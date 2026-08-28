@@ -1,0 +1,169 @@
+{
+  "scopes": {
+    "global": {
+      "promotedProducts": [
+        {
+          "id": "shop-bartan-bar-1775654570056",
+          "displayName": "Bartan bar",
+          "names": [
+            "Bartan bar",
+            "Nip set"
+          ],
+          "unit": "piece",
+          "price": 30,
+          "useCount": 6,
+          "lastUsedAt": 1775739992508,
+          "source": "promoted"
+        },
+        {
+          "id": "shop-monaco-1775739992507",
+          "displayName": "Monaco",
+          "names": [
+            "Monaco",
+            "मोनायको"
+          ],
+          "unit": "piece",
+          "price": 30,
+          "useCount": 1,
+          "lastUsedAt": 1775739992506,
+          "source": "promoted"
+        },
+        {
+          "id": "shop-bataana-daal-1775549575536",
+          "displayName": "Bataana Daal",
+          "names": [
+            "Bataana Daal",
+            "बटाना दाल"
+          ],
+          "unit": "kg",
+          "price": null,
+          "useCount": 2,
+          "lastUsedAt": 1775549925462,
+          "source": "promoted"
+        },
+        {
+          "id": "shop-कुलथा-1775548871157",
+          "displayName": "कुलथा",
+          "names": [
+            "कुलथा",
+            "kulthā"
+          ],
+          "unit": "kg",
+          "price": 120,
+          "useCount": 2,
+          "lastUsedAt": 1775549101357,
+          "source": "promoted"
+        },
+        {
+          "id": "shop-bansal-15kg-1775491100281",
+          "displayName": "Bansal 15kg",
+          "names": [
+            "Bansal 15kg"
+          ],
+          "unit": "piece",
+          "price": 2300,
+          "useCount": 1,
+          "lastUsedAt": 1775491100281,
+          "source": "promoted"
+        }
+      ],
+      "provisionalProducts": [
+        {
+          "id": "prov-futane-1785338932730",
+          "displayName": "Futane",
+          "names": [
+            "Futane",
+            "futane"
+          ],
+          "unit": "kg",
+          "price": 100,
+          "seenCount": 1,
+          "lastSeenAt": 1785338932730,
+          "source": "provisional"
+        },
+        {
+          "id": "prov-surf-excel-1775810936598",
+          "displayName": "Surf Excel",
+          "names": [
+            "Surf Excel",
+            "surf excel sabun"
+          ],
+          "unit": "piece",
+          "price": 10,
+          "seenCount": 1,
+          "lastSeenAt": 1775810936598,
+          "source": "provisional"
+        }
+      ],
+      "corrections": [
+        {
+          "alias": "अजवाइन",
+          "aliasKey": "अजवाइन",
+          "displayName": "Ajwain",
+          "unit": "",
+          "useCount": 2,
+          "lastUsedAt": 1785338932731
+        },
+        {
+          "alias": "जीरा",
+          "aliasKey": "जीरा",
+          "displayName": "Jeera",
+          "unit": "",
+          "useCount": 1,
+          "lastUsedAt": 1785338932731
+        },
+        {
+          "alias": "सौंफ",
+          "aliasKey": "सौंफ",
+          "displayName": "Saunf",
+          "unit": "",
+          "useCount": 1,
+          "lastUsedAt": 1785338932731
+        },
+        {
+          "alias": "aata",
+          "aliasKey": "aata",
+          "displayName": "Chakki Aata",
+          "unit": "kg",
+          "useCount": 1,
+          "lastUsedAt": 1785338932730
+        },
+        {
+          "alias": "gehun",
+          "aliasKey": "gehun",
+          "displayName": "गेहूं",
+          "unit": "kg",
+          "useCount": 1,
+          "lastUsedAt": 1785338932730
+        },
+        {
+          "alias": "पोहा",
+          "aliasKey": "पोहा",
+          "displayName": "Poha",
+          "unit": "kg",
+          "useCount": 1,
+          "lastUsedAt": 1775810936598
+        },
+        {
+          "alias": "धनिया",
+          "aliasKey": "धनिया",
+          "displayName": "Dhaniya Powder",
+          "unit": "",
+          "useCount": 1,
+          "lastUsedAt": 1775810936598
+        },
+        {
+          "alias": "chaa",
+          "aliasKey": "chaa",
+          "displayName": "velcha",
+          "unit": "gm",
+          "useCount": 2,
+          "lastUsedAt": 1775487610538
+        }
+      ],
+      "revision": 1785339458583,
+      "updatedAt": 1785339458583
+    }
+  },
+  "updatedAt": 1785339458585
+}

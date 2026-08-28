@@ -1,0 +1,12 @@
+{
+  "name": "kiranabill",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Voice-first kirana billing app",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}

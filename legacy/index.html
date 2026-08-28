@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html>
+<html lang="hi" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="KiranaBill"/>
+<meta name="theme-color" content="#E8621A"/>
+<title>KiranaBill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════ TOPBAR ═══════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🛒</div>
+    <div class="brand-text">
+      <div class="brand-name">KiranaBill</div>
+      <div class="brand-sub" id="shopLabel">My Kirana Store</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="toggle-pill" onclick="toggleTheme()" title="Toggle theme">
+      <div class="toggle-thumb" id="themeThumb">☀️</div>
+    </button>
+    <button class="icon-pill" onclick="openHistory()" title="History">🕐</button>
+    <button class="icon-pill" onclick="openSettingsSheet()">⚙️</button>
+  </div>
+</header>
+
+<!-- ═══════ CUSTOMER NAME BAR ═══════ -->
+<div class="customer-bar">
+  <span class="customer-icon">👤</span>
+  <input class="customer-inp" type="text" id="customerName"
+    placeholder="Customer का नाम (optional)…"
+    oninput="onCustomerInput()" />
+  <button class="customer-clear" id="customerClear" onclick="clearCustomer()">✕</button>
+</div>
+
+<!-- ═══════ MIC ZONE ═══════ -->
+<section class="mic-zone" id="micZone">
+  <div class="mic-stage">
+    <div class="pulse-ring pr1"></div>
+    <div class="pulse-ring pr2"></div>
+    <div class="pulse-ring pr3"></div>
+    <button id="micBtn" onclick="toggleListen()">🎤</button>
+  </div>
+
+  <span id="micStatus">बोलने के लिए दबाएं</span>
+
+  <div class="transcript-field" id="transcriptField">
+    <span id="transcriptEl" class="tr-ph">"2 kilo chini, teen Parle-G 10 wala"</span>
+  </div>
+
+  <div id="parsingIndicator">
+    <div class="parse-dots">
+      <div class="parse-dot"></div>
+      <div class="parse-dot"></div>
+      <div class="parse-dot"></div>
+    </div>
+    समझ रहा हूं…
+  </div>
+
+  <div class="hints-row">
+    <span class="hint-chip"><b>"2 kilo aata"</b></span>
+    <span class="hint-chip"><b>"Teen Parle-G 10 wala"</b></span>
+    <span class="hint-chip">"Ho gaya" = Done</span>
+    <span class="hint-chip">"Last hatao" = Undo</span>
+  </div>
+
+  <div class="debug-panel" id="voiceDebugPanel" hidden>
+    <div class="debug-head">
+      <div class="debug-title">Voice Debug</div>
+      <button class="debug-copy-btn" type="button" onclick="copyVoiceDebugReport()">Copy Debug</button>
+    </div>
+    <div class="debug-grid">
+      <div class="debug-block">
+        <span class="debug-label">Heard</span>
+        <pre class="debug-value" id="debugHeard">-</pre>
+      </div>
+      <div class="debug-block">
+        <span class="debug-label">Normalized</span>
+        <pre class="debug-value" id="debugNormalized">-</pre>
+      </div>
+      <div class="debug-block">
+        <span class="debug-label">Source</span>
+        <pre class="debug-value" id="debugSource">-</pre>
+      </div>
+      <div class="debug-block">
+        <span class="debug-label">Parsed</span>
+        <pre class="debug-value" id="debugItems">-</pre>
+      </div>
+    </div>
+    <div class="debug-history-block">
+      <span class="debug-label">Recent Cases</span>
+      <pre class="debug-value debug-history" id="debugHistory">-</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ BILL AREA ═══════ -->
+<main class="bill-area">
+  <div class="bill-bar">
+    <div class="bill-bar-left">
+      <span class="bill-section-label">Bill</span>
+      <span class="item-badge" id="itemBadge">0</span>
+    </div>
+    <button class="clear-btn" onclick="clearBill()">🗑 Clear</button>
+  </div>
+
+  <div class="add-item-row add-item-row-top" id="addItemRow">
+    <button class="add-item-btn" onclick="openAddItem()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Item मैन्युअल जोड़ें
+    </button>
+  </div>
+
+  <div id="emptyState">
+    <div class="empty-icon">🎙️</div>
+    <div class="empty-title">Bill खाली है</div>
+    <div class="empty-desc">ऊपर माइक दबाएं और<br>items हिंदी में बोलिए</div>
+  </div>
+
+  <table id="billTable">
+      <colgroup>
+        <col class="col-name-c">
+        <col class="col-qty-c">
+        <col class="col-rate-c">
+      <col class="col-amt-c">
+      <col class="col-del-c">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th class="ta-right">Total</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody id="billBody"></tbody>
+    </table>
+
+    <div id="billCards" class="bill-cards"></div>
+  
+  </main>
+
+<!-- ═══════ ADD ITEM SHEET ═══════ -->
+<div class="sheet-overlay" id="addItemSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">✏️ Item जोड़ें</div>
+      <button class="sheet-x" onclick="closeSheet('addItemSheet')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="sheet-note">
+        कोई भी item manually add करें — नाम, quantity, unit और rate डालें।
+      </p>
+      <div class="form-field">
+        <label class="form-label">Item का नाम</label>
+        <input class="form-input" type="text" id="aiName"
+          placeholder="जैसे: Tata Salt, Lays, कोई भी item…"
+          onkeydown="if(event.key==='Enter') addManualItem()"/>
+      </div>
+      <div class="form-row-2">
+        <div class="form-field">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" type="number" id="aiQty"
+            value="1" min="0.25" step="0.25" placeholder="1"/>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Unit</label>
+          <select class="unit-select" id="aiUnit">
+            <option value="piece">Piece</option>
+            <option value="kg">Kg</option>
+            <option value="gm">Gram</option>
+            <option value="liter">Liter</option>
+            <option value="ml">ML</option>
+            <option value="packet">Packet</option>
+            <option value="dozen">Dozen</option>
+            <option value="box">Box</option>
+            <option value="bottle">Bottle</option>
+            <option value="pouch">Pouch</option>
+            <option value="can">Can</option>
+            <option value="tin">Tin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Rate (₹)</label>
+        <input class="form-input" type="number" id="aiRate"
+          placeholder="₹ price डालें…" min="0"
+          onkeydown="if(event.key==='Enter') addManualItem()"/>
+      </div>
+      <button class="add-confirm-btn" onclick="addManualItem()">✅ Bill में जोड़ें</button>
+      <button class="sheet-close-btn spaced" onclick="closeSheet('addItemSheet')">← वापस जाएं</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ FOOTER BAR ═══════ -->
+<footer class="footer-bar">
+  <div class="total-panel">
+    <div class="total-tag">Total</div>
+    <div id="totalAmount">₹0</div>
+  </div>
+  <button class="generate-btn" onclick="finalizeBill()">🧾 Bill Banao</button>
+</footer>
+
+<!-- ═══════ BILL SHEET ═══════ -->
+<div class="sheet-overlay" id="billSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">🧾 Bill Ready</div>
+      <button class="sheet-x" onclick="closeSheet('billSheet')">✕</button>
+    </div>
+    <div id="billPreviewContent"></div>
+    <div class="action-grid">
+      <button class="action-tile" onclick="downloadImage()">
+        <span class="tile-icon">📸</span>
+        <span class="tile-text">Image<span class="tile-sub">Gallery में save</span></span>
+      </button>
+      <button class="action-tile" onclick="downloadPDF()">
+        <span class="tile-icon">📄</span>
+        <span class="tile-text">PDF<span class="tile-sub">PDF save करें</span></span>
+      </button>
+      <button class="action-tile wa-tile" onclick="shareWhatsApp()">
+        <span class="tile-icon">💬</span>
+        <span class="tile-text">WhatsApp<span class="tile-sub">Image share करें</span></span>
+      </button>
+      <button class="action-tile sms-tile" onclick="openSMSSheet()">
+        <span class="tile-icon">📱</span>
+        <span class="tile-text">SMS<span class="tile-sub">Customer को भेजें</span></span>
+      </button>
+      <button class="action-tile new-tile" onclick="newBill()">✨ नया Bill बनाएं</button>
+    </div>
+    <button class="sheet-close-btn" onclick="closeSheet('billSheet')">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- ═══════ SMS SHEET ═══════ -->
+<div class="sheet-overlay" id="smsSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">📱 SMS भेजें</div>
+      <button class="sheet-x" onclick="closeSMSSheet()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="sms-info">
+        📌 Customer का number डालें। SMS app खुलेगा — वहाँ Send करें।<br>
+        <b>Note:</b> Browser से SMS में image attach नहीं होती — text bill भेजा जाएगा।
+      </div>
+      <div class="form-field">
+        <label class="form-label">Mobile Number</label>
+        <input class="form-input" type="tel" id="smsNumber" placeholder="9876543210" maxlength="10" oninput="updateSMSPreview()"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">SMS Preview</label>
+        <div class="sms-preview-box" id="smsPreview">Number डालने पर preview दिखेगा…</div>
+      </div>
+      <button class="sms-send-btn" onclick="sendSMS()">📤 SMS App में खोलें</button>
+      <button class="sheet-close-btn spaced" onclick="closeSMSSheet()">← वापस जाएं</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SETTINGS SHEET ═══════ -->
+<div class="sheet-overlay" id="settingsSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">⚙️ Settings</div>
+      <button class="sheet-x" onclick="closeSheet('settingsSheet')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="form-field">
+        <label class="form-label">दुकान का नाम (Shop Name)</label>
+        <input class="form-input" type="text" id="inpShopName" placeholder="Gupta Traders"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" type="tel" id="inpShopPhone" placeholder="9876543210"/>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Bill Language</label>
+        <select class="form-input form-select" id="inpBillLang">
+          <option value="en">English</option>
+          <option value="hi">हिंदी</option>
+          <option value="both">English + हिंदी</option>
+        </select>
+      </div>
+      <p class="sheet-note">
+        Voice learning backup download करके दूसरे device पर import कर सकते हैं।
+      </p>
+      <div class="form-row-2">
+        <div class="form-field">
+          <button class="save-btn" type="button" onclick="downloadLearningBackup()">⬇️ Voice Memory Export</button>
+        </div>
+        <div class="form-field">
+          <button class="save-btn" type="button" onclick="triggerLearningBackupImport()">⬆️ Voice Memory Import</button>
+        </div>
+      </div>
+      <input type="file" id="learningBackupFile" accept=".json,application/json" onchange="importLearningBackupFile(event)" hidden />
+      <div class="form-field" style="margin-top:1rem;padding-top:1rem;border-top:.5px solid var(--border)">
+        <label class="form-label" style="color:var(--text-muted);font-size:12px">🛠 Developer Mode</label>
+        <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;margin-top:.35rem">
+          <input type="checkbox" id="inpDebugMode" onchange="toggleDebugMode(this.checked)" style="width:18px;height:18px;accent-color:var(--accent)"/>
+          <span style="font-size:13px;color:var(--text-secondary)">Show voice debug panel</span>
+        </label>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:.3rem">Turn this on when reporting a voice parsing problem. Share the debug output with support.</p>
+      </div>
+      <button class="save-btn" onclick="saveSettings()">💾 Save करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ HISTORY SHEET ═══════ -->
+<div class="sheet-overlay" id="historySheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">🕐 Bill History</div>
+      <button class="sheet-x" onclick="closeSheet('historySheet')">✕</button>
+    </div>
+    <div class="sheet-body sheet-body-flush">
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ HISTORY BILL VIEW SHEET ═══════ -->
+<div class="sheet-overlay" id="histBillSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="hist-bill-header">
+      <button class="hist-back" onclick="closeSheet('histBillSheet')">←</button>
+      <div class="sheet-title sheet-title-compact" id="histBillTitle">Bill</div>
+    </div>
+    <div id="histBillPreview"></div>
+    <div class="action-grid">
+      <button class="action-tile" onclick="dlHistImage()">
+        <span class="tile-icon">📸</span>
+        <span class="tile-text">Image<span class="tile-sub">Save to gallery</span></span>
+      </button>
+      <button class="action-tile" onclick="dlHistPDF()">
+        <span class="tile-icon">📄</span>
+        <span class="tile-text">PDF<span class="tile-sub">Save as PDF</span></span>
+      </button>
+      <button class="action-tile wa-tile" onclick="shareHistWA()">
+        <span class="tile-icon">💬</span>
+        <span class="tile-text">WhatsApp<span class="tile-sub">Share as image</span></span>
+      </button>
+      <button class="action-tile sms-tile" onclick="shareHistSMS()">
+        <span class="tile-icon">📱</span>
+        <span class="tile-text">SMS<span class="tile-sub">Send to customer</span></span>
+      </button>
+    </div>
+    <button class="sheet-close-btn" onclick="closeSheet('histBillSheet')">✕ बंद करें</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="sheet-overlay dialog-overlay" id="deleteConfirmSheet">
+  <div class="dialog-card">
+    <div class="dialog-title">Delete Bill?</div>
+    <div class="dialog-text">This bill will be removed from history. Are you sure?</div>
+    <div class="dialog-actions">
+      <button class="dialog-btn" onclick="closeDeleteConfirm()">Cancel</button>
+      <button class="dialog-btn dialog-btn-danger" onclick="confirmDeleteHistoryEntry()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+<script src="learning-store.js"></script>
+<script src="validator.js"></script>
+<script src="voice.js"></script>
+<script src="billing-ui.js"></script>
+</body>
+</html>

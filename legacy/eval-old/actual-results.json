@@ -1,0 +1,231 @@
+[
+  {
+    "id": "VC001",
+    "actualTranscript": "2 किलो चीनी",
+    "actualItems": [{
+        "displayName": "Chini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": null ,
+        "total": 0,
+        "priceType": "default",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC002",
+    "actualTranscript": "5 केजी आटा 40 वाला.",
+    "actualItems": [{
+        "displayName": "Chakki Aata",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 40,
+        "total": 200,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC003",
+    "actualTranscript": "कनकी 36 वाली 5 किलो",
+    "actualItems": [{
+        "displayName": "कनकी",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 36,
+        "total": 180,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC004",
+    "actualTranscript": "तीन बात साबुन दस वाला.",
+    "actualItems": [{
+        "displayName": "Bath Sabun",
+        "qty": 3,
+        "unit": "piece",
+        "rate": 10,
+        "total": 30,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC005",
+    "actualTranscript": "अजवाइन द स्की, अजवाइन 10 की",
+    "actualItems": [{
+        "displayName": "Ajwain",
+        "qty": 1,
+        "unit": "gm",
+        "rate": null,
+        "total": 10,
+        "priceType": "total",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC006",
+    "actualTranscript": "गनेश पोहा 2, पैपेट 35 वाला.",
+    "actualItems": [{
+        "displayName": "Ganesh Poha",
+        "qty": 2,
+        "unit": "packet",
+        "rate": 35,
+        "total": 70,
+        "priceType": "rate",
+        "isCustom": true
+      }]
+  },
+  {
+    "id": "VC007",
+    "actualTranscript": "2 किलो चीनी 90 रुपएं.",
+    "actualItems": [{
+        "displayName": "Chini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 90,
+        "priceType": "total",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC008",
+    "actualTranscript": "5 किलो तूअरदाल 120 वाली.",
+    "actualItems": [{
+        "displayName": "Toor Daal",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 120,
+        "total": 600,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC009",
+    "actualTranscript": "आधा किलो मूंग दाल,",
+    "actualItems": [ {
+        "displayName": "Moong Daal",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": null,
+        "total": 0,
+        "priceType": "default",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC010",
+    "actualTranscript": "सवा किलो बेसन",
+    "actualItems": [{
+        "displayName": "Besan",
+        "qty": 1.25,
+        "unit": "kg",
+        "rate": 90,
+        "total": 112.5,
+        "priceType": "default",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC011",
+    "actualTranscript": "दो दूथ पैकेट",
+    "actualItems": [{
+        "displayName": "Doodh Packet",
+        "qty": 2,
+        "unit": "piece",
+        "rate": 28,
+        "total": 56,
+        "priceType": "default",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC012",
+    "actualTranscript": "तीन पाले जी दस वाला.",
+    "actualItems": [{
+        "displayName": "Parle-G 10",
+        "qty": 3,
+        "unit": "piece",
+        "rate": 10,
+        "total": 30,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC013",
+    "actualTranscript": "5 किलो चावल दीस का.",
+    "actualItems": [{
+        "displayName": "Chaval",
+        "qty": 5,
+        "unit": "kg",
+        "rate": null,
+        "total": 100,
+        "priceType": "rate",
+        "isCustom": false
+      }]
+  },
+  {
+    "id": "VC014",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC015",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC016",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC017",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC018",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC019",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC020",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC021",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC022",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC023",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC024",
+    "actualTranscript": "",
+    "actualItems": []
+  },
+  {
+    "id": "VC025",
+    "actualTranscript": "",
+    "actualItems": []
+  }
+]

@@ -1,0 +1,234 @@
+# 05 — Frontend Specification
+
+**Last updated:** 16 Aug 2026 · **Status:** Final for MVP
+
+React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
+Must work on **both phone and desktop**.
+
+---
+
+## 1. Screens
+
+| # | Screen | Purpose |
+|---|---|---|
+| S1 | Sign in | Google sign-in only |
+| S2 | Onboarding | Shop name, phone, logo, **catalog choice** |
+| S3 | **Billing** | The home screen. Everything else is secondary. |
+| S4 | Catalog | Search, add, edit, price, learning suggestions |
+| S5 | History | Search and view past bills |
+| S6 | Bill detail | Read-only view of a finalised bill |
+| S7 | Settings | Shop details, bill language, developer mode |
+
+---
+
+## 2. S3 — Billing screen
+
+This screen is the product. Every decision here is subordinate to **turns-to-bill = 1**.
+
+```
+┌──────────────────────────────────────────────┐
+│  KiranaBill              [offline?] [≡]      │
+├──────────────────────────────────────────────┤
+│  Customer: [ Cash            ] [ mobile   ]  │  ← never blocks
+├──────────────────────────────────────────────┤
+│  Item          Qty   Unit   Rate    Amount   │
+│  ─────────────────────────────────────────   │
+│  Chini          2     kg      45      90   ✕ │
+│  Parle-G        3     pcs     10      30   ✕ │
+│  Ajwain         —     —        —       0   ✕ │
+│    ⚠ Price needed                            │
+│  Chawal         5     kg       —      30   ✕ │
+│    ⚠ Rate ₹6/kg — usually ₹52. Check?        │
+├──────────────────────────────────────────────┤
+│  TOTAL                              ₹150     │
+├──────────────────────────────────────────────┤
+│  [ 🎤  Bolein ]        [ + Add item ]        │
+│  [        Bill Banao          ]              │
+└──────────────────────────────────────────────┘
+```
+
+**Desktop:** table. **Mobile:** cards, one per line. The predecessor already does this switch.
+
+### The one-turn flow
+
+```
+tap mic → speak the whole order → tap stop
+   ↓
+transcript appears immediately (before items resolve)
+   ↓
+all items land in the table — including unknowns, flagged
+   ↓
+glance · tap to fix anything wrong
+   ↓
+"Bill Banao" → receipt
+```
+
+**No question is ever asked between the mic and the receipt.**
+
+### Voice states
+
+| State | UI |
+|---|---|
+| Idle | "बोलने के लिए दबाएं" |
+| Requesting mic permission | "Mic permission…" — never a blank pulsing button |
+| Listening | Pulsing rings + elapsed timer |
+| Transcribing | Spinner + "सुन रहे हैं…" |
+| Transcript ready | **Show the transcript text immediately** |
+| Resolving | Items append as they resolve |
+| Done | Items in table, focus on the first flagged line |
+| Failed | Inline message + "Add manually" — never a dead end |
+| Offline | Mic disabled, one-line reason |
+
+### Line flags
+
+| Severity | Appearance | Blocks finalise? |
+|---|---|---|
+| **HIGH** | Red inline text under the line, stating the specific problem | **Yes**, until acknowledged |
+| MEDIUM | Amber REVIEW badge, tappable for reason | No |
+| LOW | Small grey dot | No |
+
+Flags are **inline sentences, not icons**. "Rate ₹6/kg — usually ₹52. Check?" is actionable;
+a warning triangle is not.
+
+### Add item (S3a)
+
+Replaces the predecessor's four blank fields, which never matched the catalog.
+
+```
+┌──────────────────────────────────┐
+│ [ chi|                        ]  │
+├──────────────────────────────────┤
+│  Chini              ₹45/kg       │  ← tap adds instantly
+│  Chana Dal          ₹95/kg       │
+│  Chai Patti         ₹520/kg      │
+│  ─────────────────────────────   │
+│  + Add "chi" as a new product    │
+└──────────────────────────────────┘
+```
+
+- Search runs against the **client-side catalog index** (see `KB-CATALOG-INDEX`)
+- Tap adds with the shop's price pre-filled, qty focused, qty defaulted to 1
+- **Target: under 2 seconds from tap to item on bill**
+- Adding a new product from here creates a `shop_product` directly
+
+---
+
+## 3. S2 — Onboarding catalog choice
+
+One screen, two options, no wrong answer:
+
+```
+  ┌────────────────────────────────┐   ┌────────────────────────────────┐
+  │  Use the ready catalog          │   │  Start empty                   │
+  │  482 common grocery products    │   │  Add your own products as you  │
+  │  with Hindi names. Edit prices  │   │  bill. Products you speak are  │
+  │  any time.                      │   │  learned automatically.        │
+  │            [ Choose ]           │   │           [ Choose ]           │
+  └────────────────────────────────┘   └────────────────────────────────┘
+```
+
+Either way, base products can be pulled in later from Catalog → "Add from ready catalog".
+
+---
+
+## 4. S4 — Catalog
+
+- Search (same index as Add item)
+- Rows: name, unit, price, `use_count`
+- Edit price inline
+- Filter: All · Custom · Learned · From base catalog
+- **"Add from ready catalog"** — browse and import base products at any time
+- **Learning suggestions panel** — price drift, unit drift, provisional products awaiting promotion.
+  Suggestions appear **only here**, never during billing.
+
+---
+
+## 5. S5 — History
+
+Search by customer name, amount, date, or item — all client-side against the local store, so it
+works offline. Grouped by date. Tap opens S6.
+
+Each row shows a sync chip when not yet synced. Never alarming; just informational.
+
+---
+
+## 6. Receipt
+
+**A kirana parchi, not a tax invoice.**
+
+Pilloo prints A4 with HSN/SAC columns, CGST/SGST/IGST tables, "Net 30 days from invoice date", and
+Customer Signature / Authorized Signatory blocks — for ₹150 of rice. That is an accounting artifact
+wearing a receipt's clothes.
+
+```
+        [logo]
+      SHARMA KIRANA
+      98765 43210
+   ─────────────────────
+   Bill: KB-000142
+   15-08-2026  6:56 PM
+   Cash
+   ─────────────────────
+   Chini      2kg  ₹45   90
+   Parle-G     3   ₹10   30
+   Chawal     5kg         30
+   ─────────────────────
+   TOTAL              ₹150
+   ─────────────────────
+      Dhanyawaad!
+```
+
+- Narrow, thermal-friendly proportions
+- Language follows `bill_language` (en / hi / both) — the setting must actually work; it is currently
+  saved and never read
+- **Every interpolated value is HTML-escaped.** `display_name`, shop name, customer name are all
+  user-controlled and end up in `innerHTML`.
+- Share: Image · PDF · WhatsApp
+
+---
+
+## 7. Offline UI
+
+| State | Treatment |
+|---|---|
+| Offline | Small grey chip in the header: "Offline" |
+| Offline, billing | Everything works. No dialogs, no nags. |
+| Syncing | Chip: "Syncing…" |
+| Sync failing | Amber chip, tappable for detail. **Never blocks billing.** |
+
+**Never** a full-screen "no internet" state. The shop keeps running when the wifi doesn't.
+
+---
+
+## 8. Non-negotiable UI rules
+
+1. **No modal ever stands between the mic and the receipt.**
+2. **No question is asked mid-bill.** Customer defaults to "Cash".
+3. **Unknown products are added and flagged**, never refused.
+4. **Voice failure always falls back to search**, never to a dead end.
+5. **Numbers are the loudest thing on a flagged line** — inline sentences, not icons.
+6. **A half-built bill survives** a network drop, a tab switch, and an app backgrounding.
+
+---
+
+## 9. Accessibility and reality of the counter
+
+- Minimum touch target 44px — this is used one-handed, quickly, sometimes with wet hands
+- Large, high-contrast numbers: the shopkeeper reads the total at a glance
+- `inputmode="decimal"` on every qty and rate field
+- Works in bright daylight — the shop faces the street
+- Never rely on colour alone to convey a flag; always include text
+
+---
+
+## 10. Performance budgets
+
+| Action | Budget |
+|---|---|
+| Keystroke → search results | < 16 ms (60 fps) |
+| Tap mic → listening | < 100 ms |
+| Stop → transcript shown | < 1.5 s |
+| Fast-path item on screen | < 300 ms after transcript |
+| LLM-path item on screen | < 4 s after transcript |
+| Finalise → receipt shown | < 500 ms (local write, sync is background) |
+| App cold start | < 2 s |

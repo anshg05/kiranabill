@@ -1,0 +1,454 @@
+[
+  {
+    "id": "VC001",
+    "utterance": "2 kilo chini",
+    "expectedTranscript": "2 kilo chini",
+    "expectedItems": [
+      {
+        "displayName": "Chini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 43,
+        "total": 86,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Simple default-price catalog item."
+  },
+  {
+    "id": "VC002",
+    "utterance": "5 kg chakki aata 40 wala",
+    "expectedTranscript": "5 kg chakki aata 40 wala",
+    "expectedItems": [
+      {
+        "displayName": "Chakki Aata",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 40,
+        "total": 200,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Per-unit rate with wala."
+  },
+  {
+    "id": "VC003",
+    "utterance": "kanki 36 wali 5kg",
+    "expectedTranscript": "kanki 36 wali 5 kg",
+    "expectedItems": [
+      {
+        "displayName": "कनकी",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 36,
+        "total": 180,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Reversed order plus wali variant."
+  },
+  {
+    "id": "VC004",
+    "utterance": "teen bath sabun 10 wala",
+    "expectedTranscript": "teen bath sabun 10 wala",
+    "expectedItems": [
+      {
+        "displayName": "Bath Sabun",
+        "qty": 3,
+        "unit": "piece",
+        "rate": 10,
+        "total": 30,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Piece item with Hindi quantity word."
+  },
+  {
+    "id": "VC005",
+    "utterance": "ajwain 10 ki",
+    "expectedTranscript": "ajwain 10 ki",
+    "expectedItems": [
+      {
+        "displayName": "Ajwain",
+        "qty": 1,
+        "unit": "gm",
+        "rate": null,
+        "total": 10,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Total-price mode using ki."
+  },
+  {
+    "id": "VC006",
+    "utterance": "ganesh poha 2 packet 35 wala",
+    "expectedTranscript": "ganesh poha 2 packet 35 wala",
+    "expectedItems": [
+      {
+        "displayName": "Ganesh Poha",
+        "qty": 2,
+        "unit": "packet",
+        "rate": 35,
+        "total": 70,
+        "priceType": "rate",
+        "isCustom": true
+      }
+    ],
+    "notes": "Unknown/custom product candidate."
+  },
+  {
+    "id": "VC007",
+    "utterance": "2 kilo chini 90 rupay",
+    "expectedTranscript": "2 kilo chini 90 rupay",
+    "expectedItems": [
+      {
+        "displayName": "Chini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 90,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Explicit total without ka/wala."
+  },
+  {
+    "id": "VC008",
+    "utterance": "toor daal 5kg 120 wali",
+    "expectedTranscript": "toor daal 5 kg 120 wali",
+    "expectedItems": [
+      {
+        "displayName": "Toor Daal",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 120,
+        "total": 600,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Rate at the end with wali."
+  },
+  {
+    "id": "VC009",
+    "utterance": "aadha kilo moong daal",
+    "expectedTranscript": "aadha kilo moong daal",
+    "expectedItems": [
+      {
+        "displayName": "Moong Daal",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 110,
+        "total": 55,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Hindi fraction word."
+  },
+  {
+    "id": "VC010",
+    "utterance": "sawa kilo besan",
+    "expectedTranscript": "sawa kilo besan",
+    "expectedItems": [
+      {
+        "displayName": "Besan",
+        "qty": 1.25,
+        "unit": "kg",
+        "rate": 90,
+        "total": 112.5,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Fraction quantity with default pricing."
+  },
+  {
+    "id": "VC011",
+    "utterance": "do doodh packet",
+    "expectedTranscript": "do doodh packet",
+    "expectedItems": [
+      {
+        "displayName": "Doodh Packet",
+        "qty": 2,
+        "unit": "piece",
+        "rate": 28,
+        "total": 56,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Common packet shorthand."
+  },
+  {
+    "id": "VC012",
+    "utterance": "3 parle g 10 wala",
+    "expectedTranscript": "3 parle g 10 wala",
+    "expectedItems": [
+      {
+        "displayName": "Parle-G 10",
+        "qty": 3,
+        "unit": "piece",
+        "rate": 10,
+        "total": 30,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Brand-style biscuit entry."
+  },
+  {
+    "id": "VC013",
+    "utterance": "5 kg chawal 30 ka",
+    "expectedTranscript": "5 kg chawal 30 ka",
+    "expectedItems": [
+      {
+        "displayName": "Chawal",
+        "qty": 5,
+        "unit": "kg",
+        "rate": null,
+        "total": 30,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Total-price mode using ka."
+  },
+  {
+    "id": "VC014",
+    "utterance": "5 kg chawal 30 ki",
+    "expectedTranscript": "5 kg chawal 30 ki",
+    "expectedItems": [
+      {
+        "displayName": "Chawal",
+        "qty": 5,
+        "unit": "kg",
+        "rate": null,
+        "total": 30,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Total-price mode using ki."
+  },
+  {
+    "id": "VC015",
+    "utterance": "Surf Excel ek packet",
+    "expectedTranscript": "surf excel ek packet",
+    "expectedItems": [
+      {
+        "displayName": "Surf Excel",
+        "qty": 1,
+        "unit": "packet",
+        "rate": null,
+        "total": null,
+        "priceType": "unknown",
+        "isCustom": true
+      }
+    ],
+    "notes": "Unknown pack size should remain reviewable."
+  },
+  {
+    "id": "VC016",
+    "utterance": "sabun 180 rupay",
+    "expectedTranscript": "sabun 180 rupay",
+    "expectedItems": [
+      {
+        "displayName": "Sabun",
+        "qty": 1,
+        "unit": "piece",
+        "rate": null,
+        "total": 180,
+        "priceType": "total",
+        "isCustom": true
+      }
+    ],
+    "notes": "Likely custom/ambiguous item with explicit total."
+  },
+  {
+    "id": "VC017",
+    "utterance": "nariyal pani 4",
+    "expectedTranscript": "nariyal pani 4",
+    "expectedItems": [
+      {
+        "displayName": "Nariyal Pani",
+        "qty": 4,
+        "unit": "piece",
+        "rate": 30,
+        "total": 120,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Trailing quantity without explicit unit."
+  },
+  {
+    "id": "VC018",
+    "utterance": "ek liter sarson tel 145 wala",
+    "expectedTranscript": "ek liter sarson tel 145 wala",
+    "expectedItems": [
+      {
+        "displayName": "Sarson Tel",
+        "qty": 1,
+        "unit": "liter",
+        "rate": 145,
+        "total": 145,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Liter unit with explicit rate."
+  },
+  {
+    "id": "VC019",
+    "utterance": "2 packet oreo aur 1 monaco",
+    "expectedTranscript": "2 packet oreo aur 1 monaco",
+    "expectedItems": [
+      {
+        "displayName": "Oreo",
+        "qty": 2,
+        "unit": "packet",
+        "rate": 20,
+        "total": 40,
+        "priceType": "default",
+        "isCustom": false
+      },
+      {
+        "displayName": "Monaco",
+        "qty": 1,
+        "unit": "piece",
+        "rate": 10,
+        "total": 10,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Two items in one utterance."
+  },
+  {
+    "id": "VC020",
+    "utterance": "bhai 2 kilo gehu aur ek tel pouch",
+    "expectedTranscript": "bhai 2 kilo gehu aur ek tel pouch",
+    "expectedItems": [
+      {
+        "displayName": "गेहूं",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 32,
+        "total": 64,
+        "priceType": "default",
+        "isCustom": false
+      },
+      {
+        "displayName": "Tel Pouch",
+        "qty": 1,
+        "unit": "piece",
+        "rate": 25,
+        "total": 25,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Filler word plus two-item sentence."
+  },
+  {
+    "id": "VC021",
+    "utterance": "dhai kilo rajma",
+    "expectedTranscript": "dhai kilo rajma",
+    "expectedItems": [
+      {
+        "displayName": "Rajma",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "total": 300,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "Another Hindi fraction word."
+  },
+  {
+    "id": "VC022",
+    "utterance": "6 kg chawal 60 wala",
+    "expectedTranscript": "6 kg chawal 60 wala",
+    "expectedItems": [
+      {
+        "displayName": "Chawal",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 60,
+        "total": 360,
+        "priceType": "rate",
+        "isCustom": false
+      }
+    ],
+    "notes": "Reverse-order example for explicit rate."
+  },
+  {
+    "id": "VC023",
+    "utterance": "5kg toor daal 120 wala aur 2 kilo chini 90 rupay",
+    "expectedTranscript": "5 kg toor daal 120 wala aur 2 kilo chini 90 rupay",
+    "expectedItems": [
+      {
+        "displayName": "Toor Daal",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 120,
+        "total": 600,
+        "priceType": "rate",
+        "isCustom": false
+      },
+      {
+        "displayName": "Chini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 90,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Mixed pricing styles in one utterance."
+  },
+  {
+    "id": "VC024",
+    "utterance": "Mamy Poko Pants do",
+    "expectedTranscript": "mamy poko pants do",
+    "expectedItems": [
+      {
+        "displayName": "Mamy Poko Pants",
+        "qty": 2,
+        "unit": "piece",
+        "rate": 18,
+        "total": 36,
+        "priceType": "default",
+        "isCustom": false
+      }
+    ],
+    "notes": "English brand with Hindi quantity word."
+  },
+  {
+    "id": "VC025",
+    "utterance": "ruk haan 50 gram jeera 20 rupay",
+    "expectedTranscript": "ruk haan 50 gram jeera 20 rupay",
+    "expectedItems": [
+      {
+        "displayName": "Jeera",
+        "qty": 50,
+        "unit": "gm",
+        "rate": null,
+        "total": 20,
+        "priceType": "total",
+        "isCustom": false
+      }
+    ],
+    "notes": "Filler words plus gram item with explicit total."
+  }
+]
