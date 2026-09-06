@@ -1,6 +1,6 @@
 # 01 — Product Requirements Document
 
-**Last updated:** 16 Aug 2026 (rev 2) · **Status:** Final · **Supersedes:** rev 1
+**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Final · **Supersedes:** rev 2
 
 ---
 
@@ -211,13 +211,16 @@ Honest estimate for one person, part-time, with AI writing the code:
 
 | Phase | Work | Estimate |
 |---|---|---|
-| 0 | Fix and re-baseline the predecessor's eval + pricing grammar | 2 weeks |
-| 1 | Foundation: auth, shop, schema, catalog | 3 weeks |
-| 2 | Voice pipeline port + deterministic fast path | 4 weeks |
+| 0 | Build `domain/` + eval harness, new codebase | 3 weeks |
+| 1 | Foundation: auth, shop, schema, RLS, sync | 3 weeks |
+| 2 | Voice pipeline + deterministic fast path | 4 weeks |
 | 3 | Billing UI, receipt, history | 3 weeks |
-| 4 | Pilot hardening + Capacitor wrap | 2 weeks |
-| | **Total** | **~14 weeks** |
+| 4 | Pilot hardening + 20-bill validation run | 2 weeks |
+| | **Total** | **~15 weeks** |
 
 Phase 0 comes first and is not optional. The pricing grammar is the differentiator and it currently
-fails on its own test cases — porting a broken differentiator to a new stack just makes it broken
-and more expensive to fix.
+fails on its own test cases — carrying a broken differentiator into a new stack just makes it broken
+and more expensive to fix. Phase 0 builds `domain/` **fresh** in the new stack rather than patching
+the predecessor; see `07-DECISIONS.md` D9.
+
+*This estimate has no historical basis. Re-estimate after Phase 0 actuals.*

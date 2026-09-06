@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 18 Aug 2026 (rev 3) · **Current phase:** Phase 0 not started
+**Last updated:** 20 Aug 2026 (rev 4) · **Current phase:** Phase 0 not started
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,9 +14,15 @@
 
 **Phase:** 0 — Fix the differentiator (not started)
 **Working on:** nothing yet
-**Next action:** **Session one — folder restructure, no AI.** See `15-BUILD-GUIDE.md` §3.
-Then `KB-001` (rotate keys), then `KB-000` (scaffold) in Antigravity.
-**Build tool: Antigravity.** Codex as backup only. No MCPs until Phase 1.
+**Next action:** `KB-000` — scaffold. Then `KB-003`.
+**Build tool: Antigravity**, Local mode, `main` branch until real code starts (then ticket branches).
+**Model policy:** Flash for scaffolding and mechanical work; **thinking-tier (Opus/Sonnet) for
+`KB-005`, `KB-005b`, RLS and the sync worker** — those are where an invisible mistake costs months.
+No MCPs until Phase 1 (Supabase, read-only token).
+
+**⚠️ Still outstanding: rotate the Groq and Gemini keys.** `.gitignore` is fixed and the repo is
+clean (verified: the old repo had zero commits, so nothing ever leaked), but the keys have been in a
+distributed zip.
 **Blocked on:** nothing
 **Codebase in play:** none yet. **Phase 0 builds `src/domain/` in the new stack.** The predecessor
 is a reference for knowledge only — its implementation is not carried forward.
@@ -48,17 +54,24 @@ Legend: ⬜ todo · 🟦 in progress · ✅ done · ⛔ blocked · ⏸️ parked
 
 | ID | Ticket | Status | Notes |
 |---|---|---|---|
-| KB-001 | Rotate keys, fix `.gitignore` | ⬜ | **Do first.** Ignore file before rotation. |
-| KB-002 | Fix `bas`/basmati command collision | ⬜ | Fix written and tested — 0 collisions across 482 products. Needs wiring in. |
-| KB-003 | Instrument everything | ⬜ | Capture Gemini `usageMetadata`, currently discarded |
-| KB-004 | Rebuild the eval | ⬜ | Derive prices from catalog; match on id; run all 25 live |
-| KB-005 | **Fix the pricing grammar** | ⬜ | VC013 returns ₹100 instead of ₹30. Write failing tests first. |
-| KB-006 | Number benchmark (100 utterances) | ⬜ | The metric nobody publishes |
-| KB-007 | Shop vocabulary phrase biasing | ⬜ | Code written, needs wiring + measurement |
-| **KB-008** | **Fast-path coverage probe** | ⬜ | **New — see Open Risks.** Measure achievable coverage before committing to the cost model. |
+| KB-001 | Rotate keys, fix `.gitignore` | 🟦 | `.gitignore` done + committed. **Key rotation still outstanding.** |
+| KB-000 | Repo + `domain/` scaffold | ⬜ | Vite + React + TS + Vitest + Tailwind tokens. `legacy/` excluded from tsconfig. |
+| KB-003 | `domain/money.ts` + `domain/catalog.ts` | ⬜ | Integer paise; seed 482 products from `legacy/products.js` |
+| KB-002 | `domain/commands.ts` | ⬜ | Whole-utterance matching. Test: no catalog alias may finalise a bill. |
+| KB-004 | Eval harness (Node) | ⬜ | Prices from catalog at runtime; match on id; separate transcription from parsing errors |
+| KB-005 | **`domain/grammar.ts` — pricing grammar** | ⬜ | Five rules, failing tests first. **Resolve the `paune`/`chataak` conflict here.** Use a thinking-tier model. |
+| KB-005b | `domain/validator.ts` + `domain/catalogIndex.ts` | ⬜ | Rules ported, not code. Prefix + n-gram index, not O(n). |
+| KB-005c | CLI harness | ⬜ | `npm run try "..."`. Mitigates Phase 0 having no visible output. |
+| KB-008 | `domain/learning.ts` | ⬜ | Three-tier rules, pure functions |
+| KB-006 | Number benchmark (100 utterances) | ⬜ | The metric no ASR vendor publishes |
+| KB-007 | Shop vocabulary phrase biasing | ⬜ | Top ~40 names as Whisper `prompt`, capped 600 chars |
+| **KB-009** | **Fast-path coverage probe** | ⬜ | **See R1.** Measure before committing to the cost model. |
 
-**Phase 0 exit gate:** pricing grammar passes every test · number-accuracy baseline recorded ·
-fast-path coverage measured.
+**Phase 0 exit gate:** all five pricing rules pass (incl. `ka` vs `wala` on identical phrasing) ·
+25/25 eval baseline recorded · number-accuracy baseline recorded · **fast-path coverage measured** ·
+catalog index under 16 ms at 10,000 products.
+
+> If coverage comes back under ~40%, **stop before Phase 1.** See R1.
 
 ### Phases 1–4
 
@@ -92,6 +105,9 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 20 Aug 2026 | **A0 onboarding run.** Agent found 4 real doc inconsistencies — all fixed: A0 prompt said "six" non-negotiables (there are eight); `04-VOICE-PIPELINE` §10 still listed O2/O3/O4 as open; `KB-009` missing from the ticket list; this tracker's Phase 0 list was stale rev-1 content. PRD timeline reconciled to 15 weeks. | Agent + Owner |
+| 20 Aug 2026 | Design mockups validated `13-DESIGN.md`. Rev 2 adds button hierarchy, number-display rules, bilingual search labels. Two improvements adopted from the mockup: "Theek hai" acknowledge button, Devanagari sublabels. | Owner |
+| 19 Aug 2026 | Repo created (`anshg05/kiranabill`, private), restructured, docs committed, pushed. `.gitattributes` added. | Owner |
 | 18 Aug 2026 | **Build tool decided: Antigravity, single tool through MVP.** Lovable dropped. MCPs deferred to Phase 1. Mermaid adopted for diagrams; `16-APP-FLOW.md` added. Graphify parked as NI-13. | Owner |
 | 17 Aug 2026 | O2 dropped (Sarvam). O3 void — no such experiment ever happened. **O4 closed: Pilloo does NOT distinguish `ka`/`wala` — pricing grammar confirmed as a real differentiator.** | Owner |
 | 17 Aug 2026 | Phase 0 restructured: build `domain/` fresh instead of patching the old codebase. Old code is reference-only. | Owner |

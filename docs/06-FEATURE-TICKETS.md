@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 18 Aug 2026 (rev 3) · **Status:** Final for MVP
+**Last updated:** 20 Aug 2026 (rev 4) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -41,6 +41,7 @@ Netlify functions · the O(n) matcher · `validator.js` as written.
 | **KB-007** | Shop vocabulary biasing | Top ~40 product names by frequency as the Whisper `prompt`, capped at 600 chars | Brand-name errors measurably reduced vs KB-004 baseline |
 | **KB-005c** | **CLI harness** | `npm run try "chawal 5 kilo tees ka"` prints parsed items, price type and fast-path hit/miss. ~15 lines. **Phase 0 has no visible output for three weeks — this is the mitigation**, and it becomes the fastest debugging tool in the project. It is also the exact demo that proves the differentiator: Pilloo returns the same amount for `ka` and `wala`. | Both phrasings produce different totals |
 | **KB-008** | `domain/learning.ts` | Three-tier learning rules, pure functions | Unit-tested against scripted bill sequences |
+| **KB-009** | **Fast-path coverage probe** | Run the Layer 1 parser over the 25 eval cases **and** the 100-utterance number benchmark. Report % handled deterministically, with miss reasons grouped. | **A measured coverage number exists.** See risk R1 — the cost model, latency story and moat argument all assume 60–70%, and it has never been measured. |
 
 **Phase 0 exit gate:** the pricing grammar passes every test, and there is a recorded number-accuracy
 baseline. **Do not start Phase 1 before this.**

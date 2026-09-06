@@ -271,10 +271,17 @@ sellable**, not an optimisation.
 
 ---
 
-## 10. Open items
+## 10. Open items — all closed
 
-| # | Question | Resolve before |
+Closed 17 Aug 2026. See `07-DECISIONS.md` rev 3. **Do not re-investigate these.**
+
+| # | Question | Resolution |
 |---|---|---|
-| **O3** | Why was the earlier fast-path regex experiment rolled back? | Building Layer 1 |
-| **O2** | Sarvam pricing | Phase 2, or if Whisper accuracy proves insufficient |
-| **O4** | Does Pilloo implement `ka`/`wala`? | Claiming the grammar publicly |
+| **O2** | Sarvam pricing | **Dropped.** Groq Whisper large-v3 is the decision. `TranscriptionProvider` keeps it reversible. |
+| **O3** | Why was the fast-path regex experiment rolled back? | **Void — no such experiment.** The note came from an AI-generated summary, not from the owner. Build Layer 1 fresh with no inherited assumption. |
+| **O4** | Does Pilloo implement `ka`/`wala`? | **It does not.** Owner tested "chawal 5 kilo tees wala" vs "...tees ka" — Pilloo returns the same amount for both. **The pricing grammar is a confirmed differentiator and may be claimed.** |
+
+**The one genuinely unresolved item in this document** is the `paune` / `chataak` conflict in
+`14-LEGACY-REFERENCE.md` §3 — the Gemini prompt has `chataak=0.05` which the code dictionary lacks,
+and `paune=0.75` is wrong in context (*"paune do"* is 1.75, not 0.75). **Resolve in `KB-005`.
+Do not invent the answer — decide the rule, write the test, make both sources agree.**

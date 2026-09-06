@@ -143,8 +143,11 @@ Implementation:
 - Build once on catalog load; update incrementally on edits
 - **Every existing guard in `validator.js` is preserved** — they run on candidates, unchanged
 
-**Threshold after this work: 10,000 products client-side.** Above that, server-side search — which
-essentially no kirana shop will reach.
+**Threshold after this work: 10,000 products client-side.** Above that, server-side search.
+
+*The pilot shop runs 500+ SKUs and is mart-like rather than a corner kirana, so the 10,000 ceiling
+has roughly 20× headroom — but it is headroom, not an impossibility. If a shop approaches 5,000,
+revisit early rather than at the threshold. See `NI-12`.*
 
 **On what competitors do:** I have no web access, so I won't invent their implementations. What
 follows from architecture: desktop-first Indian billing software (Vyapar, Marg, Busy) runs on a

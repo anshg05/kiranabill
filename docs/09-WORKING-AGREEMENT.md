@@ -1,6 +1,6 @@
 # 09 — Working Agreement
 
-**Last updated:** 18 Aug 2026 (rev 2) · **Status:** Active from first commit
+**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Active from first commit
 
 How work gets done on this project. Engineering standards, the AI session protocol, and the
 definition of done.
@@ -51,7 +51,8 @@ Now write a summary covering:
  1. What this product is, and the single sentence that is its thesis
  2. Who the user is and what specifically fails for them today
  3. The five layers of the voice pipeline and why layer 1 exists
- 4. The six non-negotiables from 00-README
+ 4. All EIGHT non-negotiables from 00-README (there are eight - if you list
+    only six you stopped early)
  5. Why "never silently wrong about a number" is treated differently
     from product-name errors
  6. What phase we are in and what the very next ticket is
