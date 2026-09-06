@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 16 Aug 2026 · **Status:** Final for MVP
+**Last updated:** 20 Aug 2026 (rev 2) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -71,7 +71,7 @@ glance · tap to fix anything wrong
 |---|---|
 | Idle | "बोलने के लिए दबाएं" |
 | Requesting mic permission | "Mic permission…" — never a blank pulsing button |
-| Listening | Pulsing rings + elapsed timer |
+| Listening | Pulsing indigo rings + elapsed timer + `सुन रहे हैं…`. Mic becomes a stop button. **Design this state explicitly — it is the most-seen state in the app and was missing from the first mockups.** |
 | Transcribing | Spinner + "सुन रहे हैं…" |
 | Transcript ready | **Show the transcript text immediately** |
 | Resolving | Items append as they resolve |
@@ -79,11 +79,28 @@ glance · tap to fix anything wrong
 | Failed | Inline message + "Add manually" — never a dead end |
 | Offline | Mic disabled, one-line reason |
 
+### Layout behaviour on long bills
+
+The mockup showed a 4-item bill with a large dead area above TOTAL. Real bills run longer.
+
+- **TOTAL is pinned** to the bottom of the item area, above the action buttons, always visible
+- The item list scrolls beneath it; TOTAL and the buttons never scroll away
+- On a short bill the empty space sits **between the last item and TOTAL** — acceptable
+- The most recently added item scrolls into view automatically
+
+### Add-item sheet proportions
+
+The mockup gave a third of the screen to a "Bill so far" strip showing four words.
+
+- The sheet covers **~75% of viewport height** — search results are the point
+- The strip above collapses to **one line**: `Bill so far · ₹150 · 4 items`
+- Search field focused on open, keyboard up immediately
+
 ### Line flags
 
 | Severity | Appearance | Blocks finalise? |
 |---|---|---|
-| **HIGH** | Red inline text under the line, stating the specific problem | **Yes**, until acknowledged |
+| **HIGH** | 3px `DANGER` left border + red inline sentence + a **"Theek hai"** acknowledge button on the row | **Yes**, until acknowledged |
 | MEDIUM | Amber REVIEW badge, tappable for reason | No |
 | LOW | Small grey dot | No |
 

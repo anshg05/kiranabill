@@ -1,6 +1,6 @@
 # 13 — Design
 
-**Last updated:** 17 Aug 2026 · **Status:** Final for MVP
+**Last updated:** 20 Aug 2026 (rev 2) · **Status:** Final for MVP · Validated against mockups
 
 ---
 
@@ -142,6 +142,48 @@ app handles fine is a design failure.
 
 ---
 
+## 6b. Button hierarchy
+
+Validated against mockups — the first version had two equally-weighted primary buttons and the
+hierarchy collapsed.
+
+| Level | Style | Used for |
+|---|---|---|
+| **Primary** | Solid `INDIGO`, white text | **Exactly one per screen.** On Billing, that is the mic. |
+| **Secondary** | `SURFACE` fill, 1px `LINE` border, `INK` text | Add item, Image, PDF |
+| **Terminal** | Solid `INK`, white text | Bill Banao. Ends the flow — must read as *different*, not as a second primary. |
+| **Acknowledge** | 1px `DANGER` border, `DANGER` text, transparent fill | "Theek hai" on a HIGH flag |
+| **Text** | `INDIGO` text only | "Add X as a new product" |
+
+Two solid indigo buttons on one screen is a bug.
+
+## 6c. Number display rules
+
+The thesis is number trust, so how numbers are shown is a design rule, not a formatting detail.
+
+| Case | Show | Never show |
+|---|---|---|
+| No price yet (Rule 5) | `—` | `₹0` — reads as free |
+| No rate, total only (`ka`) | rate cell `—`, amount filled | `₹0` |
+| Qty unknown | `—` | `0` |
+| Genuinely zero | `₹0` | — |
+| All amounts | tabular figures, right-aligned | proportional figures |
+
+`₹0` means "this costs nothing." An unpriced line means "we don't know yet." They must look different.
+
+## 6d. Bilingual labelling
+
+Adopted from the mockups. In any **search or picker** list, show the Devanagari name as a sublabel
+under the Latin name:
+
+```
+Chini                    ₹45/kg
+चीनी
+```
+
+The shopkeeper types Latin and gets Hindi confirmation. Costs one line, removes a whole class of
+wrong-item errors. **Search lists only** — not the bill table, which follows `bill_language`.
+
 ## 7. Explicitly forbidden
 
 ```
@@ -155,6 +197,9 @@ app handles fine is a design failure.
 ✗ Generic SaaS blue (#3B82F6 and neighbours)
 ✗ Pure white (#FFFFFF) as the app background
 ✗ Devanagari and Latin from mismatched typefaces
+✗ Two solid primary buttons on one screen
+✗ `₹0` for a line that simply has no price yet
+✗ Labels that wrap or clip inside a button — size the button to the text
 ```
 
 ---
