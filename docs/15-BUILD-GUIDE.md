@@ -1,6 +1,6 @@
 # 15 — Build Guide
 
-**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Active
+**Last updated:** 21 Aug 2026 (rev 4) · **Status:** Active
 **Supersedes:** rev 1, which recommended multiple tools including Lovable.
 
 How to actually build this, alone. Read `09-WORKING-AGREEMENT.md` alongside it — that covers the
@@ -241,6 +241,7 @@ Pure TypeScript. No UI, no database, no browser. Highest-risk work first, testab
 | 8 | `KB-005c` **the CLI** — see §6 |
 | 9 | `KB-008` `learning.ts` |
 | 10 | `KB-006` 100-utterance number benchmark |
+| 10b | `KB-007` shop vocabulary phrase biasing |
 | 11 | `KB-009` **fast-path coverage probe** |
 
 **Exit gate:** all five pricing rules pass · 25/25 eval baseline recorded · number-accuracy baseline

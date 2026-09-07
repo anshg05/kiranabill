@@ -1,6 +1,6 @@
 # 13 — Design
 
-**Last updated:** 20 Aug 2026 (rev 2) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 21 Aug 2026 (rev 3) · **Status:** Final for MVP · Validated against mockups
 
 ---
 
@@ -206,29 +206,46 @@ wrong-item errors. **Search lists only** — not the bill table, which follows `
 
 ## 8. Implementation
 
-Tokens are defined once in `tailwind.config.ts`, from the values above. **Raw hex values never
-appear in components.** If a colour is needed that isn't a token, that's a design decision and it
-goes in this document first.
+**Tailwind v4.** Tokens live in a `@theme` block in `src/index.css`. There is **no
+`tailwind.config.ts`** and **no PostCSS config** — v4's Vite plugin handles both.
 
-```ts
-colors: {
-  ink:     { DEFAULT: '#1A1A1F', soft: '#5A5A66' },
-  paper:   '#FBF9F4',
-  surface: '#FFFFFF',
-  line:    '#E4E0D6',
-  indigo:  { DEFAULT: '#2C3E7B', deep: '#1E2B57' },
-  turmeric:'#E0A020',
-  danger:  '#B3261E',
-  warn:    '#A16207',
-  ok:      '#2E6B3E',
-  muted:   '#9A9689',
+**Raw hex values never appear in components.** If a colour is needed that isn't a token, that is a
+design decision and it goes in this document first.
+
+```css
+/* src/index.css */
+@import "tailwindcss";
+
+@theme {
+  --color-ink:          #1A1A1F;
+  --color-ink-soft:     #5A5A66;
+  --color-paper:        #FBF9F4;
+  --color-surface:      #FFFFFF;
+  --color-line:         #E4E0D6;
+  --color-indigo:       #2C3E7B;
+  --color-indigo-deep:  #1E2B57;
+  --color-turmeric:     #E0A020;
+  --color-danger:       #B3261E;
+  --color-warn:         #A16207;
+  --color-ok:           #2E6B3E;
+  --color-muted:        #9A9689;
+
+  --font-sans: "Mukta", system-ui, sans-serif;   /* Mukta is the DEFAULT, not opt-in */
+  --font-mono: "IBM Plex Mono", monospace;
 }
 ```
 
-Dark mode is **deferred**. A shop counter is a daylight environment, and shipping one well-made
-theme beats shipping two mediocre ones.
+Usage: `bg-paper`, `text-ink`, `border-line`, `text-danger`, `bg-indigo`.
 
----
+> ⚠️ **Mukta must be `--font-sans`, not a separate `--font-body`.** The `KB-000` scaffold set
+> `--font-body`, which leaves Tailwind's system stack as the default and forces every component to
+> opt in with a class. Fix this when Phase 3 starts.
+
+> **Tailwind v4 tree-shakes unused tokens.** Only tokens some class actually references appear in
+> the built CSS. Verify tokens against `src/index.css`, never against `dist/`.
+
+**Dark mode is deferred.** A shop counter is a daylight environment; one well-made theme beats two
+mediocre ones.
 
 ## 9. Icons
 

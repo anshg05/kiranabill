@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 20 Aug 2026 (rev 4) · **Status:** Final for MVP
+**Last updated:** 21 Aug 2026 (rev 5) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -32,16 +32,20 @@ Netlify functions · the O(n) matcher · `validator.js` as written.
 |---|---|---|---|
 | **KB-001** | Rotate keys, fix `.gitignore` | Add `.env`, `.env.*`, `!.env.example` **first**, then rotate both keys | New keys live, old revoked, nothing secret in the repo |
 | **KB-000** | Repo + `domain/` scaffold | Vite + TS. `src/domain/` with zero external imports. Vitest configured. | `npm test` runs |
-| **KB-002** | Command matcher (`domain/commands.ts`) | Whole-utterance matching, filler-stripped, digit-rejecting. The old `includes("bas")` matched "basmati" — 8 aliases across 5 products collided. | 0 collisions across all 482 products; "bas", "ab bas", "ho gaya", "बस" still fire |
 | **KB-003** | `domain/money.ts` + `domain/catalog.ts` | Integer paise arithmetic; catalog types; import the 482 products as seed JSON | Money math unit-tested; catalog loads |
+| **KB-002** | Command matcher (`domain/commands.ts`) | Whole-utterance matching, filler-stripped, digit-rejecting. The old `includes("bas")` matched "basmati" — 8 aliases across 5 products collided. | 0 collisions across all 482 products; "bas", "ab bas", "ho gaya", "बस" still fire |
 | **KB-004** | **Eval harness (Node)** | Derive prices from the catalog at runtime; match on catalog id not display string; report transcription errors separately from parsing errors | 25/25 run, baseline recorded |
 | **KB-005** | **`domain/grammar.ts` — pricing grammar** | All five rules. The old code returned ₹100 instead of ₹30 for "5 kg chawal 30 ka". **Confirmed differentiator: Pilloo returns the same amount for `ka` and `wala`.** Write failing tests first. | All `ka`/`wala` cases pass |
 | **KB-005b** | `domain/validator.ts` + `domain/catalogIndex.ts` | Port the *rules*, not the code. Prefix + n-gram index, not an O(n) scan. | Guards preserved; index benchmarked |
-| **KB-006** | Number benchmark | 100 utterances stressing Hindi numerals, fractions, `X wala` vs `X ka`, two-number utterances, confusable pairs (तीस/पीस, दस/दीस) | Baseline number-accuracy figure recorded |
-| **KB-007** | Shop vocabulary biasing | Top ~40 product names by frequency as the Whisper `prompt`, capped at 600 chars | Brand-name errors measurably reduced vs KB-004 baseline |
 | **KB-005c** | **CLI harness** | `npm run try "chawal 5 kilo tees ka"` prints parsed items, price type and fast-path hit/miss. ~15 lines. **Phase 0 has no visible output for three weeks — this is the mitigation**, and it becomes the fastest debugging tool in the project. It is also the exact demo that proves the differentiator: Pilloo returns the same amount for `ka` and `wala`. | Both phrasings produce different totals |
 | **KB-008** | `domain/learning.ts` | Three-tier learning rules, pure functions | Unit-tested against scripted bill sequences |
+| **KB-006** | Number benchmark | 100 utterances stressing Hindi numerals, fractions, `X wala` vs `X ka`, two-number utterances, confusable pairs (तीस/पीस, दस/दीस) | Baseline number-accuracy figure recorded |
+| **KB-007** | Shop vocabulary biasing | Top ~40 product names by frequency as the Whisper `prompt`, capped at 600 chars | Brand-name errors measurably reduced vs KB-004 baseline |
 | **KB-009** | **Fast-path coverage probe** | Run the Layer 1 parser over the 25 eval cases **and** the 100-utterance number benchmark. Report % handled deterministically, with miss reasons grouped. | **A measured coverage number exists.** See risk R1 — the cost model, latency story and moat argument all assume 60–70%, and it has never been measured. |
+
+> **This order is canonical.** It matches `CLAUDE.md`, `10-TRACKER.md` and `15-BUILD-GUIDE.md` §6.
+> `KB-003` (money + catalog) comes before `KB-002` (commands) because the command matcher's test
+> sweeps the 482-product catalog, which `KB-003` loads.
 
 **Phase 0 exit gate:** the pricing grammar passes every test, and there is a recorded number-accuracy
 baseline. **Do not start Phase 1 before this.**

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 20 Aug 2026 (rev 5) · **Current phase:** Phase 0 not started
+**Last updated:** 21 Aug 2026 (rev 6) · **Current phase:** Phase 0 in progress
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -12,8 +12,8 @@
 
 ## Right now
 
-**Phase:** 0 — Fix the differentiator (not started)
-**Working on:** nothing yet
+**Phase:** 0 — Building `domain/` (in progress)
+**Working on:** `KB-003` next — `domain/money.ts` + `domain/catalog.ts`
 **Next action:** `KB-000` — scaffold. Then `KB-003`.
 **Build tool: Antigravity**, Local mode, `main` branch until real code starts (then ticket branches).
 **Model policy:** Flash for scaffolding and mechanical work; **thinking-tier (Opus/Sonnet) for
@@ -37,7 +37,7 @@ before anything else.
 
 | Phase | Scope | Status |
 |---|---|---|
-| **0** | Build `domain/` + eval harness, new codebase | ⬜ Not started |
+| **0** | Build `domain/` + eval harness, new codebase | 🟦 In progress (KB-000 done) |
 | 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ⬜ Not started |
 | 2 | Voice pipeline: catalog index, layers 1–4, learning | ⬜ Not started |
 | 3 | Billing UI, receipt, history, catalog screen | ⬜ Not started |
@@ -55,7 +55,7 @@ Legend: ⬜ todo · 🟦 in progress · ✅ done · ⛔ blocked · ⏸️ parked
 | ID | Ticket | Status | Notes |
 |---|---|---|---|
 | KB-001 | Rotate keys, fix `.gitignore` | 🟦 | `.gitignore` done + committed. **Key rotation still outstanding.** |
-| KB-000 | Repo + `domain/` scaffold | ⬜ | Vite + React + TS + Vitest + Tailwind tokens. `legacy/` excluded from tsconfig. |
+| KB-000 | Repo + `domain/` scaffold | ✅ | Done 20 Aug. React 19, TS 5.8, Vite 6, Vitest 3, **Tailwind v4** (`@theme` in `src/index.css`, no config file, no PostCSS). `npm test` ✓ · `tsc --noEmit` ✓ · `npm run build` ✓. All 12 tokens present. |
 | KB-003 | `domain/money.ts` + `domain/catalog.ts` | ⬜ | Integer paise; seed 482 products from `legacy/products.js` |
 | KB-002 | `domain/commands.ts` | ⬜ | Whole-utterance matching. Test: no catalog alias may finalise a bill. |
 | KB-004 | Eval harness (Node) | ⬜ | Prices from catalog at runtime; match on id; separate transcription from parsing errors |
@@ -105,6 +105,9 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 21 Aug 2026 | **Claude Code onboarding run.** Found 4 more real doc errors, all fixed: `06` Phase 0 ticket order contradicted three other docs (plus a duplicated `KB-004`); `SD-011` and `13-DESIGN` §8 still described a Tailwind **v3** `tailwind.config.ts` that doesn't exist; this tracker had `KB-000` as todo after it shipped; `legacy/README.md` was never created. `15-BUILD-GUIDE` was also missing `KB-007`. | Agent + Owner |
+| 21 Aug 2026 | Switched build tool: **Antigravity → Claude Code** (Antigravity quota exhausted mid-`KB-000`). `CLAUDE.md` added as the auto-loaded entry point. Handoff cost: zero — the new tool picked up from the docs. | Owner |
+| 20 Aug 2026 | **`KB-000` complete.** Tailwind **v4** pinned. Branch workflow dropped — solo dev works on `main`, committing after each working step. | Owner |
 | 20 Aug 2026 | **`18-AGENT-CONTRACT.md` added** — binding operating contract for every agent session: flow, 10 STOP conditions, 12 hard rules, manual-step protocol, per-ticket proof standards. Session opener reduced to one line. | Owner |
 | 20 Aug 2026 | **A0 onboarding run.** Agent found 4 real doc inconsistencies — all fixed: A0 prompt said "six" non-negotiables (there are eight); `04-VOICE-PIPELINE` §10 still listed O2/O3/O4 as open; `KB-009` missing from the ticket list; this tracker's Phase 0 list was stale rev-1 content. PRD timeline reconciled to 15 weeks. | Agent + Owner |
 | 20 Aug 2026 | Design mockups validated `13-DESIGN.md`. Rev 2 adds button hierarchy, number-display rules, bilingual search labels. Two improvements adopted from the mockup: "Theek hai" acknowledge button, Devanagari sublabels. | Owner |
@@ -128,6 +131,7 @@ Recorded once measurement begins. **Empty is honest; do not fill with estimates.
 | Metric | Baseline | Current | Target |
 |---|---|---|---|
 | Eval: pass / warn / fail / skip | 0 / 10 / 3 / 12 | — | 25 / 0 / 0 / 0 |
+| `KB-000` toolchain | — | ✅ test, tsc, build all clean | — |
 | Number-accuracy benchmark | not measured | — | ≥ 95% |
 | Fast-path coverage | not measured | — | ≥ 60% |
 | Median turns-to-bill | not measured | — | 1 |
