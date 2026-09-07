@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/*
+ * KiranaBill design tokens — from docs/13-DESIGN.md §8.
+ * These are the ONLY colours allowed in the app.
+ * If you need a colour not listed here, add it to 13-DESIGN.md first.
+ *
+ * Typography: Mukta (body), IBM Plex Mono (numbers/amounts).
+ * Dark mode: deferred — see 13-DESIGN.md §8.
+ */
+@theme {
+  /* Colours */
+  --color-ink: #1A1A1F;
+  --color-ink-soft: #5A5A66;
+  --color-paper: #FBF9F4;
+  --color-surface: #FFFFFF;
+  --color-line: #E4E0D6;
+  --color-indigo: #2C3E7B;
+  --color-indigo-deep: #1E2B57;
+  --color-turmeric: #E0A020;
+  --color-danger: #B3261E;
+  --color-warn: #A16207;
+  --color-ok: #2E6B3E;
+  --color-muted: #9A9689;
+
+  /* Fonts — self-hosted in Phase 3 (M-21). Google Fonts CDN for now. */
+  --font-body: "Mukta", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
