@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 20 Aug 2026 (rev 4) · **Current phase:** Phase 0 not started
+**Last updated:** 20 Aug 2026 (rev 5) · **Current phase:** Phase 0 not started
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -105,6 +105,7 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 20 Aug 2026 | **`18-AGENT-CONTRACT.md` added** — binding operating contract for every agent session: flow, 10 STOP conditions, 12 hard rules, manual-step protocol, per-ticket proof standards. Session opener reduced to one line. | Owner |
 | 20 Aug 2026 | **A0 onboarding run.** Agent found 4 real doc inconsistencies — all fixed: A0 prompt said "six" non-negotiables (there are eight); `04-VOICE-PIPELINE` §10 still listed O2/O3/O4 as open; `KB-009` missing from the ticket list; this tracker's Phase 0 list was stale rev-1 content. PRD timeline reconciled to 15 weeks. | Agent + Owner |
 | 20 Aug 2026 | Design mockups validated `13-DESIGN.md`. Rev 2 adds button hierarchy, number-display rules, bilingual search labels. Two improvements adopted from the mockup: "Theek hai" acknowledge button, Devanagari sublabels. | Owner |
 | 19 Aug 2026 | Repo created (`anshg05/kiranabill`, private), restructured, docs committed, pushed. `.gitattributes` added. | Owner |

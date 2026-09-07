@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 18 Aug 2026 (rev 5) · **Phase:** Pre-build complete · **Status:** Ready to build
+**Last updated:** 20 Aug 2026 (rev 6) · **Phase:** Pre-build complete · **Status:** Ready to build
 
 ---
 
@@ -31,11 +31,14 @@ Read `15-BUILD-GUIDE.md`. Folder restructure, tool setup, phase sequence, daily 
 
 ### If you are an AI joining this project
 
-**First time on this project?** Run the onboarding session in `09-WORKING-AGREEMENT.md` **A0** —
+**Read `18-AGENT-CONTRACT.md` first, in full.** It is your operating contract and it overrides your
+defaults: the session flow, the ten STOP conditions, the twelve hard rules, how to hand a manual
+step back to the developer, and what counts as proof that a ticket is done.
+
+**First time on this project?** Also run the onboarding session in `09-WORKING-AGREEMENT.md` §A0 —
 read everything, write a summary, touch no code.
 
-**Every session after that:** the bootstrap prompt in `09-WORKING-AGREEMENT.md` **A1**, plus exactly
-one ticket. Do not skip it.
+**Every session after that:** `18-AGENT-CONTRACT.md` plus exactly one ticket. Nothing more.
 Read `10-TRACKER.md` immediately after this file — it is the current state of the world.
 
 ### Reading order
@@ -60,6 +63,7 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 15 | `15-BUILD-GUIDE.md` | **Start here for "how do I actually begin."** Folder restructure, tool choice, phase sequence. |
 | 16 | `16-APP-FLOW.md` | Before building a journey, a sequence, or anything stateful. Mermaid diagrams. |
 | 17 | `17-MANUAL-TASKS.md` | Everything only the human can do — accounts, keys, OAuth, migrations, costs |
+| 18 | `18-AGENT-CONTRACT.md` | **If you are an AI agent: read this first, in full. It is binding.** |
 
 ### Documents that don't exist yet, on purpose
 

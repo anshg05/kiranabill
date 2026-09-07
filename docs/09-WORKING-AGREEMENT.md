@@ -1,6 +1,6 @@
 # 09 — Working Agreement
 
-**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Active from first commit
+**Last updated:** 20 Aug 2026 (rev 4) · **Status:** Active from first commit
 
 How work gets done on this project. Engineering standards, the AI session protocol, and the
 definition of done.
@@ -72,8 +72,16 @@ Re-run A0 whenever you switch tools, or after a long gap.
 
 ### A1. The bootstrap prompt
 
-Paste this at the start of **every** session with **any** AI tool. Do not skip it, even for a
-one-line change.
+**Superseded in practice by `18-AGENT-CONTRACT.md`**, which holds the full operating rules in the
+repo. The one-line session opener is:
+
+```
+Read docs/18-AGENT-CONTRACT.md in full and follow it. Then read docs/10-TRACKER.md.
+Today's ticket is KB-XXX. Give me your PLAN and stop.
+```
+
+The longer prompt below remains valid for a tool that cannot read repo files, or as a fallback if
+the contract is ever unavailable.
 
 ```
 This is the KiranaBill project. I am the solo developer. You are joining an

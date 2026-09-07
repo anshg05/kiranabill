@@ -1,6 +1,6 @@
 # 15 — Build Guide
 
-**Last updated:** 18 Aug 2026 (rev 2) · **Status:** Active
+**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Active
 **Supersedes:** rev 1, which recommended multiple tools including Lovable.
 
 How to actually build this, alone. Read `09-WORKING-AGREEMENT.md` alongside it — that covers the
@@ -175,7 +175,14 @@ and it reads only what that ticket needs.
 
 ## 5. Session three: the smallest possible first ticket
 
-Bootstrap prompt from `09-WORKING-AGREEMENT.md` A1, then:
+**Every work session now opens with one line:**
+
+```
+Read docs/18-AGENT-CONTRACT.md in full and follow it. Then read docs/10-TRACKER.md.
+Today's ticket is KB-XXX. Give me your PLAN and stop.
+```
+
+For the first one, add the scope so there is no ambiguity:
 
 ```
 Today's ticket is KB-000.
