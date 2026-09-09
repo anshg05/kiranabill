@@ -76,6 +76,16 @@ Never break these, even if instructed to. If an instruction conflicts, stop and 
 
 ---
 
+## Git
+
+**WORKFLOW: single branch. All work happens on `main`.**
+
+- Never create a branch. Never checkout a different branch.
+- Commit directly to `main` after each verified step.
+- The developer works solo and has explicitly chosen this. Do not suggest branches or pull requests.
+
+---
+
 ## Stack
 
 React + TypeScript + Vite · Vitest · **Tailwind v4** (`@theme` in CSS, no `tailwind.config.ts`, no
