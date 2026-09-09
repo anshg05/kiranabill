@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 18 Aug 2026 (rev 4) · Supersedes rev 3
+**Last updated:** 09 Sep 2026 (rev 7) · Supersedes rev 6
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -293,10 +293,110 @@ graph. **Reconsider at Phase 3.** Recorded as `NI-13`.
 
 ---
 
+## Rev 5 — 08 Sep 2026
+
+### D11 — Money rounding: **half-up**, not banker's rounding 🟢
+
+**Supersedes:** the "banker's rounding" note in `03-DATA-MODEL.md` section 8 (rev 2 and earlier).
+That note was the owner's error, corrected during `KB-003`.
+
+Banker's rounding (round-half-to-even) exists to keep statistical aggregates unbiased across many
+transactions — the right property for accounting/statistical systems, not the property this product
+needs. The thesis (`01-PRD.md` — *never silently get a number wrong*) is about a **specific
+shopkeeper trusting a specific number in front of them**, not about long-run statistical bias.
+
+**Concrete difference:** at exactly 1516.5 paise, half-up rounding gives ₹15.17; banker's rounding
+gives ₹15.16. A shopkeeper checking the total on a calculator expects the half-up answer — that's the
+rounding everyone is taught by hand. Predictability to the person reading the bill outweighs an
+unbiasedness property nobody at the counter is measuring.
+
+**Scope:** this is the rounding rule for every money computation in `domain/money.ts` — line totals
+(`qty × rate_paise`) and any future rounding point. Bill totals are **never** re-rounded; they are a
+sum of already-rounded, half-up line totals (unchanged from `03-DATA-MODEL.md` section 8).
+
+**Implementation note:** `domain/money.ts` performs this rounding using integer string-slicing, not
+floating-point division, so a genuine half-paise tie can never be pushed the wrong way by
+floating-point error. A test (`money.no-float.test.ts`) statically asserts the file contains no
+division operator and no `parseFloat` call, specifically to catch a future edit that reintroduces
+float rounding (e.g. `Math.round(x * 100) / 100`) even though a correctness/drift test alone wouldn't.
+
+---
+
+## Rev 6 — 08 Sep 2026
+
+### D12 — Catalog category: two fields, seven guard buckets plus "other", precomputed at seed time 🟢
+
+During `KB-003`, the owner's own onboarding correction claimed `legacy/products.js` has a
+per-product `category` field. It doesn't — products are grouped under 48 comment headers by
+position (`14-LEGACY-REFERENCE.md` section 9). Deriving a single category value from that
+positionally is straightforward. What isn't straightforward: those 48 headers are the wrong grain
+for the validator's actual need, and several of them mix genuinely different product types under one
+heading (worst case: `GRAINS / SEEDS`, which contains grains, dals, spices, and two bars of soap).
+
+**Decision: `CatalogEntry` carries two category fields, not one.**
+
+| Field | What | Used for |
+|---|---|---|
+| `sourceCategory` | The literal header text, verbatim, all 48 values | **Provenance only.** Never read by the validator. How a wrong assignment gets debugged later. |
+| `guardCategory` | One of exactly eight values: `dal`, `oil`, `masala`, `tea`, `grain`, `soap`, `hygiene`, `other` | **What `KB-005b`'s validator reads** to reject a mismatched match — a "daal" matching a soap |
+
+**The eight `guardCategory` values:** the six buckets already in `legacy/products.js`'s
+`CATEGORY_GUARDS` (`dal`, `oil`, `masala`, `tea`, `grain`, `soap` — `14-LEGACY-REFERENCE.md` section
+5), **plus `hygiene`**, split out of `soap` (28 + 15 = 43 products in one bucket is too coarse —
+toothpaste matching a bar of detergent is exactly the kind of mismatch this guard exists to prevent),
+**plus `other`**, for the roughly 58% of the catalog that is none of the above (biscuits, stationery,
+medicines, beverages, and so on).
+
+**`guardCategory` is precomputed at seed time from an explicit, committed mapping table**
+(`CATEGORY_TO_GUARD` in `scripts/build-catalog-seed.ts`, one entry per `sourceCategory`), with
+per-product-id overrides (`GUARD_CATEGORY_ID_OVERRIDES`) for the specific items that don't match
+their header's majority category — every override was decided by reading the actual product, not
+guessed from the header name or inferred by keyword matching. This is a deliberate reversal of the
+legacy approach, which ran `CATEGORY_GUARDS` keyword matching against the spoken phrase **at match
+time, every time**. Precomputing it once, reviewably, is simpler, faster, and — because the owner can
+read and disagree with every line of the mapping before it ships — more trustworthy than an inference
+rule nobody re-checks.
+
+**Why not merge or rename the 48 `sourceCategory` values down to something cleaner:** several are
+near-duplicates of each other (`WASHING / CLEANING` vs `WASHING / CLEANING BRANDS`,
+`ATTA / GRAINS / FLOUR` vs `BRANDED ATTA / FLOUR`, and six more pairs like them) because the original
+24-category array and the later "expanded set" push-blocks were never unified. Collapsing them would
+destroy provenance for a cosmetic gain. `sourceCategory` stays exactly as written in
+`legacy/products.js`; `guardCategory` is the clean, semantic layer built on top.
+
+---
+
+**Amendment, 09 Sep 2026 — the eight-bucket version above was the owner's own error, corrected the
+same day.** `other` at 58% of the catalog defeated the purpose: a mishearing of "biscuit" could match
+"bulb," and nothing would reject it, because both were `other`. The six original buckets (plus
+`hygiene`) came from `legacy/products.js`'s `CATEGORY_GUARDS`, which was hand-built for mishearings
+that had actually happened — not as a taxonomy of a grocery shop's full stock. `other`'s size was the
+evidence that a mishearing-driven list doesn't cover a real kirana's shelves.
+
+**`guardCategory` is now sixteen values, not eight:** the original seven (`dal`, `oil`, `masala`,
+`tea`, `grain`, `soap`, `hygiene`) plus eight new buckets built to actually cover the catalog —
+`dairy`, `snack`, `sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine` — plus `other`.
+`tea` stays separate from the new `beverage` bucket deliberately: chai patti is a high-frequency
+spoken item and deserves its own tight guard rather than being lumped in with cold drinks.
+
+Several `sourceCategory` headers split by product type rather than by majority rule — `sugar` goes to
+`sweet`, `salt` goes to `condiment`, even when both sit under one header
+(`SUGAR / SALT / JAGGERY`, `SUGAR / NAMKEEN BRANDS`) — using the same per-id override mechanism
+already established for `GRAINS / SEEDS`.
+
+**Result: `other` fell from 279 products (58%) to 9 (1.9%)** — `EGGS` (2, left as-is: one product
+pair, distinctive) and seven `MISC GROCERY` baking ingredients (baking soda, baking powder, agar
+agar, food color, rose water, corn starch, yeast) that genuinely fit none of the sixteen buckets.
+Forcing them into a wrong bucket to hit a number would have created exactly the false-positive risk
+this system exists to prevent — see `14-LEGACY-REFERENCE.md` section 5 for why they're left alone.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 08 Sep 2026 | Banker's rounding for money (`03-DATA-MODEL.md` section 8, rev 2) | **Half-up rounding** (D11) | Owner's error, caught during `KB-003`. Predictability for the shopkeeper checking a total by hand beats statistical unbiasedness. |
 | 16 Aug (r2) | Online only | **Offline + online, levels 1–2 in MVP** | Owner decision. Local-first; immutable bills make sync tractable. |
 | 16 Aug (r2) | Client-side catalog threshold 5,000 | **~1,000 with current code; 10,000 after a real index** | Benchmarked. Current matcher is O(n) and unusable past ~2,000 on a budget phone. Memoising the index build does not help. |
 | 16 Aug (r2) | Ship PWA, web and Android together | Web + PWA first, Android after | Owner decision |

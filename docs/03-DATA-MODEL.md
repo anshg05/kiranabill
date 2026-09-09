@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 17 Aug 2026 (rev 2) · **Status:** Final for MVP
+**Last updated:** 09 Sep 2026 (rev 5) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -141,7 +141,8 @@ not a migration.
 | `id` | `uuid` PK | |
 | `catalog_version` | `int` | Bumped when the base catalog is revised |
 | `display_name` | `text` | |
-| `category` | `text` | Drives validator category guards |
+| `source_category` | `text` | Provenance — the literal legacy catalog section a product came from (e.g. `"DALS / PULSES / LEGUMES"`), one of 48 values. **Never used for guard logic.** See `07-DECISIONS.md` D12. |
+| `guard_category` | `text` | One of exactly sixteen values: `dal`, `oil`, `masala`, `tea`, `grain`, `soap`, `hygiene`, `dairy`, `snack`, `sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine`, `other`. **This is what the validator reads** to reject a mismatched match (a "daal" matching a soap) — precomputed at seed time, not inferred by keyword matching at runtime. `other` is under 2% of the catalog. See `07-DECISIONS.md` D12. |
 | `default_unit` | `text` | |
 | `suggested_price_paise` | `bigint` | **A suggestion only. Never used as a shop's price.** |
 | `aliases` | `jsonb` | Hindi + Latin + Devanagari variants |
@@ -301,12 +302,20 @@ other on every table. This is the single most important test in the suite.
 | Storage | `BIGINT` paise |
 | Arithmetic | Integer only. No floats at any point. |
 | Quantity | `numeric(12,3)` — a quantity is not money |
-| `total_paise` when `price_type='rate'` | `round(qty × rate_paise)`, banker's rounding, computed **once** at line level |
+| `total_paise` when `price_type='rate'` | `round(qty × rate_paise)`, **half-up** rounding, computed **once** at line level. See `07-DECISIONS.md` D11 — this supersedes an earlier "banker's rounding" note that was never actually the right call for this product. |
 | Bill total | Sum of already-rounded line totals. **Never re-round the sum.** |
 | Display | Whole rupees by default; paise shown only when non-zero |
 
 The predecessor prints `toFixed(0)` per line *and* on the sum, so a bill of ₹10.60 + ₹10.60 displays
 as ₹11 + ₹11 = ₹21 and the lines visibly don't add up. Rounding once, at line level, fixes this.
+
+**Why half-up, not banker's rounding.** Banker's rounding (round-half-to-even) exists to keep
+*statistical* aggregates unbiased over many transactions — the right goal for accounting systems,
+wrong goal for this product. The thesis here is that **the shopkeeper can trust the number in front
+of them**, and a shopkeeper checking a total by hand or on a calculator expects ordinary half-up
+rounding. At exactly 1516.5 paise, half-up gives ₹15.17; banker's rounding gives ₹15.16. Predictability
+to the person reading the bill wins over statistical unbiasedness nobody at the counter is measuring.
+See `07-DECISIONS.md` D11.
 
 ---
 

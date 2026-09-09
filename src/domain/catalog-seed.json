@@ -1,0 +1,7955 @@
+[
+  {
+    "id": "1",
+    "displayName": "गेहूं",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3200,
+    "aliases": [
+      "गेहूं",
+      "gehun",
+      "gehu",
+      "wheat",
+      "आटा",
+      "गेहुं",
+      "गेहू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "2",
+    "displayName": "Chakki Aata",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3800,
+    "aliases": [
+      "Chakki Aata",
+      "chakki aata",
+      "chakki fresh",
+      "chakki ka aata",
+      "fresh aata",
+      "पिसा आटा",
+      "चक्की आटा",
+      "aata",
+      "atta",
+      "wheat flour",
+      "gehu atta"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "3",
+    "displayName": "Maida",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 4200,
+    "aliases": [
+      "Maida",
+      "maida",
+      "refined flour",
+      "all purpose flour",
+      "मैदा",
+      "मेदा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "4",
+    "displayName": "Besan",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Besan",
+      "besan",
+      "gram flour",
+      "chana flour",
+      "chickpea flour",
+      "बेसन",
+      "चने का आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "5",
+    "displayName": "Suji",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Suji",
+      "suji",
+      "sooji",
+      "rava",
+      "semolina",
+      "ravva",
+      "रवा",
+      "सूजी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "6",
+    "displayName": "Makki Atta",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Makki Atta",
+      "makki atta",
+      "corn flour",
+      "makka atta",
+      "cornflour",
+      "maize flour",
+      "मक्का आटा",
+      "मक्की आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "7",
+    "displayName": "Bajra Atta",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Bajra Atta",
+      "bajra",
+      "bajra flour",
+      "pearl millet",
+      "बाजरा",
+      "बाजरे का आटा",
+      "bajara"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "8",
+    "displayName": "Jowar Atta",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Jowar Atta",
+      "jowar",
+      "jowar atta",
+      "sorghum",
+      "ज्वार",
+      "ज्वार का आटा",
+      "jawar"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "9",
+    "displayName": "Ragi Atta",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Ragi Atta",
+      "ragi",
+      "ragi flour",
+      "finger millet",
+      "nachni",
+      "रागी",
+      "नाचनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "10",
+    "displayName": "Sattu",
+    "sourceCategory": "ATTA / GRAINS / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Sattu",
+      "sattu",
+      "roasted gram flour",
+      "सत्तु",
+      "सत्तू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "11",
+    "displayName": "Chawal",
+    "sourceCategory": "RICE / CHAWAL",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Chawal",
+      "chawal",
+      "rice",
+      "चावल",
+      "सफेद चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "12",
+    "displayName": "Basmati",
+    "sourceCategory": "RICE / CHAWAL",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Basmati",
+      "basmati",
+      "basmati rice",
+      "basmati chawal",
+      "long grain rice",
+      "बासमती",
+      "बासमती चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "13",
+    "displayName": "Sella Chawal",
+    "sourceCategory": "RICE / CHAWAL",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Sella Chawal",
+      "sella rice",
+      "sella chawal",
+      "parboiled rice",
+      "ukda chawal",
+      "सेला चावल",
+      "उकड़ा चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "14",
+    "displayName": "Poha",
+    "sourceCategory": "RICE / CHAWAL",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Poha",
+      "poha",
+      "chivda",
+      "flat rice",
+      "beaten rice",
+      "flattened rice",
+      "पोहा",
+      "चिवड़ा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "15",
+    "displayName": "Murmura",
+    "sourceCategory": "RICE / CHAWAL",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Murmura",
+      "murmura",
+      "murmure",
+      "puffed rice",
+      "laai",
+      "मुरमुरे",
+      "लाई"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "16",
+    "displayName": "Toor Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Toor Daal",
+      "daal",
+      "dal",
+      "dhal",
+      "lentils",
+      "दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "17",
+    "displayName": "Arhar Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "Arhar Daal",
+      "arhar daal",
+      "tur daal",
+      "tuvar dal",
+      "toor dal",
+      "pigeon pea",
+      "अरहर दाल",
+      "तुअर दाल",
+      "तूर दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "18",
+    "displayName": "Moong Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 11000,
+    "aliases": [
+      "Moong Daal",
+      "moong daal",
+      "moong dal",
+      "green moong",
+      "split green gram",
+      "मूंग दाल",
+      "मूंग की दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "19",
+    "displayName": "Masoor Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Masoor Daal",
+      "masoor daal",
+      "masoor dal",
+      "red lentil",
+      "pink lentil",
+      "मसूर दाल",
+      "मसूर की दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "20",
+    "displayName": "Urad Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Urad Daal",
+      "urad daal",
+      "urad dal",
+      "black gram",
+      "white lentil",
+      "उड़द दाल",
+      "उरद दाल",
+      "udad daal"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "21",
+    "displayName": "Chana Daal",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Chana Daal",
+      "chana daal",
+      "chana dal",
+      "split chickpea",
+      "bengal gram",
+      "चना दाल",
+      "चने की दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "22",
+    "displayName": "Rajma",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Rajma",
+      "rajma",
+      "kidney beans",
+      "red beans",
+      "राजमा",
+      "राजमाह"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "23",
+    "displayName": "Kabuli Chana",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Kabuli Chana",
+      "chhole",
+      "kabuli chana",
+      "chole",
+      "chickpea",
+      "white chana",
+      "छोले",
+      "काबुली चना",
+      "चने"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "24",
+    "displayName": "Kala Chana",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Kala Chana",
+      "kala chana",
+      "black chana",
+      "desi chana",
+      "brown chickpea",
+      "काला चना",
+      "देसी चना",
+      "chana",
+      "चना"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "25",
+    "displayName": "Lobiya",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 8500,
+    "aliases": [
+      "Lobiya",
+      "lobiya",
+      "black eyed peas",
+      "cow pea",
+      "लोबिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "26",
+    "displayName": "Matki",
+    "sourceCategory": "DALS / PULSES / LEGUMES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Matki",
+      "matki",
+      "moth beans",
+      "turkish gram",
+      "मटकी",
+      "मोठ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "27",
+    "displayName": "Chini",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Chini",
+      "chini",
+      "cheeni",
+      "sugar",
+      "shakkar",
+      "white sugar",
+      "चीनी",
+      "शक्कर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "28",
+    "displayName": "Bura",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Bura",
+      "bura",
+      "bura sugar",
+      "powdered sugar",
+      "pisi cheeni",
+      "icing sugar",
+      "पिसी चीनी",
+      "बूरा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "29",
+    "displayName": "Namak",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Namak",
+      "namak",
+      "salt",
+      "common salt",
+      "table salt",
+      "नमक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "30",
+    "displayName": "Sendha Namak",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Sendha Namak",
+      "sendha namak",
+      "rock salt",
+      "senda namak",
+      "pink salt",
+      "सेंधा नमक",
+      "सेंधे का नमक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "31",
+    "displayName": "Gur",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Gur",
+      "gud",
+      "gur",
+      "jaggery",
+      "palm jaggery",
+      "गुड़",
+      "गुड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "32",
+    "displayName": "Desi Shakkar",
+    "sourceCategory": "SUGAR / SALT / JAGGERY",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 4800,
+    "aliases": [
+      "Desi Shakkar",
+      "shakkar",
+      "desi shakkar",
+      "khandsari",
+      "raw sugar",
+      "खांडसारी",
+      "देशी शक्कर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "33",
+    "displayName": "Tel (1L)",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13000,
+    "aliases": [
+      "Tel (1L)",
+      "tel",
+      "oil",
+      "cooking oil",
+      "तेल",
+      "खाना पकाने का तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "34",
+    "displayName": "Sarson Tel",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 14500,
+    "aliases": [
+      "Sarson Tel",
+      "sarson tel",
+      "mustard oil",
+      "sarson",
+      "kachi ghani",
+      "सरसों का तेल",
+      "सरसों तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "35",
+    "displayName": "Sunflower Tel",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13500,
+    "aliases": [
+      "Sunflower Tel",
+      "sunflower oil",
+      "sunflower tel",
+      "surajmukhi tel",
+      "सूरजमुखी तेल",
+      "सनफ्लावर तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "36",
+    "displayName": "Soya Tel",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Soya Tel",
+      "soya oil",
+      "soyabean oil",
+      "soya bean oil",
+      "soybean oil",
+      "सोयाबीन तेल",
+      "सोया तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "37",
+    "displayName": "Moongfali Tel",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Moongfali Tel",
+      "groundnut oil",
+      "moongfali tel",
+      "peanut oil",
+      "मूंगफली तेल",
+      "मूंगफली का तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "38",
+    "displayName": "Nariyal Tel",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "ml",
+    "suggestedPricePaise": 15,
+    "aliases": [
+      "Nariyal Tel",
+      "coconut oil",
+      "nariyal tel",
+      "नारियल तेल",
+      "नारियल का तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "39",
+    "displayName": "Tel Pouch",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Tel Pouch",
+      "oil pouch",
+      "tel pouch",
+      "pouch",
+      "small oil",
+      "पाउच तेल",
+      "छोटा तेल",
+      "पाउच"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "40",
+    "displayName": "Ghee",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "kg",
+    "suggestedPricePaise": 55000,
+    "aliases": [
+      "Ghee",
+      "ghee",
+      "desi ghee",
+      "pure ghee",
+      "cow ghee",
+      "घी",
+      "देसी घी",
+      "गाय का घी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "41",
+    "displayName": "Amul Ghee",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 56000,
+    "aliases": [
+      "Amul Ghee",
+      "amul ghee",
+      "amul",
+      "अमूल घी",
+      "अमूल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "42",
+    "displayName": "Vanaspati",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Vanaspati",
+      "vanaspati",
+      "dalda",
+      "hydrogenated oil",
+      "वनस्पति",
+      "डालडा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "43",
+    "displayName": "Butter",
+    "sourceCategory": "OIL / GHEE / VANASPATI",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Butter",
+      "butter",
+      "makhan",
+      "white butter",
+      "मक्खन",
+      "बटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "44",
+    "displayName": "Doodh",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "liter",
+    "suggestedPricePaise": 5600,
+    "aliases": [
+      "Doodh",
+      "doodh",
+      "milk",
+      "full cream milk",
+      "दूध",
+      "गाय का दूध"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "45",
+    "displayName": "Doodh Packet",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Doodh Packet",
+      "milk packet",
+      "doodh packet",
+      "polybag milk",
+      "दूध पैकेट",
+      "पाउच दूध"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "46",
+    "displayName": "Dahi",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "kg",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Dahi",
+      "dahi",
+      "curd",
+      "yogurt",
+      "plain yogurt",
+      "दही",
+      "देसी दही"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "47",
+    "displayName": "Paneer",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "kg",
+    "suggestedPricePaise": 36000,
+    "aliases": [
+      "Paneer",
+      "paneer",
+      "cottage cheese",
+      "chenna",
+      "पनीर",
+      "घर का पनीर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "48",
+    "displayName": "Chhena",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "kg",
+    "suggestedPricePaise": 30000,
+    "aliases": [
+      "Chhena",
+      "chhena",
+      "chena",
+      "fresh cheese",
+      "छेना"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "49",
+    "displayName": "Milkmaid",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Milkmaid",
+      "condensed milk",
+      "milkmaid",
+      "sweetened condensed milk",
+      "मिल्कमेड",
+      "कंडेंस्ड मिल्क"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "50",
+    "displayName": "Amul Milk",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Amul Milk",
+      "amul milk",
+      "toned milk",
+      "amul taaza",
+      "अमूल दूध",
+      "टोन्ड मिल्क"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "51",
+    "displayName": "Cream",
+    "sourceCategory": "MILK / DAIRY",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Cream",
+      "cream",
+      "malai",
+      "fresh cream",
+      "मलाई",
+      "क्रीम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "52",
+    "displayName": "Parle-G 10",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Parle-G 10",
+      "parle g",
+      "parleg",
+      "parle-g",
+      "parle",
+      "paarle",
+      "glucose biscuit",
+      "पारले जी",
+      "पारले",
+      "पारले-जी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "53",
+    "displayName": "Parle-G 30",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Parle-G 30",
+      "parle g 30",
+      "parle 30",
+      "bada parle",
+      "30 wala parle",
+      "parle bada",
+      "big parle",
+      "पारले बड़ा",
+      "बड़ा पारले"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "54",
+    "displayName": "Parle-G 5",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Parle-G 5",
+      "parle g 5",
+      "5 wala parle",
+      "chota parle",
+      "parle 5",
+      "chhota parle",
+      "पारले 5",
+      "छोटा पारले"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "55",
+    "displayName": "Monaco",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Monaco",
+      "monaco",
+      "monaco biscuit",
+      "salted biscuit",
+      "मोनाको",
+      "क्रेकर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "56",
+    "displayName": "Marie Gold",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Marie Gold",
+      "marie",
+      "marie biscuit",
+      "marie gold",
+      "tea biscuit",
+      "मेरी",
+      "मेरी गोल्ड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "57",
+    "displayName": "Good Day",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Good Day",
+      "good day",
+      "goodday",
+      "butter biscuit",
+      "गुड डे",
+      "गुड-डे"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "58",
+    "displayName": "Hide & Seek",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Hide & Seek",
+      "hide n seek",
+      "hide and seek",
+      "hide seek",
+      "chocolate biscuit",
+      "हाइड एन सीक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "59",
+    "displayName": "Bourbon",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Bourbon",
+      "bourbon",
+      "bourbon biscuit",
+      "cream biscuit",
+      "बोर्बन",
+      "बोर्बॉन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "60",
+    "displayName": "Tiger",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Tiger",
+      "tiger",
+      "tiger biscuit",
+      "tiger glucose",
+      "टाइगर",
+      "टाइगर बिस्कुट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "61",
+    "displayName": "50-50",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "50-50",
+      "50 50",
+      "fifty fifty",
+      "5050",
+      "नमकीन मीठा",
+      "पचास पचास"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "62",
+    "displayName": "NutriChoice",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "NutriChoice",
+      "digestive",
+      "nutrichoice",
+      "oats biscuit",
+      "न्यूट्रीचॉइस",
+      "डाइजेस्टिव"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "63",
+    "displayName": "Oreo",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Oreo",
+      "oreo",
+      "oreo biscuit",
+      "cream sandwich",
+      "ओरियो",
+      "ओरेओ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "64",
+    "displayName": "Krackjack",
+    "sourceCategory": "BISCUITS / COOKIES",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Krackjack",
+      "krackjack",
+      "krack jack",
+      "sweet salty biscuit",
+      "क्रैकजैक",
+      "क्रेकजैक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "65",
+    "displayName": "Bread",
+    "sourceCategory": "BREAD / BAKERY",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Bread",
+      "bread",
+      "double roti",
+      "sandwich bread",
+      "white bread",
+      "ब्रेड",
+      "डबल रोटी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "66",
+    "displayName": "Brown Bread",
+    "sourceCategory": "BREAD / BAKERY",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Brown Bread",
+      "brown bread",
+      "whole wheat bread",
+      "multigrain bread",
+      "ब्राउन ब्रेड",
+      "मल्टीग्रेन ब्रेड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "67",
+    "displayName": "Pav",
+    "sourceCategory": "BREAD / BAKERY",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Pav",
+      "pav",
+      "pao",
+      "ladi pav",
+      "dinner roll",
+      "पाव",
+      "लादी पाव"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "68",
+    "displayName": "Rusk",
+    "sourceCategory": "BREAD / BAKERY",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Rusk",
+      "toast",
+      "rusk",
+      "milk rusk",
+      "रस्क",
+      "टोस्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "69",
+    "displayName": "Cake",
+    "sourceCategory": "BREAD / BAKERY",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Cake",
+      "cake",
+      "small cake",
+      "pastry",
+      "cup cake",
+      "केक",
+      "पेस्ट्री"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "70",
+    "displayName": "Namkeen",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Namkeen",
+      "namkeen",
+      "mixture",
+      "नमकीन",
+      "मिक्सचर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "71",
+    "displayName": "Chips",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Chips",
+      "chips",
+      "lays",
+      "potato chips",
+      "wafers",
+      "चिप्स",
+      "आलू चिप्स",
+      "वेफर्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "72",
+    "displayName": "Kurkure",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Kurkure",
+      "kurkure",
+      "cornsticks",
+      "kurkuri",
+      "कुरकुरे",
+      "कुरकुरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "73",
+    "displayName": "Uncle Chips",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Uncle Chips",
+      "uncle chips",
+      "uncle",
+      "अंकल चिप्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "74",
+    "displayName": "Bingo",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Bingo",
+      "bingo",
+      "bingo chips",
+      "bingo mad angles",
+      "बिंगो"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "75",
+    "displayName": "Haldiram Namkeen",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Haldiram Namkeen",
+      "haldiram",
+      "haldiram namkeen",
+      "haldirams",
+      "हल्दीराम",
+      "हल्दीराम का"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "76",
+    "displayName": "Bhujia",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 16000,
+    "aliases": [
+      "Bhujia",
+      "bhujia",
+      "bhujiya",
+      "sev bhujia",
+      "besan bhujia",
+      "भुजिया",
+      "सेव भुजिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "77",
+    "displayName": "Chana Jor Garam",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Chana Jor Garam",
+      "chana jor garam",
+      "chanachur",
+      "chana jor",
+      "चना जोर गरम",
+      "चनाचुर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "78",
+    "displayName": "Popcorn",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Popcorn",
+      "popcorn",
+      "pop corn",
+      "पॉपकॉर्न",
+      "पॉप कॉर्न"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "79",
+    "displayName": "Mathri",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 16000,
+    "aliases": [
+      "Mathri",
+      "mathri",
+      "mathiya",
+      "khasta mathri",
+      "मठरी",
+      "मठ्ठी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "80",
+    "displayName": "Sev",
+    "sourceCategory": "SNACKS / NAMKEEN",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Sev",
+      "sev",
+      "nylon sev",
+      "gathiya",
+      "thin sev",
+      "सेव",
+      "नायलॉन सेव"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "81",
+    "displayName": "Maggi",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1400,
+    "aliases": [
+      "Maggi",
+      "maggi",
+      "maggi noodles",
+      "instant noodles",
+      "मैगी",
+      "मैगी नूडल्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "82",
+    "displayName": "Maggi 70g",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1400,
+    "aliases": [
+      "Maggi 70g",
+      "maggi 70",
+      "badi maggi",
+      "70g maggi",
+      "big maggi",
+      "मैगी बड़ी",
+      "70 ग्राम मैगी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "83",
+    "displayName": "Yippee",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1400,
+    "aliases": [
+      "Yippee",
+      "yippee",
+      "yipee",
+      "sunfeast yippee",
+      "sunfeast noodles",
+      "यिप्पी",
+      "यिप्पी नूडल्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "84",
+    "displayName": "Top Ramen",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1400,
+    "aliases": [
+      "Top Ramen",
+      "top ramen",
+      "top noodles",
+      "ramen",
+      "टॉप रामेन",
+      "रामेन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "85",
+    "displayName": "Pasta",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Pasta",
+      "pasta",
+      "macaroni",
+      "पास्ता",
+      "मैकरोनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "86",
+    "displayName": "Hakka Noodles",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Hakka Noodles",
+      "hakka noodles",
+      "noodles packet",
+      "chinese noodles",
+      "हक्का नूडल्स",
+      "चाइनीज नूडल्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "87",
+    "displayName": "Sewai",
+    "sourceCategory": "NOODLES / PASTA / INSTANT FOOD",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Sewai",
+      "vermicelli",
+      "sewai",
+      "shevai",
+      "सेवइयाँ",
+      "सेवई",
+      "शेवया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "89",
+    "displayName": "Chai Patti",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "tea",
+    "unit": "gm",
+    "suggestedPricePaise": 50,
+    "aliases": [
+      "Chai Patti",
+      "chai",
+      "chai patti",
+      "tea",
+      "tea leaves",
+      "chay",
+      "चाय",
+      "चाय पत्ती",
+      "चाय के पत्ते",
+      "chai pati",
+      "cha patti",
+      "chaipatti"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "90",
+    "displayName": "Red Label Tea",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 8500,
+    "aliases": [
+      "Red Label Tea",
+      "brooke bond",
+      "red label",
+      "ब्रुक बॉन्ड",
+      "रेड लेबल",
+      "ब्रूक बॉन्ड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "91",
+    "displayName": "Taj Mahal Tea",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 9500,
+    "aliases": [
+      "Taj Mahal Tea",
+      "taj mahal",
+      "tajmahal tea",
+      "taj mahal chai",
+      "ताज महल",
+      "ताजमहल चाय"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "92",
+    "displayName": "Tata Tea",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Tata Tea",
+      "taaza",
+      "tata tea",
+      "tata chai",
+      "tata taaza",
+      "ताज़ा",
+      "टाटा टी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "93",
+    "displayName": "Green Tea",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Green Tea",
+      "green tea",
+      "green chai",
+      "tulsi tea",
+      "herbal tea",
+      "ग्रीन टी",
+      "हर्बल टी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "94",
+    "displayName": "Nescafe",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Nescafe",
+      "coffee",
+      "nescafe",
+      "instant coffee",
+      "नेस्कैफे",
+      "कॉफी",
+      "इंस्टेंट कॉफी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "95",
+    "displayName": "Bournvita",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Bournvita",
+      "bournvita",
+      "brown horlicks",
+      "chocolate drink",
+      "बॉर्नविटा",
+      "चॉकलेट ड्रिंक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "96",
+    "displayName": "Horlicks",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 13000,
+    "aliases": [
+      "Horlicks",
+      "horlicks",
+      "health drink",
+      "हॉर्लिक्स",
+      "हेल्थ ड्रिंक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "97",
+    "displayName": "Complan",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Complan",
+      "complan",
+      "growth drink",
+      "कॉम्प्लान"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "98",
+    "displayName": "Boost",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Boost",
+      "boost",
+      "chocolate malt",
+      "बूस्ट",
+      "चॉकलेट माल्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "99",
+    "displayName": "Ovaltine",
+    "sourceCategory": "TEA / COFFEE / HEALTH DRINKS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 11000,
+    "aliases": [
+      "Ovaltine",
+      "ovaltine",
+      "malt drink",
+      "ओवाल्टाइन",
+      "माल्ट ड्रिंक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "100",
+    "displayName": "Lal Mirch",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Lal Mirch",
+      "mirchi",
+      "mirch",
+      "lal mirch",
+      "red chilli",
+      "sabut mirch",
+      "लाल मिर्च",
+      "मिर्च",
+      "साबुत मिर्च"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "101",
+    "displayName": "Mirchi Powder",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 22000,
+    "aliases": [
+      "Mirchi Powder",
+      "mirchi powder",
+      "red chilli powder",
+      "pisi lal mirch",
+      "पिसी मिर्च",
+      "मिर्च पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "102",
+    "displayName": "Haldi",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 18000,
+    "aliases": [
+      "Haldi",
+      "haldi",
+      "turmeric",
+      "haldi powder",
+      "हल्दी",
+      "पीली मिर्च",
+      "हल्दी पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "103",
+    "displayName": "Dhaniya Powder",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Dhaniya Powder",
+      "dhaniya",
+      "coriander",
+      "coriander powder",
+      "dhania",
+      "dhaniya powder",
+      "धनिया",
+      "धनिया पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "104",
+    "displayName": "Jeera",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 40000,
+    "aliases": [
+      "Jeera",
+      "jeera",
+      "jira",
+      "jheera",
+      "cumin",
+      "cumin seeds",
+      "sabut jeera",
+      "साबुत जीरा",
+      "जीरा",
+      "जीरे",
+      "jara",
+      "जरा",
+      "जारा",
+      "ज़ारा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "105",
+    "displayName": "Garam Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Garam Masala",
+      "garam masala",
+      "garammasala",
+      "mixed spices",
+      "masala",
+      "गरम मसाला",
+      "मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "106",
+    "displayName": "Chole Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Chole Masala",
+      "chole masala",
+      "chana masala",
+      "छोले मसाला",
+      "चना मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "107",
+    "displayName": "Sabzi Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Sabzi Masala",
+      "sabzi masala",
+      "subzi masala",
+      "vegetable masala",
+      "सब्जी मसाला",
+      "वेजिटेबल मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "108",
+    "displayName": "Rajma Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Rajma Masala",
+      "rajma masala",
+      "kidney bean masala",
+      "राजमा मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "109",
+    "displayName": "Pav Bhaji Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Pav Bhaji Masala",
+      "pav bhaji masala",
+      "pavbhaji",
+      "pavbhaji masala",
+      "पाव भाजी मसाला",
+      "पावभाजी मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "110",
+    "displayName": "Biryani Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Biryani Masala",
+      "biryani masala",
+      "chicken biryani masala",
+      "बिरयानी मसाला",
+      "बिरयानी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "111",
+    "displayName": "Hing",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 200,
+    "aliases": [
+      "Hing",
+      "hing",
+      "asafoetida",
+      "heeng",
+      "हींग",
+      "हिंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "112",
+    "displayName": "Tejpatta",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Tejpatta",
+      "tejpatta",
+      "bay leaf",
+      "tej patta",
+      "तेजपत्ता",
+      "तेजपत"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "113",
+    "displayName": "Elaichi",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 300,
+    "aliases": [
+      "Elaichi",
+      "elaichi",
+      "cardamom",
+      "green cardamom",
+      "choti elaichi",
+      "इलायची",
+      "छोटी इलायची"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "114",
+    "displayName": "Laung",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 150,
+    "aliases": [
+      "Laung",
+      "laung",
+      "clove",
+      "sabut laung",
+      "लौंग",
+      "लवंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "115",
+    "displayName": "Dalchini",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Dalchini",
+      "dalchini",
+      "cinnamon",
+      "दालचीनी",
+      "तज"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "116",
+    "displayName": "Kali Mirch",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Kali Mirch",
+      "kali mirch",
+      "kalimirch",
+      "kali much",
+      "kali mirchi",
+      "kalimich",
+      "black pepper",
+      "pepper",
+      "काली मिर्च",
+      "कालीमिर्च"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "117",
+    "displayName": "Ajwain",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 50,
+    "aliases": [
+      "Ajwain",
+      "ajwain",
+      "ajvayan",
+      "ajvayn",
+      "carom seeds",
+      "bishop's weed",
+      "अजवाइन",
+      "अजवाईन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "118",
+    "displayName": "Methi Dana",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 40,
+    "aliases": [
+      "Methi Dana",
+      "methi dana",
+      "fenugreek seeds",
+      "methi",
+      "मेथी दाना",
+      "मेथी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "119",
+    "displayName": "Saunf",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 40,
+    "aliases": [
+      "Saunf",
+      "saunf",
+      "saof",
+      "sauf",
+      "souf",
+      "souff",
+      "sof",
+      "soff",
+      "sonf",
+      "sanuf",
+      "fennel",
+      "fennel seeds",
+      "variyali",
+      "सौंफ",
+      "सौंफ़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "120",
+    "displayName": "Kalonji",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 60,
+    "aliases": [
+      "Kalonji",
+      "kalonji",
+      "nigella",
+      "black cumin",
+      "कलौंजी",
+      "कलोंजी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "121",
+    "displayName": "Amchur",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 80,
+    "aliases": [
+      "Amchur",
+      "amchur",
+      "dry mango powder",
+      "amchoor",
+      "अमचूर",
+      "खट्टा पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "122",
+    "displayName": "Chaat Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Chaat Masala",
+      "chaat masala",
+      "chat masala",
+      "snack masala",
+      "चाट मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "123",
+    "displayName": "Sambhar Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Sambhar Masala",
+      "sambhar masala",
+      "sambar masala",
+      "सांभर मसाला",
+      "सांभर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "124",
+    "displayName": "Kitchen King",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Kitchen King",
+      "kitchen king",
+      "kitchen king masala",
+      "किचन किंग",
+      "किचेन किंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "125",
+    "displayName": "Everest Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Everest Masala",
+      "everest",
+      "everest masala",
+      "एवरेस्ट",
+      "एवरेस्ट मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "126",
+    "displayName": "MDH Masala",
+    "sourceCategory": "SPICES / MASALA",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "MDH Masala",
+      "mdh",
+      "mdh masala",
+      "एमडीएच",
+      "एमडीएच मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "127",
+    "displayName": "Tomato Ketchup",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Tomato Ketchup",
+      "tomato ketchup",
+      "tomato sauce",
+      "ketchup",
+      "टमाटर सॉस",
+      "केचप",
+      "टमाटर केचप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "128",
+    "displayName": "Maggi Ketchup",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Maggi Ketchup",
+      "maggi ketchup",
+      "maggi sauce",
+      "मैगी केचप",
+      "मैगी सॉस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "129",
+    "displayName": "Soya Sauce",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Soya Sauce",
+      "soya sauce",
+      "soy sauce",
+      "dark soy",
+      "सोया सॉस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "130",
+    "displayName": "Chilli Sauce",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Chilli Sauce",
+      "chilli sauce",
+      "chili sauce",
+      "green chilli sauce",
+      "चिली सॉस",
+      "हरी मिर्च सॉस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "131",
+    "displayName": "Sirka",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Sirka",
+      "vinegar",
+      "sirka",
+      "white vinegar",
+      "सिरका"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "132",
+    "displayName": "Achar",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Achar",
+      "achar",
+      "pickle",
+      "mixed pickle",
+      "अचार",
+      "मिला जुला अचार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "133",
+    "displayName": "Aam Achar",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Aam Achar",
+      "mango achar",
+      "aam ka achar",
+      "aam achar",
+      "आम का अचार",
+      "आम अचार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "134",
+    "displayName": "Mix Achar",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Mix Achar",
+      "mixed achar",
+      "mix pickle",
+      "मिक्स अचार",
+      "मिक्स पिकल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "135",
+    "displayName": "Papad",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Papad",
+      "papad",
+      "pappad",
+      "papadum",
+      "roasted papad",
+      "पापड़",
+      "पापड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "136",
+    "displayName": "Lijjat Papad",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Lijjat Papad",
+      "lijjat papad",
+      "lijjat",
+      "लिज्जत",
+      "लिज्जत पापड़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "137",
+    "displayName": "Jam",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Jam",
+      "jam",
+      "fruit jam",
+      "mixed fruit jam",
+      "jelly",
+      "जैम",
+      "फ्रूट जैम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "138",
+    "displayName": "Peanut Butter",
+    "sourceCategory": "SAUCE / KETCHUP / PICKLES / PAPAD",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Peanut Butter",
+      "peanut butter",
+      "moongfali butter",
+      "मूंगफली बटर",
+      "पीनट बटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "139",
+    "displayName": "Toffee",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Toffee",
+      "toffee",
+      "candy",
+      "lollipop",
+      "5 wali",
+      "5 ka",
+      "टॉफी",
+      "कैंडी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "140",
+    "displayName": "5 Star",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "5 Star",
+      "5 star",
+      "five star",
+      "fivestar",
+      "5star",
+      "फाइव स्टार",
+      "5 स्टार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "141",
+    "displayName": "KitKat",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "KitKat",
+      "kit kat",
+      "kitkat",
+      "chocolate wafer",
+      "किटकैट",
+      "किट-कैट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "142",
+    "displayName": "Dairy Milk",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Dairy Milk",
+      "dairy milk",
+      "dairymilk",
+      "cadbury",
+      "milk chocolate",
+      "डेयरी मिल्क",
+      "कैडबरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "143",
+    "displayName": "Eclairs",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Eclairs",
+      "eclairs",
+      "eclair",
+      "toffee eclairs",
+      "एक्लेयर्स",
+      "एक्लेयर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "144",
+    "displayName": "Mango Bite",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Mango Bite",
+      "mango bite",
+      "mango candy",
+      "mango toffee",
+      "मैंगो बाइट",
+      "मैंगो कैंडी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "145",
+    "displayName": "Alpenliebe",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Alpenliebe",
+      "alpenliebe",
+      "alpenlibe",
+      "caramel candy",
+      "अल्पेनलीबे",
+      "कैरामेल टॉफी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "146",
+    "displayName": "Chewing Gum",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Chewing Gum",
+      "chewing gum",
+      "gum",
+      "bubblegum",
+      "च्युइंग गम",
+      "बबलगम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "147",
+    "displayName": "Polo",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Polo",
+      "polo",
+      "polo mint",
+      "mint candy",
+      "पोलो",
+      "पोलो मिंट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "148",
+    "displayName": "Hajmola",
+    "sourceCategory": "SWEETS / CANDY / CHOCOLATE",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Hajmola",
+      "hajmola",
+      "digestive candy",
+      "हाजमोला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "149",
+    "displayName": "Cold Drink",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Cold Drink",
+      "cold drink",
+      "colddrink",
+      "soft drink",
+      "botal",
+      "ठंडा",
+      "बोतल",
+      "सॉफ्ट ड्रिंक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "150",
+    "displayName": "Cola 600ml",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Cola 600ml",
+      "coca cola",
+      "coke",
+      "pepsi",
+      "cola",
+      "कोक",
+      "पेप्सी",
+      "कोका कोला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "151",
+    "displayName": "Thums Up",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Thums Up",
+      "thumbs up",
+      "thums up",
+      "thumps up",
+      "थम्स अप",
+      "थंब्स अप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "152",
+    "displayName": "Sprite/Limca",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Sprite/Limca",
+      "sprite",
+      "limca",
+      "7up",
+      "lemon drink",
+      "स्प्राइट",
+      "लिम्का",
+      "7 अप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "153",
+    "displayName": "Frooti",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Frooti",
+      "frooti",
+      "mango drink",
+      "mango frooti",
+      "फ्रूटी",
+      "मैंगो फ्रूटी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "154",
+    "displayName": "Maaza",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Maaza",
+      "maaza",
+      "maaza mango",
+      "mango slice",
+      "माज़ा",
+      "माजा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "155",
+    "displayName": "Juice",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Juice",
+      "juice",
+      "fruit juice",
+      "real juice",
+      "tropicana",
+      "mixed fruit",
+      "जूस",
+      "फ्रूट जूस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "156",
+    "displayName": "Water Bottle",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Water Bottle",
+      "water bottle",
+      "mineral water",
+      "bisleri",
+      "kinley",
+      "pani ki botal",
+      "पानी की बोतल",
+      "मिनरल वाटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "157",
+    "displayName": "Energy Drink",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 11000,
+    "aliases": [
+      "Energy Drink",
+      "energy drink",
+      "red bull",
+      "monster",
+      "stamina drink",
+      "एनर्जी ड्रिंक",
+      "रेड बुल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "158",
+    "displayName": "Soda",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Soda",
+      "soda",
+      "soda water",
+      "club soda",
+      "carbonated water",
+      "सोडा",
+      "सोडा वाटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "159",
+    "displayName": "Lassi/Chhach",
+    "sourceCategory": "COLD DRINKS / BEVERAGES",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Lassi/Chhach",
+      "lassi",
+      "chhach",
+      "buttermilk",
+      "chaas",
+      "लस्सी",
+      "छाछ",
+      "चास"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "160",
+    "displayName": "Bath Sabun",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Bath Sabun",
+      "sabun",
+      "soap",
+      "bathing soap",
+      "bath soap",
+      "साबुन",
+      "नहाने का साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "161",
+    "displayName": "Lux Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Lux Soap",
+      "lux",
+      "lux soap",
+      "beauty soap",
+      "लक्स",
+      "लक्स साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "162",
+    "displayName": "Lifebuoy",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Lifebuoy",
+      "lifebuoy",
+      "lifebouy",
+      "hygiene soap",
+      "लाइफबॉय",
+      "लाइफबॉय साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "163",
+    "displayName": "Dettol Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Dettol Soap",
+      "dettol soap",
+      "dettol bar",
+      "antiseptic soap",
+      "डेटॉल साबुन",
+      "डेटॉल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "164",
+    "displayName": "Dove Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Dove Soap",
+      "dove",
+      "dove soap",
+      "moisturising soap",
+      "डव",
+      "डव साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "165",
+    "displayName": "Pears Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Pears Soap",
+      "pears",
+      "pears soap",
+      "glycerine soap",
+      "पियर्स",
+      "पियर साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "166",
+    "displayName": "Margo Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Margo Soap",
+      "margo",
+      "neem soap",
+      "margo neem",
+      "मार्गो",
+      "नीम साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "167",
+    "displayName": "Santoor Soap",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Santoor Soap",
+      "santoor",
+      "sandalwood soap",
+      "संतूर",
+      "संतूर साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "168",
+    "displayName": "Toothpaste",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Toothpaste",
+      "toothpaste",
+      "paste",
+      "tooth paste",
+      "दंत मंजन",
+      "पेस्ट",
+      "टूथपेस्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "169",
+    "displayName": "Colgate",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Colgate",
+      "colgate",
+      "colgate paste",
+      "colgate strong teeth",
+      "कोलगेट",
+      "कोलगेट पेस्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "170",
+    "displayName": "Pepsodent",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Pepsodent",
+      "pepsodent",
+      "pepso",
+      "पेप्सोडेंट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "171",
+    "displayName": "Closeup",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Closeup",
+      "closeup",
+      "close up",
+      "gel toothpaste",
+      "क्लोज़ अप",
+      "क्लोजअप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "172",
+    "displayName": "Toothbrush",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Toothbrush",
+      "toothbrush",
+      "brush",
+      "dant ka brush",
+      "tooth brush",
+      "टूथब्रश",
+      "दांत का ब्रश"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "173",
+    "displayName": "Shampoo",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Shampoo",
+      "shampoo",
+      "balo ka shampoo",
+      "hair shampoo",
+      "शैम्पू",
+      "बालों का शैम्पू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "174",
+    "displayName": "Head & Shoulders",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Head & Shoulders",
+      "head shoulders",
+      "h&s",
+      "head and shoulders",
+      "dandruff shampoo",
+      "हेड एंड शोल्डर्स",
+      "डैंड्रफ शैम्पू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "175",
+    "displayName": "Clinic Plus",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Clinic Plus",
+      "clinic plus",
+      "clinic",
+      "family shampoo",
+      "क्लीनिक प्लस",
+      "क्लिनिक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "176",
+    "displayName": "Sunsilk",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 7500,
+    "aliases": [
+      "Sunsilk",
+      "sunsilk",
+      "silk shampoo",
+      "सनसिल्क",
+      "सन सिल्क"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "177",
+    "displayName": "Dove Shampoo",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Dove Shampoo",
+      "dove shampoo",
+      "dove hair",
+      "डव शैम्पू",
+      "डव बाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "178",
+    "displayName": "Hair Oil",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Hair Oil",
+      "hair oil",
+      "baalon ka tel",
+      "coconut hair oil",
+      "बालों का तेल",
+      "बाल तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "179",
+    "displayName": "Parachute Oil",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Parachute Oil",
+      "parachute",
+      "parachute oil",
+      "parachute coconut",
+      "पैराशूट",
+      "पैराशूट तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "180",
+    "displayName": "Amla Oil",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Amla Oil",
+      "dabur amla",
+      "amla oil",
+      "amla hair oil",
+      "आंवला तेल",
+      "डाबर आंवला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "181",
+    "displayName": "Face Wash",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Face Wash",
+      "face wash",
+      "face cleanser",
+      "फेस वॉश",
+      "चेहरा धोने का साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "182",
+    "displayName": "Face Cream",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Face Cream",
+      "fairness cream",
+      "face cream",
+      "fair lovely",
+      "fair and lovely",
+      "गोरापन क्रीम",
+      "फेस क्रीम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "183",
+    "displayName": "Vaseline",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Vaseline",
+      "vaseline",
+      "moisturizer",
+      "body lotion",
+      "petroleum jelly",
+      "वैसलीन",
+      "मॉइश्चराइजर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "184",
+    "displayName": "Deo Spray",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Deo Spray",
+      "deodorant",
+      "deo",
+      "body spray",
+      "underarm",
+      "डियोडरेंट",
+      "बॉडी स्प्रे"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "185",
+    "displayName": "Sanitary Pad",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Sanitary Pad",
+      "sanitary pad",
+      "whisper",
+      "stayfree",
+      "lady pad",
+      "पैड",
+      "सैनिटरी पैड",
+      "लेडीज पैड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "186",
+    "displayName": "Razor/Blade",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Razor/Blade",
+      "razor",
+      "shaving blade",
+      "blade",
+      "gillette razor",
+      "रेजर",
+      "शेविंग ब्लेड",
+      "ब्लेड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "187",
+    "displayName": "Shaving Cream",
+    "sourceCategory": "SOAP / PERSONAL HYGIENE",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Shaving Cream",
+      "shaving cream",
+      "shave gel",
+      "shaving foam",
+      "gillette",
+      "शेविंग क्रीम",
+      "शेव जेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "188",
+    "displayName": "Washing Powder",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Washing Powder",
+      "detergent",
+      "washing powder",
+      "laundry powder",
+      "kapde dho powder",
+      "surf",
+      "tide",
+      "ariel",
+      "कपड़े धोने का पाउडर",
+      "डिटर्जेंट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "189",
+    "displayName": "Surf Excel",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Surf Excel",
+      "surf excel",
+      "surf",
+      "surf easy wash",
+      "सर्फ",
+      "सर्फ एक्सेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "190",
+    "displayName": "Tide",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Tide",
+      "tide",
+      "tide plus",
+      "टाइड",
+      "टाइड प्लस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "191",
+    "displayName": "Ariel",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 6500,
+    "aliases": [
+      "Ariel",
+      "ariel",
+      "ariel matic",
+      "एरियल",
+      "एरियल मेटिक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "192",
+    "displayName": "Rin",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Rin",
+      "rin",
+      "rinn",
+      "rin advanced",
+      "रिन",
+      "रिन एडवांस्ड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "193",
+    "displayName": "Nirma",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Nirma",
+      "nirma",
+      "nirma washing",
+      "निर्मा",
+      "निर्मा पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "194",
+    "displayName": "Washing Bar",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Washing Bar",
+      "washing bar",
+      "detergent bar",
+      "kapde dho sabun",
+      "कपड़े धोने की बट्टी",
+      "वॉशिंग बार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "195",
+    "displayName": "Vim",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Vim",
+      "vim",
+      "vim bar",
+      "vim dishwash",
+      "विम",
+      "विम बार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "196",
+    "displayName": "Dish Wash",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Dish Wash",
+      "dish wash",
+      "dishwash liquid",
+      "bartan dho",
+      "bartan sabun",
+      "बर्तन धोने का साबुन",
+      "डिशवॉश",
+      "लिक्विड साबुन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "197",
+    "displayName": "Colin",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Colin",
+      "colin",
+      "glass cleaner",
+      "mirror cleaner",
+      "window cleaner",
+      "कोलिन",
+      "ग्लास क्लीनर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "198",
+    "displayName": "Phenyl",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Phenyl",
+      "phenyl",
+      "floor cleaner",
+      "floor liquid",
+      "फिनाइल",
+      "फ्लोर क्लीनर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "199",
+    "displayName": "Harpic",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Harpic",
+      "harpic",
+      "toilet cleaner",
+      "toilet liquid",
+      "हार्पिक",
+      "टॉयलेट क्लीनर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "200",
+    "displayName": "Lizol",
+    "sourceCategory": "WASHING / CLEANING",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Lizol",
+      "lizol",
+      "disinfectant floor",
+      "floor disinfectant",
+      "लाइजोल",
+      "डिसइनफेक्टेंट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "201",
+    "displayName": "Maachis",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 200,
+    "aliases": [
+      "Maachis",
+      "matchbox",
+      "maachis",
+      "matches",
+      "safety matches",
+      "माचिस",
+      "दियासलाई"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "202",
+    "displayName": "Agarbatti",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Agarbatti",
+      "agarbatti",
+      "incense sticks",
+      "incense",
+      "dhoop batti",
+      "अगरबत्ती",
+      "धूप बत्ती"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "203",
+    "displayName": "Cycle Agarbatti",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Cycle Agarbatti",
+      "cycle agarbatti",
+      "cycle brand",
+      "साइकिल अगरबत्ती",
+      "साइकिल ब्रांड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "204",
+    "displayName": "Dhoop",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Dhoop",
+      "dhoop",
+      "dhoop stick",
+      "cone dhoop",
+      "धूप",
+      "धूप बत्ती"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "205",
+    "displayName": "Kapoor",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Kapoor",
+      "camphor",
+      "kapoor",
+      "bhimseni kapoor",
+      "कपूर",
+      "भीमसेनी कपूर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "206",
+    "displayName": "Mombatti",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Mombatti",
+      "candle",
+      "mombatti",
+      "wax candle",
+      "मोमबत्ती",
+      "कैंडल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "207",
+    "displayName": "Roli/Sindur",
+    "sourceCategory": "MATCHES / AGARBATTI / PUJA",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Roli/Sindur",
+      "roli",
+      "sindur",
+      "vermillion",
+      "kumkum",
+      "रोली",
+      "सिंदूर",
+      "कुमकुम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "208",
+    "displayName": "Diaper",
+    "sourceCategory": "BABY PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Diaper",
+      "diaper",
+      "pampers",
+      "baby diaper",
+      "nappy",
+      "diapers",
+      "डायपर",
+      "पैम्पर्स",
+      "नैपी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "209",
+    "displayName": "Baby Powder",
+    "sourceCategory": "BABY PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Baby Powder",
+      "baby powder",
+      "johnsons",
+      "johnson baby",
+      "johnson baby powder",
+      "बेबी पाउडर",
+      "जॉनसन पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "210",
+    "displayName": "Baby Oil",
+    "sourceCategory": "BABY PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Baby Oil",
+      "baby oil",
+      "baby massage oil",
+      "infant oil",
+      "बेबी ऑयल",
+      "मालिश तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "211",
+    "displayName": "Baby Food",
+    "sourceCategory": "BABY PRODUCTS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Baby Food",
+      "cerelac",
+      "baby food",
+      "infant food",
+      "बेबी फूड",
+      "सेरेलक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "212",
+    "displayName": "Pen",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Pen",
+      "pen",
+      "ball pen",
+      "ballpoint",
+      "ballpoint pen",
+      "ink pen",
+      "कलम",
+      "पेन",
+      "बॉलपेन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "213",
+    "displayName": "Pencil",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Pencil",
+      "pencil",
+      "lead pencil",
+      "पेंसिल",
+      "लेड पेंसिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "214",
+    "displayName": "Copy/Notebook",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Copy/Notebook",
+      "notebook",
+      "copy",
+      "exercise book",
+      "writing book",
+      "कॉपी",
+      "नोटबुक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "215",
+    "displayName": "Rubber Band",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Rubber Band",
+      "rubber band",
+      "rubber",
+      "elastic band",
+      "रबर बैंड",
+      "रबर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "216",
+    "displayName": "Polythene Bag",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Polythene Bag",
+      "polythene",
+      "carry bag",
+      "plastic bag",
+      "shopping bag",
+      "थैली",
+      "पॉलीथीन",
+      "बैग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "217",
+    "displayName": "Newspaper",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Newspaper",
+      "newspaper",
+      "akhbar",
+      "daily news",
+      "अखबार",
+      "समाचार पत्र"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "218",
+    "displayName": "Battery",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Battery",
+      "battery",
+      "cell",
+      "dry cell",
+      "AA battery",
+      "बैटरी",
+      "सेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "219",
+    "displayName": "Fevicol",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Fevicol",
+      "glue",
+      "fevicol",
+      "feviglue",
+      "adhesive",
+      "गोंद",
+      "फेविकोल",
+      "चिपकाने वाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "220",
+    "displayName": "Tape",
+    "sourceCategory": "STATIONERY / HOUSEHOLD",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Tape",
+      "tape",
+      "sellotape",
+      "scotch tape",
+      "cello tape",
+      "टेप",
+      "सेलो टेप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "221",
+    "displayName": "Bandage",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Bandage",
+      "bandage",
+      "band aid",
+      "plaster",
+      "wound plaster",
+      "बैंडेज",
+      "पट्टी",
+      "बैंड-एड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "222",
+    "displayName": "Dettol Liquid",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Dettol Liquid",
+      "dettol",
+      "antiseptic",
+      "antiseptic liquid",
+      "dettol liquid",
+      "डेटॉल",
+      "एंटीसेप्टिक",
+      "डेटॉल लिक्विड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "223",
+    "displayName": "ORS Packet",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "ORS Packet",
+      "ors",
+      "electral",
+      "electrolyte",
+      "oral rehydration",
+      "ओआरएस",
+      "इलेक्ट्रल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "224",
+    "displayName": "Vicks VapoRub",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Vicks VapoRub",
+      "vicks",
+      "vicks vaporub",
+      "chest rub",
+      "विक्स",
+      "विक्स वेपोरब"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "225",
+    "displayName": "Moov",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Moov",
+      "moov",
+      "moov spray",
+      "pain relief spray",
+      "pain balm",
+      "मूव",
+      "दर्द स्प्रे"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "226",
+    "displayName": "Anda",
+    "sourceCategory": "EGGS",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 700,
+    "aliases": [
+      "Anda",
+      "anda",
+      "egg",
+      "eggs",
+      "hen egg",
+      "अंडा",
+      "अंडे",
+      "मुर्गी का अंडा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "227",
+    "displayName": "Anda (Dozen)",
+    "sourceCategory": "EGGS",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 8400,
+    "aliases": [
+      "Anda (Dozen)",
+      "anda dozen",
+      "dozen eggs",
+      "12 anda",
+      "ek darjan anda",
+      "बारह अंडे",
+      "एक दर्जन अंडे"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "228",
+    "displayName": "Moongfali",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Moongfali",
+      "moongfali",
+      "peanut",
+      "groundnut",
+      "shengdane",
+      "मूंगफली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "229",
+    "displayName": "Kaju",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 80000,
+    "aliases": [
+      "Kaju",
+      "kaju",
+      "cashew",
+      "cashew nut",
+      "काजू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "230",
+    "displayName": "Badam",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 70000,
+    "aliases": [
+      "Badam",
+      "badam",
+      "almond",
+      "raw almond",
+      "बादाम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "231",
+    "displayName": "Kishmish",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 30000,
+    "aliases": [
+      "Kishmish",
+      "kishmish",
+      "raisin",
+      "dried grapes",
+      "किशमिश",
+      "किसमिस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "232",
+    "displayName": "Pista",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 120000,
+    "aliases": [
+      "Pista",
+      "pista",
+      "pistachio",
+      "roasted pista",
+      "पिस्ता"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "233",
+    "displayName": "Akhrot",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 60000,
+    "aliases": [
+      "Akhrot",
+      "akhrot",
+      "walnut",
+      "अखरोट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "234",
+    "displayName": "Khajur",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Khajur",
+      "dates",
+      "khajur",
+      "dry dates",
+      "khajoor",
+      "खजूर",
+      "खजूरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "235",
+    "displayName": "Chironji",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "gm",
+    "suggestedPricePaise": 300,
+    "aliases": [
+      "Chironji",
+      "chironji",
+      "charoli",
+      "buchanania",
+      "चिरौंजी",
+      "चारोली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "236",
+    "displayName": "Nariyal",
+    "sourceCategory": "DRY FRUITS / NUTS",
+    "guardCategory": "dryfruit",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Nariyal",
+      "coconut",
+      "nariyal",
+      "fresh coconut",
+      "khopra",
+      "नारियल",
+      "खोपरा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "237",
+    "displayName": "Meetha Soda",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Meetha Soda",
+      "baking soda",
+      "meetha soda",
+      "sodium bicarbonate",
+      "मीठा सोडा",
+      "बेकिंग सोडा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "238",
+    "displayName": "Baking Powder",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Baking Powder",
+      "baking powder",
+      "leavening agent",
+      "बेकिंग पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "239",
+    "displayName": "Cocoa Powder",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Cocoa Powder",
+      "cocoa powder",
+      "chocolate powder",
+      "cacao",
+      "कोकोआ पाउडर",
+      "चॉकलेट पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "240",
+    "displayName": "Agar Agar",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Agar Agar",
+      "agar agar",
+      "china grass",
+      "gelatin",
+      "veg gelatin",
+      "अगर अगर",
+      "चाइना ग्रास"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "241",
+    "displayName": "Food Color",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Food Color",
+      "food color",
+      "food colouring",
+      "rang",
+      "खाद्य रंग",
+      "फूड कलर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "242",
+    "displayName": "Gulab Jal",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Gulab Jal",
+      "rose water",
+      "gulab jal",
+      "rose essence",
+      "गुलाब जल",
+      "रोज वाटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "243",
+    "displayName": "Kesar",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Kesar",
+      "kesar",
+      "saffron",
+      "kashmiri kesar",
+      "केसर",
+      "जाफरान"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "244",
+    "displayName": "Imli",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Imli",
+      "tamarind",
+      "imli",
+      "sour tamarind",
+      "इमली",
+      "खट्टी इमली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "245",
+    "displayName": "Gud Powder",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Gud Powder",
+      "jaggery powder",
+      "gud powder",
+      "powdered jaggery",
+      "गुड़ पाउडर",
+      "पाउडर गुड़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "246",
+    "displayName": "Corn Starch",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Corn Starch",
+      "corn starch",
+      "cornstarch",
+      "corn flour thickener",
+      "मकई स्टार्च",
+      "कॉर्न स्टार्च"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "247",
+    "displayName": "Yeast",
+    "sourceCategory": "MISC GROCERY",
+    "guardCategory": "other",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Yeast",
+      "yeast",
+      "instant yeast",
+      "dry yeast",
+      "khameer",
+      "खमीर",
+      "यीस्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "301",
+    "displayName": "Fortune Aata",
+    "sourceCategory": "BRANDED ATTA / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Fortune Aata",
+      "fortune aata",
+      "fortune",
+      "फॉर्च्यून आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "302",
+    "displayName": "Ashirvaad Aata",
+    "sourceCategory": "BRANDED ATTA / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3800,
+    "aliases": [
+      "Ashirvaad Aata",
+      "ashirvaad aata",
+      "ashirvad",
+      "ashirwad",
+      "आशीर्वाद आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "303",
+    "displayName": "Pilsbury Aata",
+    "sourceCategory": "BRANDED ATTA / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Pilsbury Aata",
+      "pilsbury aata",
+      "pillsbury",
+      "पिल्सबरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "304",
+    "displayName": "Patanjali Aata",
+    "sourceCategory": "BRANDED ATTA / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3300,
+    "aliases": [
+      "Patanjali Aata",
+      "patanjali aata",
+      "patanjali",
+      "पतंजलि आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "305",
+    "displayName": "Rajdhani Aata",
+    "sourceCategory": "BRANDED ATTA / FLOUR",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3600,
+    "aliases": [
+      "Rajdhani Aata",
+      "rajdhani aata",
+      "rajdhani",
+      "राजधानी आटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "310",
+    "displayName": "India Gate Basmati",
+    "sourceCategory": "BRANDED RICE",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 9500,
+    "aliases": [
+      "India Gate Basmati",
+      "india gate rice",
+      "india gate",
+      "इंडिया गेट चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "311",
+    "displayName": "Kohinoor Basmati",
+    "sourceCategory": "BRANDED RICE",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Kohinoor Basmati",
+      "kohinoor rice",
+      "kohinoor",
+      "कोहिनूर चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "312",
+    "displayName": "Daawat Basmati",
+    "sourceCategory": "BRANDED RICE",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 9200,
+    "aliases": [
+      "Daawat Basmati",
+      "dawat rice",
+      "daawat",
+      "दावत चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "313",
+    "displayName": "Fortune Rice",
+    "sourceCategory": "BRANDED RICE",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 5500,
+    "aliases": [
+      "Fortune Rice",
+      "fortune rice",
+      "fortune chawal"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "320",
+    "displayName": "Tata Sampann Dal",
+    "sourceCategory": "PULSES / DAL BRANDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 13000,
+    "aliases": [
+      "Tata Sampann Dal",
+      "tata sampann dal",
+      "tata dal",
+      "टाटा दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "321",
+    "displayName": "Fortune Dal",
+    "sourceCategory": "PULSES / DAL BRANDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 11000,
+    "aliases": [
+      "Fortune Dal",
+      "mdh dal",
+      "fortune dal"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "322",
+    "displayName": "Chana Sattu",
+    "sourceCategory": "PULSES / DAL BRANDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 7500,
+    "aliases": [
+      "Chana Sattu",
+      "chana sattu",
+      "sattu powder",
+      "black sattu"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "330",
+    "displayName": "Fortune Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "Fortune Oil",
+      "fortune oil",
+      "fortune tel",
+      "फॉर्च्यून तेल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "331",
+    "displayName": "Saffola Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 16000,
+    "aliases": [
+      "Saffola Oil",
+      "saffola oil",
+      "saffola",
+      "सफोला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "332",
+    "displayName": "Sundrop Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Sundrop Oil",
+      "sundrop oil",
+      "sundrop",
+      "सनड्रॉप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "333",
+    "displayName": "Dhara Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13800,
+    "aliases": [
+      "Dhara Oil",
+      "dhara oil",
+      "dhara",
+      "धारा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "334",
+    "displayName": "Gemini Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13200,
+    "aliases": [
+      "Gemini Oil",
+      "gemini oil",
+      "gemini",
+      "जेमिनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "335",
+    "displayName": "Ruchi Gold Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13000,
+    "aliases": [
+      "Ruchi Gold Oil",
+      "ruchi gold",
+      "ruchigold",
+      "रुचि गोल्ड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "336",
+    "displayName": "Mahakosh Oil",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "liter",
+    "suggestedPricePaise": 13300,
+    "aliases": [
+      "Mahakosh Oil",
+      "mahakosh oil",
+      "mahakosh",
+      "महाकोश",
+      "mahakosh tel"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "337",
+    "displayName": "Tel Can (15L)",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 200000,
+    "aliases": [
+      "Tel Can (15L)",
+      "oil can",
+      "tel can",
+      "15 liter tel",
+      "15 litre oil",
+      "tin oil",
+      "तेल का टिन",
+      "कनस्तर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "338",
+    "displayName": "Tel Packet 1L",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "Tel Packet 1L",
+      "oil packet",
+      "1 liter packet",
+      "tel 1 liter",
+      "oil 1l"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "339",
+    "displayName": "Tel 5L",
+    "sourceCategory": "EDIBLE OIL BRANDS",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 68000,
+    "aliases": [
+      "Tel 5L",
+      "oil 5 liter",
+      "5 litre oil",
+      "5 liter tel"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "340",
+    "displayName": "Madhur Chini",
+    "sourceCategory": "SUGAR / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 4600,
+    "aliases": [
+      "Madhur Chini",
+      "madhur sugar",
+      "madhur chini",
+      "मधुर चीनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "341",
+    "displayName": "Tata Salt",
+    "sourceCategory": "SUGAR / NAMKEEN BRANDS",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 2200,
+    "aliases": [
+      "Tata Salt",
+      "tata salt",
+      "tata namak",
+      "टाटा नमक",
+      "टाटा साल्ट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "342",
+    "displayName": "Annapurna Salt",
+    "sourceCategory": "SUGAR / NAMKEEN BRANDS",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Annapurna Salt",
+      "annapurna salt",
+      "annapurna namak",
+      "अन्नपूर्णा नमक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "343",
+    "displayName": "Captain Cook Salt",
+    "sourceCategory": "SUGAR / NAMKEEN BRANDS",
+    "guardCategory": "condiment",
+    "unit": "kg",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Captain Cook Salt",
+      "captain cook salt",
+      "captain cook",
+      "कैप्टन कुक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "350",
+    "displayName": "Amul Butter",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "oil",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Amul Butter",
+      "amul butter",
+      "amul makhan",
+      "अमूल मक्खन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "351",
+    "displayName": "Amul Cheese",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Amul Cheese",
+      "amul cheese",
+      "cheese slice",
+      "चीज़",
+      "cheese"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "352",
+    "displayName": "Amul Dahi",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Amul Dahi",
+      "amul dahi",
+      "curd packet",
+      "दही पैकेट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "353",
+    "displayName": "Nestle Milk",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Nestle Milk",
+      "nestle milk",
+      "nestle doodh",
+      "नेस्ले दूध"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "354",
+    "displayName": "Mother Dairy Milk",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Mother Dairy Milk",
+      "mother dairy milk",
+      "mother dairy",
+      "मदर डेयरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "355",
+    "displayName": "Go Cheese/Paneer",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Go Cheese/Paneer",
+      "go cheese",
+      "go paneer",
+      "गो पनीर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "356",
+    "displayName": "Kusum Ghee",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "oil",
+    "unit": "kg",
+    "suggestedPricePaise": 52000,
+    "aliases": [
+      "Kusum Ghee",
+      "kusum ghee",
+      "kusum",
+      "कुसुम घी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "357",
+    "displayName": "Patanjali Ghee",
+    "sourceCategory": "DAIRY BRANDS",
+    "guardCategory": "oil",
+    "unit": "kg",
+    "suggestedPricePaise": 53000,
+    "aliases": [
+      "Patanjali Ghee",
+      "patanjali ghee",
+      "patanjali cow ghee",
+      "पतंजलि घी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "360",
+    "displayName": "Ching's Noodles",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Ching's Noodles",
+      "ching's noodles",
+      "chings",
+      "चिंग्स नूडल्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "361",
+    "displayName": "Knorr Soup",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Knorr Soup",
+      "knorr soup",
+      "knorr",
+      "नॉर सूप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "362",
+    "displayName": "Maggi Masala",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Maggi Masala",
+      "maggi masala",
+      "maggi masala pack",
+      "मैगी मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "363",
+    "displayName": "Instant Poha Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Instant Poha Mix",
+      "poha ready mix",
+      "poha mix",
+      "इंस्टेंट पोहा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "364",
+    "displayName": "Upma Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Upma Mix",
+      "upma mix",
+      "instant upma",
+      "उपमा मिक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "365",
+    "displayName": "Idli Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Idli Mix",
+      "idli mix",
+      "instant idli",
+      "इडली मिक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "366",
+    "displayName": "Dosa Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Dosa Mix",
+      "dosa mix",
+      "instant dosa",
+      "डोसा मिक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "367",
+    "displayName": "Halwa Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Halwa Mix",
+      "halwa mix",
+      "sheera mix",
+      "हलवा मिक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "368",
+    "displayName": "Khichdi Mix",
+    "sourceCategory": "INSTANT FOOD / READY TO EAT",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Khichdi Mix",
+      "khichdi mix",
+      "dal khichdi",
+      "खिचड़ी मिक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "370",
+    "displayName": "Britannia Bread",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4200,
+    "aliases": [
+      "Britannia Bread",
+      "britannia bread",
+      "britannia",
+      "ब्रिटानिया ब्रेड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "371",
+    "displayName": "Harvest Gold Bread",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4200,
+    "aliases": [
+      "Harvest Gold Bread",
+      "harvest gold",
+      "harvest gold bread",
+      "हार्वेस्ट गोल्ड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "372",
+    "displayName": "Modern Bread",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Modern Bread",
+      "modern bread",
+      "modern",
+      "मॉडर्न ब्रेड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "373",
+    "displayName": "Little Hearts",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Little Hearts",
+      "britannia cake",
+      "little hearts",
+      "लिटल हार्ट्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "374",
+    "displayName": "Tiger Cake",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Tiger Cake",
+      "tiger cake",
+      "tiger bun",
+      "टाइगर केक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "375",
+    "displayName": "Britannia Treat",
+    "sourceCategory": "BREAD / BAKERY BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Britannia Treat",
+      "britannia treat",
+      "treat biscuit"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "380",
+    "displayName": "Wagh Bakri Tea",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Wagh Bakri Tea",
+      "wagh bakri",
+      "wagh bakri tea",
+      "वाघ बकरी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "381",
+    "displayName": "Society Tea",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 8500,
+    "aliases": [
+      "Society Tea",
+      "society tea",
+      "society chai",
+      "सोसाइटी चाय"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "382",
+    "displayName": "Lipton Tea",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "tea",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Lipton Tea",
+      "lipton tea",
+      "lipton",
+      "लिप्टन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "383",
+    "displayName": "Bru Coffee",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 7500,
+    "aliases": [
+      "Bru Coffee",
+      "bru coffee",
+      "bru",
+      "ब्रू कॉफी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "384",
+    "displayName": "Glucon-D",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Glucon-D",
+      "glucon d",
+      "glucon-d",
+      "ग्लूकोन डी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "385",
+    "displayName": "Tang",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Tang",
+      "tang powder",
+      "tang",
+      "टैंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "386",
+    "displayName": "Rasna",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Rasna",
+      "rasna",
+      "rasna powder",
+      "रसना"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "387",
+    "displayName": "Rooh Afza",
+    "sourceCategory": "TEA / COFFEE BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 18000,
+    "aliases": [
+      "Rooh Afza",
+      "rooh afza",
+      "rooh-afza",
+      "रूह अफ़ज़ा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "390",
+    "displayName": "Catch Masala",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Catch Masala",
+      "catch masala",
+      "catch",
+      "कैच मसाला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "391",
+    "displayName": "Maggi Masala Mix",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Maggi Masala Mix",
+      "maggi masala mix",
+      "maggi masale"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "392",
+    "displayName": "Soya Chunks",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Soya Chunks",
+      "nutrela soya chunks",
+      "soya chunks",
+      "soya badi",
+      "सोया बड़ी",
+      "सोया चंक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "393",
+    "displayName": "Soya Granules",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Soya Granules",
+      "soya granules",
+      "soya keema",
+      "सोया कीमा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "394",
+    "displayName": "Kasuri Methi",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 80,
+    "aliases": [
+      "Kasuri Methi",
+      "kasuri methi",
+      "kasoori methi",
+      "dried fenugreek",
+      "कसूरी मेथी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "395",
+    "displayName": "Sabut Dhaniya",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 50,
+    "aliases": [
+      "Sabut Dhaniya",
+      "sabut dhaniya",
+      "whole coriander",
+      "साबुत धनिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "396",
+    "displayName": "Badi Elaichi",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 400,
+    "aliases": [
+      "Badi Elaichi",
+      "kali elaichi",
+      "black cardamom",
+      "badi elaichi",
+      "बड़ी इलायची"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "397",
+    "displayName": "Chakri Phool",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 150,
+    "aliases": [
+      "Chakri Phool",
+      "star anise",
+      "chakriphool",
+      "chakra phool",
+      "चक्री फूल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "398",
+    "displayName": "Javitri",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Javitri",
+      "javitri",
+      "mace spice",
+      "जावित्री"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "399",
+    "displayName": "Jaiphal",
+    "sourceCategory": "SPICES / MASALA BRANDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 300,
+    "aliases": [
+      "Jaiphal",
+      "jaiphal",
+      "nutmeg",
+      "जायफल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "400",
+    "displayName": "Kissan Ketchup",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8500,
+    "aliases": [
+      "Kissan Ketchup",
+      "kissan ketchup",
+      "kissan",
+      "किसान केचप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "401",
+    "displayName": "Dr Oetker Sauce",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Dr Oetker Sauce",
+      "dr oetker",
+      "fun foods",
+      "dr. oetker"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "402",
+    "displayName": "Heinz Ketchup",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Heinz Ketchup",
+      "heinz ketchup",
+      "heinz",
+      "हाइंज"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "403",
+    "displayName": "Veeba Sauce",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Veeba Sauce",
+      "veeba sauce",
+      "veeba"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "404",
+    "displayName": "Chutney",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Chutney",
+      "chutney",
+      "green chutney",
+      "pudina chutney",
+      "चटनी",
+      "पुदीना चटनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "405",
+    "displayName": "Mustard Sauce",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Mustard Sauce",
+      "mustard sauce",
+      "mustard",
+      "सरसों सॉस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "406",
+    "displayName": "Mayonnaise",
+    "sourceCategory": "SAUCE / CONDIMENT BRANDS",
+    "guardCategory": "condiment",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Mayonnaise",
+      "mayo",
+      "mayonnaise",
+      "मेयोनेज़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "410",
+    "displayName": "Haldiram Mixture",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Haldiram Mixture",
+      "haldiram mixture",
+      "haldiram mix",
+      "हल्दीराम मिक्सचर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "411",
+    "displayName": "Aloo Bhujia",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Aloo Bhujia",
+      "haldiram aloo bhujia",
+      "aloo bhujia",
+      "आलू भुजिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "412",
+    "displayName": "Moong Dal Namkeen",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Moong Dal Namkeen",
+      "haldiram sev",
+      "moong dal haldiram",
+      "मूंग दाल नमकीन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "413",
+    "displayName": "Bikaji Bhujia",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Bikaji Bhujia",
+      "bikaji bhujia",
+      "bikaji",
+      "बीकाजी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "414",
+    "displayName": "Balaji Chips",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Balaji Chips",
+      "balaji wafers",
+      "balaji chips",
+      "बालाजी चिप्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "415",
+    "displayName": "Act II Popcorn",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Act II Popcorn",
+      "act ii popcorn",
+      "act 2",
+      "एक्ट 2 पॉपकॉर्न"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "416",
+    "displayName": "Poppins",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Poppins",
+      "poppins",
+      "pop pins",
+      "poppins candy",
+      "पॉपिन्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "417",
+    "displayName": "Dairy Milk Silk",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Dairy Milk Silk",
+      "dairy milk silk",
+      "silk chocolate",
+      "सिल्क चॉकलेट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "418",
+    "displayName": "KitKat Chunky",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "KitKat Chunky",
+      "kitkat chunky",
+      "kitkat big",
+      "किटकैट बड़ा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "419",
+    "displayName": "Munch",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Munch",
+      "munch",
+      "nestle munch",
+      "मंच"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "420",
+    "displayName": "Gems",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Gems",
+      "gems",
+      "cadbury gems",
+      "जेम्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "421",
+    "displayName": "Melody",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Melody",
+      "melody",
+      "melody toffee",
+      "मेलोडी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "422",
+    "displayName": "Perk",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Perk",
+      "perk chocolate",
+      "perk",
+      "पर्क"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "423",
+    "displayName": "Bounty",
+    "sourceCategory": "SWEETS / MITHAI / NAMKEEN BRANDS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Bounty",
+      "bounty",
+      "bounty chocolate",
+      "बाउंटी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "430",
+    "displayName": "Mountain Dew",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Mountain Dew",
+      "mountain dew",
+      "dew",
+      "माउंटेन ड्यू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "431",
+    "displayName": "Mirinda",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Mirinda",
+      "mirinda",
+      "orange drink",
+      "मिरिंडा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "432",
+    "displayName": "Appy Fizz",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Appy Fizz",
+      "appy fizz",
+      "appy",
+      "एपी फिज़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "433",
+    "displayName": "Paper Boat",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Paper Boat",
+      "paper boat",
+      "paper boat drink",
+      "पेपर बोट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "434",
+    "displayName": "Real Juice",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Real Juice",
+      "real fruit juice",
+      "real juice packet",
+      "रियल जूस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "435",
+    "displayName": "B Natural Juice",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "B Natural Juice",
+      "b natural",
+      "b natural juice",
+      "बी नेचुरल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "436",
+    "displayName": "Limca Bottle",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Limca Bottle",
+      "limca",
+      "limca bottle",
+      "लिम्का बोतल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "437",
+    "displayName": "Shikanjvi",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Shikanjvi",
+      "shikanjvi",
+      "nimbu pani",
+      "lemonade",
+      "शिकंजवी",
+      "नींबू पानी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "438",
+    "displayName": "Kokum Sharbat",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Kokum Sharbat",
+      "kokum sharbat",
+      "kokum",
+      "कोकम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "439",
+    "displayName": "Amul Lassi",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Amul Lassi",
+      "amul lassi",
+      "amul butter milk",
+      "अमूल लस्सी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "440",
+    "displayName": "Full Cream Milk Packet",
+    "sourceCategory": "COLD DRINK / BEVERAGES BRANDS",
+    "guardCategory": "dairy",
+    "unit": "piece",
+    "suggestedPricePaise": 3200,
+    "aliases": [
+      "Full Cream Milk Packet",
+      "cow milk packet",
+      "full cream packet",
+      "फुल क्रीम दूध"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "450",
+    "displayName": "Dettol Handwash",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Dettol Handwash",
+      "dettol handwash",
+      "dettol liquid wash",
+      "डेटॉल हैंडवॉश"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "451",
+    "displayName": "Lifebuoy Handwash",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Lifebuoy Handwash",
+      "lifebuoy handwash",
+      "lifebuoy liquid",
+      "लाइफबॉय हैंडवॉश"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "452",
+    "displayName": "Savlon",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Savlon",
+      "savlon",
+      "savlon antiseptic",
+      "सेवलॉन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "453",
+    "displayName": "Godrej No.1 Soap",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 2800,
+    "aliases": [
+      "Godrej No.1 Soap",
+      "godrej no 1",
+      "godrej soap",
+      "गोदरेज नंबर 1"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "454",
+    "displayName": "Hamam Soap",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Hamam Soap",
+      "hamam soap",
+      "hamam",
+      "हमाम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "455",
+    "displayName": "Nivea Cream",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Nivea Cream",
+      "nivea cream",
+      "nivea",
+      "निविया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "456",
+    "displayName": "Boroline",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Boroline",
+      "boroline",
+      "बोरोलिन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "457",
+    "displayName": "Burnol",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Burnol",
+      "burnol",
+      "burn cream",
+      "बर्नोल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "458",
+    "displayName": "Nycil Powder",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Nycil Powder",
+      "nycil powder",
+      "prickly heat powder",
+      "नाइसिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "459",
+    "displayName": "Mediker Shampoo",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Mediker Shampoo",
+      "mediker shampoo",
+      "mediker",
+      "मेडिकर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "460",
+    "displayName": "Kesh Kala Oil",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Kesh Kala Oil",
+      "kesh kala oil",
+      "kesh kala",
+      "केश काला"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "461",
+    "displayName": "Mamaearth Product",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Mamaearth Product",
+      "mamaearth",
+      "mama earth",
+      "ममाअर्थ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "462",
+    "displayName": "Himalaya Face Wash",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Himalaya Face Wash",
+      "himalaya face wash",
+      "himalaya",
+      "हिमालया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "463",
+    "displayName": "Clean & Clear",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Clean & Clear",
+      "clean and clear",
+      "clean clear",
+      "क्लीन एंड क्लियर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "464",
+    "displayName": "Garnier Face Wash",
+    "sourceCategory": "SOAP / HYGIENE BRANDS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Garnier Face Wash",
+      "garnier face wash",
+      "garnier",
+      "गार्नियर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "470",
+    "displayName": "Wheel Detergent",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Wheel Detergent",
+      "wheel detergent",
+      "wheel",
+      "व्हील"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "471",
+    "displayName": "Ghadi Detergent",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Ghadi Detergent",
+      "ghadi detergent",
+      "ghadi",
+      "घड़ी डिटर्जेंट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "472",
+    "displayName": "Fena Detergent",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3800,
+    "aliases": [
+      "Fena Detergent",
+      "fena detergent",
+      "fena",
+      "फेना"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "473",
+    "displayName": "Ezee Liquid Detergent",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "Ezee Liquid Detergent",
+      "ezee liquid",
+      "ezee",
+      "ईज़ी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "474",
+    "displayName": "Pril Dish Wash",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Pril Dish Wash",
+      "pril dishwash",
+      "pril",
+      "प्रिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "475",
+    "displayName": "Scotch Brite Scrubber",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Scotch Brite Scrubber",
+      "scotch brite",
+      "scrubber",
+      "स्क्रबर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "476",
+    "displayName": "Domex Toilet Cleaner",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 6500,
+    "aliases": [
+      "Domex Toilet Cleaner",
+      "domex",
+      "toilet domex",
+      "डोमेक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "477",
+    "displayName": "Hit Spray",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Hit Spray",
+      "hit spray",
+      "hit cockroach",
+      "हिट स्प्रे"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "478",
+    "displayName": "Good Knight",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Good Knight",
+      "good knight",
+      "goodknight",
+      "mosquito repellent",
+      "गुड नाइट",
+      "मच्छर क्वाइल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "479",
+    "displayName": "All Out Refill",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "All Out Refill",
+      "allout",
+      "all out",
+      "ऑलआउट"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "480",
+    "displayName": "Mortein",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Mortein",
+      "mortein",
+      "mosquito killer",
+      "मोर्टेन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "481",
+    "displayName": "Odonil",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Odonil",
+      "odonil",
+      "bathroom freshener",
+      "ओडोनिल",
+      "odournil"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "482",
+    "displayName": "Odomos",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Odomos",
+      "odomos",
+      "mosquito cream",
+      "ओडोमोस",
+      "mosquito lotion"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "483",
+    "displayName": "Naphthalene Balls",
+    "sourceCategory": "WASHING / CLEANING BRANDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Naphthalene Balls",
+      "lal tikki",
+      "naphthalene balls",
+      "नेफ्थलीन",
+      "camphor balls"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "490",
+    "displayName": "Pampers XL",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Pampers XL",
+      "pampers xl",
+      "pampers large",
+      "pampers xxl",
+      "पैम्पर्स एक्सएल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "491",
+    "displayName": "Huggies Diaper",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 1800,
+    "aliases": [
+      "Huggies Diaper",
+      "huggies diaper",
+      "huggies",
+      "हगीज़"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "492",
+    "displayName": "Mamy Poko Pants",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "hygiene",
+    "unit": "piece",
+    "suggestedPricePaise": 1800,
+    "aliases": [
+      "Mamy Poko Pants",
+      "mamy poko",
+      "mamypoko",
+      "मैमी पोको"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "493",
+    "displayName": "Lactogen",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Lactogen",
+      "lactogen",
+      "lactogen milk",
+      "लैक्टोजन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "494",
+    "displayName": "NAN Pro",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 18000,
+    "aliases": [
+      "NAN Pro",
+      "nan pro",
+      "nan powder",
+      "नैन प्रो"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "495",
+    "displayName": "Farex Baby Cereal",
+    "sourceCategory": "BABY / CHILD PRODUCTS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Farex Baby Cereal",
+      "farex",
+      "farex cereal",
+      "फारेक्स"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "500",
+    "displayName": "Fevistick",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Fevistick",
+      "fevistick",
+      "fevi stick",
+      "फेवीस्टिक"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "501",
+    "displayName": "M-Seal",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "M-Seal",
+      "m seal",
+      "mseal",
+      "एम सील",
+      "epoxy"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "502",
+    "displayName": "Whitener",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Whitener",
+      "white ink pen",
+      "whitener",
+      "व्हाइटनर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "503",
+    "displayName": "Stapler",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Stapler",
+      "stapler",
+      "stapler pin",
+      "स्टेपलर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "504",
+    "displayName": "Kaichi (Scissor)",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Kaichi (Scissor)",
+      "scissor",
+      "kaichi",
+      "कैंची"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "505",
+    "displayName": "Eraser",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Eraser",
+      "rubber eraser",
+      "eraser",
+      "रबर इरेजर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "506",
+    "displayName": "Sharpener",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Sharpener",
+      "sharpener",
+      "pencil sharpener",
+      "शार्पनर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "507",
+    "displayName": "Cello Tape (Big)",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Cello Tape (Big)",
+      "cello tape",
+      "big tape",
+      "transparent tape",
+      "सेलो टेप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "508",
+    "displayName": "Writing Pad",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Writing Pad",
+      "writing pad",
+      "notepad",
+      "likhne ka pad",
+      "लिखने का पैड"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "509",
+    "displayName": "Scale/Ruler",
+    "sourceCategory": "STATIONERY / GENERAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Scale/Ruler",
+      "scale",
+      "ruler",
+      "पैमाना",
+      "स्केल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "510",
+    "displayName": "Crocin",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Crocin",
+      "crocin",
+      "paracetamol",
+      "fever tablet",
+      "क्रोसिन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "511",
+    "displayName": "Disprin",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Disprin",
+      "disprin",
+      "dispirin",
+      "दिस्प्रीन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "512",
+    "displayName": "Gelusil",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Gelusil",
+      "gelusil",
+      "antacid",
+      "जेलुसिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "513",
+    "displayName": "Digene",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Digene",
+      "digene",
+      "digene tablet",
+      "डाइजीन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "514",
+    "displayName": "Pudin Hara",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Pudin Hara",
+      "pudin hara",
+      "pudina hara",
+      "पुदीन हारा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "515",
+    "displayName": "Zandu Balm",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Zandu Balm",
+      "zandu balm",
+      "zandu",
+      "ज़ंडू बाम",
+      "balm"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "516",
+    "displayName": "Tiger Balm",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Tiger Balm",
+      "tiger balm",
+      "tiger baam",
+      "टाइगर बाम"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "517",
+    "displayName": "Volini Spray",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Volini Spray",
+      "volini spray",
+      "volini",
+      "वोलिनी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "518",
+    "displayName": "Betadine",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 4500,
+    "aliases": [
+      "Betadine",
+      "betadine",
+      "betadene",
+      "बेटाडीन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "519",
+    "displayName": "Cotton Roll",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Cotton Roll",
+      "cotton",
+      "cotton roll",
+      "रुई",
+      "रुई की गोली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "520",
+    "displayName": "Thermometer",
+    "sourceCategory": "MEDICINES / FIRST AID (OTC)",
+    "guardCategory": "medicine",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Thermometer",
+      "thermometer",
+      "bukhar naapne wala",
+      "थर्मामीटर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "530",
+    "displayName": "Bartan Powder",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Bartan Powder",
+      "utensil cleaner",
+      "bartan cleaner",
+      "बर्तन साफ करने का पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "531",
+    "displayName": "Aluminium Foil",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Aluminium Foil",
+      "aluminium foil",
+      "al foil",
+      "एल्युमीनियम फॉयल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "532",
+    "displayName": "Cling Wrap",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Cling Wrap",
+      "cling wrap",
+      "food wrap",
+      "क्लिंग रैप"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "533",
+    "displayName": "Zip Lock Bag",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Zip Lock Bag",
+      "zip lock bag",
+      "ziplock",
+      "ज़िप बैग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "534",
+    "displayName": "Garbage Bag",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Garbage Bag",
+      "garbage bag",
+      "dustbin bag",
+      "कचरा बैग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "535",
+    "displayName": "Tissue Paper",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Tissue Paper",
+      "tissue paper",
+      "tissue box",
+      "टिशू पेपर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "536",
+    "displayName": "Toilet Roll",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Toilet Roll",
+      "toilet paper",
+      "toilet roll",
+      "टॉयलेट पेपर",
+      "toilet tissue"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "537",
+    "displayName": "Pocha/Mop",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "Pocha/Mop",
+      "floor mop",
+      "pocha",
+      "pochha",
+      "पोछा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "538",
+    "displayName": "Jhadu (Broom)",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Jhadu (Broom)",
+      "broom",
+      "jhadu",
+      "झाड़ू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "539",
+    "displayName": "Dust Brush",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Dust Brush",
+      "brush jhadu",
+      "brush broom",
+      "dust brush",
+      "डस्ट ब्रश"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "540",
+    "displayName": "Balti (Bucket)",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Balti (Bucket)",
+      "bucket",
+      "balti",
+      "बाल्टी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "541",
+    "displayName": "Mug/Lota",
+    "sourceCategory": "HOUSEHOLD / KITCHEN",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Mug/Lota",
+      "mug",
+      "lota",
+      "plastic mug",
+      "लोटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "550",
+    "displayName": "Gulal (Holi Rang)",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Gulal (Holi Rang)",
+      "holi colour",
+      "holi rang",
+      "gulal",
+      "गुलाल",
+      "होली रंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "551",
+    "displayName": "Pichkari",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Pichkari",
+      "pichkari",
+      "water gun",
+      "पिचकारी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "552",
+    "displayName": "Rakhi",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Rakhi",
+      "rakhi",
+      "rakshabandhan",
+      "राखी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "553",
+    "displayName": "Diya (Clay)",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 200,
+    "aliases": [
+      "Diya (Clay)",
+      "diya",
+      "clay diya",
+      "मिट्टी का दीया",
+      "दिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "554",
+    "displayName": "Puja Thali",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Puja Thali",
+      "puja thali",
+      "pooja thali",
+      "पूजा थाली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "555",
+    "displayName": "Nariyal Pani",
+    "sourceCategory": "AGRI / SEASONAL / REGIONAL",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Nariyal Pani",
+      "nariyal pani",
+      "coconut water",
+      "नारियल पानी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "560",
+    "displayName": "Earphones",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Earphones",
+      "earphones",
+      "earbuds",
+      "earbud",
+      "ईयरफोन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "561",
+    "displayName": "Mobile Charger",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Mobile Charger",
+      "mobile charger",
+      "charger",
+      "चार्जर",
+      "फोन चार्जर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "562",
+    "displayName": "USB Cable",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "USB Cable",
+      "usb cable",
+      "data cable",
+      "यूएसबी केबल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "563",
+    "displayName": "LED Bulb",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "LED Bulb",
+      "led bulb",
+      "bulb",
+      "बल्ब",
+      "9w bulb"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "564",
+    "displayName": "CFL Bulb",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "CFL Bulb",
+      "cfl bulb",
+      "fluorescent bulb",
+      "सीएफएल बल्ब"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "565",
+    "displayName": "Torch",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Torch",
+      "torch",
+      "flashlight",
+      "torch light",
+      "टॉर्च"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "566",
+    "displayName": "Extension Board",
+    "sourceCategory": "ELECTRONICS / ACCESSORIES",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Extension Board",
+      "extension cord",
+      "extension box",
+      "बोर्ड",
+      "plug board"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "570",
+    "displayName": "Chappal",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Chappal",
+      "chappal",
+      "slipper",
+      "slippers",
+      "चप्पल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "571",
+    "displayName": "Chhata (Umbrella)",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Chhata (Umbrella)",
+      "umbrella",
+      "chhata",
+      "छाता",
+      "barish wala chhata"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "572",
+    "displayName": "Safety Pin",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 500,
+    "aliases": [
+      "Safety Pin",
+      "safety pin",
+      "safetypin",
+      "सेफ्टी पिन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "573",
+    "displayName": "Dhaga (Thread)",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Dhaga (Thread)",
+      "thread",
+      "dhaga",
+      "needle thread",
+      "धागा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "574",
+    "displayName": "Kanghi (Comb)",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 1500,
+    "aliases": [
+      "Kanghi (Comb)",
+      "comb",
+      "kanghi",
+      "कंघी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "575",
+    "displayName": "Aaina (Mirror)",
+    "sourceCategory": "FOOTWEAR / MISC",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Aaina (Mirror)",
+      "mirror",
+      "aaina",
+      "आईना",
+      "dressing mirror"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "580",
+    "displayName": "Chikki",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Chikki",
+      "chikki",
+      "groundnut chikki",
+      "peanut chikki",
+      "चिक्की"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "581",
+    "displayName": "Chakli",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Chakli",
+      "chakli",
+      "murukku",
+      "चकली"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "582",
+    "displayName": "Ribbon Pakoda",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 18000,
+    "aliases": [
+      "Ribbon Pakoda",
+      "ribbon pakoda",
+      "ribbon",
+      "रिबन पकोड़ा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "583",
+    "displayName": "Kara Sev",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 16000,
+    "aliases": [
+      "Kara Sev",
+      "kara sev",
+      "karasev",
+      "करा सेव"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "584",
+    "displayName": "Dal Moth",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 18000,
+    "aliases": [
+      "Dal Moth",
+      "dal moth",
+      "dalmoth",
+      "दाल मोठ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "585",
+    "displayName": "Khakhra",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "piece",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Khakhra",
+      "khakhra",
+      "khakra",
+      "खाखरा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "586",
+    "displayName": "Murukku",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Murukku",
+      "murukku",
+      "murkoo",
+      "मुरुक्कू"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "587",
+    "displayName": "Banta Soda",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Banta Soda",
+      "goli soda",
+      "banta",
+      "banta soda",
+      "गोली सोडा",
+      "बंटा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "588",
+    "displayName": "Ganna Juice",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "beverage",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Ganna Juice",
+      "sugarcane juice",
+      "ganna juice",
+      "गन्ने का रस"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "589",
+    "displayName": "Mishri",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Mishri",
+      "mishri",
+      "rock candy",
+      "मिश्री"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "590",
+    "displayName": "Murabba",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "Murabba",
+      "murabba",
+      "amla murabba",
+      "आंवला मुरब्बा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "591",
+    "displayName": "Pachak Churan",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "sweet",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Pachak Churan",
+      "churan",
+      "digestive churan",
+      "पाचक चूर्ण"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "592",
+    "displayName": "Saunth (Dry Ginger)",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 100,
+    "aliases": [
+      "Saunth (Dry Ginger)",
+      "saunth",
+      "sonth",
+      "dry ginger",
+      "सोंठ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "593",
+    "displayName": "Kali Mirch Powder",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 150,
+    "aliases": [
+      "Kali Mirch Powder",
+      "kalimirch powder",
+      "kali mirch powder",
+      "काली मिर्च पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "594",
+    "displayName": "Dhania Jeera Powder",
+    "sourceCategory": "REGIONAL FOOD ITEMS",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Dhania Jeera Powder",
+      "dhania jeera powder",
+      "coriander cumin",
+      "धनिया जीरा पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "600",
+    "displayName": "Kala Til",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 15000,
+    "aliases": [
+      "Kala Til",
+      "kala til",
+      "black sesame",
+      "काला तिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "601",
+    "displayName": "Safed Til",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "Safed Til",
+      "safed til",
+      "white sesame",
+      "सफेद तिल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "602",
+    "displayName": "Alsi (Flaxseed)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 10000,
+    "aliases": [
+      "Alsi (Flaxseed)",
+      "alsi",
+      "flaxseed",
+      "linseed",
+      "अलसी"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "603",
+    "displayName": "Sunflower Seeds",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 20000,
+    "aliases": [
+      "Sunflower Seeds",
+      "sunflower seeds",
+      "suraj mukhi beej",
+      "सूरजमुखी के बीज"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "604",
+    "displayName": "Chia/Sabja Seeds",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dryfruit",
+    "unit": "gm",
+    "suggestedPricePaise": 80,
+    "aliases": [
+      "Chia/Sabja Seeds",
+      "chia seeds",
+      "sabja",
+      "basil seeds",
+      "चिया सीड्स",
+      "सब्जा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "605",
+    "displayName": "Quinoa",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 30000,
+    "aliases": [
+      "Quinoa",
+      "quinoa",
+      "quinoa grain",
+      "क्विनोआ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "606",
+    "displayName": "Jau (Barley)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 4000,
+    "aliases": [
+      "Jau (Barley)",
+      "barley",
+      "jau",
+      "जौ"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "607",
+    "displayName": "Makka (Corn)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 2500,
+    "aliases": [
+      "Makka (Corn)",
+      "makka",
+      "maize",
+      "corn",
+      "मक्का"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "608",
+    "displayName": "Jowar Sabut",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3000,
+    "aliases": [
+      "Jowar Sabut",
+      "sorghum whole",
+      "jowar sabut",
+      "साबुत ज्वार"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "609",
+    "displayName": "Futana",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "snack",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "फ़ुटाना",
+      "Futana",
+      "फ़ुटना",
+      "Futna"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "610",
+    "displayName": "Bhagar",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 13000,
+    "aliases": [
+      "Bhagar",
+      "Bagar",
+      "Bagat",
+      "भगड़",
+      "बगड़",
+      "भगर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "611",
+    "displayName": "Gulab Jamun Packet",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "sweet",
+    "unit": "kg",
+    "suggestedPricePaise": 37000,
+    "aliases": [
+      "गुलाब जामुन पैकेट",
+      "Gulab jamun",
+      "गुलाब जामुन",
+      "Gulab Jamun Packet"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "612",
+    "displayName": "Jeera Powder",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 32000,
+    "aliases": [
+      "Jeera Powder",
+      "jira powder",
+      "jeera powder",
+      "cumin powder",
+      "जीरा पाउडर",
+      "जिरा पाउडर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "613",
+    "displayName": "Daaliya",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 32000,
+    "aliases": [
+      "दालिया",
+      "Daaliya",
+      "Daliya",
+      "दलिया",
+      "डालिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "614",
+    "displayName": "Sabun",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 1000,
+    "aliases": [
+      "Sabun",
+      "Fena sabun",
+      "Tanman sabun",
+      "Fena",
+      "Tanman",
+      "Surfexcel sabun",
+      "Wheel sabun",
+      "फेना",
+      "तनमन",
+      "सर्फ एक्सेल साबुन",
+      "व्हील साबुन",
+      "bath sabun",
+      "bathing sabun",
+      "bath soap"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "615",
+    "displayName": "Bartan bar",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "soap",
+    "unit": "piece",
+    "suggestedPricePaise": 3500,
+    "aliases": [
+      "Bartan bar",
+      "Vim set",
+      "Vim bundle",
+      "Nip bundle",
+      "Nip Set",
+      "Vim",
+      "Nip",
+      "bartanbar",
+      "bartan sabun",
+      "vim bar",
+      "nip bar"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "616",
+    "displayName": "Agarbatti",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Agarbatti",
+      "Dhoop",
+      "Incense sticks",
+      "धूप",
+      "अगरबत्ती"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "617",
+    "displayName": "Chandan (Sandalwood)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "Chandan (Sandalwood)",
+      "Sandalwood",
+      "Chandan",
+      "चंदन"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "618",
+    "displayName": "Kesar (Saffron)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "masala",
+    "unit": "gm",
+    "suggestedPricePaise": 50000,
+    "aliases": [
+      "Kesar (Saffron)",
+      "Kesar",
+      "Saffron",
+      "केसर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "619",
+    "displayName": "Mogra (Jasmine)",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "household",
+    "unit": "piece",
+    "suggestedPricePaise": 2000,
+    "aliases": [
+      "Mogra (Jasmine)",
+      "Mogra",
+      "Jasmine",
+      "मोगरा"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "620",
+    "displayName": "Kanki",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "grain",
+    "unit": "kg",
+    "suggestedPricePaise": 3600,
+    "aliases": [
+      "Kanki",
+      "Kanaki",
+      "kanki chawal",
+      "broken rice",
+      "कनकी",
+      "कनकी चावल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "621",
+    "displayName": "Khada Dhaniya",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "Khada Dhaniya",
+      "khada dhaniya",
+      "kada dhaniya",
+      "खड़ा धनिया",
+      "खडी धनिया"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "622",
+    "displayName": "Moong Mogar",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 11000,
+    "aliases": [
+      "Moong Mogar",
+      "dhuli moong daal",
+      "dhuli moong",
+      "duli moong",
+      "duli moong daal",
+      "moong mogar",
+      "moong moongar",
+      "moong moger",
+      "moong magar",
+      "moong moghar",
+      "धुली मूंग दाल",
+      "धुली मूंग की दाल",
+      "मूंग मोगर",
+      "मूंग मगर",
+      "धुली मूंग"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "623",
+    "displayName": "Masoor Daal",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 9000,
+    "aliases": [
+      "Masoor Daal",
+      "khadi masoor daal",
+      "khadi masoor",
+      "खड़ा मसूर दाल",
+      "खड़ा मसूर",
+      "खडी मसूर",
+      "खडी मसूर दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "624",
+    "displayName": "Urad Mogar",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "Urad Mogar",
+      "dhuli urad daal",
+      "dhuli urad",
+      "duli urad",
+      "duli urad daal",
+      "dhuli udad daal",
+      "duli udad daal",
+      "urad mogar",
+      "urad moongar",
+      "udad mogar",
+      "urad moger",
+      "urad magar",
+      "udad magar",
+      "urad moghar",
+      "धुली उड़द दाल",
+      "धुली उरद दाल",
+      "उड़द मोगर",
+      "उड़द मगर",
+      "उरद मोगर",
+      "उरद मगर"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "625",
+    "displayName": "Moong",
+    "sourceCategory": "GRAINS / SEEDS",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 9200,
+    "aliases": [
+      "Moong",
+      "khadi moong daal",
+      "khadi moong",
+      "खड़ा मूंग दाल",
+      "खड़ा मूंग",
+      "खडी मूंग",
+      "खडी मूंग दाल"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "626",
+    "displayName": "हरा बटाना",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 7000,
+    "aliases": [
+      "हरा बटाना",
+      "hara batana",
+      "green potato",
+      "hara aloo"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "627",
+    "displayName": "चप्टा बटाना",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "चप्टा बटाना",
+      "chapta batana",
+      "flat potato",
+      "chapta aloo"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "628",
+    "displayName": "सफेद बटाना",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "सफेद बटाना",
+      "safed batana"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "629",
+    "displayName": "बरबटी दाल",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 8000,
+    "aliases": [
+      "बरबटी दाल",
+      "barbati dal",
+      "barbati daal",
+      "barbati pulse"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "630",
+    "displayName": "कुलथा",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 12000,
+    "aliases": [
+      "कुलथा",
+      "kultha",
+      "horse gram",
+      "kulthi"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "631",
+    "displayName": "तिल्ली",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dryfruit",
+    "unit": "kg",
+    "suggestedPricePaise": 14000,
+    "aliases": [
+      "तिल्ली",
+      "tilli",
+      "sesame",
+      "til"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "632",
+    "displayName": "खंडा दाल",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 6000,
+    "aliases": [
+      "खंडा दाल",
+      "khanda dal",
+      "khanda daal",
+      "khanda pulse"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "633",
+    "displayName": "बटाना दाल",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "dal",
+    "unit": "kg",
+    "suggestedPricePaise": 5000,
+    "aliases": [
+      "बटाना दाल",
+      "batana dal",
+      "batana daal",
+      "batana pulse"
+    ],
+    "isActive": true
+  },
+  {
+    "id": "634",
+    "displayName": "हल्दी गाठ",
+    "sourceCategory": "REGIONAL VEGETABLES / PULSES",
+    "guardCategory": "masala",
+    "unit": "kg",
+    "suggestedPricePaise": 32000,
+    "aliases": [
+      "हल्दी गाठ",
+      "haldi gath",
+      "turmeric root"
+    ],
+    "isActive": true
+  }
+]

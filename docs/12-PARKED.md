@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 21 Aug 2026 (rev 4)
+**Last updated:** 08 Sep 2026 (rev 4)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -104,6 +104,7 @@ Open questions. Each has a trigger.
 | NI-08 | Real bills/day and catalog size at the pilot shop | Every performance and cost assumption is calibrated on guesses | Phase 4 |
 | NI-09 | Which competitor did the market-research quotes actually come from? | Some quoted "user complaints" showed signs of fabrication — a source with a citation but no quote text | Before using any of it externally |
 | NI-10 | ~~Tailwind or port the CSS?~~ | **Closed 17 Aug** — Tailwind. See SD-011. | — |
+| NI-14 | ~~Where does `base_products.category` come from?~~ | **Closed 08 Sep**, during `KB-003` — it's positional, not a stored field or a guard-derived guess: `legacy/products.js` groups products under 48 comment headers, and `scripts/build-catalog-seed.ts` assigns each product the header it falls under. See `14-LEGACY-REFERENCE.md` section 9. | — |
 | **NI-11** | **Barcode scanning for packaged goods** | The shop is 500+ SKUs and mart-like. For *packaged* goods with printed barcodes, a camera scan beats voice decisively. Voice's real advantage is **loose goods sold by weight** — dal, rice, atta, sugar — where there is no barcode to scan. A serious grocery product probably needs both eventually. | After MVP pilot. Do not add to MVP. |
 | **NI-13** | **Graphify — knowledge graph over the codebase** | Claims 70–90% token reduction by letting an agent query a graph instead of scanning files. **Unverified:** postdates this documentation set; licence, maintenance status and whether it uploads code are all unknown — check before installing. Not useful at Phase 0 (no code yet), and the 17-doc set is already a curated context layer. | **Phase 3**, when `src/` is large enough that the agent misses cross-file relationships |
 | **NI-12** | **Is the target a kirana or a grocery mart?** | Owner describes 100+ bills/day, 500+ products, "like DMart/JioMart". That is materially larger than a corner kirana and changes assumptions about counters, staff, and barcode need. The MVP is unaffected; the *positioning* may be. | Phase 4 |
