@@ -1,6 +1,16 @@
 # 14 — Legacy Reference
 
-**Last updated:** 17 Aug 2026 · **Status:** Reference material, frozen
+**Last updated:** 09 Sep 2026 (rev 4) · **Status:** Reference material, frozen
+
+**Rev 2 note:** section 9 previously said each product has a `category` field. It doesn't — corrected
+during `KB-003` after the owner caught it. See section 9 for what's actually there.
+
+**Rev 3 note:** section 5's category guards are now a precomputed two-field system (`sourceCategory` /
+`guardCategory`, `07-DECISIONS.md` D12) rather than runtime keyword inference, and there are eight
+guard buckets, not six. See section 5.
+
+**Rev 4 note:** eight buckets left 58% of the catalog in `other` — too coarse to guard anything.
+Expanded to fifteen buckets plus `other`, bringing `other` under 2%. See section 5.
 
 ---
 
@@ -237,6 +247,40 @@ export const CATEGORY_GUARDS = [
 **Logic:** derive the category set for the spoken phrase and for the candidate match. If both are
 non-empty and disjoint → reject the match.
 
+**Rev 3 update (`KB-003`, `07-DECISIONS.md` D12): this is now precomputed, not inferred at match
+time, and there are sixteen buckets, not six.** `CatalogEntry.guardCategory` (`domain/catalog.ts`) is
+set once, per product, when `scripts/build-catalog-seed.ts` builds the seed.
+
+The six buckets above were hand-built for mishearings that had actually happened in the old
+validator — not as a taxonomy of a grocery shop's actual stock. Stopping at those six (plus `hygiene`,
+split out of `soap` because 28 + 15 = 43 products was too coarse) left **58% of the catalog in
+`other`** — no guard at all on the majority of the shop, so a mishearing of "biscuit" could match
+"bulb" and nothing would reject it. Eight more buckets were added to cover the rest of a real kirana's
+stock: `dairy`, `snack`, `sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine`. That
+brought `other` down to **under 2%** (9 of 482 products — see below).
+
+**The full sixteen:** `dal`, `oil`, `masala`, `tea`, `grain`, `soap`, `hygiene`, `dairy`, `snack`,
+`sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine`, `other`.
+
+The validator (`KB-005b`) should **read `guardCategory` directly** rather than re-deriving it from
+keywords against the spoken phrase at runtime. The mapping from each of the catalog's 48
+`sourceCategory` headers to one of these values is an explicit, committed table in
+`scripts/build-catalog-seed.ts` (`CATEGORY_TO_GUARD`), with per-product overrides
+(`GUARD_CATEGORY_ID_OVERRIDES`) for the many headers that mix genuinely different categories under one
+heading, or split cleanly by product type (`SUGAR / SALT / JAGGERY` → sugar is `sweet`, salt is
+`condiment`) rather than by a majority rule. Worst case: `GRAINS / SEEDS`, which contains actual
+grains, dals, spices, dry-fruit seeds, household puja items, and two bars of soap — every one of its
+26 products is individually overridden. Every override was decided by reading the product it applies
+to, not guessed from the header name. See that file's comments for the full reasoning, category by
+category.
+
+**The nine products that genuinely resist classification, left as `other`:** `EGGS` (2 products — one
+pair, distinctive, fine as-is) and seven baking ingredients under `MISC GROCERY` — baking soda, baking
+powder, agar agar, food color, rose water, corn starch, yeast. None of the sixteen buckets covers
+"baking supplies," and forcing them into a wrong bucket (e.g. `condiment`) would create the exact kind
+of false-positive guard this system exists to avoid. If baking ingredients become common enough in
+spoken orders to be worth guarding, add a `baking` bucket rather than stretching an existing one.
+
 ---
 
 ## 6. Matching thresholds
@@ -309,9 +353,32 @@ per-kg rate and convert. Handles "500 gram, 60 rupay wala" where 60 is obviously
 
 `legacy/products.js` → seed data for `base_products`.
 
-- 482 products, ids 1–634, 24 categories
-- Each has `displayName`, `category`, `unit`, `price`, and an alias array mixing Hindi, Latin and
-  Devanagari
+- 482 products, ids 1–634, **48 categories** (corrected — see below)
+- Each product literal has `id`, `names` (the alias array — Hindi, Latin and Devanagari mixed),
+  `displayName`, `unit`, `price`. **There is no per-product `category` field.** Products are grouped
+  under comment headers instead (see below) — an earlier revision of this document said `category`
+  was a field on each product; that was wrong.
+- **Category is positional, not a field.** Products are grouped under plain-text comment headers in
+  two styles used in different parts of the file:
+  ```
+  // ══════════════════════════════
+  // ATTA / GRAINS / FLOUR
+  // ══════════════════════════════
+  { id:1, ... },
+  { id:2, ... },
+  ```
+  and, later in the file (the `PRODUCTS.push(...)` blocks):
+  ```
+  // ── BRANDED ATTA / FLOUR ──
+  { id:337, ... },
+  ```
+  Every product belongs to whichever header appears above it, scanning top to bottom. There are
+  **48** such headers total (24 in the original array, 24 more across the later `push` blocks) — not
+  24, which only counted the first array. `scripts/build-catalog-seed.ts` (`KB-003`) assigns
+  `CatalogEntry.category` this way, deterministically, with no guessing and no keyword inference.
+  This is a different, finer-grained thing than the six `CATEGORY_GUARDS` buckets in section 5 below
+  (`dal`, `oil`, `masala`, `tea`, `grain`, `soap`) — those are a coarser classification the validator
+  uses at match time, and remain `KB-005b`'s job.
 - ~164 bytes per product as JSON; 79 KB total
 - `PRODUCT_RUNTIME_FIXES` and `cleanupProductsCatalog()` patched mojibake and duplicate aliases at
   load time — **apply those fixes once during seeding**, then delete the mechanism. A catalog that

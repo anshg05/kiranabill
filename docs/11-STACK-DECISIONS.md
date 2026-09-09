@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 18 Aug 2026 (rev 3)
+**Last updated:** 08 Sep 2026 (rev 4)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -243,6 +243,27 @@ client-side, so upload becomes a normal local write that syncs like anything els
 file handling, no new infrastructure.
 
 ---
+
+## SD-017 — Build-script runner: **tsx** (dev-only) · 08 Sep 2026
+
+Needed to run `scripts/build-catalog-seed.ts` (`npm run seed:catalog`, `KB-003`) as committed,
+type-checked TypeScript without a manual compile step.
+
+| Rejected | Why |
+|---|---|
+| Plain `.js` for the script | Would avoid the dependency, but the correction that created this script explicitly wanted a typed, committed, reproducible transform — losing types on the one script that touches money-seed data is the wrong trade. |
+| `ts-node` | Heavier, slower startup, more configuration surface for the same job |
+| Relying on Node's native `--experimental-strip-types` | Version-dependent (Node 22.6+, and only unflagged on very recent Node) — not safe to assume on the owner's installed Node LTS |
+
+**Exit cost: near zero.** Dev-only, not in `dependencies`, not part of any shipped bundle. Deleting
+it just means switching the one script's run command.
+
+## SD-018 — Node type declarations: **@types/node** (dev-only) · 08 Sep 2026
+
+Needed so `scripts/build-catalog-seed.ts` type-checks against `node:fs`, `node:path`, etc. Standard,
+near-universal companion to any typed Node script; no alternative considered — the alternative is no
+type-checking on the seed script, which is exactly the reproducibility guarantee `KB-003`'s
+correction asked for.
 
 ## How to add to this document
 
