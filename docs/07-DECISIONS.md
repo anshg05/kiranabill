@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 14 Sep 2026 (rev 9) · Supersedes rev 8
+**Last updated:** 14 Sep 2026 (rev 10) · Supersedes rev 9
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -493,6 +493,50 @@ catalog is genuinely sold under two different discrete units at different prices
 approximate. Grouped all 482 products by exact `displayName`: only two names repeat at all
 (`masoor daal`, `agarbatti`), and both repeats share the *same* unit on both sides — no case exists
 where the same product carries two different discrete units. **D14 stands as written.**
+
+---
+
+## Rev 10 — 14 Sep 2026
+
+### D15 — Learned-alias retirement is confidence-threshold-based (<=0.3), not a flat suppression count 🟢
+
+**Unlike every decision before this one, there is no source to point to.** `08-LEARNING-ENGINE.md`
+section 4 says a suppressed alias's confidence decrements and "two suppressions retire it," but gives
+no decrement value, and `legacy/learning-store.js` has no confidence score, no suppression, and no
+retirement logic at all to check against — confirmed by grepping the file directly during `KB-008`.
+This decision is chosen, not found, and future sessions need to know that plainly.
+
+**The math already in the doc:** confidence starts at 0.5 on first correction, +0.2 per confirmation
+without edit (0.5 → 0.7 → 0.9), promoted at ≥0.8. Section 10 rule 5 says suppression should be
+"symmetric with promotion" but doesn't say what that means mechanically.
+
+**Decision:**
+- Suppression decrements confidence by **-0.2** — the literal symmetric counterpart to the +0.2
+  confirmation increment.
+- **Retirement fires when confidence drops to or below 0.3** (symmetric with the 0.5 starting point
+  and the 0.8 promotion threshold), not a separate suppression counter. The entry is removed from
+  state outright when this happens — it does not linger at exactly 0.3.
+
+**Why not a flat "two suppressions" counter (the first draft of this ticket, before the owner
+corrected it):** a count independent of confidence treats every alias identically regardless of how
+much evidence supports it — an alias confirmed three times (0.9) and one confirmed once (0.5) would
+both retire after the same two suppressions. That isn't actually symmetric with promotion, where more
+confirmations earn more trust. Under the threshold rule instead:
+
+| Confidence before suppression | Confirmations behind it | Suppressions survived |
+|---|---|---|
+| 0.5 | 1 | **0** — retires on the first suppression (0.5 − 0.2 = 0.3) |
+| 0.7 | 2 | 1 — retires on the second (0.7 − 0.2 − 0.2 = 0.3) |
+| 0.9 | 3 | 2 — still alive at 0.5 after two suppressions |
+
+A well-established alias is harder to dislodge than a shaky one just created — the behavior
+"symmetric with promotion" should actually produce, and the reason `KB-008`'s test file has a
+dedicated test proving the 0.9-survives-two / 0.5-survives-zero contrast directly, not just a
+changed constant.
+
+**Revisit when:** real suppression events accumulate during the pilot and this can be checked against
+actual shopkeeper correction behavior, the same way the length-scaled matching thresholds
+(`14-LEGACY-REFERENCE.md` section 6) at least came from the old code's real tuning and this doesn't.
 
 ---
 
