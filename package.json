@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "seed:catalog": "tsx scripts/build-catalog-seed.ts",
-    "eval": "tsx eval/run-eval.ts"
+    "eval": "tsx eval/run-eval.ts",
+    "try": "tsx scripts/try.ts"
   },
   "dependencies": {
     "react": "^19.1.0",
