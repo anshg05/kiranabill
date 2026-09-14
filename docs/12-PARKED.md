@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 08 Sep 2026 (rev 4)
+**Last updated:** 14 Sep 2026 (rev 5)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -108,6 +108,7 @@ Open questions. Each has a trigger.
 | **NI-11** | **Barcode scanning for packaged goods** | The shop is 500+ SKUs and mart-like. For *packaged* goods with printed barcodes, a camera scan beats voice decisively. Voice's real advantage is **loose goods sold by weight** — dal, rice, atta, sugar — where there is no barcode to scan. A serious grocery product probably needs both eventually. | After MVP pilot. Do not add to MVP. |
 | **NI-13** | **Graphify — knowledge graph over the codebase** | Claims 70–90% token reduction by letting an agent query a graph instead of scanning files. **Unverified:** postdates this documentation set; licence, maintenance status and whether it uploads code are all unknown — check before installing. Not useful at Phase 0 (no code yet), and the 17-doc set is already a curated context layer. | **Phase 3**, when `src/` is large enough that the agent misses cross-file relationships |
 | **NI-12** | **Is the target a kirana or a grocery mart?** | Owner describes 100+ bills/day, 500+ products, "like DMart/JioMart". That is materially larger than a corner kirana and changes assumptions about counters, staff, and barcode need. The MVP is unaffected; the *positioning* may be. | Phase 4 |
+| **NI-20** | **Claude Code launched a session in `.claude/worktrees/` instead of the main checkout, breaking the single-branch workflow and costing a manual conflict merge.** No config flag found in project `.claude/`, `~/.claude/settings.json`, or `~/.claude/.claude.json`. Likely a harness-level feature (SDK Agent tool isolation, or a desktop-app session isolation toggle) that runs before CLAUDE.md loads. | **Trigger:** check the desktop app's new-session settings before the next multi-session task. |
 
 ---
 
