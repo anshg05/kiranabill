@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 7)
+**Last updated:** 14 Sep 2026 (rev 8)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -109,6 +109,7 @@ Open questions. Each has a trigger.
 | **NI-13** | **Graphify — knowledge graph over the codebase** | Claims 70–90% token reduction by letting an agent query a graph instead of scanning files. **Unverified:** postdates this documentation set; licence, maintenance status and whether it uploads code are all unknown — check before installing. Not useful at Phase 0 (no code yet), and the 17-doc set is already a curated context layer. | **Phase 3**, when `src/` is large enough that the agent misses cross-file relationships |
 | **NI-12** | **Is the target a kirana or a grocery mart?** | Owner describes 100+ bills/day, 500+ products, "like DMart/JioMart". That is materially larger than a corner kirana and changes assumptions about counters, staff, and barcode need. The MVP is unaffected; the *positioning* may be. | Phase 4 |
 | **NI-20** | **Claude Code launched a session in `.claude/worktrees/` instead of the main checkout, breaking the single-branch workflow and costing a manual conflict merge.** No config flag found in project `.claude/`, `~/.claude/settings.json`, or `~/.claude/.claude.json`. Likely a harness-level feature (SDK Agent tool isolation, or a desktop-app session isolation toggle) that runs before CLAUDE.md loads. | **Trigger:** check the desktop app's new-session settings before the next multi-session task. |
+| **NI-21** | **`domain/grammar.ts` (`KB-005`) resolves a self-contradiction in the qty/unit-when-no-quantity-spoken rule.** `docs/14-LEGACY-REFERENCE.md` section 1 (the verbatim old Gemini prompt, used as-is by Layer 2 / `KB-205`) still has the original contradiction. When `KB-205` builds the LLM fallback, the prompt text must be updated to match `grammar.ts`'s resolution, or Layer 1 and Layer 2 can disagree on identical input. | **Trigger:** before `KB-205`. |
 
 ---
 

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 09 Sep 2026 (rev 7) · Supersedes rev 6
+**Last updated:** 14 Sep 2026 (rev 8) · Supersedes rev 7
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -389,6 +389,76 @@ pair, distinctive) and seven `MISC GROCERY` baking ingredients (baking soda, bak
 agar, food color, rose water, corn starch, yeast) that genuinely fit none of the sixteen buckets.
 Forcing them into a wrong bucket to hit a number would have created exactly the false-positive risk
 this system exists to prevent — see `14-LEGACY-REFERENCE.md` section 5 for why they're left alone.
+
+---
+
+## Rev 8 — 14 Sep 2026
+
+### D13 — Four interpretive calls made while turning the old Gemini prompt into deterministic `domain/grammar.ts` logic 🟢
+
+`docs/14-LEGACY-REFERENCE.md` section 1 is a verbatim LLM prompt — it can absorb inconsistency
+through few-shot pattern-matching in a way a deterministic function cannot. Writing `KB-005`'s tests
+against it required resolving four real ambiguities the prompt either left open or answered two
+different ways. Recorded here so a future session doesn't have to re-derive — or accidentally
+re-litigate — the same four calls.
+
+**1. "Total price only, no qty/unit spoken" — the prompt contradicts itself; resolved by catalog
+resolution.**
+
+RULE 2's own text says: *"if only total price is spoken and no quantity/unit is spoken, do NOT
+invent qty or unit — set qty:null, unit:''."* Its own examples do exactly that anyway: `"namak 20
+rupay ka"` → `qty:1, unit:kg`; `"ajwain 10 rupay"` → `qty:1, unit:gm`.
+
+**Decision:** if the spoken product resolves against the catalog, assume `qty:1` of **that catalog
+entry's own unit**. If it doesn't resolve, `qty:null, unit:""` — there is nothing to fall back to.
+This explains every example in the source prompt without contradiction, and matches the already-shipped
+`KB-004` fixture (VC005: `"ajwain 10 ki"` → `qty:1, unit:"gm"`, Ajwain's catalog unit) — a real
+consistency check, not just a plausible-sounding rule.
+
+**2. `paune` and `sawa` are compositional, not fixed constants — `dedh`/`dhai` stay fixed.**
+
+`docs/14-LEGACY-REFERENCE.md` section 3 already flagged `paune=0.75` as wrong in context: *"paune
+do" is 1.75, not 0.75.* The general pattern in spoken Hindi is that `paune`/`sawa` modify whichever
+number word follows them (`paune do` = 2 − 0.25 = 1.75; `sawa teen` = 3 + 0.25 = 3.25), while `dedh`
+(1.5) and `dhai` (2.5) are idiomatic to those exact values and don't compose the same way — nobody
+says "dedh teen" to mean something.
+
+**Decision:** `paune <number>` = number − 0.25; `sawa <number>` = number + 0.25; bare `paune`/`sawa`
+(no following number word) default to the "...ek" form (0.75 / 1.25 respectively), preserving the one
+bare-form usage already live in the `KB-004` eval fixtures (VC010: `"sawa kilo besan"` → `qty:1.25`).
+`dedh` and `dhai` stay fixed constants.
+
+**Extending the same compositional treatment to `sawa` was not asked for** — only `paune` was flagged
+as broken. Doing it anyway, because leaving `sawa` non-compositional while fixing `paune` would leave
+the grammar asymmetric for no linguistic reason: both words follow the identical construction in real
+speech.
+
+**3. `chataak` is a unit (≈50g), not a fraction multiplier.**
+
+The old Gemini prompt listed `chataak=0.05` alongside the fraction words (`aadha`, `paav`, `sawa`...),
+but `HINDI_FRACTIONS` in the actual code dictionary never had an entry for it — the two sources
+disagreed, per `14-LEGACY-REFERENCE.md` section 3. `0.05` only makes sense read as *0.05 kg = 50g* — a
+weight, not a multiplier applied to a following unit word the way `aadha kilo` (0.5 × kilo) works.
+
+**Decision:** `chataak` joins the unit system (alongside `kg`/`gram`/`liter`), not the fractions
+table — `1 chataak = 50g`, converting straight to `gm` the same way any other weight unit does. Not
+invented: it's the same number in the old prompt, correctly reinterpreted as what it actually
+described. **Owner's note for the pilot:** some regional usage puts a chataak closer to 58g (1/16 of
+a traditional seer) — worth a real-world sanity check once testing in the shop, not blocking now.
+
+**4. Bail-out (`null`) is for structural ambiguity only, never for an unknown or unpriced product.**
+
+`04-VOICE-PIPELINE.md` §3 lists "unrecognised token" among Layer 1's bail-out triggers, which could be
+misread as "any product not in the catalog." Hard rule 5 (`never block billing on an unknown
+product`) and Rule 5's own examples (`ajwain`, `saunf`, `kali mirch`, `chawal` — all ordinary,
+catalog-real product names) rule that reading out: a product name is never itself a grammar token to
+recognise, it's the remainder left over after qty/unit/price/rule-words are stripped, so it can never
+by itself trigger the "unrecognised token" bail.
+
+**Decision:** `parseUtterance` returns `null` only for genuine multi-signal ambiguity it would
+otherwise have to guess through — two unclaimed numbers with no `wala`/`ka` to say which is which,
+or conflicting units in one utterance. A bare or unpriced product, known or not, always returns an
+item (Rule 5b: `priceType: "unknown"`, never a bail) — that is what "never block" means in code.
 
 ---
 
