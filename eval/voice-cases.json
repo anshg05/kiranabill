@@ -8,10 +8,9 @@
         "displayName": "Chini",
         "qty": 2,
         "unit": "kg",
-        "rate": 43,
-        "total": 86,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "27"
       }
     ],
     "notes": "Simple default-price catalog item."
@@ -25,10 +24,11 @@
         "displayName": "Chakki Aata",
         "qty": 5,
         "unit": "kg",
-        "rate": 40,
-        "total": 200,
+        "rate": 4000,
+        "total": 20000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "2"
       }
     ],
     "notes": "Per-unit rate with wala."
@@ -42,10 +42,11 @@
         "displayName": "कनकी",
         "qty": 5,
         "unit": "kg",
-        "rate": 36,
-        "total": 180,
+        "rate": 3600,
+        "total": 18000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "620"
       }
     ],
     "notes": "Reversed order plus wali variant."
@@ -59,10 +60,11 @@
         "displayName": "Bath Sabun",
         "qty": 3,
         "unit": "piece",
-        "rate": 10,
-        "total": 30,
+        "rate": 1000,
+        "total": 3000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "160"
       }
     ],
     "notes": "Piece item with Hindi quantity word."
@@ -77,9 +79,10 @@
         "qty": 1,
         "unit": "gm",
         "rate": null,
-        "total": 10,
+        "total": 1000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "117"
       }
     ],
     "notes": "Total-price mode using ki."
@@ -93,10 +96,11 @@
         "displayName": "Ganesh Poha",
         "qty": 2,
         "unit": "packet",
-        "rate": 35,
-        "total": 70,
+        "rate": 3500,
+        "total": 7000,
         "priceType": "rate",
-        "isCustom": true
+        "isCustom": true,
+        "catalogId": null
       }
     ],
     "notes": "Unknown/custom product candidate."
@@ -111,9 +115,10 @@
         "qty": 2,
         "unit": "kg",
         "rate": null,
-        "total": 90,
+        "total": 9000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "27"
       }
     ],
     "notes": "Explicit total without ka/wala."
@@ -127,10 +132,11 @@
         "displayName": "Toor Daal",
         "qty": 5,
         "unit": "kg",
-        "rate": 120,
-        "total": 600,
+        "rate": 12000,
+        "total": 60000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "16"
       }
     ],
     "notes": "Rate at the end with wali."
@@ -144,10 +150,9 @@
         "displayName": "Moong Daal",
         "qty": 0.5,
         "unit": "kg",
-        "rate": 110,
-        "total": 55,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "18"
       }
     ],
     "notes": "Hindi fraction word."
@@ -161,10 +166,9 @@
         "displayName": "Besan",
         "qty": 1.25,
         "unit": "kg",
-        "rate": 90,
-        "total": 112.5,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "4"
       }
     ],
     "notes": "Fraction quantity with default pricing."
@@ -178,10 +182,9 @@
         "displayName": "Doodh Packet",
         "qty": 2,
         "unit": "piece",
-        "rate": 28,
-        "total": 56,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "45"
       }
     ],
     "notes": "Common packet shorthand."
@@ -195,10 +198,11 @@
         "displayName": "Parle-G 10",
         "qty": 3,
         "unit": "piece",
-        "rate": 10,
-        "total": 30,
+        "rate": 1000,
+        "total": 3000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "52"
       }
     ],
     "notes": "Brand-style biscuit entry."
@@ -213,9 +217,10 @@
         "qty": 5,
         "unit": "kg",
         "rate": null,
-        "total": 30,
+        "total": 3000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "11"
       }
     ],
     "notes": "Total-price mode using ka."
@@ -230,9 +235,10 @@
         "qty": 5,
         "unit": "kg",
         "rate": null,
-        "total": 30,
+        "total": 3000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "11"
       }
     ],
     "notes": "Total-price mode using ki."
@@ -249,7 +255,8 @@
         "rate": null,
         "total": null,
         "priceType": "unknown",
-        "isCustom": true
+        "isCustom": true,
+        "catalogId": null
       }
     ],
     "notes": "Unknown pack size should remain reviewable."
@@ -264,9 +271,10 @@
         "qty": 1,
         "unit": "piece",
         "rate": null,
-        "total": 180,
+        "total": 18000,
         "priceType": "total",
-        "isCustom": true
+        "isCustom": true,
+        "catalogId": null
       }
     ],
     "notes": "Likely custom/ambiguous item with explicit total."
@@ -280,10 +288,9 @@
         "displayName": "Nariyal Pani",
         "qty": 4,
         "unit": "piece",
-        "rate": 30,
-        "total": 120,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "555"
       }
     ],
     "notes": "Trailing quantity without explicit unit."
@@ -297,10 +304,11 @@
         "displayName": "Sarson Tel",
         "qty": 1,
         "unit": "liter",
-        "rate": 145,
-        "total": 145,
+        "rate": 14500,
+        "total": 14500,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "34"
       }
     ],
     "notes": "Liter unit with explicit rate."
@@ -314,19 +322,17 @@
         "displayName": "Oreo",
         "qty": 2,
         "unit": "packet",
-        "rate": 20,
-        "total": 40,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "63"
       },
       {
         "displayName": "Monaco",
         "qty": 1,
         "unit": "piece",
-        "rate": 10,
-        "total": 10,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "55"
       }
     ],
     "notes": "Two items in one utterance."
@@ -340,19 +346,17 @@
         "displayName": "गेहूं",
         "qty": 2,
         "unit": "kg",
-        "rate": 32,
-        "total": 64,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "1"
       },
       {
         "displayName": "Tel Pouch",
         "qty": 1,
         "unit": "piece",
-        "rate": 25,
-        "total": 25,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "39"
       }
     ],
     "notes": "Filler word plus two-item sentence."
@@ -366,10 +370,9 @@
         "displayName": "Rajma",
         "qty": 2.5,
         "unit": "kg",
-        "rate": 120,
-        "total": 300,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "22"
       }
     ],
     "notes": "Another Hindi fraction word."
@@ -383,10 +386,11 @@
         "displayName": "Chawal",
         "qty": 6,
         "unit": "kg",
-        "rate": 60,
-        "total": 360,
+        "rate": 6000,
+        "total": 36000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "11"
       }
     ],
     "notes": "Reverse-order example for explicit rate."
@@ -400,19 +404,21 @@
         "displayName": "Toor Daal",
         "qty": 5,
         "unit": "kg",
-        "rate": 120,
-        "total": 600,
+        "rate": 12000,
+        "total": 60000,
         "priceType": "rate",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "16"
       },
       {
         "displayName": "Chini",
         "qty": 2,
         "unit": "kg",
         "rate": null,
-        "total": 90,
+        "total": 9000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "27"
       }
     ],
     "notes": "Mixed pricing styles in one utterance."
@@ -426,10 +432,9 @@
         "displayName": "Mamy Poko Pants",
         "qty": 2,
         "unit": "piece",
-        "rate": 18,
-        "total": 36,
         "priceType": "default",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "492"
       }
     ],
     "notes": "English brand with Hindi quantity word."
@@ -444,9 +449,10 @@
         "qty": 50,
         "unit": "gm",
         "rate": null,
-        "total": 20,
+        "total": 2000,
         "priceType": "total",
-        "isCustom": false
+        "isCustom": false,
+        "catalogId": "104"
       }
     ],
     "notes": "Filler words plus gram item with explicit total."

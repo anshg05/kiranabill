@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 6)
+**Last updated:** 14 Sep 2026 (rev 7)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -34,7 +34,7 @@ Confirmed problems, not yet fixed. Each has a ticket or an explicit reason for w
 | KI-14 | No `inputmode="decimal"` on qty/rate inputs | LOW | KB-303 | |
 | KI-15 | No loading state during mic permission request | LOW | KB-302 | |
 | KI-16 | `BILL_UNITS` in `app.js` includes `bag`; the manual-add dropdown doesn't | LOW | KB-305 | Small drift, symptom of no single source |
-| **KI-17** | **`eval/voice-cases.json` stores rupees as decimals, not integer paise** (e.g. VC010 `"total": 112.5`) | MEDIUM | KB-004 | Found during Claude Code onboarding. The fixtures predate the integer-paise rule. `KB-004` must convert rupees→paise explicitly, **not** reuse these numbers directly. Combined with the known stale prices (VC001 expects chini at ₹43, catalog says ₹45), the whole fixture file needs regenerating from the catalog. |
+| KI-17 | ~~`eval/voice-cases.json` stores rupees as decimals, not integer paise~~ (e.g. VC010 `"total": 112.5`) | MEDIUM | KB-004 | **Closed 14 Sep 2026.** Every `expectedItem` now carries a `catalogId`, hand-resolved against `src/domain/catalog.ts`. `priceType: "default"` items no longer store `rate`/`total` at all — `eval/run-eval.ts` derives them from the live catalog every run via `lineTotalPaise()`. Remaining literal spoken `rate`/`total` are integer paise. Confirmed the drift was real, not theoretical: VC001's Chini is 4500 paise (₹45) live, the fixture had hardcoded 43. |
 | **KI-18** | `legacy/README.md` missing — required by `15-BUILD-GUIDE.md` §3 Step 4 | LOW | — | Create it. Content is in the build guide. |
 | **KI-19** | Mukta set as `--font-body`, not `--font-sans`, so Tailwind's system stack stays the default and every component must opt in | LOW | KB-301 | Fix when Phase 3 starts. See `13-DESIGN.md` §8. |
 
