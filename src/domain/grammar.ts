@@ -19,22 +19,39 @@
  *   4. null (bail-out) is for structural ambiguity only, never for an
  *      unknown or unpriced product (hard rule 5: never block on those).
  *
- * Catalog matching here is a deliberate stopgap: exact, case-insensitive,
- * against displayName/aliases only. No fuzzy scoring, no thresholds, no
- * phonetic variants, no guard categories - that whole system is KB-005b's
- * job (domain/validator.ts + domain/catalogIndex.ts). This file only needs
- * enough matching to resolve a catalog default price and unit.
+ * Catalog matching is domain/validator.ts's matchProduct() (KB-005b) - a
+ * real indexed matcher with length-scaled thresholds, category guards,
+ * phonetic variants and KI-20 duplicate-alias handling. This file used to
+ * carry its own exact-match stopgap; wired to the real matcher once
+ * validator.ts existed and was reviewed (see grammar.test.ts's re-run
+ * against it, and the wiring commit for exactly which of the 30 cases, if
+ * any, changed behavior as a result).
  */
 
-import { catalog, getCatalogEntryById, type CatalogEntry } from "./catalog.js";
+import { getCatalogEntryById, type CatalogEntry } from "./catalog.js";
 import { lineTotalPaise, rupeesToPaise, type Paise } from "./money.js";
+import { matchProduct } from "./validator.js";
 
 export type PriceType = "rate" | "total" | "default" | "unknown";
+
+/**
+ * "matched" - a single confident catalog product. "ambiguous" - KI-20:
+ * two or more real products tied within validator.ts's tie band; a real
+ * product is known to be meant, just not which one. "none" - nothing
+ * confident enough, known or not. isCustom is derived (true for both
+ * "ambiguous" and "none") so anything reading only isCustom keeps working
+ * unchanged - this is additive, not a replacement. Kept even though
+ * nothing downstream consumes it yet, deliberately: the distinction is
+ * cheap to preserve here and expensive to reconstruct later, once whatever
+ * builds the confidence-gate/bill-state system needs it.
+ */
+export type MatchStatus = "matched" | "ambiguous" | "none";
 
 export interface ParsedItem {
   readonly spokenName: string;
   readonly catalogId: string | null;
   readonly isCustom: boolean;
+  readonly matchStatus: MatchStatus;
   readonly qty: number | null;
   readonly unit: string;
   readonly rate: Paise | null;
@@ -103,13 +120,23 @@ const RATE_MARKERS = new Set(["wala", "wali"]);
 const TOTAL_MARKERS = new Set(["ka", "ki"]);
 const CURRENCY_FILLERS = new Set(["rupay", "rupaye", "rupaya", "rupee", "rupees", "rs"]);
 
-/** Simple exact match against displayName/aliases - see file header. */
-function matchCatalogExact(name: string): CatalogEntry | undefined {
-  if (!name) return undefined;
-  const lower = name.toLowerCase();
-  return catalog.find(
-    (entry) => entry.displayName.toLowerCase() === lower || entry.aliases.some((alias) => alias.toLowerCase() === lower),
-  );
+interface CatalogMatch {
+  readonly catalogId: string | null;
+  readonly isCustom: boolean;
+  readonly matchStatus: MatchStatus;
+}
+
+/** Wraps validator.ts's matchProduct() - see the MatchStatus doc comment
+ * above for why "ambiguous" and "none" are kept distinct. */
+function resolveCatalogMatch(spokenName: string): CatalogMatch {
+  const outcome = matchProduct(spokenName);
+  if (outcome.kind === "matched") {
+    return { catalogId: outcome.catalogId, isCustom: false, matchStatus: "matched" };
+  }
+  if (outcome.kind === "ambiguous") {
+    return { catalogId: null, isCustom: true, matchStatus: "ambiguous" };
+  }
+  return { catalogId: null, isCustom: true, matchStatus: "none" };
 }
 
 /**
@@ -285,26 +312,19 @@ function qtyAndUnit(entry: NumEntry): { qty: number; unit: string } {
 /** Rule 5a: qty spoken, no price -> the catalog's own default price,
  * converted to the spoken unit. Never invents a price for an unresolved
  * product (rate/total stay null - there is nothing to derive it from). */
-function resolveDefault(
-  qty: number,
-  spokenUnit: string,
-  catalogId: string | null,
-  spokenName: string,
-  isCustom: boolean,
-): ParsedItem | null {
-  if (!catalogId) {
-    return { spokenName, catalogId, isCustom, qty, unit: spokenUnit, rate: null, total: null, priceType: "unknown" };
+function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, spokenName: string): ParsedItem | null {
+  if (!match.catalogId) {
+    return { spokenName, ...match, qty, unit: spokenUnit, rate: null, total: null, priceType: "unknown" };
   }
-  const entry = getCatalogEntryById(catalogId);
+  const entry = getCatalogEntryById(match.catalogId);
   if (!entry) {
-    throw new Error(`grammar.ts: matched catalogId "${catalogId}" that getCatalogEntryById cannot find`);
+    throw new Error(`grammar.ts: matched catalogId "${match.catalogId}" that getCatalogEntryById cannot find`);
   }
   const ratePaise = convertCatalogRate(entry, spokenUnit);
   if (ratePaise === null) return null; // incompatible units - bail rather than guess
   return {
     spokenName,
-    catalogId,
-    isCustom,
+    ...match,
     qty,
     unit: spokenUnit,
     rate: ratePaise,
@@ -314,17 +334,11 @@ function resolveDefault(
 }
 
 /** Rule 2/3's "total price only, no qty/unit spoken" edge case - docs/07-DECISIONS.md D13 point 1. */
-function resolveUnattachedTotal(
-  totalPaise: Paise,
-  catalogId: string | null,
-  spokenName: string,
-  isCustom: boolean,
-): ParsedItem {
-  const entry = catalogId ? getCatalogEntryById(catalogId) : undefined;
+function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenName: string): ParsedItem {
+  const entry = match.catalogId ? getCatalogEntryById(match.catalogId) : undefined;
   return {
     spokenName,
-    catalogId,
-    isCustom,
+    ...match,
     qty: entry ? 1 : null,
     unit: entry ? entry.unit : "",
     rate: null,
@@ -341,15 +355,13 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
   const nums = extractNums(classified);
   const spokenName = extractSpokenName(classified);
 
-  const matched = matchCatalogExact(spokenName);
-  const catalogId = matched ? matched.id : null;
-  const isCustom = !matched;
+  const match = resolveCatalogMatch(spokenName);
 
   // Rule 5b: nothing numeric spoken at all - never guess a price, even for
   // a product that resolves in the catalog (hard rule 5: never block, and
   // never invent, on an unknown or unpriced product).
   if (nums.length === 0) {
-    return { spokenName, catalogId, isCustom, qty: null, unit: "", rate: null, total: 0, priceType: "unknown" };
+    return { spokenName, ...match, qty: null, unit: "", rate: null, total: 0, priceType: "unknown" };
   }
 
   const rateEntry = nums.find((n) => n.isRate);
@@ -366,7 +378,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     if (!qtyEntry) return null;
     const { qty, unit } = qtyAndUnit(qtyEntry);
     const ratePaise = rupeesToPaise(rateEntry.value);
-    return { spokenName, catalogId, isCustom, qty, unit, rate: ratePaise, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
+    return { spokenName, ...match, qty, unit, rate: ratePaise, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
   }
 
   // Rule 2: ka/ki -> that number is the total, rate stays null.
@@ -375,9 +387,9 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     const qtyEntry = nums.find((n) => n !== totalEntry);
     if (qtyEntry) {
       const { qty, unit } = qtyAndUnit(qtyEntry);
-      return { spokenName, catalogId, isCustom, qty, unit, rate: null, total: totalPaise, priceType: "total" };
+      return { spokenName, ...match, qty, unit, rate: null, total: totalPaise, priceType: "total" };
     }
-    return resolveUnattachedTotal(totalPaise, catalogId, spokenName, isCustom);
+    return resolveUnattachedTotal(totalPaise, match, spokenName);
   }
 
   // No wala/ka/ki anywhere. More than two bare numbers is beyond what this
@@ -389,15 +401,15 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     const only = nums[0]!; // nums.length === 1, bounds-guaranteed
     if (only.attachedUnit) {
       // Rule 5a: qty + unit, no price.
-      return resolveDefault(only.value, only.attachedUnit, catalogId, spokenName, isCustom);
+      return resolveDefault(only.value, only.attachedUnit, match, spokenName);
     }
     if (only.isCurrency) {
       // Rule 3: a bare price via an explicit currency word, no qty/unit spoken.
-      return resolveUnattachedTotal(rupeesToPaise(only.value), catalogId, spokenName, isCustom);
+      return resolveUnattachedTotal(rupeesToPaise(only.value), match, spokenName);
     }
     // Bare number, no unit, no currency word - "[qty][product]" pattern,
     // implicit piece count (docs/04-VOICE-PIPELINE.md section 3).
-    return resolveDefault(only.value, "piece", catalogId, spokenName, isCustom);
+    return resolveDefault(only.value, "piece", match, spokenName);
   }
 
   // nums.length === 2, no rule word: Rule 3. Exactly one number must carry
@@ -408,7 +420,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
   if (!qtyEntry || otherEntries.length !== 1 || otherEntries[0]!.attachedUnit !== null) return null;
 
   const { qty, unit } = qtyAndUnit(qtyEntry);
-  return { spokenName, catalogId, isCustom, qty, unit, rate: null, total: rupeesToPaise(otherEntries[0]!.value), priceType: "total" };
+  return { spokenName, ...match, qty, unit, rate: null, total: rupeesToPaise(otherEntries[0]!.value), priceType: "total" };
 }
 
 /**

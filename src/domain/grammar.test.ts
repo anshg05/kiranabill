@@ -235,7 +235,7 @@ describe("Rule 5b - a bare item with no qty and no price is never guessed", () =
     expect(item.priceType).toBe("unknown");
   });
 
-  it("a genuinely unrecognised bare item -> still not blocked, just unknown (hard rule 5: never block on an unknown product)", () => {
+  it("a bare item with no qty/price is never guessed, even when it resolves - 'saunth' (id 592, dry ginger) is a real catalog alias, not unrecognised as this test originally assumed; corrected during the KB-005b wiring pass (Rule 5b applies regardless of resolution, same as the 'ajwain' case above)", () => {
     const item = parseOne("saunth");
     expect(item.qty).toBeNull();
     expect(item.total).toBe(0);
