@@ -487,6 +487,13 @@ it assigns per product (e.g. one dozen-eggs product priced "per piece" by mistak
 silently paper over that inconsistency rather than catching it. Worth a spot check during `KB-005b`,
 which builds the real catalog matcher this stopgap will be replaced by.
 
+**Confirmed, 14 Sep 2026 — checked, not just asserted.** Owner asked whether any product in the
+catalog is genuinely sold under two different discrete units at different prices (e.g. single
+`piece` vs. a `dozen` box), which would make this decision actively wrong rather than just
+approximate. Grouped all 482 products by exact `displayName`: only two names repeat at all
+(`masoor daal`, `agarbatti`), and both repeats share the *same* unit on both sides — no case exists
+where the same product carries two different discrete units. **D14 stands as written.**
+
 ---
 
 ## Superseded

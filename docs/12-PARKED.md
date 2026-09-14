@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 9)
+**Last updated:** 14 Sep 2026 (rev 10)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -37,12 +37,52 @@ Confirmed problems, not yet fixed. Each has a ticket or an explicit reason for w
 | KI-17 | ~~`eval/voice-cases.json` stores rupees as decimals, not integer paise~~ (e.g. VC010 `"total": 112.5`) | MEDIUM | KB-004 | **Closed 14 Sep 2026.** Every `expectedItem` now carries a `catalogId`, hand-resolved against `src/domain/catalog.ts`. `priceType: "default"` items no longer store `rate`/`total` at all — `eval/run-eval.ts` derives them from the live catalog every run via `lineTotalPaise()`. Remaining literal spoken `rate`/`total` are integer paise. Confirmed the drift was real, not theoretical: VC001's Chini is 4500 paise (₹45) live, the fixture had hardcoded 43. |
 | **KI-18** | `legacy/README.md` missing — required by `15-BUILD-GUIDE.md` §3 Step 4 | LOW | — | Create it. Content is in the build guide. |
 | **KI-19** | Mukta set as `--font-body`, not `--font-sans`, so Tailwind's system stack stays the default and every component must opt in | LOW | KB-301 | Fix when Phase 3 starts. See `13-DESIGN.md` §8. |
-| **KI-20** | **Two distinct catalog products share an alias.** `id 160` ("Bath Sabun") and `id 614` ("Sabun", filed under `GRAINS / SEEDS`) both carry `"bath sabun"` in their alias list. Found while writing `grammar.ts`'s (`KB-005`) exact-match stopgap, which currently resolves to whichever comes first in `catalog-seed.json`'s array order (`id 160`) — an accident of build order, not a real disambiguation. | MEDIUM | KB-005b | Not fixed here — out of scope for a grammar ticket. `KB-005b`'s matcher needs to either handle a tied/duplicate alias deliberately (flag for review rather than silently pick one) or the catalog seed data needs the duplicate removed. Worth a quick grep for other duplicate aliases across the 482 products before `KB-005b` starts — this one was found by accident, not by a systematic check. |
+| **KI-20** | **28 alias/name strings are shared by two distinct catalog products** (systematic sweep of all 482, case-insensitive, same method as `KB-002`'s command-collision check — every `displayName` + every `aliases[]` entry, not just the one found by accident). **22 of the 28 pairs have a genuinely different price on each side** — not cosmetic duplicates. Whichever product comes first in `catalog-seed.json`'s array order silently wins today (`grammar.ts`'s `KB-005` exact-match stopgap has no tie-breaking logic at all). | **HIGH** | KB-005b | Full list below. Not fixed here — `KB-005b`'s real matcher needs deliberate tie-breaking (flag for review, don't silently pick one) or the catalog seed data needs the genuine duplicates merged/disambiguated. The `kesar`/`saffron`/`केसर` and `bath sabun`/`sabun`/`bath soap` rows are the worst: >2x price difference between the two candidates. |
 
 **Note on section A:** these were found in the predecessor. Since Phase 0 rebuilds `domain/` rather
 than patching it, most are now **"must not be reintroduced"** rather than "must be fixed." Each is
 covered by a test in the new code. KI-01 (exposed keys) is the exception — it is a live risk today
 and independent of the rewrite.
+
+**KI-20 full list** — all 28 duplicate alias/name strings, both candidate products, and whether the
+price actually differs. `id A` is whichever comes first in `catalog-seed.json`'s array order — the
+one `grammar.ts`'s stopgap silently picks today.
+
+| Shared string | id A (unit, price) | id B (unit, price) | Price differs? |
+|---|---|---|---|
+| masoor daal | 19 Masoor Daal (kg, ₹90) | 623 Masoor Daal (kg, ₹90) | no |
+| shakkar | 27 Chini (kg, ₹45) | 32 Desi Shakkar (kg, ₹48) | **yes** |
+| limca | 152 Sprite/Limca (piece, ₹40) | 436 Limca Bottle (piece, ₹40) | no |
+| real juice | 155 Juice (piece, ₹30) | 434 Real Juice (piece, ₹30) | no |
+| bath sabun | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| sabun | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| bath soap | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| डेटॉल | 163 Dettol Soap (piece, ₹40) | 222 Dettol Liquid (piece, ₹50) | **yes** |
+| surf | 188 Washing Powder (piece, ₹50) | 189 Surf Excel (piece, ₹60) | **yes** |
+| tide | 188 Washing Powder (piece, ₹50) | 190 Tide (piece, ₹50) | no |
+| ariel | 188 Washing Powder (piece, ₹50) | 191 Ariel (piece, ₹65) | **yes** |
+| vim | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| vim bar | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| bartan sabun | 196 Dish Wash (piece, ₹40) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| agarbatti | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| incense sticks | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| अगरबत्ती | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| धूप बत्ती | 202 Agarbatti (piece, ₹20) | 204 Dhoop (piece, ₹20) | no |
+| dhoop | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| धूप | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| cello tape | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
+| सेलो टेप | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
+| kesar | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
+| saffron | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
+| केसर | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
+| fena | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
+| फेना | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
+| murukku | 581 Chakli (kg, ₹200) | 586 Murukku (kg, ₹200) | no |
+
+22 of 28 have a real price difference. `kesar`/`saffron`/`केसर` is also the only row where the two
+candidates don't even share a unit (piece vs. gm) — `grammar.ts`'s stopgap would silently return the
+`piece` product's price no matter which was actually meant, since it has no concept of ambiguity here
+at all, only first-match.
 
 ---
 
