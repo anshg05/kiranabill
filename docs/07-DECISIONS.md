@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 14 Sep 2026 (rev 8) · Supersedes rev 7
+**Last updated:** 14 Sep 2026 (rev 9) · Supersedes rev 8
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -459,6 +459,33 @@ by itself trigger the "unrecognised token" bail.
 otherwise have to guess through — two unclaimed numbers with no `wala`/`ka` to say which is which,
 or conflicting units in one utterance. A bare or unpriced product, known or not, always returns an
 item (Rule 5b: `priceType: "unknown"`, never a bail) — that is what "never block" means in code.
+
+---
+
+## Rev 9 — 14 Sep 2026
+
+### D14 — Discrete-count units (`piece`/`packet`/`dozen`/...) are mutually interchangeable for a catalog default price lookup 🟢
+
+**Made during `grammar.ts` implementation, not pre-approved like D13 — flagging for review, not presenting as settled.**
+
+`KB-004`'s eval fixture VC019 ("2 packet oreo aur 1 monaco") expects Oreo's default price to resolve
+even though the catalog stores Oreo's unit as `"piece"` while the utterance says `"packet"`. Treating
+these as incompatible (the same strict logic used for `kg` vs `piece`, which correctly bails) would
+make this ordinary, already-approved fixture unparseable.
+
+**Decision:** `piece`, `packet`, `dozen`, `box`, `bottle`, `pouch`, `bag`, `can`, `tin` are treated as
+mutually compatible for the purpose of reading a catalog's default price — "1 packet" and "1 piece"
+both mean one retail unit of whatever the product is, regardless of which count-word the seed data
+happened to store. This is **not** the same as unit *conversion* (there's no numeric factor between
+"packet" and "piece" the way there is between `kg` and `gm`) — it's treating them as synonyms for "one
+discrete thing," which is how a shopkeeper actually uses these words interchangeably for packaged
+goods. Weight (`kg`/`gm`) and volume (`liter`/`ml`) units are explicitly **not** in this group — those
+still require real SI conversion, or the lookup bails.
+
+**Risk this doesn't cover:** if `KB-003`'s catalog seeding is ever inconsistent about which count-word
+it assigns per product (e.g. one dozen-eggs product priced "per piece" by mistake), this rule would
+silently paper over that inconsistency rather than catching it. Worth a spot check during `KB-005b`,
+which builds the real catalog matcher this stopgap will be replaced by.
 
 ---
 

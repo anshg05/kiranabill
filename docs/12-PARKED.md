@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 8)
+**Last updated:** 14 Sep 2026 (rev 9)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -37,6 +37,7 @@ Confirmed problems, not yet fixed. Each has a ticket or an explicit reason for w
 | KI-17 | ~~`eval/voice-cases.json` stores rupees as decimals, not integer paise~~ (e.g. VC010 `"total": 112.5`) | MEDIUM | KB-004 | **Closed 14 Sep 2026.** Every `expectedItem` now carries a `catalogId`, hand-resolved against `src/domain/catalog.ts`. `priceType: "default"` items no longer store `rate`/`total` at all — `eval/run-eval.ts` derives them from the live catalog every run via `lineTotalPaise()`. Remaining literal spoken `rate`/`total` are integer paise. Confirmed the drift was real, not theoretical: VC001's Chini is 4500 paise (₹45) live, the fixture had hardcoded 43. |
 | **KI-18** | `legacy/README.md` missing — required by `15-BUILD-GUIDE.md` §3 Step 4 | LOW | — | Create it. Content is in the build guide. |
 | **KI-19** | Mukta set as `--font-body`, not `--font-sans`, so Tailwind's system stack stays the default and every component must opt in | LOW | KB-301 | Fix when Phase 3 starts. See `13-DESIGN.md` §8. |
+| **KI-20** | **Two distinct catalog products share an alias.** `id 160` ("Bath Sabun") and `id 614` ("Sabun", filed under `GRAINS / SEEDS`) both carry `"bath sabun"` in their alias list. Found while writing `grammar.ts`'s (`KB-005`) exact-match stopgap, which currently resolves to whichever comes first in `catalog-seed.json`'s array order (`id 160`) — an accident of build order, not a real disambiguation. | MEDIUM | KB-005b | Not fixed here — out of scope for a grammar ticket. `KB-005b`'s matcher needs to either handle a tied/duplicate alias deliberately (flag for review rather than silently pick one) or the catalog seed data needs the duplicate removed. Worth a quick grep for other duplicate aliases across the 482 products before `KB-005b` starts — this one was found by accident, not by a systematic check. |
 
 **Note on section A:** these were found in the predecessor. Since Phase 0 rebuilds `domain/` rather
 than patching it, most are now **"must not be reintroduced"** rather than "must be fixed." Each is
