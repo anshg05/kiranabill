@@ -1,6 +1,10 @@
 # 14 — Legacy Reference
 
-**Last updated:** 14 Sep 2026 (rev 5) · **Status:** Reference material, frozen
+**Last updated:** 14 Sep 2026 (rev 6) · **Status:** Reference material, frozen
+
+**Rev 6 note:** section 7 undercounted the review reason codes (said 7, `04-VOICE-PIPELINE.md`'s "11"
+was the correct number) and included one, `unknown`, that isn't real — conflated with `grammar.ts`'s
+unrelated `priceType: "unknown"`. Corrected against `legacy/validator.js` directly, ahead of `KB-005b`.
 
 **Rev 5 note:** this document recorded the KI-02 *defect* (section 11) but never extracted the
 actual command vocabulary that produced it — `KB-002` had to read `legacy/voice.js` directly to get
@@ -308,7 +312,14 @@ Plus a **learned-product boost** proportional to `use_count`, capped at +0.08.
 
 ## 7. Review reason codes
 
-Carry all of these forward. Severity mapping per `04-VOICE-PIPELINE.md` §5.
+**Corrected 14 Sep 2026 (KB-005b prep).** This section previously listed 7 codes, one of them
+(`unknown`) not real — `04-VOICE-PIPELINE.md` §5 said "11 codes preserved," which was the correct
+count; this section's enumeration was wrong, not the count in that other doc. Verified directly
+against `legacy/validator.js`'s `REVIEW_REASON_LABELS` (line 43) and the five `reviewReasons.push(...)`
+call sites for the codes that dictionary doesn't make obvious are actually used (lines 569–632) —
+all 11 are real and reachable, not dead labels.
+
+Carry all eleven forward.
 
 | Code | Meaning | Severity |
 |---|---|---|
@@ -318,7 +329,20 @@ Carry all of these forward. Severity mapping per `04-VOICE-PIPELINE.md` §5.
 | `unknown_product` | Not in catalog | LOW — add and flag, **never block** |
 | `unusual_rate` | Rate > 3× or < 0.2× the shop's price | **HIGH** |
 | `unusual_total` | Total outside the expected band | **HIGH** |
-| `unknown` | Rule 5 — bare item, no qty or price | MEDIUM |
+| `weak_match` | Product matched, but below a confident score | severity **not sourced from legacy code** — assign when implemented |
+| `incomplete_item` | Item is missing required data beyond just name/rate/total | severity **not sourced** |
+| `invalid_qty` | Parsed quantity fails a sanity check (e.g. zero or negative) | severity **not sourced** |
+| `invalid_unit` | Spoken/parsed unit doesn't resolve to a recognised unit | severity **not sourced** |
+| `unit_mismatch` | Spoken unit type doesn't match what the product expects | severity **not sourced** |
+
+**What was wrong before:** the old table had `missing_name`, `missing_rate`, `missing_total`,
+`unknown_product`, `unusual_rate`, `unusual_total` (6 real codes, correct) plus a 7th, `unknown`,
+described as "Rule 5 — bare item, no qty or price." That isn't a validator review-reason code at all —
+it's `grammar.ts`'s `priceType: "unknown"` field (a different, unrelated taxonomy), conflated with this
+one. The five genuinely missing codes (`weak_match`, `incomplete_item`, `invalid_qty`, `invalid_unit`,
+`unit_mismatch`) have no severity assigned anywhere in `legacy/validator.js` — labels and call sites
+exist, but nothing maps them to HIGH/MEDIUM/LOW. Assigning that is real design work belonging to
+whichever ticket actually implements the confidence-gate system these codes feed — not done here.
 
 **New codes required by `04-VOICE-PIPELINE.md`, not present in the old code:**
 

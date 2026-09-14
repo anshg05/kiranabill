@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 10)
+**Last updated:** 14 Sep 2026 (rev 11)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -37,52 +37,66 @@ Confirmed problems, not yet fixed. Each has a ticket or an explicit reason for w
 | KI-17 | ~~`eval/voice-cases.json` stores rupees as decimals, not integer paise~~ (e.g. VC010 `"total": 112.5`) | MEDIUM | KB-004 | **Closed 14 Sep 2026.** Every `expectedItem` now carries a `catalogId`, hand-resolved against `src/domain/catalog.ts`. `priceType: "default"` items no longer store `rate`/`total` at all — `eval/run-eval.ts` derives them from the live catalog every run via `lineTotalPaise()`. Remaining literal spoken `rate`/`total` are integer paise. Confirmed the drift was real, not theoretical: VC001's Chini is 4500 paise (₹45) live, the fixture had hardcoded 43. |
 | **KI-18** | `legacy/README.md` missing — required by `15-BUILD-GUIDE.md` §3 Step 4 | LOW | — | Create it. Content is in the build guide. |
 | **KI-19** | Mukta set as `--font-body`, not `--font-sans`, so Tailwind's system stack stays the default and every component must opt in | LOW | KB-301 | Fix when Phase 3 starts. See `13-DESIGN.md` §8. |
-| **KI-20** | **28 alias/name strings are shared by two distinct catalog products** (systematic sweep of all 482, case-insensitive, same method as `KB-002`'s command-collision check — every `displayName` + every `aliases[]` entry, not just the one found by accident). **22 of the 28 pairs have a genuinely different price on each side** — not cosmetic duplicates. Whichever product comes first in `catalog-seed.json`'s array order silently wins today (`grammar.ts`'s `KB-005` exact-match stopgap has no tie-breaking logic at all). | **HIGH** | KB-005b | Full list below. Not fixed here — `KB-005b`'s real matcher needs deliberate tie-breaking (flag for review, don't silently pick one) or the catalog seed data needs the genuine duplicates merged/disambiguated. The `kesar`/`saffron`/`केसर` and `bath sabun`/`sabun`/`bath soap` rows are the worst: >2x price difference between the two candidates. |
+| **KI-20** | **28 alias/name strings are shared by two distinct catalog products** (systematic sweep of all 482, case-insensitive, same method as `KB-002`'s command-collision check — every `displayName` + every `aliases[]` entry, not just the one found by accident). **22 of the 28 pairs have a genuinely different price on each side** — not cosmetic duplicates. Whichever product comes first in `catalog-seed.json`'s array order silently wins today (`grammar.ts`'s `KB-005` exact-match stopgap has no tie-breaking logic at all). **Categorized below — 18 of 28 trace to one root cause (6 generic "catch-all" entries), not 28 independent problems.** | **HIGH** | KB-005b | Full list and categorization below. Not fixed here — see per-category notes below the table for what each category actually needs. |
 
 **Note on section A:** these were found in the predecessor. Since Phase 0 rebuilds `domain/` rather
 than patching it, most are now **"must not be reintroduced"** rather than "must be fixed." Each is
 covered by a test in the new code. KI-01 (exposed keys) is the exception — it is a live risk today
 and independent of the rewrite.
 
-**KI-20 full list** — all 28 duplicate alias/name strings, both candidate products, and whether the
-price actually differs. `id A` is whichever comes first in `catalog-seed.json`'s array order — the
-one `grammar.ts`'s stopgap silently picks today.
+**KI-20 full list, categorized.** `id A` is whichever comes first in `catalog-seed.json`'s array
+order — the one `grammar.ts`'s stopgap silently picks today. Three categories, found by reading each
+pair's actual alias lists (`node -e` against `catalog-seed.json`), not guessed from the names alone:
 
-| Shared string | id A (unit, price) | id B (unit, price) | Price differs? |
-|---|---|---|---|
-| masoor daal | 19 Masoor Daal (kg, ₹90) | 623 Masoor Daal (kg, ₹90) | no |
-| shakkar | 27 Chini (kg, ₹45) | 32 Desi Shakkar (kg, ₹48) | **yes** |
-| limca | 152 Sprite/Limca (piece, ₹40) | 436 Limca Bottle (piece, ₹40) | no |
-| real juice | 155 Juice (piece, ₹30) | 434 Real Juice (piece, ₹30) | no |
-| bath sabun | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
-| sabun | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
-| bath soap | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
-| डेटॉल | 163 Dettol Soap (piece, ₹40) | 222 Dettol Liquid (piece, ₹50) | **yes** |
-| surf | 188 Washing Powder (piece, ₹50) | 189 Surf Excel (piece, ₹60) | **yes** |
-| tide | 188 Washing Powder (piece, ₹50) | 190 Tide (piece, ₹50) | no |
-| ariel | 188 Washing Powder (piece, ₹50) | 191 Ariel (piece, ₹65) | **yes** |
-| vim | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
-| vim bar | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
-| bartan sabun | 196 Dish Wash (piece, ₹40) | 615 Bartan Bar (piece, ₹35) | **yes** |
-| agarbatti | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
-| incense sticks | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
-| अगरबत्ती | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
-| धूप बत्ती | 202 Agarbatti (piece, ₹20) | 204 Dhoop (piece, ₹20) | no |
-| dhoop | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
-| धूप | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
-| cello tape | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
-| सेलो टेप | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
-| kesar | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
-| saffron | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
-| केसर | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, and different unit |
-| fena | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
-| फेना | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
-| murukku | 581 Chakli (kg, ₹200) | 586 Murukku (kg, ₹200) | no |
+- **Catch-all (18 of 28)** — one side is a generic entry whose *own alias list* bakes in a specific
+  brand/synonym name that also has its own dedicated catalog entry. Root cause traced to exactly
+  **6 generic entries**: `id 152` "Sprite/Limca" (two brands merged into one SKU), `id 155` "Juice",
+  `id 188` "Washing Powder" (lists `surf`/`tide`/`ariel` as its own aliases), `id 614` "Sabun" (lists
+  `Fena`/`Tanman`/`Surfexcel`/`Wheel` — and is filed under `GRAINS / SEEDS`, the same mis-seeded
+  header `07-DECISIONS.md` D12 already flagged as a dumping ground), `id 615` "Bartan bar" (lists
+  `Vim`/`Nip` — also filed under `GRAINS / SEEDS`), `id 616` "Agarbatti" (lists `Dhoop`/`Incense
+  sticks` — also `GRAINS / SEEDS`). **This is a catalog-seeding defect, not a matcher problem** — the
+  real fix is trimming these 6 entries' alias lists to remove the brand names that have their own
+  dedicated entries, likely in a future `KB-003`-adjacent cleanup ticket, not `KB-005b`.
+- **True duplicate (1 of 28)** — `masoor daal` (`id 19` / `id 623`): identical product, identical
+  unit, identical price, entered twice. Should be merged, not disambiguated.
+- **Real ambiguity (9 of 28)** — genuinely different products or variants that legitimately share a
+  colloquial or brand term; **not** a data error, and exactly what `KB-005b`'s matcher needs to
+  actually handle (flag as ambiguous, don't silently pick one): `shakkar` (sugar vs. jaggery-sugar),
+  `डेटॉल` (soap vs. liquid), `धूप बत्ती` (agarbatti vs. dhoop cone), `cello tape`/`सेलो टेप` (small vs.
+  big pack), `kesar`/`saffron`/`केसर` (piece sachet vs. loose gram — also the only pair with different
+  units), `murukku` (chakli vs. murukku, related but distinct snacks).
 
-22 of 28 have a real price difference. `kesar`/`saffron`/`केसर` is also the only row where the two
-candidates don't even share a unit (piece vs. gm) — `grammar.ts`'s stopgap would silently return the
-`piece` product's price no matter which was actually meant, since it has no concept of ambiguity here
-at all, only first-match.
+| Shared string | Category | id A (unit, price) | id B (unit, price) | Price differs? |
+|---|---|---|---|---|
+| masoor daal | true duplicate | 19 Masoor Daal (kg, ₹90) | 623 Masoor Daal (kg, ₹90) | no |
+| shakkar | real ambiguity | 27 Chini (kg, ₹45) | 32 Desi Shakkar (kg, ₹48) | **yes** |
+| limca | catch-all (152) | 152 Sprite/Limca (piece, ₹40) | 436 Limca Bottle (piece, ₹40) | no |
+| real juice | catch-all (155) | 155 Juice (piece, ₹30) | 434 Real Juice (piece, ₹30) | no |
+| bath sabun | catch-all (614) | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| sabun | catch-all (614) | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| bath soap | catch-all (614) | 160 Bath Sabun (piece, ₹30) | 614 Sabun (piece, ₹10) | **yes** |
+| डेटॉल | real ambiguity | 163 Dettol Soap (piece, ₹40) | 222 Dettol Liquid (piece, ₹50) | **yes** |
+| surf | catch-all (188) | 188 Washing Powder (piece, ₹50) | 189 Surf Excel (piece, ₹60) | **yes** |
+| tide | catch-all (188) | 188 Washing Powder (piece, ₹50) | 190 Tide (piece, ₹50) | no |
+| ariel | catch-all (188) | 188 Washing Powder (piece, ₹50) | 191 Ariel (piece, ₹65) | **yes** |
+| vim | catch-all (615) | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| vim bar | catch-all (615) | 195 Vim (piece, ₹30) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| bartan sabun | catch-all (615) | 196 Dish Wash (piece, ₹40) | 615 Bartan Bar (piece, ₹35) | **yes** |
+| agarbatti | catch-all (616) | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| incense sticks | catch-all (616) | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| अगरबत्ती | catch-all (616) | 202 Agarbatti (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| धूप बत्ती | real ambiguity | 202 Agarbatti (piece, ₹20) | 204 Dhoop (piece, ₹20) | no |
+| dhoop | catch-all (616) | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| धूप | catch-all (616) | 204 Dhoop (piece, ₹20) | 616 Agarbatti (piece, ₹50) | **yes** |
+| cello tape | real ambiguity | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
+| सेलो टेप | real ambiguity | 220 Tape (piece, ₹10) | 507 Cello Tape Big (piece, ₹25) | **yes** |
+| kesar | real ambiguity | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, different unit |
+| saffron | real ambiguity | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, different unit |
+| केसर | real ambiguity | 243 Kesar (piece, ₹50) | 618 Kesar/Saffron (**gm**, ₹500) | **yes**, different unit |
+| fena | catch-all (614) | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
+| फेना | catch-all (614) | 472 Fena Detergent (piece, ₹38) | 614 Sabun (piece, ₹10) | **yes** |
+| murukku | real ambiguity | 581 Chakli (kg, ₹200) | 586 Murukku (kg, ₹200) | no |
 
 ---
 
@@ -151,6 +165,8 @@ Open questions. Each has a trigger.
 | **NI-12** | **Is the target a kirana or a grocery mart?** | Owner describes 100+ bills/day, 500+ products, "like DMart/JioMart". That is materially larger than a corner kirana and changes assumptions about counters, staff, and barcode need. The MVP is unaffected; the *positioning* may be. | Phase 4 |
 | **NI-20** | **Claude Code launched a session in `.claude/worktrees/` instead of the main checkout, breaking the single-branch workflow and costing a manual conflict merge.** No config flag found in project `.claude/`, `~/.claude/settings.json`, or `~/.claude/.claude.json`. Likely a harness-level feature (SDK Agent tool isolation, or a desktop-app session isolation toggle) that runs before CLAUDE.md loads. | **Trigger:** check the desktop app's new-session settings before the next multi-session task. |
 | **NI-21** | **`domain/grammar.ts` (`KB-005`) resolves a self-contradiction in the qty/unit-when-no-quantity-spoken rule.** `docs/14-LEGACY-REFERENCE.md` section 1 (the verbatim old Gemini prompt, used as-is by Layer 2 / `KB-205`) still has the original contradiction. When `KB-205` builds the LLM fallback, the prompt text must be updated to match `grammar.ts`'s resolution, or Layer 1 and Layer 2 can disagree on identical input. | **Trigger:** before `KB-205`. |
+| **NI-22** | **`validator.ts`'s ambiguous-match tie-band (0.05) is an unvalidated constant, chosen without real speech data.** Same class of thing as the length-scaled matching thresholds — but those at least came from the old code's actual tuning; this one didn't. Too wide means legitimate matches get flagged ambiguous too often; too narrow means real duplicates (`KI-20`) slip through as false-confident. | **Trigger:** after `KB-006` (number benchmark) or the first pilot week. |
+| **NI-23** | **10 of 16 `guardCategory` buckets have no category-guard keyword list.** Only `dal`, `oil`, `masala`, `tea`, `grain`, `soap` have documented spoken-side keywords (`14-LEGACY-REFERENCE.md` §5); `hygiene` (split from `soap` after those lists were written) and the 8 `KB-003` buckets (`dairy`, `snack`, `sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine`) have none. Deliberately not invented — the existing 6 lists were each "earned from a real mishearing," not authored upfront, and the same discipline applies here. These 10 buckets are unguarded by this mechanism until real mishearing data justifies a list. | **Trigger:** pilot week, when real mishearings start accumulating. |
 
 ---
 
