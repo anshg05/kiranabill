@@ -1,0 +1,1339 @@
+[
+  {
+    "id": "NB001",
+    "category": "numeral",
+    "utterance": "ek kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 9000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB002",
+    "category": "numeral",
+    "utterance": "do kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 18000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB003",
+    "category": "numeral",
+    "utterance": "teen kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 27000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB004",
+    "category": "numeral",
+    "utterance": "char kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 36000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB005",
+    "category": "numeral",
+    "utterance": "paanch kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 45000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB006",
+    "category": "numeral",
+    "utterance": "chhe kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 6,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 54000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB007",
+    "category": "numeral",
+    "utterance": "saat kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 7,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 63000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB008",
+    "category": "numeral",
+    "utterance": "aath kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 8,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 72000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB009",
+    "category": "numeral",
+    "utterance": "nau kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 9,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 81000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB010",
+    "category": "numeral",
+    "utterance": "das kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 10,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 90000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB011",
+    "category": "numeral",
+    "utterance": "gyarah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 11,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 99000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB012",
+    "category": "numeral",
+    "utterance": "barah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 12,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 108000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB013",
+    "category": "numeral",
+    "utterance": "terah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 13,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 117000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB014",
+    "category": "numeral",
+    "utterance": "chaudah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 14,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 126000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB015",
+    "category": "numeral",
+    "utterance": "pandrah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 15,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 135000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB016",
+    "category": "numeral",
+    "utterance": "solah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 16,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 144000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB017",
+    "category": "numeral",
+    "utterance": "satrah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 17,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 153000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB018",
+    "category": "numeral",
+    "utterance": "atharah kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 18,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 162000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB019",
+    "category": "numeral",
+    "utterance": "unnees kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 19,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 171000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB020",
+    "category": "numeral",
+    "utterance": "bees kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 20,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 180000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB021",
+    "category": "numeral",
+    "utterance": "pachees kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 25,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 225000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB022",
+    "category": "numeral",
+    "utterance": "tees kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 30,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 270000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB023",
+    "category": "numeral",
+    "utterance": "chaalees kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 40,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 360000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB024",
+    "category": "numeral",
+    "utterance": "pachaas kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 50,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 450000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB025",
+    "category": "numeral",
+    "utterance": "saath kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 60,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 540000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB026",
+    "category": "numeral",
+    "utterance": "sattar kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 70,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 630000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB027",
+    "category": "numeral",
+    "utterance": "assi kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 80,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 720000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB028",
+    "category": "numeral",
+    "utterance": "nabbe kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 90,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 810000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB029",
+    "category": "numeral",
+    "utterance": "sau kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 100,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 900000,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB030",
+    "category": "fraction",
+    "utterance": "aadha kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 0.5,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 2500,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB031",
+    "category": "fraction",
+    "utterance": "paav kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 0.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 1250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB032",
+    "category": "fraction",
+    "utterance": "sawa kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 1.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 6250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB033",
+    "category": "fraction",
+    "utterance": "dedh kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 1.5,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 7500,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB034",
+    "category": "fraction",
+    "utterance": "dhai kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 2.5,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 12500,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB035",
+    "category": "fraction",
+    "utterance": "paune kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 0.75,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 3750,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB036",
+    "category": "fraction",
+    "utterance": "paune do kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 1.75,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 8750,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB037",
+    "category": "fraction",
+    "utterance": "paune teen kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 2.75,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 13750,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB038",
+    "category": "fraction",
+    "utterance": "paune char kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 3.75,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 18750,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB039",
+    "category": "fraction",
+    "utterance": "sawa do kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 2.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 11250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB040",
+    "category": "fraction",
+    "utterance": "sawa teen kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 3.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 16250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB041",
+    "category": "fraction",
+    "utterance": "sawa paanch kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 5.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 26250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB042",
+    "category": "fraction",
+    "utterance": "paune paanch kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 4.75,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 23750,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB043",
+    "category": "fraction",
+    "utterance": "sawa char kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 4.25,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 21250,
+      "priceType": "default"
+    }
+  },
+  {
+    "id": "NB044",
+    "category": "wala-ka",
+    "utterance": "5 kg chawal 30 wala",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": 3000,
+      "total": 15000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB045",
+    "category": "wala-ka",
+    "utterance": "5 kg chawal 30 ka",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "total": 3000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB046",
+    "category": "wala-ka",
+    "utterance": "2 kg besan 50 wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 10000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB047",
+    "category": "wala-ka",
+    "utterance": "2 kg besan 50 ka",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 5000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB048",
+    "category": "wala-ka",
+    "utterance": "3 kg toor daal 100 wala",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": 10000,
+      "total": 30000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB049",
+    "category": "wala-ka",
+    "utterance": "3 kg toor daal 100 ka",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB050",
+    "category": "wala-ka",
+    "utterance": "4 kg chini 40 wala",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": 4000,
+      "total": 16000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB051",
+    "category": "wala-ka",
+    "utterance": "4 kg chini 40 ka",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 4000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB052",
+    "category": "wala-ka",
+    "utterance": "2 kg rajma 110 wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 11000,
+      "total": 22000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB053",
+    "category": "wala-ka",
+    "utterance": "2 kg rajma 110 ka",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB054",
+    "category": "wala-ka",
+    "utterance": "2 kg moong daal 90 wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 18000,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB055",
+    "category": "wala-ka",
+    "utterance": "2 kg moong daal 90 ka",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 9000,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB056",
+    "category": "wala-ka",
+    "utterance": "3 kg namak 25 wala",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": 2500,
+      "total": 7500,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB057",
+    "category": "wala-ka",
+    "utterance": "3 kg namak 25 ka",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "total": 2500,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB058",
+    "category": "wala-ka",
+    "utterance": "4 kg kanki 36 wala",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": 3600,
+      "total": 14400,
+      "priceType": "rate"
+    },
+    "note": "minimal pair with the next case - wala"
+  },
+  {
+    "id": "NB059",
+    "category": "wala-ka",
+    "utterance": "4 kg kanki 36 ka",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 3600,
+      "priceType": "total"
+    },
+    "note": "minimal pair with the previous case - ka"
+  },
+  {
+    "id": "NB060",
+    "category": "two-number",
+    "utterance": "2 kilo chawal 90 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 9000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB061",
+    "category": "two-number",
+    "utterance": "3 kilo besan 200 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB062",
+    "category": "two-number",
+    "utterance": "1 kilo toor daal 85 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "total": 8500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB063",
+    "category": "two-number",
+    "utterance": "5 kilo chini 200 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB064",
+    "category": "two-number",
+    "utterance": "50 gram ajwain 30 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 50,
+      "unit": "gm",
+      "rate": null,
+      "total": 3000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB065",
+    "category": "two-number",
+    "utterance": "2 kilo rajma 220 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 22000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB066",
+    "category": "two-number",
+    "utterance": "1 kilo moong daal 100 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB067",
+    "category": "two-number",
+    "utterance": "2 kilo namak 35 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 3500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB068",
+    "category": "two-number",
+    "utterance": "500 gram jeera 180 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": null,
+      "total": 18000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB069",
+    "category": "two-number",
+    "utterance": "3 kilo kanki 100 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB070",
+    "category": "two-number",
+    "utterance": "4 kilo chawal 180 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 18000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB071",
+    "category": "two-number",
+    "utterance": "1 kilo besan 85 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "total": 8500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB072",
+    "category": "two-number",
+    "utterance": "2 kilo toor daal 170 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 17000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB073",
+    "category": "two-number",
+    "utterance": "3 kilo chini 130 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "total": 13000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB074",
+    "category": "two-number",
+    "utterance": "100 gram ajwain 55 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 100,
+      "unit": "gm",
+      "rate": null,
+      "total": 5500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB075",
+    "category": "confusable",
+    "utterance": "5 kg chawal तीस ka",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "total": 3000,
+      "priceType": "total"
+    },
+    "note": "तीस=30, correct form"
+  },
+  {
+    "id": "NB076",
+    "category": "confusable",
+    "utterance": "3 पीस parle-g 10 wala",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "piece",
+      "rate": 1000,
+      "total": 3000,
+      "priceType": "rate"
+    },
+    "note": "पीस used legitimately as the unit 'piece' - tests whether grammar.ts recognises the Devanagari spelling, not just Latin piece/pcs/pc"
+  },
+  {
+    "id": "NB077",
+    "category": "confusable",
+    "utterance": "5 kg chawal पीस ka",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "ADVERSARIAL: तीस misheard as पीस in a price slot - पीस is not a number, no correct total exists; any confident total here is wrong"
+  },
+  {
+    "id": "NB078",
+    "category": "confusable",
+    "utterance": "तीस kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 30,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 270000,
+      "priceType": "default"
+    },
+    "note": "तीस=30 as qty, Devanagari script"
+  },
+  {
+    "id": "NB079",
+    "category": "confusable",
+    "utterance": "पीस kilo besan",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "ADVERSARIAL: पीस as a quantity makes no sense - no correct qty exists"
+  },
+  {
+    "id": "NB080",
+    "category": "confusable",
+    "utterance": "50 gram jeera das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 50,
+      "unit": "gm",
+      "rate": null,
+      "total": 1000,
+      "priceType": "total"
+    },
+    "note": "दस=10, correct form"
+  },
+  {
+    "id": "NB081",
+    "category": "confusable",
+    "utterance": "50 gram jeera दीस rupay",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "ADVERSARIAL: दस misheard as दीस (not a real word) - no correct total exists"
+  },
+  {
+    "id": "NB082",
+    "category": "confusable",
+    "utterance": "das kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": 10,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 90000,
+      "priceType": "default"
+    },
+    "note": "दस=10 as qty"
+  },
+  {
+    "id": "NB083",
+    "category": "confusable",
+    "utterance": "दीस kilo besan",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "ADVERSARIAL: दीस as qty - not a real number"
+  },
+  {
+    "id": "NB084",
+    "category": "confusable",
+    "utterance": "namak दस ka",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "total": 1000,
+      "priceType": "total"
+    },
+    "note": "दस=10 as ka-total, no qty/unit spoken - falls back to catalog unit (namak=kg)"
+  },
+  {
+    "id": "NB085",
+    "category": "confusable",
+    "utterance": "4 kg besan बीस ka",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 2000,
+      "priceType": "total"
+    },
+    "note": "बीस=20, minimal pair with next case"
+  },
+  {
+    "id": "NB086",
+    "category": "confusable",
+    "utterance": "4 kg besan तीस ka",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 3000,
+      "priceType": "total"
+    },
+    "note": "तीस=30, minimal pair with previous case - both are REAL numbers, the true silent-wrong-number risk"
+  },
+  {
+    "id": "NB087",
+    "category": "confusable",
+    "utterance": "बीस kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 20,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 100000,
+      "priceType": "default"
+    },
+    "note": "बीस=20 as qty"
+  },
+  {
+    "id": "NB088",
+    "category": "confusable",
+    "utterance": "तीस kilo chawal",
+    "expected": {
+      "safe": false,
+      "qty": 30,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 150000,
+      "priceType": "default"
+    },
+    "note": "तीस=30 as qty, minimal pair with previous case"
+  },
+  {
+    "id": "NB089",
+    "category": "confusable",
+    "utterance": "2 kg toor daal बीस wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2000,
+      "total": 4000,
+      "priceType": "rate"
+    },
+    "note": "बीस=20 as rate"
+  },
+  {
+    "id": "NB090",
+    "category": "confusable",
+    "utterance": "2 kg toor daal तीस wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3000,
+      "total": 6000,
+      "priceType": "rate"
+    },
+    "note": "तीस=30 as rate, minimal pair with previous case"
+  },
+  {
+    "id": "NB091",
+    "category": "bare",
+    "utterance": "chawal",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  },
+  {
+    "id": "NB092",
+    "category": "bare",
+    "utterance": "besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  },
+  {
+    "id": "NB093",
+    "category": "bare",
+    "utterance": "ajwain",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  },
+  {
+    "id": "NB094",
+    "category": "bare",
+    "utterance": "namak",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  },
+  {
+    "id": "NB095",
+    "category": "bare",
+    "utterance": "jeera",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  },
+  {
+    "id": "NB096",
+    "category": "bail",
+    "utterance": "chini 30 40",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "structural ambiguity - expect parseUtterance() to return null"
+  },
+  {
+    "id": "NB097",
+    "category": "bail",
+    "utterance": "5 kg 3 liter chini 90 rupay",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "structural ambiguity - expect parseUtterance() to return null"
+  },
+  {
+    "id": "NB098",
+    "category": "bail",
+    "utterance": "besan 20 30",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "structural ambiguity - expect parseUtterance() to return null"
+  },
+  {
+    "id": "NB099",
+    "category": "bail",
+    "utterance": "2 kg 500 gram rajma 90 rupay",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "structural ambiguity - expect parseUtterance() to return null"
+  },
+  {
+    "id": "NB100",
+    "category": "bail",
+    "utterance": "namak 15 25",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "structural ambiguity - expect parseUtterance() to return null"
+  }
+]
