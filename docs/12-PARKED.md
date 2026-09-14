@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Sep 2026 (rev 5)
+**Last updated:** 14 Sep 2026 (rev 6)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -19,7 +19,7 @@ Confirmed problems, not yet fixed. Each has a ticket or an explicit reason for w
 | # | Issue | Severity | Ticket | Notes |
 |---|---|---|---|---|
 | KI-01 | API keys exposed in distributed `.env.local`; `.gitignore` doesn't exclude it | **HIGH** | KB-001 | Ignore file first, then rotate |
-| KI-02 | `includes("bas")` finalises the bill on "basmati". 8 aliases across 5 products collide. | **HIGH** | KB-002 | Fix written and tested |
+| KI-02 | ~~`includes("bas")` finalises the bill on "basmati". 8 aliases across 5 products collide.~~ | **HIGH** | KB-002 | **Closed 14 Sep 2026.** `domain/commands.ts` matches whole tokens/token-sequences only, never a substring of a longer token, plus a no-digit and a ≤6-token guard. Regression test asserts `matchCommand("basmati")` and `matchCommand("basmati chawal")` are both `null`; a full sweep of all 482 catalog aliases asserts zero trigger any command. |
 | KI-03 | Pricing grammar fails `ka`/`wala`. VC013 "5 kg chawal 30 ka" → ₹100 instead of ₹30 | **HIGH** | KB-005 | This is the differentiator |
 | KI-04 | Default-price path broken — VC001, VC009 return rate null, total 0 | **HIGH** | KB-005 | Same root area |
 | KI-05 | Eval: 12 of 25 cases never run; fixtures hardcode stale prices and dead display names | HIGH | KB-004 | Guards nothing in current state |

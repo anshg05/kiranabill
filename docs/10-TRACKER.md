@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 14 Sep 2026 (rev 8) · **Current phase:** Phase 0 in progress
+**Last updated:** 14 Sep 2026 (rev 9) · **Current phase:** Phase 0 in progress
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -13,8 +13,8 @@
 ## Right now
 
 **Phase:** 0 — Fix the differentiator (in progress)
-**Working on:** `KB-003` just completed. Next up: `KB-002`.
-**Next action:** `KB-002` — command matcher (`domain/commands.ts`).
+**Working on:** `KB-002` just completed. Next up: `KB-004`.
+**Next action:** `KB-004` — eval harness (Node).
 **Build tool: Antigravity**, Local mode, `main` branch until real code starts (then ticket branches).
 **Model policy:** Flash for scaffolding and mechanical work; **thinking-tier (Opus/Sonnet) for
 `KB-005`, `KB-005b`, RLS and the sync worker** — those are where an invisible mistake costs months.
@@ -58,7 +58,7 @@ Legend: ⬜ todo · 🟦 in progress · ✅ done · ⛔ blocked · ⏸️ parked
 | KB-001 | Rotate keys, fix `.gitignore` | 🟦 | `.gitignore` done + committed. **Key rotation still outstanding.** |
 | KB-000 | Repo + `domain/` scaffold | ✅ | Done 20 Aug. React 19, TS 5.8, Vite 6, Vitest 3, **Tailwind v4** (`@theme` in `src/index.css`, no config file, no PostCSS). `npm test` ✓ · `tsc --noEmit` ✓ · `npm run build` ✓. All 12 tokens present. `legacy/` excluded from tsconfig. |
 | KB-003 | `domain/money.ts` + `domain/catalog.ts` | ✅ **Done** | Integer paise, half-up rounding (D11). 482 products seeded from `legacy/products.js` via committed `scripts/build-catalog-seed.ts` (`npm run seed:catalog`). Category is two fields (D12): `sourceCategory` (48 positional headers, provenance only) and `guardCategory` (16 semantic buckets — for `KB-005b`; `other` is 1.9% of the catalog). Aggregate rupee→paise sum check passes. Committed. |
-| KB-002 | `domain/commands.ts` | ⬜ | Whole-utterance matching. Test: no catalog alias may finalise a bill. |
+| KB-002 | `domain/commands.ts` | ✅ **Done** | Whole-utterance matching: whole token / contiguous token-sequence only (never a substring of a longer token), no digit anywhere, ≤6 tokens after filler-stripping, longest match wins on overlap. Latin vocabulary ported verbatim from `legacy/voice.js` (not in `14-LEGACY-REFERENCE.md` — that only recorded the KI-02 defect, not the word list); Devanagari phrases added new, pending owner review of the Hindi. 37 tests incl. full 482-alias sweep (zero false positives) and the KI-02 regression (`"basmati"`, `"basmati chawal"` → `null`). Closes KI-02. |
 | KB-004 | Eval harness (Node) | ⬜ | Prices from catalog at runtime; match on id; separate transcription from parsing errors |
 | KB-005 | **`domain/grammar.ts` — pricing grammar** | ⬜ | Five rules, failing tests first. **Resolve the `paune`/`chataak` conflict here.** Use a thinking-tier model. |
 | KB-005b | `domain/validator.ts` + `domain/catalogIndex.ts` | ⬜ | Rules ported, not code. Prefix + n-gram index, not O(n). |
@@ -106,6 +106,7 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 14 Sep 2026 | **`KB-002` finished and committed.** `domain/commands.ts` — whole-utterance voice command matcher (finalize/removeLast/clearAll). Fixes KI-02: the predecessor's `text.includes("bas")` finalised the bill on "basmati" (8 aliases across 5 products collided). The new rule requires a whole token or exact contiguous token sequence (never a substring of a longer token), rejects any utterance containing a digit, and caps utterance length at 6 tokens after filler-stripping — three corrections made together with the owner after the first two proposed rules were each shown, with a real catalog example, to still misfire on "basmati". Command vocabulary itself came from `legacy/voice.js` directly, not `14-LEGACY-REFERENCE.md` — that doc recorded the *defect* but never extracted the actual word list, a gap worth knowing about for future tickets that assume the reference doc is complete. Devanagari command phrases (`बस`, `हो गया`, `हटाओ`, `सब हटाओ`, etc.) are new, not ported from legacy — **owner should review the Hindi in `commands.ts`'s comments.** 37 tests added, including the full 482-alias sweep required by `18-AGENT-CONTRACT.md` §8 (zero false positives). `docs/12-PARKED.md` KI-02 closed. | Agent + Owner |
 | 14 Sep 2026 | **`origin/main` restored to match local `main`.** An unauthorised tool run ("Ideavo AI") had pushed 6 unwanted commits to `origin/main` (`.ideavo/` scaffolding, an `.e2b.app` sandbox hook in `vite.config.ts`, a deletion of `.env.example`, a fabricated `KB-000` tracker entry). Nothing on it was worth keeping. Force-pushed (`--force-with-lease`) local `main` (tip `7530204`, later `e255994`) over it; the discarded commits are kept locally on branch `ideavo-backup` (not pushed). Also: untracked `tsconfig.tsbuildinfo` (`.gitignore` already excluded it, just wasn't retroactively applied) and deleted a stale, git-unregistered `.claude/worktrees/onboarding-docs-review-883d5d` directory left over from a prior session that ran outside the main checkout — see `12-PARKED.md` NI-20 for the open question of why that happened and how to prevent it. Verified before pushing: 32/32 tests, both `tsc --noEmit` runs clean, catalog seed sum MATCH. | Agent + Owner |
 | 09 Sep 2026 | **`KB-003` finished and committed.** Owner caught that the 8-bucket `guardCategory` design left 58% of the catalog as `other` — the six-plus-hygiene buckets came from `legacy/products.js`'s mishearing-driven `CATEGORY_GUARDS`, not a real taxonomy of the shop's stock. Expanded to 16 buckets (`dairy`, `snack`, `sweet`, `beverage`, `condiment`, `dryfruit`, `household`, `medicine` added), bringing `other` to 1.9% (9 of 482 — `EGGS` and 7 baking-ingredient products that genuinely fit nothing). `07-DECISIONS.md` D12 amended in place (new dated line, original not rewritten); `03-DATA-MODEL.md` and `14-LEGACY-REFERENCE.md` §5 updated to match. | Agent + Owner |
 | 08 Sep 2026 | **`KB-003` category redesigned to two fields.** Owner: `guardCategory` needs to be the validator's real semantic bucket, not the 48 raw positional headers, and needs a 7th bucket (`hygiene`, split from `soap`) plus `other` — new decision `07-DECISIONS.md` D12. `CatalogEntry` now carries `sourceCategory` (provenance, all 48) and `guardCategory` (8 buckets), mapped by an explicit, committed, per-category table with per-id overrides for the ~15 headers that mix categories (worst: `GRAINS / SEEDS`). `14-LEGACY-REFERENCE.md` section 5 and `03-DATA-MODEL.md`'s `base_products` schema updated to match. | Agent + Owner |
