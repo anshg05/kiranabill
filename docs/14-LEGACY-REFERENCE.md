@@ -1,6 +1,10 @@
 # 14 — Legacy Reference
 
-**Last updated:** 09 Sep 2026 (rev 4) · **Status:** Reference material, frozen
+**Last updated:** 14 Sep 2026 (rev 5) · **Status:** Reference material, frozen
+
+**Rev 5 note:** this document recorded the KI-02 *defect* (section 11) but never extracted the
+actual command vocabulary that produced it — `KB-002` had to read `legacy/voice.js` directly to get
+it, the same class of gap A0 already caught elsewhere in this doc set. Added as new section 12.
 
 **Rev 2 note:** section 9 previously said each product has a `category` field. It doesn't — corrected
 during `KB-003` after the owner caught it. See section 9 for what's actually there.
@@ -416,3 +420,27 @@ Each needs a test in the new code.
 | KI-08 | Rounded per line **and** on the sum | ₹10.60 + ₹10.60 displays as a total that equals the lines |
 | KI-11 | O(n) catalog scan | Index benchmark at 10,000 products under 16 ms |
 | KI-13 | Bill language saved but never read | Setting `hi` produces a Hindi receipt |
+
+---
+
+## 12. Voice commands
+
+Whole-utterance instructions — finalise the bill, undo the last line, clear everything — as opposed
+to item speech. `legacy/voice.js`'s `isVoiceCommandText()` and the dispatch in
+`handleFinalTranscript()` matched these with plain substring search
+(`normalizedText.includes(command)`), which is what caused KI-02: `"basmati"` contains `"bas"`, so
+saying the product name alone silently finalised the bill. Three groups, Latin only:
+
+```
+finalize:   ho gaya, hogaya, bill bana, bill banao, total, bas, done, complete, khatam, finish
+removeLast: hatao, hata do, last hatao, pichla hatao, remove, undo, wapas, delete
+clearAll:   sab hatao, clear karo, sab delete
+```
+
+**The KI-02 fix, and the actual matching logic, live in `src/domain/commands.ts`** (`KB-002`) — whole
+token / exact contiguous token-sequence matching only, never a substring of a longer token, plus a
+no-digit guard and a token-count cap. That file also adds a set of Devanagari equivalents not present
+in the legacy source, since transcripts can arrive in either script. Read `commands.ts` and
+`commands.test.ts` for the current rule and the regression tests, not this list — this section exists
+so the vocabulary is discoverable without grepping `legacy/` again, not as the spec for how it's
+matched.
