@@ -11,7 +11,8 @@
     "seed:catalog": "tsx scripts/build-catalog-seed.ts",
     "eval": "tsx eval/run-eval.ts",
     "try": "tsx scripts/try.ts",
-    "bench:numbers": "tsx eval/number-benchmark.ts"
+    "bench:numbers": "tsx eval/number-benchmark.ts",
+    "coverage:probe": "tsx eval/coverage-probe.ts"
   },
   "dependencies": {
     "react": "^19.1.0",

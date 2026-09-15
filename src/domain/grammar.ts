@@ -481,3 +481,110 @@ export function parseUtterance(text: string): ParsedItem[] | null {
   }
   return items;
 }
+
+// ---------------------------------------------------------------------------
+// KB-009 - fast-path coverage diagnostics. docs/04-VOICE-PIPELINE.md section
+// 3 asks Layer 1 to "log fastPathHit/fastPathMiss with a reason on every
+// utterance" - parseUtterance() itself returns bare null on a miss, so this
+// is purely additive instrumentation, never called by parseUtterance and
+// never changing what it returns.
+//
+// Deliberately NOT a restructure of resolveSegment to return reasons
+// directly - that would touch every tested return path in this file for a
+// diagnostic-only need. Instead this reuses the exact same internal
+// helpers (classifySegment, extractNums, hasOrphanedMarker,
+// convertCatalogRate, ...) and mirrors resolveSegment's own branch order,
+// so the actual parsing behavior can never drift - only the sequence of
+// high-level checks needs to stay in sync, and grammar.test.ts asserts
+// that agreement directly (diagnoseUtterance().hit must match
+// parseUtterance() !== null for every real fixture case) rather than
+// trusting it by inspection alone.
+// ---------------------------------------------------------------------------
+
+export type MissReason =
+  | "empty utterance"
+  | "orphaned marker"
+  | "conflicting rate and total markers"
+  | "rate marker with no separate quantity"
+  | "too many numbers or conflicting units"
+  | "incompatible unit for default price"
+  | "ambiguous two-number utterance";
+
+export interface ParseDiagnostics {
+  readonly hit: boolean;
+  readonly reason: MissReason | null;
+}
+
+function diagnoseSegment(rawSegment: string): MissReason | null {
+  const words = splitWords(rawSegment);
+  if (words.length === 0) return "empty utterance";
+
+  const classified = classifySegment(words);
+  const nums = extractNums(classified);
+
+  if (hasOrphanedMarker(classified, nums)) return "orphaned marker";
+
+  if (nums.length === 0) return null; // Rule 5b - always a hit, never a bail
+
+  const rateEntry = nums.find((n) => n.isRate);
+  const totalEntry = nums.find((n) => n.isTotal);
+
+  if (rateEntry && totalEntry) return "conflicting rate and total markers";
+
+  if (rateEntry) {
+    const qtyEntry = nums.find((n) => n !== rateEntry);
+    return qtyEntry ? null : "rate marker with no separate quantity";
+  }
+
+  if (totalEntry) return null; // resolves whether or not a separate qty is present
+
+  if (nums.length > 2) return "too many numbers or conflicting units";
+
+  if (nums.length === 1) {
+    const only = nums[0]!;
+
+    // Mirrors resolveSegment's own if/else order exactly: attachedUnit
+    // first, then isCurrency (Rule 3, resolveUnattachedTotal - never
+    // bails), else the implicit-piece fallback. Both the attachedUnit and
+    // implicit-piece cases go through resolveDefault(), which can bail on
+    // an incompatible unit ("do doodh packet" - "doodh" alone resolves to
+    // a liter-priced product, incompatible with the implicit "piece" -
+    // this exact case is what the 125-case self-consistency check caught).
+    if (!only.attachedUnit && only.isCurrency) return null;
+    const spokenUnit = only.attachedUnit ?? "piece";
+
+    const spokenName = extractSpokenName(classified);
+    const match = resolveCatalogMatch(spokenName);
+    if (match.catalogId) {
+      const entry = getCatalogEntryById(match.catalogId);
+      if (entry && convertCatalogRate(entry, spokenUnit) === null) {
+        return "incompatible unit for default price";
+      }
+    }
+    return null;
+  }
+
+  const qtyEntry = nums.find((n) => n.attachedUnit !== null);
+  const otherEntries = nums.filter((n) => n !== qtyEntry);
+  if (!qtyEntry || otherEntries.length !== 1 || otherEntries[0]!.attachedUnit !== null) {
+    return "ambiguous two-number utterance";
+  }
+  return null;
+}
+
+/** Diagnostic twin of parseUtterance() - same hit/miss outcome, plus a
+ * grouped reason on every miss. Never used by parseUtterance itself. */
+export function diagnoseUtterance(text: string): ParseDiagnostics {
+  const segments = text
+    .split(/\baur\b/i)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+  if (segments.length === 0) return { hit: false, reason: "empty utterance" };
+
+  for (const segment of segments) {
+    const reason = diagnoseSegment(segment);
+    if (reason !== null) return { hit: false, reason };
+  }
+  return { hit: true, reason: null };
+}

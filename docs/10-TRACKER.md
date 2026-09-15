@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 15 Sep 2026 (rev 19) · **Current phase:** Phase 0 in progress
+**Last updated:** 15 Sep 2026 (rev 20) · **Current phase:** Phase 0 in progress
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -13,7 +13,7 @@
 ## Right now
 
 **Phase:** 0 — Fix the differentiator (in progress)
-**Working on:** `KB-005d` just completed. Next up: `KB-007`.
+**Working on:** `KB-009` just completed — the gate passed. Next up: `KB-007`.
 **Next action:** `KB-007` — shop vocabulary phrase biasing (top ~40 product names as the Whisper `prompt`, capped 600 chars).
 **Build tool: Antigravity**, Local mode, `main` branch until real code starts (then ticket branches).
 **Model policy:** Flash for scaffolding and mechanical work; **thinking-tier (Opus/Sonnet) for
@@ -67,13 +67,15 @@ Legend: ⬜ todo · 🟦 in progress · ✅ done · ⛔ blocked · ⏸️ parked
 | KB-006 | Number benchmark (100 utterances) | ✅ **Done** | `eval/number-benchmark.json` + `eval/number-benchmark.ts`, `npm run bench:numbers`. Measurement, not a test suite — no `grammar.ts` bug fixes here. **Original baseline: 98% correct, 0% bail, 2% false confidence (wrong)** — see KI-21, fixed by `KB-005d` below; re-run baseline is now 100/0/0. WER out of scope: Phase 0 has no STT to compare a transcript against, confirmed before building rather than assumed. |
 | **KB-005d** | `grammar.ts` — reject malformed `ka`/`ki`/`wala`/`wali` (orphaned marker) | ✅ **Done** | Priority insert ahead of `KB-007`, not in the original canonical order (see `CLAUDE.md`'s list, now stale by this one ticket) — `KI-21` needed fixing before `KB-009`'s coverage measurement means anything. Structural fix (`hasOrphanedMarker()`), not a two-word patch: any `wala`/`wali`/`ka`/`ki`/currency marker whose neighbour fails to parse as a number now bails the segment. `KB-006` re-run: **100/0/0** (was 98/0/2). Closes KI-21. |
 | KB-007 | Shop vocabulary phrase biasing | ⬜ | Top ~40 names as Whisper `prompt`, capped 600 chars |
-| **KB-009** | **Fast-path coverage probe** | ⬜ | **See R1.** Measure before committing to the cost model. |
+| **KB-009** | **Fast-path coverage probe — THE GATE** | ✅ **Done** | `eval/coverage-probe.ts`, `npm run coverage:probe`. Ran the real `parseUtterance()` (incl. `KB-005d`'s fix) over all 125 cases (25 eval + 100 number-benchmark). **Result: 92.8% HIT (116/125), 7.2% MISS (9/125) — well clear of the 60–70% target and the 40% stop-gate. No stop triggered.** `grammar.ts` gained one new export, `diagnoseUtterance()`, purely additive instrumentation (a miss-reason twin of `parseUtterance`, verified via a 125-case self-consistency test to never disagree with it — caught and fixed a real gap in the diagnostic's own logic before it shipped, see the handoff). Miss reasons grouped: ambiguous two-number (3), incompatible unit for default price (2 — new finding, `KI-24`), orphaned marker (2 — `KI-21`'s known cases, correctly still bailing), too many numbers/conflicting units (2). Closes R1. |
 
-**Phase 0 exit gate:** all five pricing rules pass (incl. `ka` vs `wala` on identical phrasing) ·
-25/25 eval baseline recorded · number-accuracy baseline recorded · **fast-path coverage measured** ·
-catalog index under 16 ms at 10,000 products.
+**Phase 0 exit gate:** all five pricing rules pass (incl. `ka` vs `wala` on identical phrasing) ✅ ·
+25/25 eval baseline recorded ✅ (all skip, no parser wired at `KB-004` time — by design) ·
+number-accuracy baseline recorded ✅ (100/0/0) · **fast-path coverage measured ✅ — 92.8%** ·
+catalog index under 16 ms at 10,000 products ✅.
 
-> If coverage comes back under ~40%, **stop before Phase 1.** See R1.
+> ~~If coverage comes back under ~40%, stop before Phase 1.~~ **Did not trigger — 92.8%, well above
+> both the 40% floor and the 60–70% target.** See R1 (closed).
 
 ### Phases 1–4
 
@@ -85,7 +87,7 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | # | Risk | Severity | Status |
 |---|---|---|---|
-| **R1** | **Fast-path coverage of 60–70% is an assumption, not a measurement.** The entire cost model, the latency story and the compounding-moat argument all rest on it. If real coverage is 30%, cost per bill roughly doubles and the product is not sellable at Indian price points. | **HIGH** | Open — `KB-009` measures it in Phase 0 (this row said `KB-008` — a stale ticket-ID reference, corrected while touching this file for `KB-008` itself; `KB-008` is learning, not the coverage probe) |
+| R1 | ~~Fast-path coverage of 60–70% is an assumption, not a measurement.~~ The entire cost model, the latency story and the compounding-moat argument all rest on it. If real coverage is 30%, cost per bill roughly doubles and the product is not sellable at Indian price points. | **HIGH** | **Closed 15 Sep 2026 — measured, not assumed.** `KB-009`: **92.8%** (116/125) on the real `parseUtterance()` pipeline over the eval + number-benchmark fixtures. Above the 60–70% target range, not just above the 40% floor. The cost model and moat argument have real ground under them now — caveat: 125 hand-authored fixture cases are not 125 real shop utterances, so this is a strong signal, not a pilot-validated number; revisit once real bills exist. |
 | R2 | The pricing grammar — the core differentiator — currently fails its own tests | HIGH | `KB-005` |
 | R3 | API keys exposed in a distributed archive | HIGH | `KB-001` |
 | R4 | Local-first sync is the most complex thing in the plan for a solo developer | MEDIUM | Mitigated by immutable bills; revisit if Phase 1 overruns |
@@ -107,6 +109,7 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 15 Sep 2026 | **`KB-009` finished and committed — THE GATE, passed. Fast-path coverage measured at 92.8% (116/125), closing R1.** `eval/coverage-probe.ts`, `npm run coverage:probe`, run over all 125 cases across both existing fixtures (`eval/voice-cases.json` + `eval/number-benchmark.json`) through the real `parseUtterance()` pipeline, KB-005d's fix included. Well above both the 40% stop-gate and the 60–70% target range — no stop triggered, proceeding to `KB-007` as planned. `grammar.ts` gained one additive export, `diagnoseUtterance()`, a miss-reason twin of `parseUtterance` that never restructures the real resolution logic — verified via a 125-case self-consistency test asserting it never disagrees with `parseUtterance`'s actual hit/miss on real fixture data. That test caught a real bug in the diagnostic before it shipped: two eval cases (`VC011` "do doodh packet", `VC020`'s "ek tel pouch" segment) actually bail (the qty's unit word sits after the product name, not immediately after the number, and the bare product resolves to a liter-priced item incompatible with the implicit-piece fallback) — the diagnostic had missed that this path can bail at all. Fixed before reporting, not after. That finding is new and real, not a repeat of `KI-21`/`KI-22` — filed as **`KI-24`** (MEDIUM, safe bail not a wrong number, but real coverage cost). Miss reasons grouped: ambiguous two-number (3), incompatible unit for default price (2, `KI-24`), orphaned marker (2, `KI-21`'s known cases), too many numbers/conflicting units (2). | Agent + Owner |
 | 15 Sep 2026 | **`KB-005d` finished and committed — closes `KI-21`, priority insert ahead of `KB-007`.** `grammar.ts`'s `hasOrphanedMarker()`: any `wala`/`wali`/`ka`/`ki`/currency marker whose neighbouring word fails to parse as a number now bails the segment, instead of silently falling through to Rule 5a's default-price path. Structural fix (token-count comparison), deliberately not a two-word special case — new tests cover `wali`/`ki` variants and a third, arbitrary unrecognised word to prove it generalises. **`KB-006` re-run: 100/0/0, not the 98/2/0 predicted in the plan** — the prediction was wrong, corrected in the handoff rather than left standing: `number-benchmark.ts`'s own scoring (written in `KB-006`) already treats a safe decline on an adversarial/unsolvable input as full credit, not partial credit, so both fixed cases scored `correct`, not `bail`. `KI-22` (पीस/`UNIT_ALIASES`) confirmed untouched and still open, as expected — traced `"wala"` in that case to attach correctly through the real logic, independent of this fix. | Agent + Owner |
 | 14 Sep 2026 | **`KB-006` finished and committed — first real number-accuracy baseline: 98% correct / 0% bail / 2% wrong.** `eval/number-benchmark.json` (100 hand-verified cases: 29 Hindi numerals, 14 fractions incl. `paune`/`sawa` compositional forms, 16 `wala`/`ka` minimal pairs, 15 two-number utterances, 16 confusable-pair cases, 5 bare-item, 5 structural-bail), `eval/number-benchmark.ts` (`npm run bench:numbers`). A measurement ticket, not a test-first one — confirmed with the owner up front that "does this function work" doesn't apply the same way to "how good is the grammar we already built." WER explicitly scoped out: Phase 0 has no STT anywhere to compare a transcript against, so there is no transcript-accuracy dimension to measure yet — caught during planning, not assumed from the doc. **The 2% wrong reproduces the Pilloo-class failure the whole product exists to prevent**: `"5 kg chawal पीस ka"` (तीस misheard as पीस, simulating an STT mishearing since Phase 0 has no real STT to actually mishear anything) returns a confident ₹250 — the catalog's default price — instead of recognising that a spoken `ka` with no adjacent number is malformed. Filed as **KI-21** (HIGH), not fixed here — this ticket measures, it doesn't fix. | Agent + Owner |
 | 14 Sep 2026 | **`KB-008` finished and committed.** `domain/learning.ts` — L1 (product promotion), L2 (alias confidence/suppression), L3 (price suggestion, never auto-applied). Tests written first (27 cases), same process as `KB-005`. Different kind of doc gap than every prior ticket this session: `08-LEARNING-ENGINE.md` is mostly a forward design spec for `KB-008`, not an extraction — confirmed by grepping `legacy/learning-store.js` directly, which has no confidence score, no suppression, no manual promotion, and no price-suggestion mechanism at all (only L1's 3-sighting threshold is a real port). Suppression's exact math had no source anywhere to check, unlike every earlier interpretive call this session. First draft proposed a flat "two suppressions retire it" counter; the owner corrected it to confidence-threshold retirement (`<=0.3`, symmetric with the 0.5 start and 0.8 promotion threshold) so a heavily-confirmed alias (0.9) survives two suppressions that a freshly-created one (0.5) doesn't survive even once — recorded as `07-DECISIONS.md` D15, explicitly flagged as chosen, not found. Also fixed a stale ticket-ID reference in the R1 risk row below (said `KB-008`, meant `KB-009`) while touching this file. | Agent + Owner |
@@ -152,7 +155,7 @@ Recorded once measurement begins. **Empty is honest; do not fill with estimates.
 | Eval: pass / warn / fail / skip | 0 / 10 / 3 / 12 | 0 / 0 / 0 / 25 (`npm run eval`, no parser wired yet) | 25 / 0 / 0 / 0 |
 | `KB-000` toolchain | — | ✅ test, tsc, build all clean | — |
 | Number-accuracy benchmark | not measured | **100% correct / 0% bail / 0% wrong** (`npm run bench:numbers`, 14 Sep 2026, post-`KB-005d`) | ≥ 95% correct, wrong ≈ 0% |
-| Fast-path coverage | not measured | — | ≥ 60% |
+| Fast-path coverage | not measured | **92.8%** (116/125, `npm run coverage:probe`, 15 Sep 2026) | ≥ 60% |
 | Median turns-to-bill | not measured | — | 1 |
 | Median seconds-to-bill | ~4 s (estimated) | — | < 2 s fast path |
 | Silent number errors / 20 bills | not measured | — | **0** |

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseUtterance, type ParsedItem } from "./grammar";
+import { parseUtterance, diagnoseUtterance, type ParsedItem } from "./grammar";
 import { getCatalogEntryById } from "./catalog";
 import { lineTotalPaise } from "./money";
+import voiceCases from "../../eval/voice-cases.json";
+import numberBenchmarkCases from "../../eval/number-benchmark.json";
 
 /**
  * KB-005 - domain/grammar.ts, the pricing grammar. Tests written before the
@@ -392,5 +394,61 @@ describe("Bail-out - orphaned wala/ka/rupay marker (KB-005d, KI-21)", () => {
   it("regression: a correctly-formed rupay utterance is completely unaffected", () => {
     const item = parseOne("2 kilo chini 90 rupay");
     expect(item.total).toBe(9000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KB-009 - diagnoseUtterance() reason categories, checked against the real
+// bail cases already established above, and a self-consistency check
+// against every utterance in both eval fixtures. This is what makes the
+// diagnostic function trustworthy rather than a parallel implementation
+// that could quietly drift from parseUtterance's real logic.
+// ---------------------------------------------------------------------------
+describe("diagnoseUtterance - reason categories match known bail cases", () => {
+  it("empty text", () => {
+    expect(diagnoseUtterance("")).toEqual({ hit: false, reason: "empty utterance" });
+  });
+
+  it("orphaned marker (KI-21)", () => {
+    expect(diagnoseUtterance("5 kg chawal पीस ka")).toEqual({ hit: false, reason: "orphaned marker" });
+    expect(diagnoseUtterance("50 gram jeera दीस rupay")).toEqual({ hit: false, reason: "orphaned marker" });
+  });
+
+  it("ambiguous two-number utterance", () => {
+    expect(diagnoseUtterance("chini 30 40")).toEqual({ hit: false, reason: "ambiguous two-number utterance" });
+  });
+
+  it("too many numbers / conflicting units", () => {
+    expect(diagnoseUtterance("5 kg 3 liter chini 90 rupay")).toEqual({
+      hit: false,
+      reason: "too many numbers or conflicting units",
+    });
+  });
+
+  it("a hit reports hit:true, reason:null", () => {
+    expect(diagnoseUtterance("5 kg chawal 30 ka")).toEqual({ hit: true, reason: null });
+  });
+});
+
+describe("diagnoseUtterance - self-consistency with parseUtterance across every real fixture case", () => {
+  const allUtterances: string[] = [
+    ...(voiceCases as Array<{ utterance: string }>).map((c) => c.utterance),
+    ...(numberBenchmarkCases as Array<{ utterance: string }>).map((c) => c.utterance),
+  ];
+
+  it("loaded both fixtures - 25 + 100 = 125 utterances", () => {
+    expect(allUtterances).toHaveLength(125);
+  });
+
+  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 125 cases", () => {
+    const disagreements: string[] = [];
+    for (const utterance of allUtterances) {
+      const diagnosticHit = diagnoseUtterance(utterance).hit;
+      const actualHit = parseUtterance(utterance) !== null;
+      if (diagnosticHit !== actualHit) {
+        disagreements.push(`"${utterance}": diagnoseUtterance said hit=${diagnosticHit}, parseUtterance said hit=${actualHit}`);
+      }
+    }
+    expect(disagreements).toEqual([]);
   });
 });
