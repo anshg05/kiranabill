@@ -348,3 +348,49 @@ describe("Bail-out - null on ambiguity, not on an unknown product", () => {
     expect(parseUtterance("")).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// KB-005d / KI-21: an orphaned marker (wala/ka/rupay present, but its
+// neighbouring word failed to parse as a number) must bail - not silently
+// fall through to a confident default-price guess. Found by KB-006's
+// number benchmark: these two utterances used to return a confident but
+// wrong total (the Pilloo-class failure - a number silently wrong with no
+// signal anything was off).
+// ---------------------------------------------------------------------------
+describe("Bail-out - orphaned wala/ka/rupay marker (KB-005d, KI-21)", () => {
+  it("तीस misheard as पीस before 'ka' - used to return a confident ₹250 (5kg chawal's default price), now bails", () => {
+    expect(parseUtterance("5 kg chawal पीस ka")).toBeNull();
+  });
+
+  it("दस misheard as दीस before 'rupay' - used to return a confident ₹20 (jeera's default price for 50gm), now bails", () => {
+    expect(parseUtterance("50 gram jeera दीस rupay")).toBeNull();
+  });
+
+  it("orphaned 'ki' (total marker variant) bails the same way as 'ka'", () => {
+    expect(parseUtterance("5 kg chawal पीस ki")).toBeNull();
+  });
+
+  it("orphaned 'wali' (rate marker variant) bails the same way as 'wala'", () => {
+    expect(parseUtterance("5 kg chawal पीस wali")).toBeNull();
+  });
+
+  it("this is a structural check, not a hardcoded word list - any unrecognised word orphaning a marker bails, not just पीस/दीस", () => {
+    expect(parseUtterance("5 kg chawal xyzzyword ka")).toBeNull();
+  });
+
+  it("regression: a correctly-formed wala utterance is completely unaffected", () => {
+    const item = parseOne("5 kg chawal 30 wala");
+    expect(item.rate).toBe(3000);
+    expect(item.total).toBe(15000);
+  });
+
+  it("regression: a correctly-formed ka utterance is completely unaffected", () => {
+    const item = parseOne("5 kg chawal 30 ka");
+    expect(item.total).toBe(3000);
+  });
+
+  it("regression: a correctly-formed rupay utterance is completely unaffected", () => {
+    const item = parseOne("2 kilo chini 90 rupay");
+    expect(item.total).toBe(9000);
+  });
+});

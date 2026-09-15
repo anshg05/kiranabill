@@ -295,6 +295,34 @@ function extractNums(classified: readonly Classified[]): NumEntry[] {
   return entries;
 }
 
+/**
+ * KB-005d (docs/12-PARKED.md KI-21). A wala/wali/ka/ki/currency marker is
+ * only ever attached to the NUM immediately preceding it. If the word
+ * between an intended number and its marker fails to parse as a number
+ * (e.g. "5 kg chawal पीस ka" - तीस misheard as पीस, which is not a number),
+ * the marker token still exists in `classified` but no NumEntry claims it -
+ * it gets silently dropped, and resolveSegment falls through to an
+ * unmarked-utterance path as if the marker had never been spoken. That
+ * produced a confident, wrong default-price total instead of a bail - the
+ * exact failure class the product exists to prevent. This counts marker
+ * tokens against how many are actually attached; a mismatch means at least
+ * one marker was orphaned, and the whole segment must bail rather than
+ * guess. Deliberately structural (token counts), not a special case for
+ * these two words - it catches any future mistranscription that orphans a
+ * marker the same way, not just पीस/दीस.
+ */
+function hasOrphanedMarker(classified: readonly Classified[], nums: readonly NumEntry[]): boolean {
+  const rateMarkers = classified.filter((token) => token.type === "rate").length;
+  const totalMarkers = classified.filter((token) => token.type === "total").length;
+  const currencyMarkers = classified.filter((token) => token.type === "currency").length;
+
+  const attachedRate = nums.filter((entry) => entry.isRate).length;
+  const attachedTotal = nums.filter((entry) => entry.isTotal).length;
+  const attachedCurrency = nums.filter((entry) => entry.isCurrency).length;
+
+  return rateMarkers > attachedRate || totalMarkers > attachedTotal || currencyMarkers > attachedCurrency;
+}
+
 function extractSpokenName(classified: readonly Classified[]): string {
   return classified
     .filter((token): token is { type: "word"; raw: string } => token.type === "word")
@@ -353,6 +381,12 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
 
   const classified = classifySegment(words);
   const nums = extractNums(classified);
+
+  // KB-005d / KI-21: a wala/ka/rupay marker that never attached to a real
+  // number (its neighbouring word failed to parse) must bail, not fall
+  // through to a confident default-price guess.
+  if (hasOrphanedMarker(classified, nums)) return null;
+
   const spokenName = extractSpokenName(classified);
 
   const match = resolveCatalogMatch(spokenName);
