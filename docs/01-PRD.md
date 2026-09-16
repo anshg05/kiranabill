@@ -1,6 +1,9 @@
 # 01 — Product Requirements Document
 
-**Last updated:** 20 Aug 2026 (rev 3) · **Status:** Final · **Supersedes:** rev 2
+**Last updated:** 16 Sep 2026 (rev 4) · **Status:** Final · **Supersedes:** rev 3
+
+**Rev 4 note:** S6 updated with `KB-009`'s real fast-path coverage measurement (92.8%, Phase 0
+fixture data) — the number that used to be an assumption everything else in this document rested on.
 
 ---
 
@@ -158,11 +161,17 @@ The MVP is validated when, measured over **20 consecutive real bills in the pilo
 | S3 | Median seconds from mic-tap to items on screen | < 2s for fast-path, < 5s otherwise |
 | S4 | Zero-edit bill accuracy | ≥ 80% |
 | S5 | Voice faster than typing the same bill | Yes, measured |
-| S6 | Fast-path coverage (no LLM call) | ≥ 60% of utterances |
+| S6 | Fast-path coverage (no LLM call) | ≥ 60% of utterances — **60–70% target, MEASURED at 92.8% (`KB-009`, 15 Sep 2026)** |
 | S7 | Bills lost or corrupted | Zero |
 
 **S2 is the release gate.** A billing app that is silently wrong about money is not shippable,
 regardless of how good every other number looks.
+
+**S6's 92.8% is a Phase 0 measurement, not this table's pilot number yet.** `KB-009` ran the real
+deterministic parser over 125 hand-authored fixture cases (`docs/10-TRACKER.md`), not the 20
+consecutive real bills this table is officially measured against — a strong signal that the cost
+model and moat argument (`01-PRD.md` §"Compounding fast-path coverage") rest on real ground, not an
+assumption, but not yet the pilot-validated number. Revisit once real bills exist.
 
 ---
 
