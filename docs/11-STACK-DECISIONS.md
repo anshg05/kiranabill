@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 08 Sep 2026 (rev 4)
+**Last updated:** 17 Sep 2026 (rev 5)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -264,6 +264,19 @@ Needed so `scripts/build-catalog-seed.ts` type-checks against `node:fs`, `node:p
 near-universal companion to any typed Node script; no alternative considered — the alternative is no
 type-checking on the seed script, which is exactly the reproducibility guarantee `KB-003`'s
 correction asked for.
+
+## SD-019 — Supabase CLI: **`supabase` ^2.117.0** (dev-only) · 17 Sep 2026
+
+Needed to run `supabase link`/`supabase migration`/etc. against the project's real Supabase instance
+(`KB-102`) without requiring a machine-global install. Added by the owner directly as part of linking
+the project (ref `urcenodcxtzwjrulwvgf`) ahead of `KB-102`'s schema/migration work — this entry
+documents it per `09-WORKING-AGREEMENT.md` §B6, not a new choice made here.
+
+No alternative considered: this is the official CLI for the platform this project already committed
+to (`SD-002` — Supabase/Postgres), not a general-purpose tool with competing options.
+
+**Exit cost: near zero.** Dev-only, not in `dependencies`, not part of any shipped bundle. The CLI is
+also independently reinstallable globally if ever removed from the repo's own devDependencies.
 
 ## How to add to this document
 
