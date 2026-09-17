@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 17 Sep 2026 (rev 11) · Supersedes rev 10
+**Last updated:** 18 Sep 2026 (rev 12) · Supersedes rev 11
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -571,6 +571,40 @@ full plugin — no `@typescript-eslint/eslint-plugin` rules are used). Logged pe
 §B6 as `11-STACK-DECISIONS.md` SD-020. Verified the rule actually fires before calling this done: a
 temporary real `../data/*` import inside `src/domain/` was confirmed to fail `npm run lint` with the
 intended message, then removed.
+
+---
+
+## Rev 12 — 18 Sep 2026
+
+### D17 — The four learning tables get sync columns (`local_id`/`device_id`/`updated_at`) that `03-DATA-MODEL.md`'s per-table lists don't show 🟢
+
+**A real contradiction between two docs, resolved by reasoning during `KB-103`, not silently patched.**
+
+`03-DATA-MODEL.md`'s "Iron rules" (top of the document) state unconditionally: *"Every syncable row
+carries `local_id`, `updated_at`, `device_id`."* But that same document's own per-table column lists
+for `learned_aliases`, `provisional_products`, `price_observations`, and `learning_events` — section 5,
+"Learning tables" — list none of those three columns on any of the four.
+
+Separately, `08-LEARNING-ENGINE.md` section 8 ("When learning runs") says plainly: *"Sync | Learning
+rows push like any other data."* Learning is explicitly designed to run offline-first, locally, against
+IndexedDB, then sync up — the same shape as `bills`, which *does* carry all three sync columns in its
+own listing.
+
+**Decision: add `local_id` (uuid), `device_id` (text), and `updated_at` (timestamptz) to all four
+learning tables** — `learned_aliases`, `provisional_products`, `price_observations`, `learning_events`.
+
+**Why the omission is treated as incomplete, not deliberate:** the "Iron rules" section is stated
+unconditionally, with no carve-out for learning tables. `08-LEARNING-ENGINE.md` independently and
+explicitly confirms these rows sync like everything else. Section 5's per-table lists are shorter and
+less detailed than sections 2–4's (`shops`, `shop_products`, `bills`) throughout — `bill_items`, by
+contrast, genuinely has no sync columns of its own, but that is because it syncs atomically as part of
+its parent `bill` (`bill_id` FK), a real structural reason the learning tables don't share: each of the
+four learning tables is its own root-level syncable entity, with no parent row carrying sync state on
+its behalf.
+
+**What this doesn't change:** `bill_items` stays without independent sync columns — confirmed
+intentional, not swept up by this decision. Only the four standalone learning tables gain the three
+columns.
 
 ---
 
