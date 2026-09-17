@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 16 Sep 2026 (rev 21) · **Current phase:** Phase 0 domain tickets complete — Phase 1 next
+**Last updated:** 17 Sep 2026 (rev 22) · **Current phase:** Phase 1 in progress (`KB-101` done)
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -12,9 +12,14 @@
 
 ## Right now
 
-**Phase:** 0 — Fix the differentiator (in progress)
-**Working on:** `KB-007` just completed. **Phase 0's domain ticket list is now complete** — every ticket in the canonical order (`KB-000` through `KB-009`, plus the `KB-005d` priority insert) is ✅. The only open Phase 0 item is `KB-001` (key rotation), which is the owner's own manual task, not something an agent session can do.
-**Next action:** Phase 1 planning/kickoff — no more Phase 0 tickets remain to plan around. Read `07-DECISIONS.md` and `03-DATA-MODEL.md` before that session starts.
+**Phase:** 1 — Foundation (in progress). Phase 0's domain ticket list is complete (`KB-000` through
+`KB-009`, plus the `KB-005d` priority insert) — only `KB-001` (key rotation, owner's manual task)
+remains open there.
+**Working on:** `KB-101` just completed (already satisfied by `KB-000` — verification + documentation
+only, no new code). Next up: `KB-102` — Supabase schema + migrations.
+**Next action:** `KB-102`. A Supabase project is already linked as prep (`urcenodcxtzwjrulwvgf`), no
+`config.toml`/migrations yet. **Before that ticket starts: `07-DECISIONS.md` D16 needs the owner's
+answer** — ESLint enforcement of the `domain/` import boundary, or manual review only.
 **Build tool: Antigravity**, Local mode, `main` branch until real code starts (then ticket branches).
 **Model policy:** Flash for scaffolding and mechanical work; **thinking-tier (Opus/Sonnet) for
 `KB-005`, `KB-005b`, RLS and the sync worker** — those are where an invisible mistake costs months.
@@ -39,7 +44,7 @@ before anything else.
 | Phase | Scope | Status |
 |---|---|---|
 | **0** | Build `domain/` + eval harness, new codebase | ✅ Domain tickets complete (`KB-001` key rotation still outstanding, owner's manual task) |
-| 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ⬜ Not started |
+| 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | 🟦 In progress (`KB-101` done) |
 | 2 | Voice pipeline: catalog index, layers 1–4, learning | ⬜ Not started |
 | 3 | Billing UI, receipt, history, catalog screen | ⬜ Not started |
 | 4 | Pilot hardening, PWA, 20-bill validation run | ⬜ Not started |
@@ -79,7 +84,12 @@ catalog index under 16 ms at 10,000 products ✅.
 
 ### Phases 1–4
 
-Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
+**Phase 1 started.** See `06-FEATURE-TICKETS.md` for the full list (`KB-101` … `KB-406`).
+
+| ID | Ticket | Status | Notes |
+|---|---|---|---|
+| KB-101 | Project scaffold | ✅ **Done** | Already satisfied by `KB-000` — `src/{domain,data,providers,ui,app}` all exist, `data`/`providers`/`ui`/`app` empty except `.gitkeep`. Re-verified directly (not assumed): every import in every `domain/` production file is same-directory only, zero imports from `data`/`providers`/`ui`/`app`. **Real gap found, not fixed here:** this boundary is enforced by discipline only, no tooling — safe while those folders were empty, not safe once Phase 1 puts real code in them. Logged as `07-DECISIONS.md` D16 (decision pending, not yet made — ESLint enforcement vs. manual review, owner's call before `KB-102`). |
+| KB-102 | Supabase project + migrations | ⬜ | **Partially prepped, not started as a ticket:** a real Supabase project is already linked (`supabase/.temp/`, ref `urcenodcxtzwjrulwvgf`) — owner confirmed this was manual prep, nothing built yet. No `config.toml`, no migrations. Schema/RLS work is still fully open. |
 
 ---
 
@@ -109,6 +119,7 @@ Not started. See `06-FEATURE-TICKETS.md` for the full list (KB-101 … KB-406).
 
 | Date | What | By |
 |---|---|---|
+| 17 Sep 2026 | **`KB-101` finished and committed — Phase 1 started.** Verification-only, no new code: the scaffold `KB-101` asks for (`src/{domain,data,providers,ui,app}`, `domain/` importing nothing from the others) was already built by `KB-000`. Re-verified directly rather than cited from memory — grepped every import in every `domain/` production file (`catalog.ts`, `catalogIndex.ts`, `commands.ts`, `grammar.ts`, `learning.ts`, `money.ts`, `validator.ts`, `vocabulary.ts`): zero cross-imports into `data`/`providers`/`ui`/`app`. **Real gap surfaced, not fixed here:** that boundary has no tooling behind it, only discipline — safe while those folders were empty, not safe once Phase 1 starts putting real code in them. Logged as `07-DECISIONS.md` D16, explicitly a decision *pending*, not made: ESLint enforcement (one `no-restricted-imports`-style rule) vs. continuing on manual review, owner's call, before `KB-102`. Also found and confirmed with the owner: a real Supabase project is already linked (`supabase/.temp/`, ref `urcenodcxtzwjrulwvgf`) — manual prep, nothing built, `KB-102` still fully open. | Agent + Owner |
 | 16 Sep 2026 | **`KB-007` finished and committed — Phase 0's domain ticket list is now complete.** `domain/vocabulary.ts`, `buildVocabularyPrompt()`. Scope narrowed to the pure ranking/capping function, same discipline as `KB-006`'s WER scoping: sending the prompt to Whisper and measuring a recognition-accuracy effect needs an STT connection Phase 0 doesn't have. Ranks by recent-frequency → use_count → brand-like name → alphabetical, caps at 40 names/600 chars, excludes zero-signal products entirely (both signals are caller-supplied — checked `learning.ts` directly and confirmed neither exists as stored data in Phase 0 yet). **A brand-new shop with no bill history gets an empty vocabulary, by design** — stated in a code comment and a dedicated test, not left for a future session to mistake as a bug. R5 stays open (mechanism built, effect unmeasured). 01-PRD.md S6 also updated this session with `KB-009`'s real 92.8% coverage number. **With this, every ticket in the canonical Phase 0 order is done; only `KB-001` (key rotation, the owner's own task) remains before Phase 1.** | Agent + Owner |
 | 15 Sep 2026 | **`KB-009` finished and committed — THE GATE, passed. Fast-path coverage measured at 92.8% (116/125), closing R1.** `eval/coverage-probe.ts`, `npm run coverage:probe`, run over all 125 cases across both existing fixtures (`eval/voice-cases.json` + `eval/number-benchmark.json`) through the real `parseUtterance()` pipeline, KB-005d's fix included. Well above both the 40% stop-gate and the 60–70% target range — no stop triggered, proceeding to `KB-007` as planned. `grammar.ts` gained one additive export, `diagnoseUtterance()`, a miss-reason twin of `parseUtterance` that never restructures the real resolution logic — verified via a 125-case self-consistency test asserting it never disagrees with `parseUtterance`'s actual hit/miss on real fixture data. That test caught a real bug in the diagnostic before it shipped: two eval cases (`VC011` "do doodh packet", `VC020`'s "ek tel pouch" segment) actually bail (the qty's unit word sits after the product name, not immediately after the number, and the bare product resolves to a liter-priced item incompatible with the implicit-piece fallback) — the diagnostic had missed that this path can bail at all. Fixed before reporting, not after. That finding is new and real, not a repeat of `KI-21`/`KI-22` — filed as **`KI-24`** (MEDIUM, safe bail not a wrong number, but real coverage cost). Miss reasons grouped: ambiguous two-number (3), incompatible unit for default price (2, `KI-24`), orphaned marker (2, `KI-21`'s known cases), too many numbers/conflicting units (2). | Agent + Owner |
 | 15 Sep 2026 | **`KB-005d` finished and committed — closes `KI-21`, priority insert ahead of `KB-007`.** `grammar.ts`'s `hasOrphanedMarker()`: any `wala`/`wali`/`ka`/`ki`/currency marker whose neighbouring word fails to parse as a number now bails the segment, instead of silently falling through to Rule 5a's default-price path. Structural fix (token-count comparison), deliberately not a two-word special case — new tests cover `wali`/`ki` variants and a third, arbitrary unrecognised word to prove it generalises. **`KB-006` re-run: 100/0/0, not the 98/2/0 predicted in the plan** — the prediction was wrong, corrected in the handoff rather than left standing: `number-benchmark.ts`'s own scoring (written in `KB-006`) already treats a safe decline on an adversarial/unsolvable input as full credit, not partial credit, so both fixed cases scored `correct`, not `bail`. `KI-22` (पीस/`UNIT_ALIASES`) confirmed untouched and still open, as expected — traced `"wala"` in that case to attach correctly through the real logic, independent of this fix. | Agent + Owner |
