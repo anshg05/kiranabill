@@ -542,9 +542,10 @@ actual shopkeeper correction behavior, the same way the length-scaled matching t
 
 ## Rev 11 — 17 Sep 2026
 
-### D16 — `domain/` import isolation needs a decision before Phase 1 puts real code in `data`/`providers`/`ui` — **decision pending, not yet made**
+### D16 — `domain/` import isolation is enforced by ESLint, not manual review alone 🟢
 
-**Not a decision yet — recording that one is needed, per the owner's instruction, ahead of `KB-102`.**
+**Resolved 17 Sep 2026, same day it was opened.** Originally recorded as a decision *needed*, not yet
+made — see the question below, kept verbatim for the record. Owner decided: add tooling.
 
 `domain/` import isolation is currently enforced by discipline only, with no tooling. This was safe
 in Phase 0 because `data/`, `providers/` and `ui/` were empty (`KB-101`, `KB-000` before it) — there
@@ -558,11 +559,18 @@ Verified directly during `KB-101`, not assumed: every import in every `domain/` 
 from `data/`, `providers/`, `ui/`, or `app/`. True today; nothing stops it from becoming false the
 first time a Phase 1 ticket adds a convenience import across the boundary.
 
-**The question, put to the owner directly rather than decided here:** add a minimal ESLint config
-(one rule — `no-restricted-imports` or equivalent, scoped to blocking `domain/` → `data`/`providers`/
-`ui`) before `KB-102`, or rely on manual review (reading the diff, same as every ticket this session)
-now that the folders are no longer empty? A new dependency either way requires
-`09-WORKING-AGREEMENT.md` §B6 justification if adopted — not pre-approved by this entry.
+**The question, as originally put to the owner:** add a minimal ESLint config (one rule —
+`no-restricted-imports` or equivalent, scoped to blocking `domain/` → `data`/`providers`/`ui`) before
+`KB-102`, or rely on manual review (reading the diff, same as every ticket this session) now that the
+folders are no longer empty?
+
+**Decision: add it.** `eslint.config.js`, one rule only (`no-restricted-imports`, scoped to
+`src/domain/**/*.ts`, blocking `**/data/**`/`**/providers/**`/`**/ui/**`) — no formatting rules, no
+style rules, no other correctness rules. `eslint` + `@typescript-eslint/parser` (parser only, not the
+full plugin — no `@typescript-eslint/eslint-plugin` rules are used). Logged per `09-WORKING-AGREEMENT.md`
+§B6 as `11-STACK-DECISIONS.md` SD-020. Verified the rule actually fires before calling this done: a
+temporary real `../data/*` import inside `src/domain/` was confirmed to fail `npm run lint` with the
+intended message, then removed.
 
 ---
 
