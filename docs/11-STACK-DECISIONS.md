@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 17 Sep 2026 (rev 5)
+**Last updated:** 17 Sep 2026 (rev 6)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -277,6 +277,33 @@ to (`SD-002` — Supabase/Postgres), not a general-purpose tool with competing o
 
 **Exit cost: near zero.** Dev-only, not in `dependencies`, not part of any shipped bundle. The CLI is
 also independently reinstallable globally if ever removed from the repo's own devDependencies.
+
+## SD-020 — ESLint: **`eslint` ^10.10.0 + `@typescript-eslint/parser` ^8.70.0** (dev-only) · 17 Sep 2026
+
+Needed to enforce `07-DECISIONS.md` D16: `domain/` must never import from `data/`, `providers/`, or
+`ui/` (`02-ARCHITECTURE.md` §10). That boundary was true by discipline alone through Phase 0, safe
+only because those folders were empty — Phase 1 puts real code in them, so a stray import would now
+compile and pass every test while silently breaking the one property that keeps `domain/` testable
+without a database or browser. Owner decided to add tooling rather than rely on manual review alone.
+
+**Deliberately minimal — one rule, nothing else.** `eslint.config.js` has exactly one rule
+(`no-restricted-imports`, scoped to `src/domain/**/*.ts` only) blocking imports matching
+`**/data/**`, `**/providers/**`, `**/ui/**`. No formatting rules, no style rules, no other
+correctness rules, no linting of `ui`/`data`/`providers`/`app` themselves. `@typescript-eslint/parser`
+is included only so ESLint can parse `.ts` syntax (`import type`, generics) — none of
+`@typescript-eslint/eslint-plugin`'s rules are used, so that package isn't installed at all.
+
+Verified the rule actually fires, not just configured and assumed: temporarily added a real
+`../data/*` import inside `src/domain/`, confirmed `npm run lint` fails with the exact message above,
+removed the probe file, confirmed clean again.
+
+| Rejected | Why |
+|---|---|
+| A full `@typescript-eslint/eslint-plugin` + recommended rule set | Exactly what this decision explicitly avoids — style/correctness linting nobody asked for, when the only need is one import-boundary rule |
+| `dependency-cruiser` or similar dedicated boundary tool | A second dependency and a second config format for a need one ESLint rule already covers |
+
+**Exit cost: near zero.** Dev-only, two packages, one rule, one config file. Deleting `eslint.config.js`
+and the two devDependencies removes it cleanly with no trace elsewhere in the codebase.
 
 ## How to add to this document
 

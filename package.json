@@ -12,7 +12,8 @@
     "eval": "tsx eval/run-eval.ts",
     "try": "tsx scripts/try.ts",
     "bench:numbers": "tsx eval/number-benchmark.ts",
-    "coverage:probe": "tsx eval/coverage-probe.ts"
+    "coverage:probe": "tsx eval/coverage-probe.ts",
+    "lint": "eslint ."
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -23,7 +24,9 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@typescript-eslint/parser": "^8.70.0",
     "@vitejs/plugin-react": "^4.4.0",
+    "eslint": "^10.10.0",
     "supabase": "^2.117.0",
     "tailwindcss": "^4.1.0",
     "tsx": "^4.19.0",
