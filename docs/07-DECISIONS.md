@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 18 Sep 2026 (rev 12) · Supersedes rev 11
+**Last updated:** 20 Sep 2026 (rev 13) · Supersedes rev 12
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -605,6 +605,53 @@ its behalf.
 **What this doesn't change:** `bill_items` stays without independent sync columns — confirmed
 intentional, not swept up by this decision. Only the four standalone learning tables gain the three
 columns.
+
+---
+
+## Rev 13 — 20 Sep 2026
+
+### D18 — `bills_enforce_immutability`'s cancel-transition check switched from an explicit column list to a `jsonb` row diff 🟢
+
+**Related to `KB-103`/D17 above — a second real gap found in the same ticket's trigger work, closed
+structurally rather than left as a maintenance hazard.**
+
+The first version of `bills_enforce_immutability()` (`supabase/migrations/20260917194832_billing.sql`)
+enforced "only `status` may change on cancellation" by listing every other column explicitly —
+`new.id is distinct from old.id or new.shop_id is distinct from old.shop_id or ...` for all thirteen
+non-status columns. The owner asked to see the actual SQL before pushing to prod and asked directly:
+does this enumerate columns, and if so, what happens when a future migration adds a column to `bills`
+and whoever writes it forgets to add it here?
+
+**The honest answer was: a silent gap.** Nothing in Postgres ties a hand-written column list inside a
+plpgsql function body to the table's actual schema. A future `alter table bills add column
+discount_paise bigint` with no matching edit to this trigger would let that column change freely
+during a cancel — exactly the class of defect this trigger exists to prevent — and every existing
+test (the local dry-run, the verification script, `db diff`) would keep passing, because none of them
+exercise a column that doesn't exist yet. The migration's own comment claimed the explicit list "forces"
+future columns through the check "deliberately" — that language overstated what it actually guaranteed
+and was corrected.
+
+**Decision: replace the explicit list with `(to_jsonb(old) - 'status') is distinct from (to_jsonb(new)
+- 'status')`.** This compares the entire row, minus `status`, as `jsonb` — any column that exists on
+`bills` at execution time is automatically included, whether or not it existed when this trigger was
+written. Same reasoning already applied elsewhere in this project (`07-DECISIONS.md` D16 / `SD-020`,
+ESLint enforcing the `domain/` import boundary instead of relying on code review to catch a stray
+import): close a gap structurally, so it can't be forgotten, rather than add a check that only fires
+after the mistake already shipped.
+
+**Why the jsonb-equality footgun doesn't apply here:** `jsonb` row comparison can be unreliable for
+floating-point columns, where two numerically-equal values can serialize to different jsonb text and
+compare as distinct. This is judged safe **for the `bills` table specifically**, not assumed safe for
+jsonb diffs in general: every column on `bills` is `uuid`, `text`, `bigint`, `int`, or `timestamptz` —
+never `float`/`real`/unconstrained `numeric` — so there is no floating-point representation ambiguity
+for this comparison to trip over. Money on this table is already integer paise (`hard rule 1`), which
+is exactly why this is safe. A future table with a float-typed column would need this reasoning
+re-checked before reusing this pattern, not copied on the assumption it always holds.
+
+**Re-verified after the change:** full local `supabase db reset` (all four migrations reapply cleanly,
+in order) and `supabase db diff` (no drift), plus the same 13-part functional verification script
+(all seven immutability scenarios) re-run and re-pasted in full in the `KB-103` handoff — not just a
+diff against the prior run.
 
 ---
 

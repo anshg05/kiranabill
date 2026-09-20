@@ -10,9 +10,10 @@
 -- prevent. The one legal transition out of 'final' is to 'cancelled', and
 -- on that transition ONLY the status column may change - every other
 -- column (including subtotal_paise/total_paise) must stay byte-identical
--- to its pre-cancellation value, checked column by column, not just
--- asserted. A cancelled bill silently ending up with a different total
--- would defeat the entire point of this trigger existing.
+-- to its pre-cancellation value, checked via a jsonb diff of the row minus
+-- status (see the function body), not just asserted. A cancelled bill
+-- silently ending up with a different total would defeat the entire point
+-- of this trigger existing.
 --
 -- docs/03-DATA-MODEL.md's own conflict-strategy table (02-ARCHITECTURE.md
 -- section 2) says bill_items are "Immutable once the bill is finalised"
@@ -61,23 +62,21 @@ begin
       raise exception 'bills: a finalised bill may only transition to cancelled, not to % (id=%)', new.status, old.id;
     end if;
 
-    -- Every column except status must stay byte-identical. Listed
-    -- explicitly, not "select * differs", so a future added column is
-    -- forced through this check deliberately rather than silently passing.
-    if new.id is distinct from old.id
-      or new.shop_id is distinct from old.shop_id
-      or new.local_id is distinct from old.local_id
-      or new.receipt_number is distinct from old.receipt_number
-      or new.customer_name is distinct from old.customer_name
-      or new.customer_mobile is distinct from old.customer_mobile
-      or new.subtotal_paise is distinct from old.subtotal_paise
-      or new.total_paise is distinct from old.total_paise
-      or new.schema_version is distinct from old.schema_version
-      or new.device_id is distinct from old.device_id
-      or new.created_at is distinct from old.created_at
-      or new.finalized_at is distinct from old.finalized_at
-      or new.synced_at is distinct from old.synced_at
-    then
+    -- Every column except status must stay byte-identical. Compared via a
+    -- jsonb diff of the whole row (minus status), not an explicit column
+    -- list - a jsonb list is forced through this check automatically the
+    -- moment it exists on the table, so a future column added to bills
+    -- can't silently bypass the check by the trigger simply not mentioning
+    -- it (the original explicit-list version had exactly that unguarded
+    -- gap - see docs/07-DECISIONS.md D17).
+    --
+    -- jsonb equality can be a footgun for float columns (e.g. distinct
+    -- numeric representations of the same value comparing unequal as
+    -- jsonb text) - doesn't apply here: every column on bills is
+    -- uuid/text/bigint/int/timestamptz, never float or unconstrained
+    -- numeric, so this comparison is judged safe for THIS table
+    -- specifically, not assumed safe for jsonb diffs in general.
+    if (to_jsonb(old) - 'status') is distinct from (to_jsonb(new) - 'status') then
       raise exception 'bills: cancelling a finalised bill may only change status - every other column must stay identical (id=%)', old.id;
     end if;
   end if;
