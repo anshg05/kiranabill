@@ -150,12 +150,14 @@ tracked product metric**, target ≥60%.
 | Called | **Only on Layer 1 miss** |
 | Prompt | Static pricing-grammar rules + a relevance-ranked catalog slice |
 | Catalog slice | Top 30 relevant products, down from the predecessor's 80 — measure whether accuracy drops before assuming it does |
-| Caching | Cache the static grammar block; it is byte-identical on every call and ~43% of the prompt |
+| Caching | ~~Cache the static grammar block; it is byte-identical on every call and ~43% of the prompt~~ **Not currently achievable — verified against the real API in `KB-205`.** Gemini's explicit context caching requires 2,048 minimum tokens; the actual grammar prompt tokenizes to 1,233. See `07-DECISIONS.md` D26. |
 | Temperature | 0.1 |
 | Retries | 3 with exponential backoff, then a fallback model |
 | Output | Strict JSON array of proposed items |
 
 **A parse response is a proposal, never financial truth.** It always passes through Layer 3.
+
+**Model:** `gemini-2.5-flash-lite` — verified live and still the cheapest Flash-Lite variant as of `KB-205` (20 Sep 2026). See `07-DECISIONS.md` D27; re-check before assuming this pricing still holds.
 
 ---
 

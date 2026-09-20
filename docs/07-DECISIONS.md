@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 18) · Supersedes rev 17
+**Last updated:** 20 Sep 2026 (rev 19) · Supersedes rev 18
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -871,6 +871,56 @@ rupees."):
 ```
 The 401 shape is real and clean enough to classify as a permanent error whenever `KB-206` builds
 retry/error handling for the `/voice` endpoint.
+
+## Rev 19 — 20 Sep 2026
+
+### D26 — Gemini's explicit context caching is not usable at the pricing-grammar prompt's real size 🟢
+
+**Verified against the live API (`KB-205`), correcting `04-VOICE-PIPELINE.md` §4's own stated
+assumption, not just noted in passing.** That section specified: *"Cache the static grammar block; it
+is byte-identical on every call and ~43% of the prompt."* Attempting this for real, with the actual
+prompt text `src/voice/pricingGrammarPrompt.ts` sends:
+
+```
+POST /v1beta/cachedContents
+400 Bad Request
+{"error":{"code":400,"message":"Cached content is too small. total_token_count=1233, min_total_token_count=2048","status":"INVALID_ARGUMENT"}}
+```
+
+The grammar prompt (3,622 characters) tokenizes to 1,233 tokens — Gemini's explicit caching floor is
+2,048. **This is not a bug to fix by writing a longer prompt** — padding the prompt just to clear an
+arbitrary token floor would be optimizing for the cache mechanism instead of correctness, exactly the
+kind of inversion this project's rules exist to prevent. `04-VOICE-PIPELINE.md` §4 is corrected in
+place to reflect this as a real, current fact, not a design intent.
+
+**Open, explicitly not resolved here:** `04-VOICE-PIPELINE.md` §9's cost model (`Layer 2 fallback ~₹0.043/utterance`) needs to be checked against whether it assumed the ~43% cached-prompt saving or already
+priced the prompt in full — unverified either way as of this entry. **Assigned to `KB-206`'s plan**,
+since that ticket is what actually calls this provider in a real cost-bearing path for the first time.
+
+### D27 — LLM parsing model pricing snapshot: `gemini-2.5-flash-lite` confirmed cheapest, dated explicitly 🟢
+
+**Why this needs a dated entry, not just a code comment:** `11-STACK-DECISIONS.md` SD-006 already
+flagged that Gemini 2.5 Flash-Lite has a published retirement date and that "the successor's pricing"
+needed real verification, not an assumed model string. Provider pricing is exactly the kind of fact
+that goes stale silently — a future session reading `GEMINI_MODEL = "gemini-2.5-flash-lite"` in
+`geminiParseProvider.ts` has no way to know whether that was chosen yesterday or a year ago, or whether
+it's still the right choice.
+
+**Checked for real, 20 Sep 2026:** `ListModels` confirms `gemini-2.5-flash-lite` is still live, alongside
+two newer generations already in production, `gemini-3.1-flash-lite` and `gemini-3.5-flash-lite`. Real
+pricing from `ai.google.dev/gemini-api/docs/pricing`, per 1M tokens:
+
+| Model | Input | Output |
+|---|---|---|
+| gemini-2.5-flash-lite | $0.10 | $0.40 |
+| gemini-3.1-flash-lite | $0.25 | $1.50 |
+| gemini-3.5-flash-lite | $0.30 | $2.50 |
+
+**Decision: `gemini-2.5-flash-lite` stands.** It remains the cheapest by a wide margin (2.5–6x below the
+newer generations), and `04-VOICE-PIPELINE.md` §9's cost model was computed against its pricing — moving
+to a newer generation now would silently invalidate that cost model for no stated benefit. **Revisit
+trigger:** before this model's actual retirement date, or if a future ticket needs capability the 2.5
+generation lacks — check `ai.google.dev` again then, don't assume this table still holds.
 
 ---
 
