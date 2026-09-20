@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 21 Aug 2026 (rev 5) · **Status:** Final for MVP
+**Last updated:** 20 Sep 2026 (rev 6) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -62,7 +62,8 @@ baseline. **Do not start Phase 1 before this.**
 | **KB-104** | RLS policies | Every `shop_id` table. `base_products` read-only to authenticated. |
 | **KB-105** | **RLS negative tests** | Two shops, authenticated as each, asserting zero cross-visibility on every table. **The most important test in the suite.** |
 | **KB-106** | Google sign-in | Auth flow, session handling, sign-out |
-| **KB-107** | Onboarding | Shop details, logo upload, **catalog choice screen** (S2) |
+| **KB-107** | Onboarding | Shop name/phone, **catalog choice screen** (S2). Logo upload split out to `KB-107b` — a distinct Storage/security surface, not bundled in to avoid scope creep. |
+| **KB-107b** | Shop logo upload | Supabase Storage bucket + `storage.objects` RLS policies (versioned migration, same discipline as every other schema change), upload UI wired into S2/S7. Deferred out of `KB-107` on 20 Sep 2026 rather than left as unscoped "someday" work. |
 | **KB-108** | Seed `base_products` | Import the 482-product catalog with aliases as versioned base data |
 | **KB-109** | IndexedDB layer | Local schema mirroring the server tables, with `local_id` / `sync_status` / `updated_at` |
 | **KB-110** | Sync worker | Bidirectional, idempotent on `(shop_id, local_id)`, exponential backoff, never blocks the UI |
