@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 14) · Supersedes rev 13
+**Last updated:** 20 Sep 2026 (rev 15) · Supersedes rev 14
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -680,6 +680,46 @@ token could equally satisfy. Decoding the JWT alone proves the token is *well-fo
 claims to be" before trusting an RLS-gated result — `KB-107`'s onboarding flow (confirming the
 `shop_members` owner row that gets inserted actually matches the signing-in user) is the next likely
 candidate.
+
+---
+
+## Rev 15 — 20 Sep 2026
+
+### D20 — `shops_select` broadened to also allow `owner_user_id = auth.uid()`, not `is_shop_member(id)` alone 🟢
+
+**A security policy change, made mid-`KB-107`, not folded in silently — same reasoning trail as any other decision here.**
+
+**What changed:** `KB-104`'s original `shops_select` policy was `using (is_shop_member(id))` only. It
+is now:
+```sql
+using (is_shop_member(id) or owner_user_id = auth.uid())
+```
+
+**Why:** `KB-107`'s onboarding flow needs to insert a `shops` row and its owning `shop_members` row as
+two sequential steps (`KB-104`'s own smoke test proved these must happen in that order, in the same
+request — see the `KB-106`/`KB-107` handoffs). If the second insert fails or the request is
+interrupted between the two steps, the shop is left in a real, expected failure state: **a `shops` row
+with no matching `shop_members` row.** `KB-107`'s `createShop()` needs to detect this "orphaned shop"
+state on next load and resume at the membership-insert step, rather than silently creating a second,
+duplicate shop. Under the original policy, that orphaned row was invisible to its own owner —
+`is_shop_member(id)` is false precisely because the membership row is the thing that's missing — so
+there was no way for the client to ever distinguish "no shop yet" from "shop exists, bootstrap
+failed partway," and no way to resume safely at all.
+
+**Why this doesn't weaken the security model:** `owner_user_id = auth.uid()` does not create a new way
+to claim or see a shop. `shops_insert` (unchanged, `KB-104`) already requires exactly this same
+condition — `owner_user_id = auth.uid()` — to create the row in the first place. This change only lets
+an already-established fact (you are recorded, at insert time, as this shop's owner) also grant read
+access to it. It cannot let a user see a shop they don't own: the clause is scoped to their own
+`auth.uid()`, identical in shape to `shops_insert`'s own check. Verified, not assumed: `KB-105`'s
+suite gained an explicit negative case for exactly this — a different user cannot see another user's
+unmembered shop through this clause, only its actual owner can.
+
+**Re-verified:** `KB-105`'s full 19-scenario suite (17 prior + 2 new: the owner-sees-own-unmembered-shop
+case, and the different-user-still-blocked negative case) — 19/19, exit code 0, nothing else regressed.
+Migration dry-run locally (`db reset`, all 8 migrations in order). Remote confirmation via
+`supabase db dump --linked` (`KI-25`: never trust `db diff` alone for this) happens after the owner
+runs `supabase db push`, per `17-MANUAL-TASKS.md` M-12 — not done as of this entry.
 
 ---
 

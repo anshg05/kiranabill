@@ -165,6 +165,31 @@ async function main(): Promise<void> {
 
     await check(
       client,
+      "bootstrap: owner A can see their own shop row BEFORE the shop_members row exists " +
+        "[the orphaned-shop visibility gap KB-107's resume logic depends on - shops_select must allow " +
+        "owner_user_id = auth.uid() in addition to is_shop_member(), or a failed bootstrap becomes " +
+        "permanently invisible to its own owner - see 07-DECISIONS.md D20]",
+      async () => {
+        const res = await client.query(`select 1 from shops where id = $1`, [shopA]);
+        if (res.rowCount !== 1) throw new Error(`expected the owner to see their own unmembered shop, got ${res.rowCount} rows`);
+        return "owner can see their own shop row even with no membership row yet, as expected";
+      }
+    );
+
+    await check(
+      client,
+      "bootstrap negative case: a DIFFERENT user (owner B) cannot see owner A's unmembered shop via the " +
+        "broadened owner_user_id clause - it only grants visibility to the actual owner, not everyone",
+      async () => {
+        await asUser(client, ownerB);
+        const res = await client.query(`select 1 from shops where id = $1`, [shopA]);
+        if (res.rowCount !== 0) throw new Error(`expected 0 rows, got ${res.rowCount}`);
+        return "0 rows visible to a non-owner, non-member user, as expected";
+      }
+    );
+
+    await check(
+      client,
       "bootstrap: owner A inserts their own owner-membership row " +
         "[REGRESSION TEST for the real KB-104 bug: this exact insert was broken pre-owns_shop() fix]",
       async () => {
