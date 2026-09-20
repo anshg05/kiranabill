@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 16) · Supersedes rev 15
+**Last updated:** 20 Sep 2026 (rev 17) · Supersedes rev 16
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -777,6 +777,71 @@ tables — RLS-protected, constrained, triggered — a mocked test suite proves 
 correct, never the *real schema interaction*. Both are required before calling that logic done; neither
 substitutes for the other. `KB-105`'s automated suite exists for exactly the RLS half of this; `KB-110`
 is the first ticket to need the equivalent for real push/pull mechanics, and it will not be the last.
+
+---
+
+## Rev 17 — 20 Sep 2026
+
+### D22 — Receipt block reservation: plain SELECT-then-INSERT, not an atomic RPC 🟡
+
+**A deliberate MVP simplification, not an oversight — logged with an explicit revisit trigger, per the
+same standard as `KB-110`'s accepted `bill_items` non-atomicity.**
+
+`KB-111`'s block reservation (`reserveBlock()`) computes `max(block_end)` for a shop and inserts the next
+50-number range as a plain two-step client operation — no `security definer` RPC, no row locking.
+
+**The real race window, named explicitly, not just gestured at:** two devices reserving a block for the
+same shop within the same query round-trip could both read the same `max(block_end)` and insert
+overlapping ranges, each believing it owns numbers the other device also believes it owns.
+
+**Why accepted for MVP:** Offline Level 4 (multi-device concurrent use) is explicitly out of scope —
+`02-ARCHITECTURE.md` §3 states one device per shop. The race requires two devices reserving
+*simultaneously*, which the product doesn't support happening at all yet.
+
+**Revisit trigger, stated explicitly:** before any multi-device support ships — not discovered via a
+real duplicate-receipt-number collision during the pilot. Whoever picks up multi-device support must
+either wrap reservation in a `security definer` RPC using `select ... for update` (or an equivalent
+serializing mechanism) or confirm some other reason the race can't manifest under that ticket's design,
+before shipping it.
+
+### D23 — Fallback receipt number format: full device UUID, not a truncated prefix 🟢
+
+**Rejected a shorter, prettier format after computing the actual collision risk, not assuming a short
+prefix was "probably fine."**
+
+A 6-hex-character truncated device-id prefix (`{prefix}-{6 chars}-{n}`) has a birthday-paradox collision
+probability of roughly 1-in-1.7-million for 5 device installations a single shop might accumulate over
+its lifetime, 1-in-373,000 for 10. In isolation, low. **Rejected anyway**, because the fallback counter
+`n` is device-local and starts fresh each time a device enters exhaustion mode — a prefix collision
+between two devices doesn't create a small *chance* of a duplicate number, it creates a **near-certain**
+one on the very first fallback number either device generates, since the two `n` sequences aren't
+independent once the prefixes match. The birthday-paradox number describes the odds of the *setup*, not
+the odds of the actual collision that follows it.
+
+**Decision: use the full device UUID** — `{shop.receiptPrefix}-{full deviceId}-{n}`. Uglier
+(`KB-550e8400-e29b-41d4-a716-446655440000-1`), but this is already the abnormal, explicitly-flagged
+edge-case path (`receipt_number_source = 'fallback'`, D24 below) — not a string a customer is meant to
+find elegant. Two random v4 UUIDs colliding is ~1-in-5×10³⁷: cryptographically negligible, not merely
+statistically low, and removes the compounding-collision structure entirely.
+
+### D24 — `bills.receipt_number_source`: a permanent bookkeeping label, never a trigger for renumbering 🟢
+
+**Also inferred, flagged as such:** the receipt-number string format itself (`{prefix}-{number, zero-
+padded to 6 digits}`, e.g. `KB-000142`) is read off a single mockup in `05-FRONTEND-SPEC.md` — no doc
+states the padding width as a rule. If a future ticket finds conflicting evidence, this is the decision
+that assumed it.
+
+**The column's purpose, stated explicitly because the word "reconcile" in `02-ARCHITECTURE.md` §4 step 5
+easily misreads as "fix the number":** `receipt_number_source` (`'block' | 'fallback'`) is a **permanent
+bookkeeping label**, set once at bill creation and never changed again. Per §4 step 3 — *"the number
+shown to the customer never changes after sync"* — a fallback-numbered bill's receipt number is never
+replaced, renumbered, or touched once assigned; it stays exactly as printed on the physical receipt
+forever. "Reconcile on sync and flag it" means the shop owner can eventually *see* that a bill used the
+offline-exhaustion path (surfaced in whichever ticket builds S5/S6 — deliberately not decided here, same
+scope discipline as `KB-109`'s item-search cut) — never that the system corrects or reissues the number.
+Stated explicitly in the migration's own comment, not just here, so a future ticket touching this column
+doesn't build renumbering logic against the letter of "reconcile" rather than its actual, narrower
+meaning.
 
 ---
 
