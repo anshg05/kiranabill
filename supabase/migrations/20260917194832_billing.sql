@@ -68,7 +68,7 @@ begin
     -- moment it exists on the table, so a future column added to bills
     -- can't silently bypass the check by the trigger simply not mentioning
     -- it (the original explicit-list version had exactly that unguarded
-    -- gap - see docs/07-DECISIONS.md D17).
+    -- gap - see docs/07-DECISIONS.md D18).
     --
     -- jsonb equality can be a footgun for float columns (e.g. distinct
     -- numeric representations of the same value comparing unequal as
