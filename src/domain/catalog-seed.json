@@ -7635,17 +7635,15 @@
   },
   {
     "id": "616",
-    "displayName": "Agarbatti",
+    "displayName": "Agarbatti (Dhoop)",
     "sourceCategory": "GRAINS / SEEDS",
     "guardCategory": "household",
     "unit": "piece",
     "suggestedPricePaise": 5000,
     "aliases": [
-      "Agarbatti",
       "Dhoop",
-      "Incense sticks",
       "धूप",
-      "अगरबत्ती"
+      "Agarbatti (Dhoop)"
     ],
     "isActive": true
   },
@@ -7755,19 +7753,19 @@
   },
   {
     "id": "623",
-    "displayName": "Masoor Daal",
+    "displayName": "Masoor Daal (Khadi)",
     "sourceCategory": "GRAINS / SEEDS",
     "guardCategory": "dal",
     "unit": "kg",
     "suggestedPricePaise": 9000,
     "aliases": [
-      "Masoor Daal",
       "khadi masoor daal",
       "khadi masoor",
       "खड़ा मसूर दाल",
       "खड़ा मसूर",
       "खडी मसूर",
-      "खडी मसूर दाल"
+      "खडी मसूर दाल",
+      "Masoor Daal (Khadi)"
     ],
     "isActive": true
   },

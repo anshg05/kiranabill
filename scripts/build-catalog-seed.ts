@@ -77,6 +77,14 @@ interface ProductFix {
   displayName?: string;
   unit?: string;
   names?: string[];
+  /**
+   * Aliases to drop (case-insensitive) even though legacy/products.js
+   * lists them for this id - for a renamed product that still carries its
+   * old, now-ambiguous generic alias (KI-26): the alias itself didn't stop
+   * being real legacy data, but keeping it here would make it collide
+   * with the same alias on the other, still-plain-named product.
+   */
+  removeNames?: string[];
 }
 
 interface BuildReport {
@@ -116,6 +124,30 @@ const PRODUCT_RUNTIME_FIXES: Record<number, ProductFix> = {
   609: { displayName: "Futana" },
   611: { displayName: "Gulab Jamun Packet" },
   613: { displayName: "Daaliya" },
+
+  // KI-26 (docs/12-PARKED.md): ids 623 and 616 shared a displayName with
+  // ids 19 and 202 respectively - two genuinely different, differently
+  // priced products under the same name, not cosmetic duplicates. Blocked
+  // KB-107's copy_base_catalog() from bulk-copying the full catalog into a
+  // shop (unique (shop_id, lower(display_name)) violation on the second
+  // row of each pair). Renamed using the disambiguating word already
+  // present in each row's own aliases, not invented fresh.
+  623: {
+    displayName: "Masoor Daal (Khadi)", // whole/unsplit masoor - id 19 stays plain "Masoor Daal"
+    // Without this, "Masoor Daal" stays a bare alias here too, colliding
+    // with id 19's own alias and making "masoor daal" ambiguous by voice
+    // - caught by hand-testing npm run try after the rename, exactly the
+    // check a passing test suite alone would not have caught.
+    removeNames: ["Masoor Daal"],
+  },
+  616: {
+    displayName: "Agarbatti (Dhoop)", // premium dhoop variant - id 202 stays plain "Agarbatti"
+    // Same reasoning as 623: "Agarbatti"/"अगरबत्ती" collide with id 202's
+    // own aliases, and "Incense sticks" collides case-insensitively with
+    // id 202's "incense sticks" - all three made "agarbatti" ambiguous by
+    // voice until removed.
+    removeNames: ["Agarbatti", "अगरबत्ती", "Incense sticks"],
+  },
 };
 
 /**
@@ -527,12 +559,17 @@ function buildSeed(rawProducts: RawProduct[]): { seed: SeedProduct[]; report: Bu
     const unit = (fix.unit ?? raw.unit ?? "piece").toLowerCase();
 
     const candidateAliases = [raw.displayName, ...raw.names, ...(fix.names ?? [])];
+    const removeNamesLower = new Set((fix.removeNames ?? []).map((n) => n.toLowerCase()));
     const keptAliases: string[] = [];
     const seenAliases = new Set<string>();
     for (const candidate of candidateAliases) {
       const cleaned = (candidate ?? "").trim();
       if (!isUsefulCatalogText(cleaned)) {
         report.garbageAliasesDropped += 1;
+        continue;
+      }
+      if (removeNamesLower.has(cleaned.toLowerCase())) {
+        report.duplicateAliasesDropped += 1;
         continue;
       }
       if (seenAliases.has(cleaned)) {
