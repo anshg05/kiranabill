@@ -69,12 +69,24 @@ describe("catalogIndex - performance (docs/18-AGENT-CONTRACT.md section 8: under
 
     const index = buildCatalogIndex(scaled); // build is a one-time startup cost, not timed
 
+    // A single performance.now() sample is noisy under system load (KI-23:
+    // observed 16-26ms spikes under a busy full-suite run, vs. ~10ms in
+    // isolation, on a lookup that isn't actually slower - the sample is).
+    // Averaging several runs measures what this test actually cares about
+    // (typical performance), rather than papering over noise with a wider
+    // margin, which would lower the bar without explaining why one sample
+    // is unreliable.
+    const RUNS_PER_QUERY = 5;
     const queries = ["chawal", "toor daal", "wim", "besan 500 gram", "ajwain"];
     for (const query of queries) {
-      const start = performance.now();
-      lookupCandidates(index, query);
-      const elapsedMs = performance.now() - start;
-      expect(elapsedMs).toBeLessThan(16);
+      let totalMs = 0;
+      for (let i = 0; i < RUNS_PER_QUERY; i++) {
+        const start = performance.now();
+        lookupCandidates(index, query);
+        totalMs += performance.now() - start;
+      }
+      const averageMs = totalMs / RUNS_PER_QUERY;
+      expect(averageMs).toBeLessThan(16);
     }
   });
 });
