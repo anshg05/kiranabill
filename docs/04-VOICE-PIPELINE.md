@@ -81,6 +81,9 @@ at 0% fast-path coverage and cannot buy past it. Coverage is earned per shop, pe
 **STT provider:** Groq Whisper large-v3 (not turbo — 22.3% vs 15.7% WER).
 **Phrase biasing:** every call carries the shop's top ~40 product names, ranked by `use_count`,
 capped at 600 characters (Whisper's prompt window is ~224 tokens).
+**Confidence:** Groq's real response carries no usable per-utterance confidence score in any response
+format — verified against the live API in `KB-204`. `TranscriptionProvider.transcribe()`'s
+`confidence?` is permanently unset for this provider. See `07-DECISIONS.md` D25.
 
 ---
 

@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 20 Sep 2026 (rev 7) · **Status:** Final for MVP
+**Last updated:** 20 Sep 2026 (rev 8) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -84,7 +84,7 @@ column added; nothing below is renumbered, so existing references elsewhere stil
 | **KB-201** | **`KB-CATALOG-INDEX`** | Prefix map + n-gram inverted index. Score only candidates, never the whole catalog. **Blocker for type-ahead.** Current O(n) scan is unusable past ~2,000 products on a budget phone (benchmarked: 5,000 → ~106 ms/keystroke). | ✅ **Already done** — `src/domain/catalogIndex.ts` (`KB-005b`, Phase 0). Trigram index, benchmarked at 10.6ms worst-case against a synthetic 10,000-product catalog, well under the 16ms budget. Nothing to port; this describes the legacy O(n) scan this already replaced. |
 | **KB-202** | Port validator to `domain/` | Preserve **all** guards: category buckets, length-scaled thresholds, phonetic variants, unit conversion with rate-basis inference, 11 review codes | ✅ **Already done** — `src/domain/validator.ts` (`KB-005b`). The 11-code review/confidence-gate system was explicitly scoped *out* of `KB-005b` at the time (deferred to whichever ticket has real bill state) — that gap is now `KB-208`'s actual remaining job, not this one's. |
 | **KB-203** | Port pricing grammar | The fixed version from KB-005. Pure functions, fully unit-tested. | ✅ **Already done** — `src/domain/grammar.ts` (`KB-005`, `KB-005d`). This *is* "the fixed version from KB-005" — there is no separate legacy version left to port. |
-| **KB-204** | `TranscriptionProvider` interface | Groq Whisper large-v3 primary; Web Speech secondary | ⬜ **Real, not-yet-started work.** No `providers/` code exists yet. |
+| **KB-204** | `TranscriptionProvider` interface | Groq Whisper large-v3 primary; Web Speech secondary | ✅ **Groq half done** — `src/voice/transcriptionProvider.ts` + `groqTranscriptionProvider.ts`, verified against the live Groq API. Web Speech deliberately deferred; the two implementations don't share one real interface shape (server-side `Blob` call vs in-browser live-stream call) — see `NI-24`. |
 | **KB-205** | `ParseProvider` interface | Gemini Flash-Lite. Cache the static grammar block. Catalog slice 30, not 80. | ⬜ **Real, not-yet-started work.** `NI-21` (the qty/unit prompt contradiction) must be resolved when this is built, per that entry's own trigger. |
 | **KB-206** | Single `/voice` endpoint | Transcription + optional parse in **one** round trip. **Binary upload, not base64.** JWT-checked, per-shop rate-limited. | ⬜ **Real, not-yet-started work.** No Netlify function exists yet; this is genuinely new infrastructure. |
 | **KB-207** | **Layer 1 — deterministic parser** | All six patterns, Hindi numerals, fractions. **Returns `null` the moment anything is ambiguous.** Log `fastPathHit`/`Miss`. ~~Resolve **O3** before starting.~~ | ✅ **Already done** — `src/domain/grammar.ts` + `commands.ts` (`KB-005`/`KB-005d`), fast-path hit/miss instrumentation already built and measured at 92.8% (`KB-009`). O3 already closed (`07-DECISIONS.md`: "void — no such experiment ever happened") — this line item is fully moot. |

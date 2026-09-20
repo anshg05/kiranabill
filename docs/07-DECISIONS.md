@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 17) · Supersedes rev 16
+**Last updated:** 20 Sep 2026 (rev 18) · Supersedes rev 17
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -842,6 +842,35 @@ scope discipline as `KB-109`'s item-search cut) — never that the system correc
 Stated explicitly in the migration's own comment, not just here, so a future ticket touching this column
 doesn't build renumbering logic against the letter of "reconcile" rather than its actual, narrower
 meaning.
+
+## Rev 18 — 20 Sep 2026
+
+### D25 — Groq Whisper's real response contains no usable confidence score 🟢
+
+**Verified against the live Groq API (`KB-204`), not assumed** — `TranscriptionProvider`'s
+`confidence?` field was left optional in `02-ARCHITECTURE.md`'s original interface design, before
+anyone had checked what Groq's endpoint actually returns. Now checked:
+
+- Default (`response_format` omitted, i.e. `json`): the response body is `{ text, x_groq }` only.
+  **No confidence field of any kind.**
+- `response_format: "verbose_json"`: adds `segments[]`, each with `avg_logprob`, `no_speech_prob`,
+  `compression_ratio` — log-probability and voice-activity internals, **not a 0–1 confidence score**.
+  Turning `avg_logprob` into something comparable to a confidence would require inventing a mapping
+  (e.g. some `exp(avg_logprob)` heuristic) that no doc specifies and no real speech data has validated.
+
+**Decision: `groqTranscriptionProvider.ts` never populates `confidence`.** The field stays permanently
+optional and permanently unset for this provider — this is not a gap to close later, it's the real
+shape of the upstream API. If a future provider (or a different Groq response mode) genuinely offers a
+usable confidence score, wire it in then; don't manufacture one now to fill an optional field.
+
+Real request/response observed during verification (English TTS input "Two kilos of rice, thirty
+rupees."):
+```
+200 OK, ~360-800ms — {"text":" 2 kilos of rice, 30 rupees", ...}
+401 on a bad key — {"error":{"message":"Invalid API Key","type":"invalid_request_error","code":"invalid_api_key"}}
+```
+The 401 shape is real and clean enough to classify as a permanent error whenever `KB-206` builds
+retry/error handling for the `/voice` endpoint.
 
 ---
 
