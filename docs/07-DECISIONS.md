@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 15) · Supersedes rev 14
+**Last updated:** 20 Sep 2026 (rev 16) · Supersedes rev 15
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -720,6 +720,63 @@ case, and the different-user-still-blocked negative case) — 19/19, exit code 0
 Migration dry-run locally (`db reset`, all 8 migrations in order). Remote confirmation via
 `supabase db dump --linked` (`KI-25`: never trust `db diff` alone for this) happens after the owner
 runs `supabase db push`, per `17-MANUAL-TASKS.md` M-12 — not done as of this entry.
+
+**Status update, 20 Sep 2026:** the owner pushed this migration and the live `shops_select` policy body
+was confirmed directly against the remote (`CREATE POLICY "shops_select" ... USING (("public".
+"is_shop_member"("id") OR ("owner_user_id" = "auth"."uid"())))`) — the exact broadened clause, not
+just similar text elsewhere in the dump. This note corrects the "not done as of this entry" line
+above rather than editing it, per this log's own append-only convention.
+
+---
+
+## Rev 16 — 20 Sep 2026
+
+### D21 — Three real `KB-110` bugs a mocked test suite could not have caught, closed only by testing against the real local stack 🟢
+
+**Not a single decision — a record of why "the mocked suite passes" was never treated as sufficient
+proof for sync logic touching a real database, and what that discipline actually found.**
+
+`KB-110`'s sync worker shipped with 21 passing mocked tests before any of what follows was found.
+Every one of these three bugs is invisible to a hand-rolled mock, because a mock has no concept of a
+real RLS policy set or a real `NOT NULL` constraint — it only enforces whatever the test author
+thought to assert.
+
+**1. Append-only retry bug.** `price_observations` and `learning_events` have `select`+`insert` RLS
+policies only — confirmed by grepping `supabase/migrations/20260920095526_rls.sql` directly, not from
+memory. `.upsert()` issues `INSERT ... ON CONFLICT DO UPDATE`; retrying an insert whose *request*
+succeeded but whose *response* was lost hits the `DO UPDATE` branch on the now-existing row, which RLS
+rejects outright (no update policy exists at all) — a correctly-synced row got permanently mislabeled
+`conflict`. Fixed with `insertAppendOnly()`: a plain `.insert()`, treating a `23505` unique-violation as
+success (re-fetches the existing row's real server id), routed around `isPermanentError()` entirely
+rather than through it.
+
+**2. Silent zero-row update bug.** `pushShop`/`pushReceiptNumberBlocks` used a plain `.update()` with no
+verification a row was actually affected. `KB-105` already proved RLS `UPDATE`/`DELETE` is a silent
+zero-row filter, not a raised error, for exactly this shape of statement — the same finding that shaped
+the `bill_items` delete test earlier in this ticket chain. Fixed by adding `.select("id")` (returning an
+array, not `.single()`, which would itself throw a non-SQLSTATE `PGRST116` on zero rows and get
+misclassified as transient) and checking `data.length === 0` as its own explicit case.
+
+**3. The `device_id` omission — found only by the real local-stack test, the strongest evidence yet in
+this project for why a mocked suite is never sufficient proof against a real schema.** None of the four
+learning-table push functions sent `device_id`, and it is a `NOT NULL` column on every one of them
+(confirmed directly against `supabase/migrations/20260917194838_learning.sql`). Every real push would
+have failed on the very first attempt with `23502 null value in column "device_id"` — a **more
+fundamental failure than either bug above**, since it would have blocked the very first real sync
+before the unique-constraint question or the retry-semantics question ever had a chance to matter. The
+21-test mocked suite passed the entire time this bug existed, because nothing in a hand-rolled fake
+client's `{ data, error }` responses knows what a real Postgres `NOT NULL` constraint requires. Found on
+the very first run of a real end-to-end test (`fake-indexeddb` for the local side; a real signed-in
+Supabase Auth user, real RLS, the real local Docker Postgres for the remote side) that pushed a real
+bill, a real `price_observation`, and a real `learning_event`, then retried each and ran `syncNow()`
+twice in a row to confirm idempotency as an actual end state (exactly 1 row server-side, not "didn't
+throw a second time").
+
+**Standing takeaway, not just a closed bug:** for any ticket that pushes or pulls against real Postgres
+tables — RLS-protected, constrained, triggered — a mocked test suite proves the *orchestration logic*
+correct, never the *real schema interaction*. Both are required before calling that logic done; neither
+substitutes for the other. `KB-105`'s automated suite exists for exactly the RLS half of this; `KB-110`
+is the first ticket to need the equivalent for real push/pull mechanics, and it will not be the last.
 
 ---
 

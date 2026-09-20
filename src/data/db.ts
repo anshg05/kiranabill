@@ -221,7 +221,11 @@ export class KiranaBillDB extends Dexie {
       // isActive in memory after that index narrows the scan is fine.
       shopProducts: "&id, shopId, displayName, *aliases",
       baseProducts: "&id, displayName, *aliases",
-      receiptNumberBlocks: "&id, shopId, [shopId+nextNumber]",
+      // syncStatus added by KB-110, which needed to query pending blocks -
+      // an oversight in the original KB-109 schema, caught only by
+      // actually exercising the query against fake-indexeddb, not by the
+      // schema string being "wrong" in an obviously-visible way.
+      receiptNumberBlocks: "&id, shopId, syncStatus, [shopId+nextNumber]",
       shops: "&id, syncStatus",
       syncState: "&tableName",
     });
