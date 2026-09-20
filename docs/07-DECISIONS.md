@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 13) · Supersedes rev 12
+**Last updated:** 20 Sep 2026 (rev 14) · Supersedes rev 13
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -652,6 +652,34 @@ re-checked before reusing this pattern, not copied on the assumption it always h
 in order) and `supabase db diff` (no drift), plus the same 13-part functional verification script
 (all seven immutability scenarios) re-run and re-pasted in full in the `KB-103` handoff — not just a
 diff against the prior run.
+
+---
+
+## Rev 14 — 20 Sep 2026
+
+### D19 — Verifying a real auth session means calling `/auth/v1/user`, not just decoding the JWT client-side 🟢
+
+**A verification standard, not an architecture decision — recorded so a future ticket touching real
+session identity doesn't have to re-derive it.**
+
+`KB-106`'s manual sign-in test needed to confirm that the identity RLS would see (the JWT's `sub`
+claim, which is exactly what `auth.uid()` reads server-side per `KB-104`'s own investigation) was
+genuinely the signed-in Google account — not just infer it from "the query didn't error," which the
+owner explicitly named as the kind of assumption that had already been wrong three times this project
+(`db diff`'s two independent failure modes, `KB-104`'s bootstrap-insert bug).
+
+**Decision: when a ticket needs to prove a session's identity is real and correct, call Supabase
+Auth's `/auth/v1/user` endpoint** (`Authorization: Bearer <access_token>`, `apikey: <anon key>`) and
+compare its returned `id`/`email` against the JWT's own decoded `sub`/`email`. This is a genuinely
+independent check, not a tautology: `/auth/v1/user` asks the Auth server to look the token up and
+return what it has on record, rather than re-reading the same client-side blob a spoofed or corrupted
+token could equally satisfy. Decoding the JWT alone proves the token is *well-formed*; hitting
+`/auth/v1/user` proves the server itself still recognises it as a real, current session for that user.
+
+**Where this applies again:** any future ticket that needs to confirm "this session really is who it
+claims to be" before trusting an RLS-gated result — `KB-107`'s onboarding flow (confirming the
+`shop_members` owner row that gets inserted actually matches the signing-in user) is the next likely
+candidate.
 
 ---
 

@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 17 Sep 2026 (rev 6)
+**Last updated:** 20 Sep 2026 (rev 7)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -301,6 +301,48 @@ removed the probe file, confirmed clean again.
 |---|---|
 | A full `@typescript-eslint/eslint-plugin` + recommended rule set | Exactly what this decision explicitly avoids — style/correctness linting nobody asked for, when the only need is one import-boundary rule |
 | `dependency-cruiser` or similar dedicated boundary tool | A second dependency and a second config format for a need one ESLint rule already covers |
+
+## SD-021 — Postgres client for tests: **`pg` + `@types/pg`** (dev-only) · 20 Sep 2026
+
+Needed for `KB-105`'s automated RLS negative-test suite (`scripts/rls-negative-tests.ts`), which
+connects directly to Postgres and switches simulated roles/JWT claims mid-transaction to exercise RLS
+for real — something Vitest's `domain/`-oriented setup has no way to do, and shouldn't (hard rule 3:
+`domain/` never touches a database). `pg` is the standard, minimal, actively-maintained Postgres
+driver for Node — no ORM, no query builder, nothing beyond raw parameterized SQL, which is exactly
+what a test asserting on Postgres error codes needs. **This entry should have been added at `KB-105`
+itself and was missed** — logged now, during `KB-106`'s documentation pass, rather than left
+permanently absent.
+
+**Exit cost: low.** Dev-only, used by exactly one script; a different Postgres client would be a
+same-shape swap with no ripple into `domain/` or the app.
+
+## SD-022 — Supabase client: **`@supabase/supabase-js`** (runtime) · 20 Sep 2026
+
+Needed for `KB-106` (Google sign-in) and everything after it that talks to Supabase from the browser —
+auth, the eventual sync worker, storage. Fails `09-WORKING-AGREEMENT.md` §B6's first question ("can
+this be 30 lines of our own code?") on purpose: hand-rolling OAuth redirects, JWT refresh, and session
+persistence is exactly the kind of thing not worth re-implementing when the platform's own official
+client (`SD-002` already committed to Supabase/Postgres) does it correctly and is the primary,
+actively-maintained SDK for the one backend this project has.
+
+**Exit cost: real but bounded.** This is the one true "hard to leave" dependency in the project so
+far — swapping backends would touch this everywhere it's used. Accepted because switching backends is
+not a scenario this project is hedging against; `SD-002` already closed that question.
+
+## SD-023 — Component testing: **`@testing-library/react` + `jsdom`** (dev-only) · 20 Sep 2026
+
+Needed to test `KB-106`'s `AuthProvider` — a React context with real hook/effect logic (session
+state, subscription cleanup) that a database-free, DOM-free `domain/`-style unit test can't exercise
+meaningfully. `@testing-library/react`'s `renderHook` against a mocked Supabase client (not the real
+one — no network, no real OAuth) tests the state machine itself: loading → signed-out/signed-in
+transitions, `signInWithGoogle`/`signOut` calling the right client methods, the auth-state listener
+unsubscribing on unmount. `jsdom` is the DOM environment `renderHook` needs; scoped to this one test
+file via a `// @vitest-environment jsdom` docblock, not a global config change — every `domain/` test
+keeps running under the faster, DOM-free `node` environment `vite.config.ts` already sets.
+
+**Exit cost: low.** Dev-only, standard for React component testing, no production bundle impact.
+Real OAuth round-trip correctness still comes from `KB-106`'s manual browser verification, not from
+these tests — mocked-client tests prove the state machine, not that Google sign-in actually works.
 
 **Exit cost: near zero.** Dev-only, two packages, one rule, one config file. Deleting `eslint.config.js`
 and the two devDependencies removes it cleanly with no trace elsewhere in the codebase.
