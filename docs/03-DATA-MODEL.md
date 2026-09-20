@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 09 Sep 2026 (rev 5) · **Status:** Final for MVP
+**Last updated:** 20 Sep 2026 (rev 6) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -268,6 +268,24 @@ bad learning run be replayed or reversed.
 
 Every syncable table carries `local_id`, `device_id`, `updated_at`, and a client-side
 `sync_status` ∈ `pending` \| `synced` \| `conflict`.
+
+**Not every local table has the same shape.** `KB-109` (the IndexedDB layer) found three genuinely
+different roles hiding under "mirror the server tables":
+
+- **Local-first (push)**: `bills`, `bill_items`, and the four learning tables. Written locally first;
+  real per-row `sync_status`; pushed by the sync worker (`KB-110`).
+- **Read-cache (pull-only)**: `shop_products`, `base_products`. Per §0's own rule — *"every write goes
+  to Postgres... the cache is downstream of the database, never the other way round"* — these rows are
+  never written locally first and carry no meaningful per-row `sync_status`. Freshness is tracked at
+  the table level, via `sync_state` alone.
+- **Hybrid**: `receipt_number_blocks` — reserved with a real online write, then read and decremented
+  locally while offline (§4 above). Neither pure shape.
+
+**A local cache of `shops` is also required, even though no earlier section of this document said so
+explicitly.** A receipt must render while offline (name, phone, `bill_language`, `receipt_prefix`,
+`logo_url`) — that only works if these fields are cached locally, following the same last-write-wins
+sync as any other shop setting. Stated here as a real requirement, not left as an inference buried in
+a ticket for a future reader to have to re-derive.
 
 ---
 

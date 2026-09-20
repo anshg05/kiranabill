@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 20 Sep 2026 (rev 7)
+**Last updated:** 20 Sep 2026 (rev 8)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -302,6 +302,9 @@ removed the probe file, confirmed clean again.
 | A full `@typescript-eslint/eslint-plugin` + recommended rule set | Exactly what this decision explicitly avoids — style/correctness linting nobody asked for, when the only need is one import-boundary rule |
 | `dependency-cruiser` or similar dedicated boundary tool | A second dependency and a second config format for a need one ESLint rule already covers |
 
+**Exit cost: near zero.** Dev-only, two packages, one rule, one config file. Deleting `eslint.config.js`
+and the two devDependencies removes it cleanly with no trace elsewhere in the codebase.
+
 ## SD-021 — Postgres client for tests: **`pg` + `@types/pg`** (dev-only) · 20 Sep 2026
 
 Needed for `KB-105`'s automated RLS negative-test suite (`scripts/rls-negative-tests.ts`), which
@@ -344,8 +347,20 @@ keeps running under the faster, DOM-free `node` environment `vite.config.ts` alr
 Real OAuth round-trip correctness still comes from `KB-106`'s manual browser verification, not from
 these tests — mocked-client tests prove the state machine, not that Google sign-in actually works.
 
-**Exit cost: near zero.** Dev-only, two packages, one rule, one config file. Deleting `eslint.config.js`
-and the two devDependencies removes it cleanly with no trace elsewhere in the codebase.
+## SD-024 — Local storage: **`dexie` ^4.4.6** (runtime) + **`fake-indexeddb` ^6.2.5** (dev-only) · 20 Sep 2026
+
+Library choice already closed (`SD-012`, 17 Aug 2026) — this entry pins the actual version and adds
+the test-only dependency `SD-012` didn't need to name yet.
+
+`fake-indexeddb` is `KB-109`'s addition: Dexie's own recommended way to test against a real,
+spec-compliant IndexedDB implementation under Node/Vitest — not a hand-rolled mock of Dexie's API,
+which would under-test exactly what `SD-012` names as the real risk of choosing Dexie ("getting
+transactions and schema versioning wrong here would corrupt bill data"). Same justification shape as
+`SD-023`'s `jsdom`: standard, dev-only, needed because this is real database logic a manual mock
+can't exercise meaningfully.
+
+**Exit cost: low.** Dev-only, used only by `db.test.ts`; no production bundle impact, no ripple into
+`domain/`.
 
 ## How to add to this document
 
