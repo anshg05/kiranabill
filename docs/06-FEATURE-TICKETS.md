@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 20 Sep 2026 (rev 6) · **Status:** Final for MVP
+**Last updated:** 20 Sep 2026 (rev 7) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -73,18 +73,24 @@ baseline. **Do not start Phase 1 before this.**
 
 ## Phase 2 — Voice pipeline · ~4 weeks · the differentiator
 
-| ID | Ticket | Detail |
-|---|---|---|
-| **KB-201** | **`KB-CATALOG-INDEX`** | Prefix map + n-gram inverted index. Score only candidates, never the whole catalog. **Blocker for type-ahead.** Current O(n) scan is unusable past ~2,000 products on a budget phone (benchmarked: 5,000 → ~106 ms/keystroke). |
-| **KB-202** | Port validator to `domain/` | Preserve **all** guards: category buckets, length-scaled thresholds, phonetic variants, unit conversion with rate-basis inference, 11 review codes |
-| **KB-203** | Port pricing grammar | The fixed version from KB-005. Pure functions, fully unit-tested. |
-| **KB-204** | `TranscriptionProvider` interface | Groq Whisper large-v3 primary; Web Speech secondary |
-| **KB-205** | `ParseProvider` interface | Gemini Flash-Lite. Cache the static grammar block. Catalog slice 30, not 80. |
-| **KB-206** | Single `/voice` endpoint | Transcription + optional parse in **one** round trip. **Binary upload, not base64.** JWT-checked, per-shop rate-limited. |
-| **KB-207** | **Layer 1 — deterministic parser** | All six patterns, Hindi numerals, fractions. **Returns `null` the moment anything is ambiguous.** Log `fastPathHit`/`Miss`. Resolve **O3** before starting. |
-| **KB-208** | **Layer 3 — number safety gate** | HIGH flags gate finalisation; MEDIUM/LOW never do. Inline sentences, not icons. |
-| **KB-209** | **Learning engine** | L1–L6 per `08-LEARNING-ENGINE.md`. Per-shop only. Only finalised bills teach. Prices suggested, never auto-applied. |
-| **KB-210** | Learning audit UI | Developer Mode: aliases + confidence, provisional products, price suggestions, reset action |
+**Corrected 20 Sep 2026, before Phase 2 planning started — this list predates Phase 0's restructuring
+(`07-DECISIONS.md`, 17 Aug 2026: "build `domain/` fresh instead of patching the old codebase") and was
+never updated afterward.** Several of these tickets describe "porting" logic into `domain/` that Phase 0
+already built there directly, under different ticket numbers, with its own tests and benchmarks. Status
+column added; nothing below is renumbered, so existing references elsewhere still resolve.
+
+| ID | Ticket | Detail | Status |
+|---|---|---|---|
+| **KB-201** | **`KB-CATALOG-INDEX`** | Prefix map + n-gram inverted index. Score only candidates, never the whole catalog. **Blocker for type-ahead.** Current O(n) scan is unusable past ~2,000 products on a budget phone (benchmarked: 5,000 → ~106 ms/keystroke). | ✅ **Already done** — `src/domain/catalogIndex.ts` (`KB-005b`, Phase 0). Trigram index, benchmarked at 10.6ms worst-case against a synthetic 10,000-product catalog, well under the 16ms budget. Nothing to port; this describes the legacy O(n) scan this already replaced. |
+| **KB-202** | Port validator to `domain/` | Preserve **all** guards: category buckets, length-scaled thresholds, phonetic variants, unit conversion with rate-basis inference, 11 review codes | ✅ **Already done** — `src/domain/validator.ts` (`KB-005b`). The 11-code review/confidence-gate system was explicitly scoped *out* of `KB-005b` at the time (deferred to whichever ticket has real bill state) — that gap is now `KB-208`'s actual remaining job, not this one's. |
+| **KB-203** | Port pricing grammar | The fixed version from KB-005. Pure functions, fully unit-tested. | ✅ **Already done** — `src/domain/grammar.ts` (`KB-005`, `KB-005d`). This *is* "the fixed version from KB-005" — there is no separate legacy version left to port. |
+| **KB-204** | `TranscriptionProvider` interface | Groq Whisper large-v3 primary; Web Speech secondary | ⬜ **Real, not-yet-started work.** No `providers/` code exists yet. |
+| **KB-205** | `ParseProvider` interface | Gemini Flash-Lite. Cache the static grammar block. Catalog slice 30, not 80. | ⬜ **Real, not-yet-started work.** `NI-21` (the qty/unit prompt contradiction) must be resolved when this is built, per that entry's own trigger. |
+| **KB-206** | Single `/voice` endpoint | Transcription + optional parse in **one** round trip. **Binary upload, not base64.** JWT-checked, per-shop rate-limited. | ⬜ **Real, not-yet-started work.** No Netlify function exists yet; this is genuinely new infrastructure. |
+| **KB-207** | **Layer 1 — deterministic parser** | All six patterns, Hindi numerals, fractions. **Returns `null` the moment anything is ambiguous.** Log `fastPathHit`/`Miss`. ~~Resolve **O3** before starting.~~ | ✅ **Already done** — `src/domain/grammar.ts` + `commands.ts` (`KB-005`/`KB-005d`), fast-path hit/miss instrumentation already built and measured at 92.8% (`KB-009`). O3 already closed (`07-DECISIONS.md`: "void — no such experiment ever happened") — this line item is fully moot. |
+| **KB-208** | **Layer 3 — number safety gate** | HIGH flags gate finalisation; MEDIUM/LOW never do. Inline sentences, not icons. | ⬜ **Real, remaining work** — this is where `KB-005b`'s deferred 11-code review/confidence-gate system actually gets built, now that real bill state (`KB-103`/`KB-109`) exists to attach it to. |
+| **KB-209** | **Learning engine** | L1–L6 per `08-LEARNING-ENGINE.md`. Per-shop only. Only finalised bills teach. Prices suggested, never auto-applied. | 🟦 **Partially done.** `src/domain/learning.ts`'s decision logic is built and tested (`KB-008`, Phase 0); the four learning tables are live in Postgres (`KB-103`/`KB-108`) and sync (`KB-110`). **Remaining:** wiring — calling `learning.ts`'s functions when a bill actually finalises, writing results through `KB-109`'s local schema. |
+| **KB-210** | Learning audit UI | Developer Mode: aliases + confidence, provisional products, price suggestions, reset action | ⬜ **Real, not-yet-started work.** No UI exists yet for any screen, this one included. |
 
 ---
 

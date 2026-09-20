@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 20 Sep 2026 (rev 34) · **Current phase:** Phase 1 in progress (`KB-111` — receipt number allocation — done, migration awaiting `db push`)
+**Last updated:** 20 Sep 2026 (rev 35) · **Current phase:** Phase 1 core chain done (`KB-101`–`KB-111`); Phase 2 planning starting — see the retrospective and `06-FEATURE-TICKETS.md`'s corrected Phase 2 list
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -57,11 +57,52 @@ before anything else.
 | Phase | Scope | Status |
 |---|---|---|
 | **0** | Build `domain/` + eval harness, new codebase | ✅ Domain tickets complete (`KB-001` key rotation still outstanding, owner's manual task) |
-| 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | 🟦 In progress (`KB-101` done) |
-| 2 | Voice pipeline: catalog index, layers 1–4, learning | ⬜ Not started |
+| 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ✅ Core chain done (`KB-101`–`KB-111`; `KB-107b`'s upload widget parked, no urgency) — see the retrospective below |
+| 2 | Voice pipeline: catalog index, layers 1–4, learning | 🟦 Starting — much of this phase's literal ticket list is already done, see the retrospective below |
 | 3 | Billing UI, receipt, history, catalog screen | ⬜ Not started |
 | 4 | Pilot hardening, PWA, 20-bill validation run | ⬜ Not started |
 | — | Capacitor Android wrapper | ⬜ After Phase 4 |
+
+---
+
+## Phase 1 retrospective — every real bug found, `KB-101` through `KB-111`
+
+Not a new ticket — a consolidated defect-finding record, requested at the close of Phase 1 because the
+individual findings are scattered across ticket handoffs and `07-DECISIONS.md`/`12-PARKED.md` entries.
+Every schema-touching or security-touching ticket in this phase was verified against real
+infrastructure at least once, not just mocked — this is the actual track record that produced.
+
+| Ticket | What was found | Caught by | Reference |
+|---|---|---|---|
+| `KB-101` | `domain/` import boundary was discipline-only, no tooling — safe only while `data`/`providers`/`ui` were empty | Re-verifying the boundary directly rather than citing it from memory | D16, `SD-020` |
+| `KB-102` | A cosmetic `config.toml` `project_id` rename broke the already-running local Docker stack (container names derive from it) | Immediate `supabase status` failure after the rename | `10-TRACKER.md` `KB-102` row |
+| `KB-103` | Two real Postgres syntax errors: `unique (shop_id, lower(...))` is an expression, invalid as a table-level constraint | Local `db reset` failing exactly at the migration | — |
+| `KB-103` | `bills_enforce_immutability`'s first design (enumerated column list) had no mechanism tying it to the table's real schema — a future added column could silently bypass the check | Owner asking to see the actual trigger SQL directly and asking "what happens if a column is added" | D18 |
+| `KB-103` | Verification script gave false-positive "PASSED" results from an FK-ordering bug in test data, and a separate misleading pass/fail print pattern | Re-reading the actual `psql` output rather than trusting the script's own labels | — |
+| `KB-104` | `shop_members`'s bootstrap insert policy queried `shops` directly, which is itself RLS-protected — a brand-new owner could never pass that subquery | The manual two-shop smoke test, before push | `owns_shop()` fix |
+| `KB-105` | The negative-test script's own shared-transaction design meant one expected rejection poisoned every check after it with an unrelated `25P02`, not the real assertion | Running the suite for real and reading a nonsensical failure | Per-check `SAVEPOINT`s |
+| `KB-105` | Cross-shop `DELETE` is a silent zero-row filter under RLS, not a raised error — the test's first version wrongly assumed an error code | The test failing for the "wrong" reason, investigated rather than patched blind | — |
+| `KB-107` | `shops_select`'s original policy made an orphaned shop (bootstrap partially failed) permanently invisible to its own owner, blocking any resume logic | Designing `createShop()`'s resume path and asking "can the client even see this state" | D20 |
+| `KB-107`/`KB-108` | Two `base_products` rows share a `display_name` — real, differently-priced products, not cosmetic duplicates; would abort the entire 482-row catalog copy | Writing `copy_base_catalog()` and checking the real seed data before trusting the copy would work | `KI-26` |
+| `KB-107b` | A storage-policy test appeared to show a cross-user update succeeding — turned out the test never switched simulated identity, not a real RLS defect | Isolating the suspicious pass with a minimal repro before concluding the policy was fine | — |
+| `KB-108` | Fixing `KI-26`'s collision by renaming two products left their *old* generic alias still attached — voice terms for the un-renamed sibling products became wrongly ambiguous | A by-hand `npm run try` spot-check after the rename, specifically requested instead of trusting the test suite alone | `KI-26` closure |
+| `KB-109` | IndexedDB has no `boolean` index-key type at all — a planned `[shopId+isActive]` compound index was structurally invalid | Running the schema against `fake-indexeddb`, not trusting Dexie's schema-string syntax | — |
+| `KB-110` | `price_observations`/`learning_events` have no UPDATE RLS policy (append-only) — `.upsert()`'s retry path hit that gap and wrongly marked correctly-synced rows `conflict` | A real end-to-end run against the local Docker stack | D21 |
+| `KB-110` | `pushShop`/`pushReceiptNumberBlocks` never verified a row was actually affected — RLS `UPDATE` is a silent zero-row filter (`KB-105`'s own finding, not reapplied until it bit) | Same real end-to-end run | D21 |
+| `KB-110` | **None of the four learning-table push functions sent `device_id`, a `NOT NULL` column on all four — every real push would have failed immediately, more fundamentally than the two bugs above.** 21 passing mocked tests never caught it. | The same real end-to-end run — the headline finding of the whole phase for *why* mocked suites alone are insufficient | D21 |
+| `KB-110` | `receiptNumberBlocks`' Dexie index never included `syncStatus`, despite `KB-110` needing to query it | `fake-indexeddb` throwing `SchemaError` the moment the real code path ran | — |
+| `KB-111` | A 6-hex-char truncated device-id prefix's collision math looked "comfortably low" in isolation but the fallback counter's non-independence made an actual collision near-certain once triggered | Computing the collision probability explicitly rather than accepting a prettier format as "probably fine" | D23 |
+| `KB-111` | Two self-caught test bugs: an off-by-one against the doc's literal "below 10" wording, and `navigator.onLine` not being implemented in the Node/Vitest test environment | Checking the spec's exact wording and the actual runtime environment before assuming the implementation was wrong | — |
+| Recurring | `supabase db diff` gave misleadingly reassuring output for three independent reasons across the phase: a stale shadow-db cache on repeat calls, defaulting to `--local` (never checking the remote at all), and a schema-only dump being mistaken for proof that seed data landed | Each found by planting direct evidence (a nonce, a real row-count query) rather than trusting the tool's own "no changes" report | `KI-25` |
+| Recurring | `catalogIndex.test.ts`'s performance benchmark flakes under system load — the `KB-106`-era "closure" (blamed the Docker stack alone) was itself incomplete; the persistent factor is Vitest's own file-level parallelism | Six occurrences across five tickets before the full picture was assembled | `KI-23`, reopened, unresolved |
+
+**What this record is for:** every one of these was closed before the ticket that found it was marked
+done — none were deferred as "known issues" in shipped code. The pattern worth carrying into Phase 2:
+mocked tests and schema-string/type-level correctness both passed for every single one of these bugs
+until something ran against a real database, a real RLS session, or a by-hand spot-check against real
+data. Phase 2 will touch a real voice pipeline (external providers, a real edge function, real audio) —
+expect the equivalent of `KB-110`'s `device_id` finding to exist somewhere in it, and plan verification
+accordingly rather than trusting mocked provider responses alone.
 
 ---
 
