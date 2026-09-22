@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 22 Sep 2026 (rev 40) · **Current phase:** Phase 1 core chain done (`KB-101`–`KB-111`); Phase 2 underway — `KB-204`–`KB-208` plus `KB-210`'s data layer done, see the retrospective and `06-FEATURE-TICKETS.md`'s corrected Phase 2 list
+**Last updated:** 23 Sep 2026 (rev 41) · **Current phase:** Phase 2's buildable-without-UI work done (`KB-204`–`KB-208`, `KB-210`'s data layer) — see the Phase 2 retrospective below and `06-FEATURE-TICKETS.md`'s corrected Phase 2 list before Phase 3 planning starts
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -114,7 +114,7 @@ stuck for 10+ minutes even with its processes actively running) — noted in cas
 |---|---|---|
 | **0** | Build `domain/` + eval harness, new codebase | ✅ Domain tickets complete (`KB-001` key rotation still outstanding, owner's manual task) |
 | 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ✅ Core chain done (`KB-101`–`KB-111`; `KB-107b`'s upload widget parked, no urgency) — see the retrospective below |
-| 2 | Voice pipeline: catalog index, layers 1–4, learning | 🟦 In progress — much of this phase's literal ticket list was already done via Phase 0 (see the retrospective below); `KB-204`/`KB-205`/`KB-206` now also done — the real `/voice` endpoint exists and is real-verified end to end |
+| 2 | Voice pipeline: catalog index, layers 1–4, learning | 🟦 Everything buildable without a UI is done — `KB-204`–`KB-208`, `KB-210`'s data layer, see the Phase 2 retrospective below. `KB-209`'s finalize hook and `KB-210`'s actual screen correctly wait on Phase 3's real finalize action and Settings screen |
 | 3 | Billing UI, receipt, history, catalog screen | ⬜ Not started |
 | 4 | Pilot hardening, PWA, 20-bill validation run | ⬜ Not started |
 | — | Capacitor Android wrapper | ⬜ After Phase 4 |
@@ -162,25 +162,47 @@ accordingly rather than trusting mocked provider responses alone.
 
 ---
 
-## Phase 2 findings so far — `KB-204` through `KB-206`
+## Phase 2 retrospective — every real bug found, `KB-204` through `KB-210`
+
+Same purpose as the Phase 1 retrospective above: a consolidated defect-finding record, requested before
+Phase 3 starts building UI against all of this. Phase 2's findings are a genuinely different class from
+Phase 1's — external API *contracts* (not just infrastructure behavior), agreement between a
+deterministic grammar and an LLM prompt meant to mirror it, a bug in already-shipped code caught only by
+a *different call path* to the same endpoint, and a safety system that flagged its own product's
+differentiator. Every schema-touching, safety-touching, or external-API-touching ticket in this phase
+was real-verified at least once — this is what that produced.
 
 | Ticket | What was found | Caught by | Reference |
 |---|---|---|---|
 | `KB-204` | Groq's real response carries no usable confidence score in any response format — `verbose_json`'s `avg_logprob`/`no_speech_prob` are log-probability internals, not a comparable score | A real call against the live Groq API, checking the actual response shape rather than trusting the interface's optional `confidence?` field as a hint either way | D25 |
 | `KB-205` | The pricing-grammar prompt written to close `NI-21` had two real gaps of its own: a missing `priceType:"default"` enum value matching `grammar.ts`'s actual fourth value, and a chataak-quantity instruction that let Gemini re-normalize grams into kilograms | A real Gemini call vs. real `grammar.ts` output on 8 utterances, run twice — first run 3/8, not assumed correct because the prompt "read right" | `NI-21` closure |
 | `KB-205` | Gemini's explicit context caching is not usable at all at the grammar prompt's real size (1,233 tokens vs. a real 2,048-token floor) — `04-VOICE-PIPELINE.md` §4's caching assumption was simply wrong, not partially right | A real `cachedContents` API call with the actual prompt text, not assumed from the doc's own stated intent | D26 |
+| `KB-205` | A mocked test wrongly assumed Gemini's auth-failure shape matches Groq's (`401`) — the real API returns `400`/`INVALID_ARGUMENT`/`API_KEY_INVALID`, a genuinely different shape between vendors | A real bad-key call against the live Gemini API, before trusting the mocked assumption into a commit | `KB-205` handoff |
 | `KB-206` | `groqTranscriptionProvider.ts` (`KB-204`) uploads every file under the bare filename `"audio"`, no extension — Groq rejected a real, correctly-typed `audio/wav` Blob outright | `KB-206`'s end-to-end script, which is the first one to call the real shipped `transcribe()` function rather than a parallel hand-built request to the same endpoint | `KI-28` |
+| `KB-206` | Docker Desktop's engine took 10+ minutes to come up on this machine despite its processes actively running (CPU burning, WSL2 distro reporting `Stopped` the whole time) | Direct observation while bringing up the local stack for real end-to-end verification — a one-off environmental note so far, not yet a recurring pattern | `10-TRACKER.md` `KB-206` entry |
+| `KB-208` | `legacy/validator.js`'s real trigger logic for `invalid_qty`/`invalid_unit` *silently substitutes* a plausible value (qty→1, unit→fallback) — a direct conflict with hard rule 7 ("never auto-change a price or unit"), not just an unlabeled severity gap | Reading the actual legacy trigger conditions before assigning severity, not inferring behavior from the code names alone | Owner's decision this session: flag-only, never substitute |
+| `KB-208` | The plan assumed `unusual_rate`/`unusual_total` would use a raw `modalPrice()` over `learning.ts`'s tracked price observations — the real code shows `priceObservations` only stores *drift* points (differed from a reference price at record time), so a bare average would have compared against a biased sample of outliers, not the shop's real normal price | Reading `recordPriceObservation`'s actual implementation mid-build, not assuming the plan's description of `learning.ts` was accurate | Fixed via `getPriceSuggestions()` reuse |
+| `KB-208` | **`unusual_total` wrongly HIGH-flagged the flagship differentiator case itself** — `"5 kg chawal 30 ka"`, ₹30 not ₹100, the exact example `KB-005` exists to prove — because a deliberate spoken `"ka"`/`"ki"` total override was compared against the catalog's computed price as if it should match | The real-data check: running all 125 `eval/voice-cases.json` + `number-benchmark.json` fixtures through the real pipeline, not just the 46 hand-written unit tests | Scope corrected to computed totals only |
+| `KB-208` | A real unit-basis bug: `qty` in grams multiplied straight against a per-kg price with no conversion — `"500 gram jeera"` computed an "expected" total ~1000x too high | Same real-data check | Fixed via `grammar.ts`'s `convertPriceBetweenUnits` (reused, not duplicated) |
+| `KB-208` | The standing instruction to pause for review before writing safety/money-logic implementation was skipped once (tests and implementation written in the same pass) | The agent's own disclosure, stated plainly rather than presented as followed | Owner: one-time, not a pattern |
+| `KB-210` | Confirmed the same dependency-on-nonexistent-UI trap `KB-209` has ("Settings → Developer Mode" needs S7, which doesn't exist) — caught *before* planning this time, by recognizing the pattern explicitly rather than rediscovering it fresh | Direct comparison against `KB-209`'s already-logged scoping lesson before writing this ticket's plan | Scoped identically to `KB-208`'s own precedent |
 
-**The `KB-206` finding is a methodology lesson, not just a bug — stated explicitly so it shapes how every
-future real-verification script gets written, not just this one ticket's history:** `KB-204`'s own real
-verification proved Groq's API *contract* works — it never proved the *shipped provider function* calls
-it correctly, because the verification script and the production code took different paths to the same
-endpoint (the script hardcoded a working `"audio.wav"` filename directly in its own request; the real
-`groqTranscriptionProvider.ts` never did). A real-infrastructure test only proves what it actually
-exercises. **Rule for every real-verification script from here on: call the actual shipped code path
-(the real exported function), never a parallel hand-rolled call to the same external API** — a script
-that reimplements request construction can pass cleanly while the real function ships broken, and
-`KB-206` is the proof this isn't hypothetical.
+**The methodology lesson from `KB-206`, restated because it's the sharpest single finding of the
+phase:** `KB-204`'s own real verification proved Groq's API *contract* works — it never proved the
+*shipped provider function* calls it correctly, because the verification script and the production code
+took different paths to the same endpoint. A real-infrastructure test only proves what it actually
+exercises. **Rule for every real-verification script from here on: call the actual shipped code path,
+never a parallel hand-rolled call to the same external API.**
+
+**What this record is for, same as Phase 1's:** every one of these was closed before the ticket that
+found it was marked done — none shipped as a "known issue." The pattern specific to this phase: three of
+these findings (`KB-205`'s prompt gaps, `KB-208`'s two real-data bugs) were invisible to hand-written
+unit tests and only surfaced by running the *real, existing eval fixtures* or a *real cross-check against
+another layer* through the actual pipeline — not by writing more unit tests in the same style as the ones
+that already passed. Phase 3 will build UI against all of this; expect the equivalent finding to be "the
+UI renders a flag correctly in isolation, but doesn't handle the real shape of a multi-item bill" or
+similar — and plan verification against real, varied bill data accordingly, not just the happy-path
+mockup.
 
 ---
 

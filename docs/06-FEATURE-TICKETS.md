@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 22 Sep 2026 (rev 12) · **Status:** Final for MVP
+**Last updated:** 23 Sep 2026 (rev 13) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -89,29 +89,35 @@ column added; nothing below is renumbered, so existing references elsewhere stil
 | **KB-206** | Single `/voice` endpoint | Transcription + optional parse in **one** round trip. **Binary upload, not base64.** JWT-checked, per-shop rate-limited. | ✅ **Done** — `netlify.toml`, `netlify/functions/voice.mts`, `_shared/auth.ts`, `_shared/rateLimit.ts`. Real end-to-end verified: real auth rejection, real Groq→Gemini round trip, real per-shop rate-limit rejection via Netlify Blobs. Found and fixed a real bug in `KB-204`'s shipped code along the way — `KI-28`. Cost-model recalculation is real but incomplete — Groq's real rate is unobtainable this session, explicit close condition logged, `KI-27`. |
 | **KB-207** | **Layer 1 — deterministic parser** | All six patterns, Hindi numerals, fractions. **Returns `null` the moment anything is ambiguous.** Log `fastPathHit`/`Miss`. ~~Resolve **O3** before starting.~~ | ✅ **Already done** — `src/domain/grammar.ts` + `commands.ts` (`KB-005`/`KB-005d`), fast-path hit/miss instrumentation already built and measured at 92.8% (`KB-009`). O3 already closed (`07-DECISIONS.md`: "void — no such experiment ever happened") — this line item is fully moot. |
 | **KB-208** | **Layer 3 — number safety gate** | HIGH flags gate finalisation; MEDIUM/LOW never do. Inline sentences, not icons. | ✅ **Done** — `src/domain/reviewFlags.ts`, the real 14-code system (11 legacy + 3 new number-safety codes). All severities sourced or explicitly decided, none invented. Real-data check over all 125 `eval/` fixtures: 0 false positives, after fixing two real bugs the check itself caught (`unusual_total` wrongly flagged a spoken `"ka"`/`"ki"` total override — including the flagship `"5 kg chawal 30 ka"` case itself; a unit-basis bug multiplied gram-scale qty straight against a per-kg price). `KI-21`'s two repro cases confirmed to still bail at Layer 1 — `reviewFlags.ts` structurally can't reach them (mistranscription, not a parsing-level number loss), stated honestly rather than glossed over. `number_unconsumed`'s Layer-2 coverage gap logged as `NI-26`. |
-| **KB-209** | **Learning engine** | L1–L6 per `08-LEARNING-ENGINE.md`. Per-shop only. Only finalised bills teach. Prices suggested, never auto-applied. | 🟦 **Partially done.** `src/domain/learning.ts`'s decision logic is built and tested (`KB-008`, Phase 0); the four learning tables are live in Postgres (`KB-103`/`KB-108`) and sync (`KB-110`). **Remaining:** wiring — calling `learning.ts`'s functions when a bill actually finalises, writing results through `KB-109`'s local schema. |
+| **KB-209** | **Learning engine** | L1–L6 per `08-LEARNING-ENGINE.md`. Per-shop only. Only finalised bills teach. Prices suggested, never auto-applied. | 🟦 **Partially done, deliberately deferred to Phase 3.** `src/domain/learning.ts`'s decision logic is built and tested (`KB-008`, Phase 0); the four learning tables are live in Postgres (`KB-103`/`KB-108`) and sync (`KB-110`); `KB-208` added `getEffectivePrice()`/`getPriceSuggestions()` as real read-side consumers; `KB-210` added the Developer Mode read/reset functions. **Remaining: this is NOT a separate later ticket to bolt onto Phase 3's `KB-307` (Finalise) — it IS `KB-307`'s own "Triggers learning" line.** Build the finalize hook as part of `KB-307`, not after it — wiring into a stub finalize action now would mean rebuilding it once the real one exists. Also flagged, not yet built: the IndexedDB↔`LearningState` marshalling both `KB-208`'s read side and this write side silently assume exists — a real, separable deliverable for whichever ticket builds it, not folded silently into "the finalize hook." |
 | **KB-210** | Learning audit UI | Developer Mode: aliases + confidence, provisional products, price suggestions, reset action | 🟦 **Data functions done, UI not started.** `src/data/learningAudit.ts` — `listLearnedAliases`/`listProvisionalProducts`/`listPendingPriceSuggestions` (reuses `learning.ts`'s real `getPriceSuggestions()`, no duplicate logic) and `resetLearning()`. Same scoping precedent as `KB-208`: no Settings (S7) screen exists yet, so this ticket built what Developer Mode would call, not the screen itself. `resetLearning()` is deliberately local-only (owner's call) — signalled structurally via a `remoteDeletionNotPerformed: true` literal field, not a plain boolean; does not clear `learningEvents`, instead appends a real `learning_reset` audit entry. Gap logged as `NI-27` with a dual close trigger. Real-data check against `08-LEARNING-ENGINE.md` §9's literal list, all four items confirmed. **Remaining:** the actual Developer Mode screen, once S7 exists. |
 
 ---
 
 ## Phase 3 — Billing UI · ~3 weeks
 
-| ID | Ticket | Detail |
-|---|---|---|
-| **KB-301** | Billing screen shell | S3. Table on desktop, cards on mobile. |
-| **KB-302** | Voice control + states | Every state in `05-FRONTEND-SPEC.md` §2. **Transcript shown before items resolve.** |
-| **KB-303** | Editable bill table | Qty, rate, remove. `inputmode="decimal"`. Line totals recompute on edit. |
-| **KB-304** | Flag rendering | HIGH red inline / MEDIUM amber badge / LOW grey dot |
-| **KB-305** | **Add item with type-ahead** | S3a. Under 2 s from tap to item on bill. Depends on KB-201. |
-| **KB-306** | Customer fields | Name defaults to "Cash", mobile optional. **Never blocks finalise.** |
-| **KB-307** | Finalise | Atomic local write, receipt number from block, immutable after. Triggers learning. |
-| **KB-308** | Receipt | Kirana parchi format. `bill_language` **actually read**. **Every value HTML-escaped.** |
-| **KB-309** | Share | Image · PDF · WhatsApp |
-| **KB-310** | History + search | S5. Client-side search so it works offline. |
-| **KB-311** | Catalog screen | S4, including "Add from ready catalog" and the learning suggestions panel |
-| **KB-314** | **Bulk catalog import** | Excel/CSV upload via SheetJS, parsed client-side, preview-and-confirm, then a normal local write that syncs. Table stakes — a 500-product shop will not type them in. |
-| **KB-312** | Settings | Shop details, bill language, developer mode |
-| **KB-313** | Offline UI | Chips, disabled mic with reason, **half-built bill survives a network drop** |
+**Checked 23 Sep 2026, before Phase 3 planning starts — same staleness check run before Phase 2, this
+time correcting real dependencies rather than "already done" claims.** Nothing below is done; the
+difference is that six of these tickets now have a concrete, already-built, real-verified Phase 2
+dependency the original ticket text doesn't name. Status column added for the real-dependency notes;
+nothing renumbered.
+
+| ID | Ticket | Detail | Status |
+|---|---|---|---|
+| **KB-301** | Billing screen shell | S3. Table on desktop, cards on mobile. | ⬜ Not started. No new dependency. |
+| **KB-302** | Voice control + states | Every state in `05-FRONTEND-SPEC.md` §2. **Transcript shown before items resolve.** | ⬜ Not started. **Real dependency now concrete:** `KB-206`'s `/voice` endpoint is done and real-verified — this ticket calls it directly. Per `02-ARCHITECTURE.md` §5, this ticket also owns running Layer 1 (`grammar.ts`) client-side first and building the catalog slice before ever calling `/voice` for a Layer 2 parse — neither is `/voice`'s job. |
+| **KB-303** | Editable bill table | Qty, rate, remove. `inputmode="decimal"`. Line totals recompute on edit. | ⬜ Not started. No new dependency. |
+| **KB-304** | Flag rendering | HIGH red inline / MEDIUM amber badge / LOW grey dot | ⬜ Not started. **Real dependency now concrete:** renders `src/domain/reviewFlags.ts`'s real `ReviewFlag[]` output (`KB-208`, done) — severity, `itemIndex`, and real human-readable `message` strings already exist (written to match `05-FRONTEND-SPEC.md`'s own "inline sentences, not icons" rule). This ticket renders that data; it doesn't design it. |
+| **KB-305** | **Add item with type-ahead** | S3a. Under 2 s from tap to item on bill. Depends on KB-201. | ⬜ Not started. **Dependency already satisfied:** `KB-201` (catalog index/matcher) was done via Phase 0 (`KB-005b`), confirmed in this file's own Phase 2 corrections above. |
+| **KB-306** | Customer fields | Name defaults to "Cash", mobile optional. **Never blocks finalise.** | ⬜ Not started. No new dependency. |
+| **KB-307** | Finalise | Atomic local write, receipt number from block, immutable after. Triggers learning. | ⬜ Not started. **The single most important cross-reference in this list, not previously stated anywhere:** "Triggers learning" IS `KB-209`'s deferred finalize hook — not a separate ticket to bolt on afterward. Build `learning.ts`'s wiring (`recordProductSighting`/`recordAliasConfirmation`/`recordPriceObservation` on every finalized line) as part of this ticket. Also needs the IndexedDB↔`LearningState` marshalling neither `KB-208` nor `KB-210` built (both only needed read-side pieces) — a real, separable deliverable, not folded silently into "the finalize hook." |
+| **KB-308** | Receipt | Kirana parchi format. `bill_language` **actually read**. **Every value HTML-escaped.** | ⬜ Not started. No new dependency. |
+| **KB-309** | Share | Image · PDF · WhatsApp | ⬜ Not started. Depends on `KB-308` (receipt) existing first, not on anything from Phase 2. |
+| **KB-310** | History + search | S5. Client-side search so it works offline. | ⬜ Not started. Searches `KB-109`'s local `bills` table, already indexed on `createdAt`/`customerName` for exactly this (`KB-109`'s own handoff flagged this ahead of time). Needs `KB-307` (real bills to search) first. |
+| **KB-311** | Catalog screen | S4, including "Add from ready catalog" and the learning suggestions panel | ⬜ Not started. **Real dependency now concrete:** the "learning suggestions panel" (`05-FRONTEND-SPEC.md` S4 — price drift, unit drift, provisional products awaiting promotion) should call `src/data/learningAudit.ts`'s `listProvisionalProducts`/`listPendingPriceSuggestions` (`KB-210`, done, real-verified) — not rebuild suggestion-fetching logic a second time. |
+| **KB-314** | **Bulk catalog import** | Excel/CSV upload via SheetJS, parsed client-side, preview-and-confirm, then a normal local write that syncs. Table stakes — a 500-product shop will not type them in. | ⬜ Not started. New dependency to justify against `09-WORKING-AGREEMENT.md` §B6 when planned: SheetJS. |
+| **KB-312** | Settings | Shop details, bill language, developer mode | ⬜ Not started. **Real dependency now concrete — this IS S7**, the exact screen both `KB-209` and `KB-210` have been waiting on. `KB-210`'s full Developer Mode data layer (`listLearnedAliases`/`listProvisionalProducts`/`listPendingPriceSuggestions`/`resetLearning`, all done and real-verified, including `resetLearning`'s honest `remoteDeletionNotPerformed` signal) is built and ready to wire in directly. |
+| **KB-313** | Offline UI | Chips, disabled mic with reason, **half-built bill survives a network drop** | ⬜ Not started. Reads `KB-110`'s real online/offline sync-loop state, already built. |
 
 ---
 
