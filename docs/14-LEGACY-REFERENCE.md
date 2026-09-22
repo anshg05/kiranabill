@@ -1,6 +1,6 @@
 # 14 — Legacy Reference
 
-**Last updated:** 14 Sep 2026 (rev 6) · **Status:** Reference material, frozen
+**Last updated:** 22 Sep 2026 (rev 7) · **Status:** Reference material, frozen
 
 **Rev 6 note:** section 7 undercounted the review reason codes (said 7, `04-VOICE-PIPELINE.md`'s "11"
 was the correct number) and included one, `unknown`, that isn't real — conflated with `grammar.ts`'s
@@ -351,6 +351,17 @@ whichever ticket actually implements the confidence-gate system these codes feed
 | `number_dropped` | A number in the transcript reached no line item | HIGH |
 | `qty_dropped` | Quantity parsed then lost | HIGH |
 | `number_unconsumed` | Two numbers spoken, one unused | HIGH |
+
+**Implemented `KB-208`. `number_unconsumed` only fires when an utterance's "aur" segments align 1:1
+with the parsed items** — true for Layer 1 (`grammar.ts`) output, not guaranteed for Layer 2
+(Gemini), which makes no promise its `items[]` maps 1:1 to spoken segments. **`number_dropped` is not
+a full substitute when `number_unconsumed` can't run** — confirmed explicitly, not assumed:
+`number_dropped` only detects a number spoken but consumed *nowhere on the whole bill*; it is blind to
+a **cross-item misassignment of numerically-identical values** (two segments speaking the same
+numbers, one item's real numbers silently attached to another) — the whole-bill count still balances
+exactly in that case, so `number_dropped` stays silent even though the bill is now wrong. For Layer
+2/misaligned output, this specific risk class has no coverage from either code. Logged as
+`12-PARKED.md` `NI-26`.
 
 ---
 

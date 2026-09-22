@@ -140,6 +140,21 @@ function resolveCatalogMatch(spokenName: string): CatalogMatch {
 }
 
 /**
+ * Whether two units are compatible - same unit, mutually-interchangeable
+ * count units (D14), or a real kg<->gm / liter<->ml SI pair. Exported for
+ * KB-208's unit_mismatch review code, which needs the same real group
+ * logic convertCatalogRate() already implements - not a second, possibly-
+ * drifting reimplementation of the same three groups.
+ */
+export function unitsAreCompatible(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (COUNT_UNITS.has(a) && COUNT_UNITS.has(b)) return true;
+  if ((a === "kg" && b === "gm") || (a === "gm" && b === "kg")) return true;
+  if ((a === "liter" && b === "ml") || (a === "ml" && b === "liter")) return true;
+  return false;
+}
+
+/**
  * Converts a catalog's per-unit price into the spoken unit's terms.
  * Same unit -> pass through. Count units (piece/packet/...) -> mutually
  * compatible, pass through. kg<->gm and liter<->ml -> exact SI conversion
@@ -150,14 +165,30 @@ function resolveCatalogMatch(spokenName: string): CatalogMatch {
  * docs/14-LEGACY-REFERENCE.md section 8 (detecting a spoken RATE that looks
  * like the wrong magnitude) - that is explicitly KB-005b's job.
  */
-function convertCatalogRate(entry: CatalogEntry, spokenUnit: string): Paise | null {
-  if (spokenUnit === entry.unit) return entry.suggestedPricePaise;
-  if (COUNT_UNITS.has(spokenUnit) && COUNT_UNITS.has(entry.unit)) return entry.suggestedPricePaise;
-  if (entry.unit === "kg" && spokenUnit === "gm") return Math.round(entry.suggestedPricePaise / 1000);
-  if (entry.unit === "gm" && spokenUnit === "kg") return entry.suggestedPricePaise * 1000;
-  if (entry.unit === "liter" && spokenUnit === "ml") return Math.round(entry.suggestedPricePaise / 1000);
-  if (entry.unit === "ml" && spokenUnit === "liter") return entry.suggestedPricePaise * 1000;
+/**
+ * The general form of convertCatalogRate() below - converts ANY per-unit
+ * price from one unit to another, not just a catalog entry's own default
+ * price. Exported for KB-208's unusual_rate/unusual_total, which need to
+ * express a shop's effective price (possibly learning.ts's real learned
+ * price, not just the catalog default) in whatever unit the shopkeeper
+ * actually spoke - the same real kg<->gm/liter<->ml/count-synonym logic,
+ * not a second, unit-blind multiplication (KB-208's own real-data check
+ * caught a "500 gram spoken against a per-kg price, multiplied with no
+ * conversion" bug this function exists to prevent from recurring).
+ */
+export function convertPriceBetweenUnits(pricePaise: Paise, fromUnit: string, toUnit: string): Paise | null {
+  if (!unitsAreCompatible(fromUnit, toUnit)) return null;
+  if (fromUnit === toUnit) return pricePaise;
+  if (COUNT_UNITS.has(fromUnit) && COUNT_UNITS.has(toUnit)) return pricePaise;
+  if (fromUnit === "kg" && toUnit === "gm") return Math.round(pricePaise / 1000);
+  if (fromUnit === "gm" && toUnit === "kg") return pricePaise * 1000;
+  if (fromUnit === "liter" && toUnit === "ml") return Math.round(pricePaise / 1000);
+  if (fromUnit === "ml" && toUnit === "liter") return pricePaise * 1000;
   return null;
+}
+
+function convertCatalogRate(entry: CatalogEntry, spokenUnit: string): Paise | null {
+  return convertPriceBetweenUnits(entry.suggestedPricePaise, entry.unit, spokenUnit);
 }
 
 // ---------------------------------------------------------------------------
@@ -455,6 +486,50 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
 
   const { qty, unit } = qtyAndUnit(qtyEntry);
   return { spokenName, ...match, qty, unit, rate: null, total: rupeesToPaise(otherEntries[0]!.value), priceType: "total" };
+}
+
+/**
+ * Every number this grammar's own tokenizer would resolve from raw text -
+ * Hindi numerals, fixed/compositional fractions, chataak-as-50g, plain
+ * digits - as a flat, order-preserving, duplicates-preserving list.
+ * Exported for KB-208's number-safety review codes (number_dropped,
+ * qty_dropped, number_unconsumed), which need to cross-check "every number
+ * a human would say was spoken" against "every number that made it onto a
+ * line item" - reusing this exact resolution logic rather than a second,
+ * possibly-drifting number extractor. Segments on "aur" the same way
+ * parseUtterance() does, so a caller comparing against parseUtterance()'s
+ * own output is comparing like with like.
+ */
+export function extractSpokenNumbers(text: string): readonly number[] {
+  return extractSpokenNumberEntries(text).map((entry) => entry.value);
+}
+
+/** Same extraction as extractSpokenNumbers(), but keeping each number's
+ * attached unit (if any) - lets a caller distinguish "5" (a bare number,
+ * could be anything) from "5 kilo" (unambiguously looked like a spoken
+ * quantity). Used by KB-208's qty_dropped code specifically. */
+export interface SpokenNumberEntry {
+  readonly value: number;
+  readonly attachedUnit: string | null;
+}
+
+export function extractSpokenNumberEntries(text: string): readonly SpokenNumberEntry[] {
+  const segments = text
+    .split(/\baur\b/i)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+  const entries: SpokenNumberEntry[] = [];
+  for (const segment of segments) {
+    const classified = classifySegment(splitWords(segment));
+    for (let i = 0; i < classified.length; i++) {
+      const token = classified[i]!;
+      if (token.type !== "num") continue;
+      const next = classified[i + 1];
+      entries.push({ value: token.value, attachedUnit: next?.type === "unit" ? next.unit : null });
+    }
+  }
+  return entries;
 }
 
 /**

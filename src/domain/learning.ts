@@ -103,6 +103,7 @@ export interface ProductPromotionResult {
   readonly promotedCatalogEntry?: PromotedCatalogEntry;
 }
 
+
 /** First-observed price wins ties (docs/07-DECISIONS.md D13-style disclosed
  * tie-break, approved as-is for KB-008). Legacy just overwrites with the
  * latest observation; the doc's "modal observed price" is new design. */
@@ -309,6 +310,29 @@ export function getPriceSuggestions(state: LearningState, nowMs: number): readon
   }
 
   return suggestions;
+}
+
+/**
+ * The real price to compare a spoken rate/total against, for KB-208's
+ * unusual_rate/unusual_total review codes - "the shop's price" per
+ * docs/04-VOICE-PIPELINE.md section 5's own wording, not the static
+ * catalog default unconditionally. Reuses getPriceSuggestions()'s own
+ * >=3-matching-observations-in-30-days confirmation, not a raw average of
+ * every drift point ever recorded (priceObservations only stores points
+ * that DIFFERED from the price passed to recordPriceObservation() at the
+ * time - it is a change-detection log, not a running average of what the
+ * shop actually charges, so a bare modalPrice() over it would be the
+ * wrong signal). Falls back to the catalog's own suggested price when
+ * there's no confirmed suggestion yet.
+ */
+export function getEffectivePrice(
+  state: LearningState,
+  catalogId: string,
+  catalogSuggestedPricePaise: Paise,
+  nowMs: number,
+): Paise {
+  const suggestion = getPriceSuggestions(state, nowMs).find((s) => s.catalogId === catalogId);
+  return suggestion ? suggestion.suggestedPricePaise : catalogSuggestedPricePaise;
 }
 
 /** [Ignore] - suppresses suggestions for this product for 90 days. A
