@@ -275,16 +275,19 @@ src/
   data/
     db.ts              IndexedDB schema + accessors
     sync.ts            sync worker
-    supabase.ts        client
-  providers/
-    transcription/     groq.ts · webSpeech.ts
-    parse/             gemini.ts
+    supabaseClient.ts  client
+  providers/           REACT CONTEXT providers only - ShopProvider, AuthProvider (KB-106/107)
+  voice/               TranscriptionProvider/ParseProvider - see below (corrected `KB-206`,
+                       was originally drawn as `providers/transcription/`+`providers/parse/`;
+                       moved to avoid colliding with the React providers above - `KB-204`/`NI-24`)
+    transcriptionProvider.ts · groqTranscriptionProvider.ts
+    parseProvider.ts · geminiParseProvider.ts · pricingGrammarPrompt.ts
   ui/
     billing/ catalog/ history/ settings/ shared/
   app/                 routing, auth, providers
 
 supabase/migrations/   versioned SQL
-netlify/functions/     voice.ts, _shared/
+netlify/functions/     voice.mts (real extension - `.ts` here was illustrative, `KB-206`), _shared/
 eval/                  voice cases, runner, number benchmark
 docs/                  this documentation set
 ```

@@ -1,0 +1,7 @@
+# docs/17-MANUAL-TASKS.md M-13's own spec: build command, publish dir.
+# functions directory is Netlify's own default (netlify/functions) - stated
+# explicitly here anyway so it isn't an implicit assumption.
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"

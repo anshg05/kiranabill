@@ -6,3 +6,10 @@ dist/
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# Local Netlify folder
+.netlify
+
+# netlify dev's Edge Functions bootstrap lockfile - generated locally even
+# though this project has zero edge functions
+deno.lock

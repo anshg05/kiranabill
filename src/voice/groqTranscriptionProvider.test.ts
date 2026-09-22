@@ -22,6 +22,36 @@ describe("groqTranscriptionProvider", () => {
     expect(result.latencyMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("uploads the file with a real extension matching the Blob's MIME type - KB-206 found Groq rejects a bare 'audio' filename with no extension", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ text: "" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createGroqTranscriptionProvider("test-key");
+    await provider.transcribe(new Blob(["audio"], { type: "audio/wav" }), {});
+
+    const form = fetchMock.mock.calls[0]![1].body as FormData;
+    const file = form.get("file") as File;
+    expect(file.name).toBe("audio.wav");
+  });
+
+  it("falls back to a .webm extension when the Blob carries no recognized type", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ text: "" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createGroqTranscriptionProvider("test-key");
+    await provider.transcribe(new Blob(["audio"]), {});
+
+    const form = fetchMock.mock.calls[0]![1].body as FormData;
+    const file = form.get("file") as File;
+    expect(file.name).toBe("audio.webm");
+  });
+
   it("sends the auth header, model, language and audio file", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
