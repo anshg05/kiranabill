@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 20 Aug 2026 (rev 6) · **Phase:** Pre-build complete · **Status:** Ready to build
+**Last updated:** 26 Sep 2026 (rev 7) · **Phase:** 3 — billing UI (current state: `10-TRACKER.md`) · **Status:** Building
 
 ---
 
@@ -27,7 +27,8 @@ Do not invent it.
 ### If you are the developer starting work
 
 Read `15-BUILD-GUIDE.md`. Folder restructure, tool setup, phase sequence, daily loop.
-**Build tool: Antigravity, all phases. Codex as backup only.**
+**Build tool: Claude Code** (since 21 Aug 2026 — `07-DECISIONS.md` D28, superseding the original
+Antigravity choice, T1). Operating rules for the agent: `CLAUDE.md` + `18-AGENT-CONTRACT.md`.
 
 ### If you are an AI joining this project
 

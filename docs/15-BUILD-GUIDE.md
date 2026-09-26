@@ -1,10 +1,17 @@
 # 15 — Build Guide
 
-**Last updated:** 21 Aug 2026 (rev 4) · **Status:** Active
+**Last updated:** 26 Sep 2026 (rev 5) · **Status:** Active
 **Supersedes:** rev 1, which recommended multiple tools including Lovable.
 
 How to actually build this, alone. Read `09-WORKING-AGREEMENT.md` alongside it — that covers the
 session protocol, this covers sequence and tooling.
+
+> **Tool superseded, 26 Sep 2026 note.** The build tool has been **Claude Code** since 21 Aug 2026
+> (`07-DECISIONS.md` D28, superseding T1; `11-STACK-DECISIONS.md` SD-025, superseding SD-015).
+> Every "Antigravity" in this guide — §1, §2's MCP catalogue, §4's onboarding step, §5, §9's
+> "switch to Codex" row — is kept as history and should be read as "the build agent", now Claude
+> Code. Git is single-branch on `main` (D29), not feature branches. The phase sequence (§6) and
+> daily loop (§8) are unaffected.
 
 ---
 

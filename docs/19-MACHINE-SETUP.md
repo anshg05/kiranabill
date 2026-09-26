@@ -1,6 +1,6 @@
 # 19 — Machine Setup
 
-**Last updated:** 22 Sep 2026 · **Status:** Active
+**Last updated:** 26 Sep 2026 · **Status:** Active
 **Purpose:** get a new machine to the exact state the old one was in, with nothing skipped and nothing guessed. Written from what this project's actual setup involved, including the real problems hit along the way — not a generic checklist.
 
 **Do these in order.** Each section assumes the previous one is done.
@@ -25,6 +25,11 @@ This is a **private** GitHub repo (`anshg05/kiranabill`) connected to a **real, 
 | **Claude Code** | `npm install -g @anthropic-ai/claude-code` | The build agent for this project |
 
 **On Windows specifically: use Git Bash, not PowerShell, for anything Claude Code runs.** Every command Claude Code has executed in this project so far — `grep`, `sed`, `awk`, `tail`, background process management — assumes a Unix-style shell. PowerShell will fight it. If Claude Code's terminal defaults to PowerShell on the new machine, change it to Git Bash before starting real work, not after hitting the first cryptic error.
+
+**Node version, as actually run (26 Sep 2026):** the current machine runs **Node 26.7.0**, an owner
+decision to stay on it — `npm run lint` and `npx tsc --noEmit` are clean, and `npm test` passes apart
+from the intermittent `catalogIndex` performance test (`12-PARKED.md` KI-23). Node 26 enters Active
+LTS on 28 Oct 2026. **An LTS release is preferred going forward** when setting up any further machine.
 
 Verify each installed correctly:
 ```bash
@@ -167,7 +172,26 @@ This happened on the old machine and cost real time, so it's documented here rat
 npx supabase db reset
 ```
 
-This applies **every migration in `supabase/migrations/`, in order**, to the local database from scratch. It should complete with no errors — if it does, your local schema now exactly matches what should be live on the remote (every migration up to this point has already been pushed and verified there, per `10-TRACKER.md`'s own record).
+This applies **every migration in `supabase/migrations/`, in order**, to the local database from scratch. It should complete with no errors — if it does, your local schema now matches the migration files. **It says nothing about the remote.**
+
+**Correction, 26 Sep 2026:** this section originally said every migration had already been pushed to the remote. That was false when written — `20260920170751_bills_receipt_number_source.sql` (`KB-111`) was local-only until the owner pushed it on 26 Sep 2026. Don't trust this document (or any other) for push state; check it directly, read-only:
+
+```bash
+npx supabase migration list --linked
+```
+
+Every row must show the same id under both `local` and `remote`. An empty `remote` means the migration has not been pushed.
+
+### Expected `supabase status` noise on this Windows setup
+
+`npx supabase status` exiting 0 is what matters. On this machine it also reports some services stopped or restarting — all expected and harmless for this project (observed 26 Sep 2026):
+
+| Service | State seen | Why it's harmless |
+|---|---|---|
+| `supabase_pooler` | stopped | Disabled in `supabase/config.toml` (`[db.pooler] enabled = false`) |
+| `supabase_edge_runtime` | stopped *or* running (both seen the same day) | This project has no Supabase edge functions — `/voice` runs on Netlify |
+| `supabase_imgproxy` | stopped | Storage image transforms — unused |
+| `supabase_vector` | restart-looping (`docker ps`: `Restarting (0) …`) | Log collection only — nothing in this project depends on it |
 
 ```bash
 npx supabase db dump --linked --schema public,storage -f /tmp/remote-check.sql
@@ -221,7 +245,7 @@ Run all of these before considering the machine "ready." Compare the numbers aga
 ```bash
 npm run lint            # clean
 npx tsc --noEmit         # clean
-npm test                 # should match the test count in docs/10-TRACKER.md
+npm test                 # should match the test count in docs/10-TRACKER.md (see KI-23 for the intermittent perf test)
 npx supabase db reset    # all migrations apply cleanly, no errors
 ```
 

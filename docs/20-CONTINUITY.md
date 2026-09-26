@@ -1,6 +1,6 @@
 # 20 — Continuity: Handing Off This Chat's Role
 
-**Last updated:** 22 Sep 2026 · **Status:** Active
+**Last updated:** 26 Sep 2026 · **Status:** Active
 **Purpose:** let a new Claude conversation, on a new account, pick up the role this chat has played — without duplicating the project's actual documentation, which already lives durably in the repo and would only drift out of sync if copied here.
 
 **The framing worth holding onto:** this is the same problem `09-WORKING-AGREEMENT.md §A0` already solved for Claude Code — a fresh session with no memory needs to become useful fast, without re-deriving decisions that are already settled. That pattern is being reused here, for a human-facing reviewer session instead of a code-writing one.
@@ -61,7 +61,7 @@ These aren't blockers — they're context that changes how a specific upcoming t
 |---|---|---|
 | `NI-27` | `resetLearning()` is deliberately local-only — a reset doesn't propagate to the remote database yet, and the result carries a structural `remoteDeletionNotPerformed: true` field for exactly this reason. | `KB-312`'s actual reset button **must** surface this warning to the user, not present a bare "reset complete." |
 | `KI-27` | Groq's real per-hour Whisper cost was never obtained (their pricing page was unreachable at the time) — the cost model is real but incomplete. Its stated close condition is real pilot usage data, whichever comes first. | Not a Phase 3 blocker. Worth remembering once the pilot actually starts producing real spend numbers. |
-| `KI-23` | A performance benchmark test (`catalogIndex.test.ts`) has flaked under system load **many** times across this project — always passes cleanly in isolation. It's an environmental artifact (contention from other running processes), not a real regression, confirmed repeatedly. | If it flakes again in Phase 3, don't treat it as new — check `12-PARKED.md`, confirm it passes isolated, move on. Don't re-diagnose from scratch each time. |
+| `KI-23` | A performance benchmark test (`catalogIndex.test.ts`, 10,000-product lookup under 16 ms) has flaked under load many times. **Correction, 26 Sep 2026:** the earlier "always passes cleanly in isolation" pattern no longer holds — on the new machine it failed in isolation too (16.76 ms), and in a 10-run diagnostic only the `chawal` query came near the budget. Cause not established. | **Do not** "confirm it passes isolated and move on" — that advice is no longer reliable. Read `12-PARKED.md` KI-23 for the raw numbers, paste the real result, and don't claim a cause. The 16 ms budget is a product requirement (`18-AGENT-CONTRACT.md` §8), so a lookup near 16 ms is a potential real signal, not only test noise. |
 | Git worktree bug | Claude Code has, at least once, launched a session into an isolated worktree instead of the real checkout, breaking the single-branch rule and requiring a manual merge to recover. | Worth a quick `git worktree list` check at the start of any session that feels like it might be starting oddly. |
 
 ---

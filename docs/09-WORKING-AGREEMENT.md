@@ -1,6 +1,6 @@
 # 09 — Working Agreement
 
-**Last updated:** 20 Aug 2026 (rev 4) · **Status:** Active from first commit
+**Last updated:** 26 Sep 2026 (rev 5) · **Status:** Active from first commit
 
 How work gets done on this project. Engineering standards, the AI session protocol, and the
 definition of done.
@@ -226,20 +226,20 @@ The `_paise` suffix is not cosmetic. It makes a float bug visible in code review
 
 ### B4. Git
 
-```
-main  ← always deployable
-  └── feat/KB-207-deterministic-parser
-  └── fix/KB-002-command-collision
-```
+**Single branch. All work happens on `main`.** Owner decision, 20 Aug 2026 — `07-DECISIONS.md` D29,
+restated as the binding rule in `CLAUDE.md` "Git". This section previously prescribed feature branches
+and "never commit to `main` directly"; that rule is superseded, not merely relaxed.
+
+- Never create or check out another branch.
+- Commit directly to `main` after each verified step — a commit per coherent, verified change, not one
+  per ticket.
+- The ticket ID in the commit message does the job a branch name used to do — it tells a future AI
+  what a change was for.
 
 Commit format: `KB-207: add Hindi fraction parsing to deterministic grammar`
 
-**No pull requests to yourself.** A PR you approve alone is ceremony, not review. Instead: before
-merging, read your own full diff on GitHub's compare view. That gives you the review benefit without
-the ritual.
-
-**Never commit to `main` directly** — not for process purity, but because the branch name is what
-tells a future AI what a change was for.
+**No pull requests to yourself.** A PR you approve alone is ceremony, not review. Instead: read your
+own full diff (`git show`, or GitHub's commit view) after each commit.
 
 ### B5. Testing
 
@@ -286,7 +286,7 @@ A ticket is done when **all** of these are true:
 □ Affected docs updated
 □ 07-DECISIONS.md updated if a decision was made or changed
 □ 10-TRACKER.md updated
-□ Merged to main
+□ Committed to main (single-branch workflow, §B4)
 ```
 
 For the release gate, see `06-FEATURE-TICKETS.md`.

@@ -1,6 +1,6 @@
 # 18 — Agent Contract
 
-**Last updated:** 20 Aug 2026 · **Status:** Binding on every session
+**Last updated:** 26 Sep 2026 · **Status:** Binding on every session
 
 > **If you are an AI agent working on this project, this document is your operating contract.
 > Read it in full before doing anything. It overrides your defaults.**
@@ -260,16 +260,12 @@ Don't produce a large diff and a short explanation. Produce a small diff and a c
 
 ## 11. Where we are
 
-**Phase 0.** Building `src/domain/` — pure TypeScript, no UI, no database, no browser.
+**Not recorded here.** The current phase, blockers and next action live in `10-TRACKER.md`
+"Right now" — this section used to hold a Phase 0 ticket order and went stale for two phases.
+As of 26 Sep 2026 the project is in Phase 3 (billing UI).
 
-Order: `KB-000` → `KB-003` → `KB-002` → `KB-004` → `KB-005` → `KB-005b` → `KB-005c` → `KB-008` →
-`KB-006` → `KB-007` → `KB-009`
+**Git:** single branch, `main`, commit after each verified step — the rule is in `CLAUDE.md`,
+decided in `07-DECISIONS.md` D29.
 
-**`KB-005` is the differentiator** and the old code got it wrong (₹100 instead of ₹30 for
-"5 kg chawal 30 ka"). Write the failing tests first.
-
-**`KB-009` is the gate.** If fast-path coverage lands under 40%, **stop and tell him** — the cost
-model and the architecture both assume 60–70%, and that is a decision he has to make, not you.
-
-**Phase 0 ships nothing visible for three weeks.** That is expected. `KB-005c` (the CLI) exists so
-progress is demonstrable. Do not suggest building UI early to make it feel better.
+*History, kept for context:* Phase 0's gate was `KB-009` — fast-path coverage under 40% would have
+stopped the project for an owner decision. It measured 92.8% (15 Sep 2026) and did not trigger.

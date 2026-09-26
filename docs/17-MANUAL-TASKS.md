@@ -1,6 +1,6 @@
 # 17 — Manual Tasks
 
-**Last updated:** 18 Aug 2026 · **Status:** Active
+**Last updated:** 26 Sep 2026 · **Status:** Active
 
 Everything only **you** can do. The agent cannot create accounts, click consent screens, hold
 credit cards, or paste secrets into dashboards.
@@ -20,7 +20,7 @@ If an agent claims it has done any of these, it is wrong — check yourself.
 | M-01 | Back up the existing folder | Your machine | — | Zip it. Thirty seconds. |
 | M-02 | Install Node.js LTS | nodejs.org | Free | Check with `node -v` |
 | M-03 | Install Git | git-scm.com | Free | |
-| M-04 | Install Antigravity | Google | Covered by AI Pro | |
+| M-04 | Install **Claude Code** | `npm install -g @anthropic-ai/claude-code` | Claude plan | Build tool since 21 Aug 2026 (`07-DECISIONS.md` D28 — was Antigravity, T1). Setup detail: `19-MACHINE-SETUP.md` §1. |
 | M-05 | Create a **private** GitHub repo | github.com | Free | **Private.** Not public. |
 | M-06 | **Rotate the Groq key** | console.groq.com → API Keys | Free tier | Delete the old one. Don't just create a new one. |
 | M-07 | **Rotate the Gemini key** | aistudio.google.com → Get API key | Free tier | Same — delete the old. |
@@ -81,7 +81,7 @@ This is deliberate. An agent with write access to your database can drop a table
 
 **Cost:** free tier.
 
-### M-14 · Supabase MCP in Antigravity (optional)
+### M-14 · Supabase MCP in Claude Code (optional)
 
 Only at Phase 1. Use a **read-only** token if the option exists.
 
@@ -91,7 +91,7 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 
 | # | Task | Cost |
 |---|---|---|
-| M-20 | Add **Chrome DevTools MCP** in Antigravity | Free |
+| M-20 | Add **Chrome DevTools MCP** in Claude Code (optional) | Free |
 | M-21 | Download **Mukta** and **IBM Plex Mono** from Google Fonts, self-host | Free |
 | M-22 | Create the app icon and PWA splash images | Free |
 

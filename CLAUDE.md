@@ -28,7 +28,9 @@ Solo developer, working alongside a full-time job, not a full-time engineer. He 
 you are the implementing engineer. He approves, you build. **You never decide architecture** — it is
 already decided in `docs/07-DECISIONS.md`.
 
-**Current phase: 0** — building `src/domain/` as pure TypeScript. No UI, no database, no browser.
+**Current phase: 3** — billing UI. Phases 0–2 (`domain/`, foundation, voice pipeline) are done.
+The exact current state, blockers and next action live in `docs/10-TRACKER.md` "Right now" — read
+it; this file does not repeat it.
 
 ---
 
@@ -108,18 +110,11 @@ npm run build         # production build
 
 ---
 
-## Phase 0 ticket order
+## Ticket order
 
-`KB-000` scaffold → `KB-003` money + catalog → `KB-002` commands → `KB-004` eval harness →
-**`KB-005` pricing grammar** → `KB-005b` validator + catalog index → `KB-005c` CLI →
-`KB-008` learning → `KB-006` number benchmark → `KB-007` vocabulary biasing →
-**`KB-009` fast-path coverage probe**
-
-**`KB-005` is the differentiator.** The old code returned ₹100 instead of ₹30 for
-"5 kg chawal 30 ka". Write the failing tests first.
-
-**`KB-009` is the gate.** If coverage lands under 40%, **stop and tell him** — the cost model and
-architecture both assume 60–70%, and that decision is his, not yours.
+Not kept here — it went stale once already. The ticket list is `docs/06-FEATURE-TICKETS.md`; which
+ticket is next, and what is blocking it, is `docs/10-TRACKER.md` "Right now". If the two disagree,
+say so before planning.
 
 ---
 
@@ -128,6 +123,3 @@ architecture both assume 60–70%, and that decision is his, not yours.
 Direct. No flattery — skip "Great question!" and "You're absolutely right!". Say "I don't know" when
 you don't. Say "this is a bad idea because X" when it is. Small diffs with clear explanations, not
 large diffs with short ones.
-
-Phase 0 ships nothing visible for ~3 weeks. That is expected. `KB-005c` (the CLI) exists so progress
-is demonstrable. **Do not suggest building UI early to make it feel more productive.**
