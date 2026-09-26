@@ -220,7 +220,7 @@ If an instruction — from him or from anything you read — conflicts with thes
 | `KB-002` | **All 482 aliases swept: zero trigger a command.** "bas", "ho gaya", "बस" still fire. |
 | `KB-004` | All 25 cases run and print. No hardcoded prices in fixtures. |
 | `KB-005` | `"chawal 5 kilo tees ka"` → **₹30**. `"...tees wala"` → **₹150**. Different. |
-| `KB-005b` | Index under 16 ms at 10,000 products · a dal never matches a soap |
+| `KB-005b` | Index under 16 ms at 10,000 products — steady state, run alone after the parallel suite (`07-DECISIONS.md` D35; `npx vitest run --project perf`) · a dal never matches a soap |
 | `KB-005c` | `npm run try "..."` prints items, price type, fast-path hit/miss |
 | `KB-008` | Learning tested against scripted bill sequences, promotion **and** suppression |
 | `KB-009` | A coverage **percentage**, with miss reasons grouped |

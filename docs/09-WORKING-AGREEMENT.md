@@ -246,6 +246,7 @@ own full diff (`git show`, or GitHub's commit view) after each commit.
 | Layer | Tool | Coverage expectation |
 |---|---|---|
 | `domain/` | Vitest | **High.** Money math, grammar, validator, learning. These are the correctness core. |
+| Performance budgets | Vitest, `*.perf.test.ts`, project `perf` | Run by `npm test` **alone, after** every other file — never in the parallel pool. Steady state only (warm-up, cold call not asserted). `07-DECISIONS.md` D35. |
 | RLS policies | SQL negative tests | **Mandatory.** Two shops, zero cross-visibility, every table. |
 | Voice pipeline | Eval suite + number benchmark | Re-run on every change to parsing or prompts |
 | UI | Manual | No E2E in MVP — solo projects abandon Playwright by month three |

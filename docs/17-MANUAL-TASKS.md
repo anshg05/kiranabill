@@ -158,5 +158,6 @@ Nothing here needs real money until Phase 4.
 2. **The service role key is not placed anywhere** — nothing in this project uses it, and it bypasses RLS
    entirely. If a future ticket ever needs it, that ticket decides where, never `.env.local` or the repo.
 3. **You apply migrations.** The agent writes SQL; you run `supabase db push`.
-4. Before every commit: `git status --short | grep -i env` should return nothing.
+4. Before every commit: `git status --short | grep -i env | grep -v '\.env\.example'` should return nothing.
+   (`.env.example` is tracked on purpose, dummy values only; it appears legitimately whenever it's edited.)
 5. If a key is ever exposed again: **rotate first, investigate second.**

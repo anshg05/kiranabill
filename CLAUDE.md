@@ -104,7 +104,7 @@ Full reasoning and rejected alternatives: `docs/11-STACK-DECISIONS.md`.
 ## Commands
 
 ```
-npm test              # Vitest
+npm test              # Vitest - all tests in parallel, then perf tests alone (D35)
 npx tsc --noEmit      # type check
 npm run dev           # dev server
 npm run build         # production build

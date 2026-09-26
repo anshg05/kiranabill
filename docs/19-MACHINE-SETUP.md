@@ -27,8 +27,8 @@ This is a **private** GitHub repo (`anshg05/kiranabill`) connected to a **real, 
 **On Windows specifically: use Git Bash, not PowerShell, for anything Claude Code runs.** Every command Claude Code has executed in this project so far — `grep`, `sed`, `awk`, `tail`, background process management — assumes a Unix-style shell. PowerShell will fight it. If Claude Code's terminal defaults to PowerShell on the new machine, change it to Git Bash before starting real work, not after hitting the first cryptic error.
 
 **Node version, as actually run (26 Sep 2026):** the current machine runs **Node 26.7.0**, an owner
-decision to stay on it — `npm run lint` and `npx tsc --noEmit` are clean, and `npm test` passes apart
-from the intermittent `catalogIndex` performance test (`12-PARKED.md` KI-23). Node 26 enters Active
+decision to stay on it — `npm run lint` and `npx tsc --noEmit` are clean, and `npm test` passes (5/5 after
+`KB-005e`, 26 Sep — the perf test now runs alone and warmed up, `07-DECISIONS.md` D35; KI-23 closed). Node 26 enters Active
 LTS on 28 Oct 2026. **An LTS release is preferred going forward** when setting up any further machine.
 
 Verify each installed correctly:
@@ -123,9 +123,9 @@ Then fill in `.env.local` with **real values**, matching each name in `.env.exam
 
 **Verify before going further:**
 ```bash
-git status --short | grep -i env
+git status --short | grep -i env | grep -v '\.env\.example'
 ```
-This must print **nothing**. If it shows `.env.local`, stop — the `.gitignore` isn't doing its job, and that needs fixing before you write a single real key into that file.
+This must print **nothing**. (`.env.example` is tracked on purpose — it holds dummy values only — so it's excluded; it shows up legitimately whenever it's edited.) If it shows `.env.local`, stop — the `.gitignore` isn't doing its job, and that needs fixing before you write a single real key into that file.
 
 ---
 
@@ -245,7 +245,8 @@ Run all of these before considering the machine "ready." Compare the numbers aga
 ```bash
 npm run lint            # clean
 npx tsc --noEmit         # clean
-npm test                 # should match the test count in docs/10-TRACKER.md (see KI-23 for the intermittent perf test)
+npm test                 # should match the test count in docs/10-TRACKER.md; runs "unit" in parallel, then "perf" alone
+npx vitest run --project perf   # the 16 ms perf test on its own (D35)
 npx supabase db reset    # all migrations apply cleanly, no errors
 ```
 

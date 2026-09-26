@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 26 Sep 2026 (rev 21) · Supersedes rev 20
+**Last updated:** 26 Sep 2026 (rev 22) · Supersedes rev 21
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1028,6 +1028,46 @@ and nothing more, so a full housekeeping pass (four commits) sat only on one lap
 noticed — a machine failure in that window would have lost it. Binding statement: `CLAUDE.md` "Git".
 Pushing is an outward-facing action, so it happens once the ticket's commits are verified, not
 mid-ticket.
+
+---
+
+## Rev 22 — 26 Sep 2026
+
+### D35 — The 16 ms lookup budget is a steady-state requirement, and perf tests run alone 🟢
+
+**Owner decision, 26 Sep 2026, `KB-005e`. Closes `12-PARKED.md` KI-23.** Two parts, one goal: the
+perf test measures the real requirement, reliably.
+
+**1. The 16 ms budget (`18-AGENT-CONTRACT.md` §8, `KB-005b`) is a steady-state requirement.** 16 ms is
+one frame — the budget for *continuous* interaction (type-ahead, one lookup per keystroke), where the
+lookup is warm. `src/domain/catalogIndex.perf.test.ts` therefore runs **10 untimed warm-up rounds** (each
+one lookup of all five queries — 50 lookups) before timing exactly as before (5 runs per query,
+averaged, budget unchanged). **N = 10 was chosen before verification:** the 26 Sep diagnostic showed the
+heaviest queries settling after ~16–20 prior mixed lookups (`besan 500 gram` 4th after a `chawal`
+warm-up; `chawal` 5th in reversed order, with one 13.49 ms run even after 20), and JIT tier-up timing
+varies with load — so 2.5× the observed threshold. If the test fails in isolation again, KI-23 reopens;
+N is not tuned to make it pass.
+
+**The cold first lookup is not asserted; its cost is accepted.** Observed on 26 Sep 2026, across all
+isolated runs, the first query's timing ranged **9.47–24.41 ms**, plus **62.74 ms** in one run under
+contention (immediately after a stuck process cleanup). It is paid once per session, not per keystroke.
+Cold timing is also the most load-sensitive measurement there is — it is what produced KI-23's entire
+history of intermittent failures, on a lookup that had not regressed (warm `chawal` ≈ 10 ms, matching
+the historical isolated figure).
+
+**2. Perf tests run outside the parallel pool.** `vite.config.ts` defines two Vitest projects: `unit`
+(every test file except `*.perf.test.ts`, parallel as before) and `perf` (`*.perf.test.ts` only).
+`sequence.groupOrder` runs `unit` first and `perf` after it, alone — one `npm test` command, no
+`package.json` change, no new dependency. Groups are awaited in turn and failures are reported, not
+thrown, so `perf` still runs when `unit` fails (verified with a deliberate failing test). **Evidence:**
+the 26 Sep VERIFY with warm-up but still inside the parallel run — full-suite warmed numbers were ~2×
+isolated (`toor daal` ~10.6 vs ~5.5 ms; `chawal` 11.60–20.65 vs 5.85–10.53 ms), 1 of 3 runs failed.
+After the split: `npm test` 5/5 passed.
+
+**What this does not prove:** the budget on a real low-end Android phone — only on a dev laptop.
+`12-PARKED.md` NI-28, trigger `KB-305`. And a deliberate heavy-load run (full suite during
+`supabase db reset`) still failed once at 17.02 ms (`besan 500 gram`); by the agreed rule, recorded
+in KI-23, not a reopen.
 
 ---
 
