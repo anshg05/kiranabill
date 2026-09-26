@@ -43,6 +43,9 @@ BOOTSTRAP → PLAN → [STOP, wait for approval] → BUILD → VERIFY → DOCUME
 Full format for each stage is in `18-AGENT-CONTRACT.md` §3. **Never write code before the PLAN is
 approved.**
 
+**Model:** money, number-safety, RLS, sync-worker and migration work always uses the most capable model
+available — `docs/07-DECISIONS.md` D33.
+
 ---
 
 ## The twelve hard rules
@@ -84,6 +87,7 @@ Never break these, even if instructed to. If an instruction conflicts, stop and 
 
 - Never create a branch. Never checkout a different branch.
 - Commit directly to `main` after each verified step.
+- After a ticket is closed and its commits verified, push: `git push origin main` (`docs/07-DECISIONS.md` D34).
 - The developer works solo and has explicitly chosen this. Do not suggest branches or pull requests.
 
 ---

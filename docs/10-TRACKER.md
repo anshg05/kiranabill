@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 26 Sep 2026 (rev 42) · **Current phase:** 3 — Billing UI, not started. Next action pending the owner's ticketing decision on `KI-29`–`KI-32` (see "Right now")
+**Last updated:** 26 Sep 2026 (rev 43) · **Current phase:** 3 — Billing UI, not started. Next: KI-23 diagnostic → `KI-30` fix → `KI-29`+`KI-31` fix → `KI-32` bootstrap → `KB-301` (owner decision 26 Sep; see "Right now")
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -32,8 +32,24 @@ pass (entry-point docs aligned to Phase 3 / Claude Code / single branch; `07-DEC
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
 list --linked` shows all 10 migrations on both sides after the owner pushed `20260920170751` (`KB-111`)
 the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
-**Next action:** pending the owner's ticketing decision on `KI-29`–`KI-32`. Not named here until that
-decision is made.
+**Next action — owner decision, 26 Sep 2026, in this order:**
+1. **KI-23 diagnostic** (`12-PARKED.md` KI-23: query order reversed; warm-up call). Run 26 Sep, raw numbers
+   reported to the owner; not yet recorded in KI-23 — pending the owner's review.
+2. **`KB-005e`** *(proposed ID)* — fix `KI-30` (gram/ml default-price rounding in `grammar.ts`).
+3. **`KB-110b`** *(proposed ID)* — fix `KI-29` + `KI-31` together: the bill push path vs. the immutability
+   triggers, and writing/pushing `receipt_number_source`. One ticket.
+4. **`KB-315`** *(proposed ID)* — `KI-32` runtime bootstrap: persisted `deviceId`, first receipt block at
+   onboarding, local `shops` cache, sync loop started.
+5. **`KB-301`** — billing screen shell.
+
+Proposed IDs follow `06-FEATURE-TICKETS.md`'s own convention: a letter suffix on the ticket whose area
+the work follows up (`KB-005b`/`c`/`d` after `KB-005` — `KB-005d` was itself a `grammar.ts` fix; `KB-107b` split
+from `KB-107`), and the next
+free number in the phase for new work (`KB-314` is the highest Phase 3 ID). **Not yet added to
+`06-FEATURE-TICKETS.md`** — pending owner confirmation of the IDs.
+
+**Outstanding owner tasks:** `M-13` (connect the real Netlify site, set env vars) before any production
+deploy.
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).

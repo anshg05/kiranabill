@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 26 Sep 2026 (rev 20) · Supersedes rev 19
+**Last updated:** 26 Sep 2026 (rev 21) · Supersedes rev 20
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -997,6 +997,37 @@ end-to-end script called the real function and caught it.
 function or endpoint, not re-implement its request construction against the same external API. A
 real-infrastructure test only proves what it actually exercises. D21 says mocked suites never prove
 real schema interaction; D32 says a hand-rolled "real" call doesn't prove the shipped code either.
+
+---
+
+## Rev 21 — 26 Sep 2026
+
+### D33 — Model policy: the most capable model for money, number-safety, RLS, sync and migrations 🟢
+
+**Restored, owner decision 26 Sep 2026.** Money, number-safety, RLS, sync-worker and migration work
+always uses the most capable model available; lighter models only for mechanical work (scaffolding,
+renames, doc formatting).
+
+Originally the tracker's "Model policy" line (Antigravity era: "Flash for scaffolding and mechanical
+work; thinking-tier (Opus/Sonnet) for `KB-005`, `KB-005b`, RLS and the sync worker — those are where an
+invisible mistake costs months"). It lived only in `10-TRACKER.md` "Right now", never in this log or
+`CLAUDE.md`, and was dropped unintentionally in `5b8e11c` when that section was rewritten for Phase 3 —
+restored here, updated for Claude Code, so it no longer depends on a section that gets rewritten every
+phase. The four areas are the same ones `18-AGENT-CONTRACT.md` §4 stop condition 10 names ("money, RLS,
+sync, or the pricing grammar"), plus migrations. Referenced from `CLAUDE.md`.
+
+### D34 — Push to `origin main` after a ticket closes 🟢
+
+**Owner decision 26 Sep 2026; extends D29 (single branch, `main`), does not supersede it.** After a
+ticket is closed and its commits verified, push them: `git push origin main`. Kept as its own entry
+rather than folded into D33 because it is a Git-workflow rule, not a model rule — it belongs next to
+D29, where a future session looking for Git rules will find it.
+
+**Why:** until 26 Sep 2026 no document said when to push. `CLAUDE.md` said "commit directly to `main`"
+and nothing more, so a full housekeeping pass (four commits) sat only on one laptop until the owner
+noticed — a machine failure in that window would have lost it. Binding statement: `CLAUDE.md` "Git".
+Pushing is an outward-facing action, so it happens once the ticket's commits are verified, not
+mid-ticket.
 
 ---
 
