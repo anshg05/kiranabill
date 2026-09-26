@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 23 Sep 2026 (rev 13) · **Status:** Final for MVP
+**Last updated:** 26 Sep 2026 (rev 14) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -91,6 +91,24 @@ column added; nothing below is renumbered, so existing references elsewhere stil
 | **KB-208** | **Layer 3 — number safety gate** | HIGH flags gate finalisation; MEDIUM/LOW never do. Inline sentences, not icons. | ✅ **Done** — `src/domain/reviewFlags.ts`, the real 14-code system (11 legacy + 3 new number-safety codes). All severities sourced or explicitly decided, none invented. Real-data check over all 125 `eval/` fixtures: 0 false positives, after fixing two real bugs the check itself caught (`unusual_total` wrongly flagged a spoken `"ka"`/`"ki"` total override — including the flagship `"5 kg chawal 30 ka"` case itself; a unit-basis bug multiplied gram-scale qty straight against a per-kg price). `KI-21`'s two repro cases confirmed to still bail at Layer 1 — `reviewFlags.ts` structurally can't reach them (mistranscription, not a parsing-level number loss), stated honestly rather than glossed over. `number_unconsumed`'s Layer-2 coverage gap logged as `NI-26`. |
 | **KB-209** | **Learning engine** | L1–L6 per `08-LEARNING-ENGINE.md`. Per-shop only. Only finalised bills teach. Prices suggested, never auto-applied. | 🟦 **Partially done, deliberately deferred to Phase 3.** `src/domain/learning.ts`'s decision logic is built and tested (`KB-008`, Phase 0); the four learning tables are live in Postgres (`KB-103`/`KB-108`) and sync (`KB-110`); `KB-208` added `getEffectivePrice()`/`getPriceSuggestions()` as real read-side consumers; `KB-210` added the Developer Mode read/reset functions. **Remaining: this is NOT a separate later ticket to bolt onto Phase 3's `KB-307` (Finalise) — it IS `KB-307`'s own "Triggers learning" line.** Build the finalize hook as part of `KB-307`, not after it — wiring into a stub finalize action now would mean rebuilding it once the real one exists. Also flagged, not yet built: the IndexedDB↔`LearningState` marshalling both `KB-208`'s read side and this write side silently assume exists — a real, separable deliverable for whichever ticket builds it, not folded silently into "the finalize hook." |
 | **KB-210** | Learning audit UI | Developer Mode: aliases + confidence, provisional products, price suggestions, reset action | 🟦 **Data functions done, UI not started.** `src/data/learningAudit.ts` — `listLearnedAliases`/`listProvisionalProducts`/`listPendingPriceSuggestions` (reuses `learning.ts`'s real `getPriceSuggestions()`, no duplicate logic) and `resetLearning()`. Same scoping precedent as `KB-208`: no Settings (S7) screen exists yet, so this ticket built what Developer Mode would call, not the screen itself. `resetLearning()` is deliberately local-only (owner's call) — signalled structurally via a `remoteDeletionNotPerformed: true` literal field, not a plain boolean; does not clear `learningEvents`, instead appends a real `learning_reset` audit entry. Gap logged as `NI-27` with a dual close trigger. Real-data check against `08-LEARNING-ENGINE.md` §9's literal list, all four items confirmed. **Remaining:** the actual Developer Mode screen, once S7 exists. |
+
+---
+
+## Pre-Phase-3 fixes — added 26 Sep 2026
+
+Four tickets confirmed by the owner on 26 Sep 2026, from defects found reading the code during the new-machine
+bootstrap (`12-PARKED.md`). **They run in this order, before `KB-301`** (`10-TRACKER.md` "Right now").
+IDs follow this document's existing convention: a letter suffix after the ticket whose area the work follows
+up (`KB-005b`/`c`/`d` after `KB-005`; `KB-107b` split from `KB-107`), and the next free number in the
+phase for new work (`KB-315` after `KB-314`). `KB-005d` (`KI-21`, done 15 Sep) was recorded only in
+`10-TRACKER.md`, never here — `KB-005e`/`f` continue its sequence.
+
+| ID | Ticket | Detail | Status |
+|---|---|---|---|
+| **KB-005e** | `catalogIndex` perf test measures steady state (`KI-23`) | The 16 ms budget (`18-AGENT-CONTRACT.md` §8) is a steady-state requirement: untimed warm-up rounds over all five queries, then time as now. Budget unchanged. No change to `catalogIndex.ts`. New decision entry in `07-DECISIONS.md`. | ⬜ Not started |
+| **KB-005f** | Gram/ml default-price rounding (`KI-30`) | `grammar.ts`'s `convertPriceBetweenUnits()` rounds the per-gram/per-ml rate to whole paise before multiplying — "500 gram chini" bills ₹25, correct ₹22.50; 32 of 123 kg/liter products affected, silent. Money path — tests first, most capable model (D33). | ⬜ Not started |
+| **KB-110b** | Bill push path + `receipt_number_source` (`KI-29` + `KI-31`) | A finalised bill's first push can never sync its items (the immutability triggers reject them, then the retry marks the bill `conflict`); and `receipt_number_source` is never stored locally or pushed. One ticket — both are the bill push path. Sync — most capable model (D33); real local-stack verification (D21, D32). | ⬜ Not started |
+| **KB-315** | Runtime bootstrap (`KI-32`) | Persisted `deviceId`; first receipt block reserved at onboarding (`16-APP-FLOW.md` §2); local `shops` cache written; sync loop started. Prerequisite for `KB-307` finalising, numbering and syncing a bill. | ⬜ Not started |
 
 ---
 

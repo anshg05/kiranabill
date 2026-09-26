@@ -119,7 +119,7 @@ Then fill in `.env.local` with **real values**, matching each name in `.env.exam
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | For **local Docker** dev, these come from `supabase start`'s own printed output (§6 below), not the hosted project's dashboard — the app talks to the local stack during development. |
 | `ALLOWED_ORIGIN`, other legacy-carried vars | Already in `.env.example` from the original project setup — copy as named. |
 
-**The one rule that must never be broken, stated plainly because it governs this entire project:** the **service-role key** (`SUPABASE_SERVICE_ROLE_KEY`) — if and when it's ever needed — goes **only** into Netlify's own environment variable settings at actual deployment time. It has never been in `.env.local` on the old machine and must never be on this one either. It bypasses RLS entirely; treat it like a password, not a config value.
+**The one rule that must never be broken, stated plainly because it governs this entire project:** the **service-role key** (`SUPABASE_SERVICE_ROLE_KEY`) is **not needed anywhere** in this project (`/voice` uses the caller's JWT and RLS — `KB-206`), so it goes nowhere — not `.env.local`, not Netlify (`17-MANUAL-TASKS.md` M-13 lists the four vars `/voice` actually needs). If a future ticket ever genuinely needs it, that ticket decides where. It has never been in `.env.local` on the old machine and must never be on this one either. It bypasses RLS entirely; treat it like a password, not a config value.
 
 **Verify before going further:**
 ```bash

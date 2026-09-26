@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 26 Sep 2026 (rev 43) · **Current phase:** 3 — Billing UI, not started. Next: KI-23 diagnostic → `KI-30` fix → `KI-29`+`KI-31` fix → `KI-32` bootstrap → `KB-301` (owner decision 26 Sep; see "Right now")
+**Last updated:** 26 Sep 2026 (rev 44) · **Current phase:** 3 — Billing UI, not started. Next: `KB-005e` → `KB-005f` → `KB-110b` → `KB-315` → `KB-301` (owner decision 26 Sep; see "Right now")
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -17,7 +17,7 @@ a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corr
 **Working on:** nothing in `src/`. 26 Sep 2026 was a new-machine bootstrap plus a docs-only housekeeping
 pass (entry-point docs aligned to Phase 3 / Claude Code / single branch; `07-DECISIONS.md` D28–D32;
 `12-PARKED.md` cleanup; `remote-check.sql` removed).
-**Found 26 Sep, logged in `12-PARKED.md` §A, not fixed, not yet ticketed — all HIGH:**
+**Found 26 Sep, logged in `12-PARKED.md` §A, not fixed — all HIGH, ticketed 26 Sep (see Next action):**
 - `KI-29` — a finalised bill's first push can never sync its line items (item insert rejected by
   `bill_items_enforce_immutability`, then the retry rejected by `bills_enforce_immutability` → `conflict`,
   zero items server-side, learning events stranded). Blocks `KB-307`'s sync story.
@@ -32,21 +32,14 @@ pass (entry-point docs aligned to Phase 3 / Claude Code / single branch; `07-DEC
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
 list --linked` shows all 10 migrations on both sides after the owner pushed `20260920170751` (`KB-111`)
 the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
-**Next action — owner decision, 26 Sep 2026, in this order:**
-1. **KI-23 diagnostic** (`12-PARKED.md` KI-23: query order reversed; warm-up call). Run 26 Sep, raw numbers
-   reported to the owner; not yet recorded in KI-23 — pending the owner's review.
-2. **`KB-005e`** *(proposed ID)* — fix `KI-30` (gram/ml default-price rounding in `grammar.ts`).
-3. **`KB-110b`** *(proposed ID)* — fix `KI-29` + `KI-31` together: the bill push path vs. the immutability
-   triggers, and writing/pushing `receipt_number_source`. One ticket.
-4. **`KB-315`** *(proposed ID)* — `KI-32` runtime bootstrap: persisted `deviceId`, first receipt block at
-   onboarding, local `shops` cache, sync loop started.
+**Next action — owner decision, 26 Sep 2026, in this order** (tickets in `06-FEATURE-TICKETS.md`
+"Pre-Phase-3 fixes"):
+1. **`KB-005e`** — `catalogIndex` perf test measures steady state (`KI-23`; the 26 Sep A/B diagnostic is recorded
+   there).
+2. **`KB-005f`** — gram/ml default-price rounding (`KI-30`).
+3. **`KB-110b`** — bill push path + `receipt_number_source` (`KI-29` + `KI-31`). One ticket.
+4. **`KB-315`** — runtime bootstrap (`KI-32`).
 5. **`KB-301`** — billing screen shell.
-
-Proposed IDs follow `06-FEATURE-TICKETS.md`'s own convention: a letter suffix on the ticket whose area
-the work follows up (`KB-005b`/`c`/`d` after `KB-005` — `KB-005d` was itself a `grammar.ts` fix; `KB-107b` split
-from `KB-107`), and the next
-free number in the phase for new work (`KB-314` is the highest Phase 3 ID). **Not yet added to
-`06-FEATURE-TICKETS.md`** — pending owner confirmation of the IDs.
 
 **Outstanding owner tasks:** `M-13` (connect the real Netlify site, set env vars) before any production
 deploy.

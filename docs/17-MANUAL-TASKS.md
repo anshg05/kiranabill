@@ -38,7 +38,11 @@ If an agent claims it has done any of these, it is wrong — check yourself.
 2. Region: **closest to India** (Singapore or Mumbai if offered) — latency is real here
 3. Save the database password somewhere safe. It is shown once.
 4. Copy **Project URL** and **anon public key** → `.env.local`
-5. Copy the **service role key** → **Netlify environment variables only.** Never in `.env.local`, never in the repo, never pasted into a chat with an agent.
+5. **Do not copy the service role key anywhere.** Nothing in this project uses it — `/voice` authenticates
+   with the caller's own JWT and RLS (`KB-206`: zero service-role usage), and the app uses the anon key.
+   It bypasses RLS entirely, so it must not be placed anywhere it isn't needed. If a future ticket ever
+   genuinely needs it, that ticket decides where it goes (never `.env.local`, never the repo, never a chat
+   with an agent). *(Corrected 26 Sep 2026 — this step used to say "Netlify environment variables only".)*
 
 **Cost:** free tier. 500 MB database, ample for one shop.
 
@@ -77,7 +81,12 @@ This is deliberate. An agent with write access to your database can drop a table
 
 1. netlify.com → connect the GitHub repo
 2. Build command `npm run build`, publish directory `dist`
-3. Site settings → Environment variables → add `GROQ_API_KEY`, `GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+3. Site settings → Environment variables → add exactly what `netlify/functions/voice.mts` reads (lines
+   26–29): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`. Missing any one →
+   `/voice` answers every request `500 Server misconfigured`. The two `VITE_` values are also what
+   `npm run build` bakes into the client bundle — they're the public URL and anon key, safe to expose.
+   **No `SUPABASE_SERVICE_ROLE_KEY`** — `/voice` never uses it (`KB-206`). *(Corrected 26 Sep 2026 — this
+   step used to list the service role key and omit both `VITE_` values.)*
 
 **Cost:** free tier.
 
@@ -146,7 +155,8 @@ Nothing here needs real money until Phase 4.
 ## Security rules — no exceptions
 
 1. **Never paste a secret into a chat with any AI.** Not to "help it debug." Not once.
-2. **Service role key lives in Netlify environment variables only.** It bypasses RLS entirely.
+2. **The service role key is not placed anywhere** — nothing in this project uses it, and it bypasses RLS
+   entirely. If a future ticket ever needs it, that ticket decides where, never `.env.local` or the repo.
 3. **You apply migrations.** The agent writes SQL; you run `supabase db push`.
 4. Before every commit: `git status --short | grep -i env` should return nothing.
 5. If a key is ever exposed again: **rotate first, investigate second.**
