@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 18 Aug 2026 (rev 2) · **Status:** Final for MVP
+**Last updated:** 26 Sep 2026 (rev 3) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -123,6 +123,10 @@ for the shopkeeper to complete.
 - Hindi numerals: `ek do teen chaar paanch chhe saat aath nau das bees pachas sau`
 - Fractions: `aadha` (0.5) `paav` (0.25) `sawa` (1.25) `dedh` (1.5) `dhai` (2.5) `paune` (−0.25)
 - Units and aliases: `kilo/kg/kilogram`, `gram/gm`, `litre/liter/ltr`, `packet/pkt`, `piece/pcs`, `dozen`, `bori/bag`
+- **Cross-unit lines (`07-DECISIONS.md` D36, `KB-005f`):** a line keeps qty and unit exactly as spoken; its rate carries
+  its own unit (`rateUnit`). "500 gram chini" → qty 500 gm, rate ₹45 per **kg**, total ₹22.50 — computed exactly
+  (qty × rate shifted by 1000, half-up once at the line), never through a rounded per-gram rate. Layer 2's output
+  does not follow this yet — its cross-unit totals are untrusted (`12-PARKED.md` KI-34).
 
 ### The bail-out rule — the most important line in this layer
 

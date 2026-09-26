@@ -56,6 +56,7 @@ describe("geminiParseProvider", () => {
         qty: 2,
         unit: "kg",
         rate: null,
+        rateUnit: null,
         total: 9000,
         priceType: "total",
       },
@@ -83,6 +84,20 @@ describe("geminiParseProvider", () => {
     expect(body.generationConfig.responseMimeType).toBe("application/json");
     expect(body.contents[0].parts[0].text).toContain("Chini");
     expect(body.contents[0].parts[0].text).toContain("chini");
+  });
+
+  it("KB-005f: a Gemini rate is mapped with rateUnit = Gemini's own unit - its claim, not verified (Layer 2 totals are untrusted, see 12-PARKED Layer 2 KI)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockGeminiSuccess([
+        { spokenName: "chawal", catalogId: "27", qty: 5, unit: "kg", rate: 5000, total: 25000, priceType: "rate" },
+      ]),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createGeminiParseProvider("test-key");
+    const result = await provider.parse("chawal 5 kilo 50 wala", { catalogSlice: [makeCatalogEntry()] });
+
+    expect(result.items[0]).toMatchObject({ rate: 5000, rateUnit: "kg" });
   });
 
   it("maps a null/unmatched catalogId to isCustom:true, matchStatus:none", async () => {

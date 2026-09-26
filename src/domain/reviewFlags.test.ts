@@ -47,20 +47,28 @@ import type { CatalogEntry } from "./catalog";
 import { EMPTY_LEARNING_STATE, recordPriceObservation, type LearningState } from "./learning";
 import { rupeesToPaise } from "./money";
 import { evaluateReviewFlags, canFinalize, type ReviewFlag } from "./reviewFlags";
+import { parseUtterance } from "./grammar";
+import { catalog as realCatalog } from "./catalog";
 
 function item(overrides: Partial<ParsedItem> = {}): ParsedItem {
-  return {
+  const base = {
     spokenName: "chini",
     catalogId: "27",
     isCustom: false,
-    matchStatus: "matched",
+    matchStatus: "matched" as const,
     qty: 2,
     unit: "kg",
     rate: null,
     total: rupeesToPaise(90),
-    priceType: "total",
+    priceType: "total" as const,
     ...overrides,
   };
+  // KB-005f: rateUnit is required on ParsedItem. Unless a test sets it
+  // explicitly, a rate is per the line's own unit (the pre-KB-005f
+  // meaning every existing test here was written against), and no rate
+  // means no rateUnit.
+  const rateUnit = "rateUnit" in overrides ? overrides.rateUnit! : base.rate === null ? null : base.unit;
+  return { ...base, rateUnit } as ParsedItem;
 }
 
 function catalogEntry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
@@ -594,5 +602,66 @@ describe("reviewFlags.ts - the 14-code confidence gate", () => {
       expect(unusualRate?.message.length).toBeGreaterThan(10);
       expect(unusualRate?.message).toContain("₹");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KB-005f (docs/12-PARKED.md KI-30, docs/07-DECISIONS.md D36): a line's rate
+// carries its own unit. unusual_rate / unusual_total must compare exactly
+// in the rate's own unit - never against a per-gram price rounded to whole
+// paise (the old basis: 4500 paise/kg -> "5 paise/gm", so "expected" for
+// 500 gm was Rs.25, not Rs.22.50).
+// ---------------------------------------------------------------------------
+describe("KB-005f - review flags compare across units exactly", () => {
+  // Chini, 4500 paise/kg - realCatalog id 27 (the fixture catalogEntry() above).
+  const chiniLine = (overrides: Partial<ParsedItem>) =>
+    item({ spokenName: "chini", catalogId: "27", qty: 500, unit: "gm", rate: 4500, rateUnit: "kg", total: 2250, priceType: "default", ...overrides });
+
+  it("a correct cross-unit line (500 gm @ 4500/kg = 2250) raises no flag at all - in particular no unusual_rate", () => {
+    const flags = evaluateReviewFlags("500 gram chini", [chiniLine({})], [catalogEntry()]);
+    expect(codesOf(flags)).toEqual([]);
+  });
+
+  it("unusual_total's expected value is exact - Rs.22.50 for 500 gm @ 4500/kg, not the old Rs.25", () => {
+    const flags = evaluateReviewFlags("500 gram chini", [chiniLine({ total: rupeesToPaise(2000) })], [catalogEntry()]);
+    const unusualTotal = flags.find((f) => f.code === "unusual_total");
+    expect(unusualTotal?.severity).toBe("HIGH");
+    expect(unusualTotal?.message).toContain("₹22.50");
+  });
+
+  it("unusual_rate compares a rate in its own rateUnit - 4500/kg against a 4500/kg shop price is not unusual", () => {
+    const flags = evaluateReviewFlags("500 gram chini", [chiniLine({})], [catalogEntry()]);
+    expect(codesOf(flags)).not.toContain("unusual_rate");
+  });
+
+  it("unusual_rate still fires for a genuinely wrong cross-unit rate - 600/gm on a 400/kg product ('500 gram jeera 600 wala')", () => {
+    const jeera = catalogEntry({ id: "104", displayName: "Jeera", unit: "kg", suggestedPricePaise: 40000 });
+    const line = item({ spokenName: "jeera", catalogId: "104", qty: 500, unit: "gm", rate: 60000, rateUnit: "gm", total: 30000000, priceType: "rate" });
+    const flags = evaluateReviewFlags("500 gram jeera 600 wala", [line], [jeera]);
+    expect(flags.find((f) => f.code === "unusual_rate")?.severity).toBe("HIGH");
+    expect(flags.find((f) => f.code === "unusual_total")?.severity).toBe("HIGH");
+  });
+
+  it("KI-34 is loud, not silent: a Layer-2-shaped gram line (as geminiParseProvider maps it - 500 gm, rate 4500 claimed per gm, total 22,50,000) fires unusual_rate AND unusual_total HIGH", () => {
+    // Gemini's Rule 5a multiplies the per-kg catalog price (4500) by the
+    // spoken gram count; geminiParseProvider takes Gemini's own unit as the
+    // rate's unit. This test is what backs KI-34's "HIGH-flagged, not
+    // silent" claim until KB-302 recomputes Layer 2 lines client-side.
+    const layer2Line = chiniLine({ rate: 4500, rateUnit: "gm", total: 2250000 });
+    const flags = evaluateReviewFlags("500 gram chini", [layer2Line], [catalogEntry()]);
+    expect(flags.find((f) => f.code === "unusual_rate")?.severity).toBe("HIGH");
+    expect(flags.find((f) => f.code === "unusual_total")?.severity).toBe("HIGH");
+    expect(canFinalize(flags, new Set())).toBe(false);
+  });
+
+  it("the real parse of '500 gram chini' never fires number_dropped / qty_dropped - the spoken 500 stays on the line", () => {
+    const transcript = "500 gram chini";
+    const items = parseUtterance(transcript);
+    expect(items).not.toBeNull();
+    const flags = evaluateReviewFlags(transcript, items!, realCatalog);
+    expect(codesOf(flags)).not.toContain("number_dropped");
+    expect(codesOf(flags)).not.toContain("qty_dropped");
+    expect(codesOf(flags)).not.toContain("unusual_rate");
+    expect(codesOf(flags)).not.toContain("unusual_total");
   });
 });

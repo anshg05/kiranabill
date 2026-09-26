@@ -204,23 +204,97 @@ describe("Rule 5a - qty spoken, no price -> catalog default price, never invente
     expect(item.priceType).toBe("default");
   });
 
-  it("straightforward gm<->kg conversion when spoken unit differs from the catalog's - 500 gram besan", () => {
-    // This is plain SI unit conversion (1 kg = 1000 gm), not the "subtle"
-    // rate-basis inference in docs/14-LEGACY-REFERENCE.md section 8 - that
-    // one detects a spoken RATE that looks like the wrong magnitude, and is
-    // explicitly KB-005b's job, not this rule.
+  it("spoken unit differs from the catalog's - 500 gram besan: qty stays as spoken, rate carries the catalog unit (KB-005f, D36)", () => {
+    // KB-005f / docs/07-DECISIONS.md D36: the line keeps the qty and unit
+    // as spoken; the rate carries its own unit (the catalog's). This used
+    // to assert a per-gram rate derived by dividing the per-kg price by
+    // 1000 - which only "worked" because Besan's price happens to divide
+    // evenly (KI-30: chini's doesn't). Total 500 gm x 9000 paise/kg = 4500.
     const entry = catalogEntry("4"); // Besan, priced per kg
     expect(entry.unit).toBe("kg");
-    const perGramRatePaise = entry.suggestedPricePaise / 1000;
-    expect(Number.isInteger(perGramRatePaise)).toBe(true); // fixture chosen to divide evenly
 
     const item = parseOne("500 gram besan");
     expect(item.catalogId).toBe("4");
     expect(item.qty).toBe(500);
     expect(item.unit).toBe("gm");
-    expect(item.rate).toBe(perGramRatePaise);
-    expect(item.total).toBe(lineTotalPaise(500, perGramRatePaise));
+    expect(item.rate).toBe(entry.suggestedPricePaise);
+    expect(item.rateUnit).toBe("kg");
+    expect(item.total).toBe(4500);
     expect(item.priceType).toBe("default");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KB-005f (docs/12-PARKED.md KI-30, docs/07-DECISIONS.md D36): a line keeps
+// qty and unit exactly as spoken; its rate carries its own unit (rateUnit).
+// Totals across gm<->kg and ml<->liter are computed exactly - qty x rate,
+// shifted by 1000, rounded half-up ONCE at the line (D11) - never via a
+// rounded per-gram rate. The old code rounded 4.5 paise/gm up to 5, so
+// "500 gram chini" billed Rs.25 instead of Rs.22.50, silently.
+// Every expected total below is hand-computed and stated in paise.
+// ---------------------------------------------------------------------------
+describe("KB-005f - cross-unit default price, exact (KI-30)", () => {
+  function expectCrossUnit(text: string, want: { qty: number; unit: string; catalogId: string; rateUnit: string; total: number }) {
+    const entry = catalogEntry(want.catalogId);
+    const item = parseOne(text);
+    expect(item.catalogId).toBe(want.catalogId);
+    expect(item.qty).toBe(want.qty);
+    expect(item.unit).toBe(want.unit);
+    expect(item.rate).toBe(entry.suggestedPricePaise); // the catalog price itself, never re-scaled
+    expect(item.rateUnit).toBe(want.rateUnit);
+    expect(item.total).toBe(want.total);
+    expect(item.priceType).toBe("default");
+  }
+
+  it("500 gram chini = 2250 paise (Rs.22.50) - Chini 4500 paise/kg; the KI-30 repro, was 2500", () => {
+    expectCrossUnit("500 gram chini", { qty: 500, unit: "gm", catalogId: "27", rateUnit: "kg", total: 2250 });
+  });
+
+  it("500 ml doodh = 2800 paise - Doodh 5600 paise/liter; was 3000", () => {
+    expectCrossUnit("500 ml doodh", { qty: 500, unit: "ml", catalogId: "44", rateUnit: "liter", total: 2800 });
+  });
+
+  it("250 gram chini = 1125 paise - was 1250", () => {
+    expectCrossUnit("250 gram chini", { qty: 250, unit: "gm", catalogId: "27", rateUnit: "kg", total: 1125 });
+  });
+
+  it("1 gram chini = 5 paise - 4.5 paise exactly, half-up at the line (D11)", () => {
+    expectCrossUnit("1 gram chini", { qty: 1, unit: "gm", catalogId: "27", rateUnit: "kg", total: 5 });
+  });
+
+  it("333 gram chini = 1499 paise - 1498.5 exactly, a genuine half-paise tie rounded half-up ONCE at the line", () => {
+    expectCrossUnit("333 gram chini", { qty: 333, unit: "gm", catalogId: "27", rateUnit: "kg", total: 1499 });
+  });
+
+  it("dhai gram chini = 11 paise - 2.5 gm x 4500/kg = 11.25; no bail, no rounded per-gram rate (was 13)", () => {
+    expectCrossUnit("dhai gram chini", { qty: 2.5, unit: "gm", catalogId: "27", rateUnit: "kg", total: 11 });
+  });
+
+  it("1 kilo ajwain = 50000 paise - the reverse direction: Ajwain 50 paise/gm, rateUnit gm", () => {
+    expectCrossUnit("1 kilo ajwain", { qty: 1, unit: "kg", catalogId: "117", rateUnit: "gm", total: 50000 });
+  });
+
+  it("rateUnit semantics: same-unit default line -> rateUnit equals unit", () => {
+    const item = parseOne("2 kilo chini");
+    expect(item.rate).toBe(catalogEntry("27").suggestedPricePaise);
+    expect(item.rateUnit).toBe("kg");
+    expect(item.total).toBe(9000);
+  });
+
+  it("rateUnit semantics: a spoken total (ka) has no rate -> rateUnit is null", () => {
+    const item = parseOne("5 kg chawal 30 ka");
+    expect(item.rate).toBeNull();
+    expect(item.rateUnit).toBeNull();
+  });
+
+  it("rateUnit semantics: a spoken wala rate is read literally, per the spoken unit - '500 gram jeera 600 wala' is unchanged (Rs.3,00,000, HIGH-flagged; inferRateBasis is unwired, a separate KI)", () => {
+    const item = parseOne("500 gram jeera 600 wala");
+    expect(item.qty).toBe(500);
+    expect(item.unit).toBe("gm");
+    expect(item.rate).toBe(60000);
+    expect(item.rateUnit).toBe("gm");
+    expect(item.total).toBe(30000000);
+    expect(item.priceType).toBe("rate");
   });
 });
 
@@ -436,11 +510,11 @@ describe("diagnoseUtterance - self-consistency with parseUtterance across every 
     ...(numberBenchmarkCases as Array<{ utterance: string }>).map((c) => c.utterance),
   ];
 
-  it("loaded both fixtures - 25 + 100 = 125 utterances", () => {
-    expect(allUtterances).toHaveLength(125);
+  it("loaded both fixtures - 25 + 110 = 135 utterances (KB-005f added NB101-NB110)", () => {
+    expect(allUtterances).toHaveLength(135);
   });
 
-  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 125 cases", () => {
+  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 135 cases", () => {
     const disagreements: string[] = [];
     for (const utterance of allUtterances) {
       const diagnosticHit = diagnoseUtterance(utterance).hit;

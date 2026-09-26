@@ -28,8 +28,8 @@
  * any, changed behavior as a result).
  */
 
-import { getCatalogEntryById, type CatalogEntry } from "./catalog.js";
-import { lineTotalPaise, rupeesToPaise, type Paise } from "./money.js";
+import { getCatalogEntryById } from "./catalog.js";
+import { lineTotalPaise, lineTotalPaiseScaled, rupeesToPaise, type Paise } from "./money.js";
 import { matchProduct } from "./validator.js";
 
 export type PriceType = "rate" | "total" | "default" | "unknown";
@@ -55,6 +55,14 @@ export interface ParsedItem {
   readonly qty: number | null;
   readonly unit: string;
   readonly rate: Paise | null;
+  /**
+   * KB-005f (docs/07-DECISIONS.md D36): the unit `rate` is per. A line keeps
+   * qty/unit exactly as spoken; the rate carries its own unit. "500 gram
+   * chini" -> qty 500, unit "gm", rate 4500, rateUnit "kg", total 2250.
+   * Required (never implicit "same as unit"): every place that builds a
+   * line must state the rate's basis. null exactly when rate is null.
+   */
+  readonly rateUnit: string | null;
   readonly total: Paise | null;
   readonly priceType: PriceType;
 }
@@ -143,7 +151,7 @@ function resolveCatalogMatch(spokenName: string): CatalogMatch {
  * Whether two units are compatible - same unit, mutually-interchangeable
  * count units (D14), or a real kg<->gm / liter<->ml SI pair. Exported for
  * KB-208's unit_mismatch review code, which needs the same real group
- * logic convertCatalogRate() already implements - not a second, possibly-
+ * logic unitScale() builds on - not a second, possibly-
  * drifting reimplementation of the same three groups.
  */
 export function unitsAreCompatible(a: string, b: string): boolean {
@@ -155,40 +163,24 @@ export function unitsAreCompatible(a: string, b: string): boolean {
 }
 
 /**
- * Converts a catalog's per-unit price into the spoken unit's terms.
- * Same unit -> pass through. Count units (piece/packet/...) -> mutually
- * compatible, pass through. kg<->gm and liter<->ml -> exact SI conversion
- * (1 kg = 1000 gm). Anything else (e.g. spoken kg against a piece-priced
- * product) -> null, the caller bails rather than guessing.
+ * KB-005f (docs/07-DECISIONS.md D36): the power of ten that converts a
+ * quantity in `qtyUnit` into `rateUnit` - the scale money.ts's
+ * lineTotalPaiseScaled() needs. 0 for the same unit or two D14 count units;
+ * -3 for gm->kg and ml->liter (qty in the smaller unit); +3 for kg->gm and
+ * liter->ml. null when incompatible - the caller bails rather than guesses.
  *
- * This is plain unit conversion, NOT the "subtle" rate-basis inference in
- * docs/14-LEGACY-REFERENCE.md section 8 (detecting a spoken RATE that looks
- * like the wrong magnitude) - that is explicitly KB-005b's job.
+ * Replaces convertPriceBetweenUnits()/convertCatalogRate(), which re-scaled
+ * the PRICE by dividing by 1000 and rounding to whole paise (KI-30: 4500
+ * paise/kg -> "5 paise/gm" -> "500 gram chini" billed 2500, not 2250). The
+ * price is never re-scaled now; unit knowledge stays here, arithmetic in
+ * money.ts.
  */
-/**
- * The general form of convertCatalogRate() below - converts ANY per-unit
- * price from one unit to another, not just a catalog entry's own default
- * price. Exported for KB-208's unusual_rate/unusual_total, which need to
- * express a shop's effective price (possibly learning.ts's real learned
- * price, not just the catalog default) in whatever unit the shopkeeper
- * actually spoke - the same real kg<->gm/liter<->ml/count-synonym logic,
- * not a second, unit-blind multiplication (KB-208's own real-data check
- * caught a "500 gram spoken against a per-kg price, multiplied with no
- * conversion" bug this function exists to prevent from recurring).
- */
-export function convertPriceBetweenUnits(pricePaise: Paise, fromUnit: string, toUnit: string): Paise | null {
-  if (!unitsAreCompatible(fromUnit, toUnit)) return null;
-  if (fromUnit === toUnit) return pricePaise;
-  if (COUNT_UNITS.has(fromUnit) && COUNT_UNITS.has(toUnit)) return pricePaise;
-  if (fromUnit === "kg" && toUnit === "gm") return Math.round(pricePaise / 1000);
-  if (fromUnit === "gm" && toUnit === "kg") return pricePaise * 1000;
-  if (fromUnit === "liter" && toUnit === "ml") return Math.round(pricePaise / 1000);
-  if (fromUnit === "ml" && toUnit === "liter") return pricePaise * 1000;
-  return null;
-}
-
-function convertCatalogRate(entry: CatalogEntry, spokenUnit: string): Paise | null {
-  return convertPriceBetweenUnits(entry.suggestedPricePaise, entry.unit, spokenUnit);
+export function unitScale(qtyUnit: string, rateUnit: string): 0 | 3 | -3 | null {
+  if (!unitsAreCompatible(qtyUnit, rateUnit)) return null;
+  if (qtyUnit === rateUnit) return 0;
+  if (COUNT_UNITS.has(qtyUnit) && COUNT_UNITS.has(rateUnit)) return 0;
+  if ((qtyUnit === "gm" && rateUnit === "kg") || (qtyUnit === "ml" && rateUnit === "liter")) return -3;
+  return 3; // kg->gm or liter->ml - the only remaining compatible pairs
 }
 
 // ---------------------------------------------------------------------------
@@ -373,21 +365,24 @@ function qtyAndUnit(entry: NumEntry): { qty: number; unit: string } {
  * product (rate/total stay null - there is nothing to derive it from). */
 function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, spokenName: string): ParsedItem | null {
   if (!match.catalogId) {
-    return { spokenName, ...match, qty, unit: spokenUnit, rate: null, total: null, priceType: "unknown" };
+    return { spokenName, ...match, qty, unit: spokenUnit, rate: null, rateUnit: null, total: null, priceType: "unknown" };
   }
   const entry = getCatalogEntryById(match.catalogId);
   if (!entry) {
     throw new Error(`grammar.ts: matched catalogId "${match.catalogId}" that getCatalogEntryById cannot find`);
   }
-  const ratePaise = convertCatalogRate(entry, spokenUnit);
-  if (ratePaise === null) return null; // incompatible units - bail rather than guess
+  // KB-005f: the qty stays as spoken; the rate is the catalog price exactly
+  // as stored, per the catalog's own unit - never re-scaled (KI-30).
+  const scale = unitScale(spokenUnit, entry.unit);
+  if (scale === null) return null; // incompatible units - bail rather than guess
   return {
     spokenName,
     ...match,
     qty,
     unit: spokenUnit,
-    rate: ratePaise,
-    total: lineTotalPaise(qty, ratePaise),
+    rate: entry.suggestedPricePaise,
+    rateUnit: entry.unit,
+    total: lineTotalPaiseScaled(qty, entry.suggestedPricePaise, scale),
     priceType: "default",
   };
 }
@@ -401,6 +396,7 @@ function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenNa
     qty: entry ? 1 : null,
     unit: entry ? entry.unit : "",
     rate: null,
+    rateUnit: null,
     total: totalPaise,
     priceType: "total",
   };
@@ -426,7 +422,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
   // a product that resolves in the catalog (hard rule 5: never block, and
   // never invent, on an unknown or unpriced product).
   if (nums.length === 0) {
-    return { spokenName, ...match, qty: null, unit: "", rate: null, total: 0, priceType: "unknown" };
+    return { spokenName, ...match, qty: null, unit: "", rate: null, rateUnit: null, total: 0, priceType: "unknown" };
   }
 
   const rateEntry = nums.find((n) => n.isRate);
@@ -443,7 +439,10 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     if (!qtyEntry) return null;
     const { qty, unit } = qtyAndUnit(qtyEntry);
     const ratePaise = rupeesToPaise(rateEntry.value);
-    return { spokenName, ...match, qty, unit, rate: ratePaise, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
+    // A spoken wala rate is read literally, per the spoken unit (KB-005f):
+    // "500 gram jeera 600 wala" stays 600/gm - reinterpreting it as per-kg
+    // would be guessing (hard rule 7; docs/12-PARKED.md KI-35).
+    return { spokenName, ...match, qty, unit, rate: ratePaise, rateUnit: unit, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
   }
 
   // Rule 2: ka/ki -> that number is the total, rate stays null.
@@ -452,7 +451,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     const qtyEntry = nums.find((n) => n !== totalEntry);
     if (qtyEntry) {
       const { qty, unit } = qtyAndUnit(qtyEntry);
-      return { spokenName, ...match, qty, unit, rate: null, total: totalPaise, priceType: "total" };
+      return { spokenName, ...match, qty, unit, rate: null, rateUnit: null, total: totalPaise, priceType: "total" };
     }
     return resolveUnattachedTotal(totalPaise, match, spokenName);
   }
@@ -485,7 +484,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
   if (!qtyEntry || otherEntries.length !== 1 || otherEntries[0]!.attachedUnit !== null) return null;
 
   const { qty, unit } = qtyAndUnit(qtyEntry);
-  return { spokenName, ...match, qty, unit, rate: null, total: rupeesToPaise(otherEntries[0]!.value), priceType: "total" };
+  return { spokenName, ...match, qty, unit, rate: null, rateUnit: null, total: rupeesToPaise(otherEntries[0]!.value), priceType: "total" };
 }
 
 /**
@@ -568,7 +567,7 @@ export function parseUtterance(text: string): ParsedItem[] | null {
 // directly - that would touch every tested return path in this file for a
 // diagnostic-only need. Instead this reuses the exact same internal
 // helpers (classifySegment, extractNums, hasOrphanedMarker,
-// convertCatalogRate, ...) and mirrors resolveSegment's own branch order,
+// unitScale, ...) and mirrors resolveSegment's own branch order,
 // so the actual parsing behavior can never drift - only the sequence of
 // high-level checks needs to stay in sync, and grammar.test.ts asserts
 // that agreement directly (diagnoseUtterance().hit must match
@@ -632,7 +631,7 @@ function diagnoseSegment(rawSegment: string): MissReason | null {
     const match = resolveCatalogMatch(spokenName);
     if (match.catalogId) {
       const entry = getCatalogEntryById(match.catalogId);
-      if (entry && convertCatalogRate(entry, spokenUnit) === null) {
+      if (entry && unitScale(spokenUnit, entry.unit) === null) {
         return "incompatible unit for default price";
       }
     }

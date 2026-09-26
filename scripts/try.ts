@@ -23,7 +23,7 @@ import { formatRupees } from "../src/domain/money.js";
 function formatItem(item: ParsedItem): string {
   const name = item.catalogId ? getCatalogEntryById(item.catalogId)!.displayName : item.spokenName;
   const qty = item.qty === null ? "qty —" : `${item.qty} ${item.unit}`.trim();
-  const rate = item.rate === null ? "rate —" : `rate ${formatRupees(item.rate)}`;
+  const rate = item.rate === null ? "rate —" : `rate ${formatRupees(item.rate)}/${item.rateUnit}`;
   const total = item.total === null ? "total —" : `total ${formatRupees(item.total)}`;
   // matchStatus "matched" is the common case and needs no callout; a KI-20
   // tie or an unresolved product is exactly the thing worth surfacing here.

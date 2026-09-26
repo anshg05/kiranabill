@@ -1335,5 +1335,155 @@
       "priceType": null
     },
     "note": "structural ambiguity - expect parseUtterance() to return null"
+  },
+  {
+    "id": "NB101",
+    "category": "cross-unit",
+    "utterance": "500 gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 2250,
+      "priceType": "default"
+    },
+    "note": "KI-30 repro: Chini 4500 paise/kg; 500 gm = 2250 exactly (old code: rounded 5 paise/gm -> 2500)"
+  },
+  {
+    "id": "NB102",
+    "category": "cross-unit",
+    "utterance": "250 gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 250,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 1125,
+      "priceType": "default"
+    },
+    "note": "Chini 4500/kg; 250 gm = 1125 (old: 1250)"
+  },
+  {
+    "id": "NB103",
+    "category": "cross-unit",
+    "utterance": "500 ml doodh",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "ml",
+      "rate": 5600,
+      "rateUnit": "liter",
+      "total": 2800,
+      "priceType": "default"
+    },
+    "note": "Doodh 5600 paise/liter; 500 ml = 2800 (old: 3000)"
+  },
+  {
+    "id": "NB104",
+    "category": "cross-unit",
+    "utterance": "333 gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 333,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 1499,
+      "priceType": "default"
+    },
+    "note": "1498.5 exactly - half-paise tie, half-up once at the line (D11)"
+  },
+  {
+    "id": "NB105",
+    "category": "cross-unit",
+    "utterance": "1 gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 5,
+      "priceType": "default"
+    },
+    "note": "4.5 paise exactly -> 5 half-up"
+  },
+  {
+    "id": "NB106",
+    "category": "cross-unit",
+    "utterance": "dhai gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 2.5,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 11,
+      "priceType": "default"
+    },
+    "note": "2.5 gm x 4500/kg = 11.25 -> 11 (old: 13)"
+  },
+  {
+    "id": "NB107",
+    "category": "cross-unit",
+    "utterance": "500 gram maida",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 4200,
+      "rateUnit": "kg",
+      "total": 2100,
+      "priceType": "default"
+    },
+    "note": "Maida 4200/kg; 500 gm = 2100 (old: 4 paise/gm -> 2000, UNDER-billed)"
+  },
+  {
+    "id": "NB108",
+    "category": "cross-unit",
+    "utterance": "500 ml sarson tel",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "ml",
+      "rate": 14500,
+      "rateUnit": "liter",
+      "total": 7250,
+      "priceType": "default"
+    },
+    "note": "Sarson Tel 14500/liter; 500 ml = 7250 (old: 15 paise/ml -> 7500)"
+  },
+  {
+    "id": "NB109",
+    "category": "cross-unit",
+    "utterance": "do chataak namak",
+    "expected": {
+      "safe": false,
+      "qty": 100,
+      "unit": "gm",
+      "rate": 2000,
+      "rateUnit": "kg",
+      "total": 200,
+      "priceType": "default"
+    },
+    "note": "chataak = 50 gm (D13); Namak 2000/kg divides evenly - total was already right, rate/rateUnit representation changes"
+  },
+  {
+    "id": "NB110",
+    "category": "cross-unit",
+    "utterance": "1 kilo ajwain",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 50,
+      "rateUnit": "gm",
+      "total": 50000,
+      "priceType": "default"
+    },
+    "note": "reverse direction: Ajwain 50 paise/gm, rateUnit gm; total was already right, representation changes"
   }
 ]

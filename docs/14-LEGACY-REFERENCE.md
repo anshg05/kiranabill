@@ -1,6 +1,6 @@
 # 14 — Legacy Reference
 
-**Last updated:** 22 Sep 2026 (rev 7) · **Status:** Reference material, frozen
+**Last updated:** 26 Sep 2026 (rev 8) · **Status:** Reference material, frozen
 
 **Rev 6 note:** section 7 undercounted the review reason codes (said 7, `04-VOICE-PIPELINE.md`'s "11"
 was the correct number) and included one, `unknown`, that isn't real — conflated with `grammar.ts`'s
@@ -382,6 +382,10 @@ Conversions: `1 kg = 1000 gm`, `1 liter = 1000 ml`.
 **Rate-basis inference** — the subtlest rule in the old validator, and worth preserving: if the
 spoken unit is `gm` but the rate is **≥ 10× the per-gram catalog price**, infer the speaker meant a
 per-kg rate and convert. Handles "500 gram, 60 rupay wala" where 60 is obviously ₹60/kg.
+
+> **26 Sep 2026:** ported as `validator.ts`'s `inferRateBasis()` in `KB-005b` but **never wired in** — a spoken
+> per-kg rate on a gram quantity is read literally (`12-PARKED.md` KI-35). Plain SI conversion of a *catalog*
+> price is a different thing and is exact since `KB-005f` (`07-DECISIONS.md` D36: the rate carries its own unit).
 
 > ⚠️ `BILL_UNITS` in `app.js` included `bag`; the manual-add dropdown did not (`KI-16`). In the
 > rebuild, **units come from one exported constant**, imported everywhere.

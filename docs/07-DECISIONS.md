@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 26 Sep 2026 (rev 22) · Supersedes rev 21
+**Last updated:** 26 Sep 2026 (rev 23) · Supersedes rev 22
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1068,6 +1068,47 @@ After the split: `npm test` 5/5 passed.
 `12-PARKED.md` NI-28, trigger `KB-305`. And a deliberate heavy-load run (full suite during
 `supabase db reset`) still failed once at 17.02 ms (`besan 500 gram`); by the agreed rule, recorded
 in KI-23, not a reopen.
+
+---
+
+## Rev 23 — 26 Sep 2026
+
+### D36 — A line keeps its spoken qty and unit; the rate carries its own unit; cross-unit totals are exact 🟢
+
+**Owner decision, 26 Sep 2026, `KB-005f`. Closes `12-PARKED.md` KI-30.**
+
+**A line keeps qty and unit exactly as spoken. A line's rate carries its own unit (`ParsedItem.rateUnit`).
+Totals across gm/kg and ml/liter are computed exactly** — qty × rate, shifted by 1000, rounded half-up ONCE
+at the line (D11) — never via a per-gram rate rounded to whole paise, and never with a division.
+"500 gram chini" → qty 500, unit "gm", rate 4500, rateUnit "kg", total 2250 (₹22.50). The old code rounded
+4500 paise/kg to "5 paise/gm" and billed ₹25 — silently, for 32 of 123 kg/liter products, in both
+directions ("500 gram maida" under-billed ₹20 vs ₹21).
+
+**Why this and not normalising the line to the catalog unit (the owner's first decision the same day,
+reversed after a real check):** normalising "500 gram chini" to 0.5 kg hides the spoken number from the
+line — a real `evaluateReviewFlags` run on the normalised item fired `number_dropped` and `qty_dropped`,
+both HIGH, on every such line; it fights the number-safety gate's purpose (the shopkeeper sees their own
+number); it would have needed a hard-rule-7 reading ("is re-expressing a unit auto-changing it?"); and it
+contradicts the Layer 2 prompt, which reports the spoken unit. Keeping the spoken qty and giving the rate
+its own unit has none of these. **No hard-rule-7 reinterpretation is involved:** nothing is converted or
+substituted — the qty is what was said, the rate is the catalog price exactly as stored.
+
+**Mechanics:** `grammar.ts`'s `unitScale()` decides the power of ten between the qty's unit and the rate's
+unit (0, +3, -3, or null = incompatible → bail); `money.ts`'s `lineTotalPaiseScaled()` does the arithmetic
+with string-slice half-up rounding at 10^3 or 10^6. `convertPriceBetweenUnits()`/`convertCatalogRate()`
+(which divided) are deleted. `reviewFlags.ts` compares a rate against the shop price by scaling the finer
+unit's price UP by 1000 and computes the expected total with the same `lineTotalPaiseScaled()`.
+`src/domain/no-division.test.ts` (TypeScript AST scan) fails on any `/` in `money.ts`, `grammar.ts` or
+`reviewFlags.ts`.
+
+**`rateUnit` is required on `ParsedItem`** (`string | null`, null exactly when `rate` is null) — never an
+implicit "same as unit": every place that builds a line must state the rate's basis. A spoken `wala` rate is
+read literally, per the spoken unit ("500 gram jeera 600 wala" stays 600/gm, ₹3,00,000, HIGH-flagged —
+KI-35). Layer 2's rate unit is Gemini's own claim and untrusted (KI-34).
+
+**Out of scope, decided separately:** how the rate and its unit are *displayed* (KB-303 / KB-308); persisting
+`rate_unit` (a `bill_items` column, a `LocalBillItem` field, the push mapping) is `KB-110b`'s — nothing
+writes `bill_items` yet (KI-32).
 
 ---
 

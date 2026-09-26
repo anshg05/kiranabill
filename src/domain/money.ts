@@ -14,11 +14,24 @@ export type Paise = number;
  * wrong way by floating-point division error. See money.no-float.test.ts.
  */
 function roundMilliPaiseHalfUp(milliPaise: number): number {
-  const sign = milliPaise < 0 ? -1 : 1;
-  const digits = String(Math.abs(milliPaise)).padStart(4, "0");
-  const whole = Number(digits.slice(0, -3));
-  const thousandths = Number(digits.slice(-3));
-  return sign * (thousandths >= 500 ? whole + 1 : whole);
+  return roundHalfUpAtPowerOfTen(milliPaise, 3);
+}
+
+/**
+ * Rounds an exact integer that represents (value x 10^places) to the
+ * nearest whole value, HALF-UP. Same string-slicing technique as always
+ * (never a division - see money.no-float.test.ts and no-division.test.ts),
+ * generalised from 3 places so KB-005f's cross-unit totals can round at
+ * 10^6 exactly. Callers keep the integer below Number.MAX_SAFE_INTEGER
+ * (~9 x 10^15) - see lineTotalPaiseScaled.
+ */
+function roundHalfUpAtPowerOfTen(scaled: number, places: number): number {
+  const sign = scaled < 0 ? -1 : 1;
+  const digits = String(Math.abs(scaled)).padStart(places + 1, "0");
+  const whole = Number(digits.slice(0, -places));
+  const remainder = digits.slice(-places);
+  const halfway = "5".padEnd(places, "0");
+  return sign * (remainder >= halfway ? whole + 1 : whole);
 }
 
 /**
@@ -30,6 +43,42 @@ export function lineTotalPaise(qty: number, ratePaise: number): Paise {
   const qtyMilliUnits = Math.round(qty * 1000); // qty has <=3 decimals by contract
   const milliPaise = qtyMilliUnits * ratePaise; // exact integer product
   return roundMilliPaiseHalfUp(milliPaise);
+}
+
+/**
+ * KB-005f (docs/07-DECISIONS.md D36, docs/12-PARKED.md KI-30): a line total
+ * when the quantity's unit and the rate's unit differ by a factor of 1000
+ * (gm<->kg, ml<->liter). `scale` is the power of ten that converts the
+ * quantity into the rate's unit - grammar.ts's unitScale() decides it; this
+ * file only does arithmetic, and never imports grammar.ts.
+ *
+ *   scale  0: same unit                     -> lineTotalPaise(qty, rate)
+ *   scale -3: qty in gm/ml, rate per kg/liter -> qty x rate / 10^3
+ *   scale +3: qty in kg/liter, rate per gm/ml -> qty x rate x 10^3
+ *
+ * Exact in every case, rounded half-up ONCE at the line (D11) - never via a
+ * per-gram rate rounded to whole paise (KI-30: "500 gram chini" at 4500
+ * paise/kg billed 2500, not 2250). qtyMilli x rate must stay below
+ * ~9 x 10^15: e.g. 1,000,000 gm (a tonne) at 1,00,00,000 paise/kg is
+ * 10^9 x 10^7 = 10^16 - past it, but no kirana line comes near that.
+ */
+export function lineTotalPaiseScaled(qty: number, ratePaise: number, scale: 0 | 3 | -3): Paise {
+  const qtyMilliUnits = Math.round(qty * 1000); // qty has <=3 decimals by contract
+  const milliPaise = qtyMilliUnits * ratePaise; // exact integer: paise x 10^3
+  if (scale === 0) return roundHalfUpAtPowerOfTen(milliPaise, 3);
+  if (scale === -3) return roundHalfUpAtPowerOfTen(milliPaise, 6); // paise x 10^6
+  return milliPaise; // scale +3: (qty x 10^3) x rate is already whole paise
+}
+
+/**
+ * Paise as a plain rupee number (4550 -> 45.5), for comparing against
+ * numbers heard in a transcript (reviewFlags.ts number safety). Decimal
+ * string shift, not a division. Never used to compute or store money.
+ */
+export function paiseToRupeeNumber(paise: Paise): number {
+  const sign = paise < 0 ? "-" : "";
+  const digits = String(Math.abs(paise)).padStart(3, "0");
+  return Number(`${sign}${digits.slice(0, -2)}.${digits.slice(-2)}`);
 }
 
 /**

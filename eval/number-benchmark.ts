@@ -37,6 +37,10 @@ interface ExpectedOutcome {
   readonly rate: number | null;
   readonly total: number | null;
   readonly priceType: PriceType | null;
+  /** KB-005f: set only on cases where the rate's unit differs from the line's
+   * (e.g. 500 gm at a per-kg rate); compared only when present, so the
+   * original 100 cases are scored exactly as before. */
+  readonly rateUnit?: string | null;
 }
 
 interface BenchmarkCase {
@@ -58,8 +62,9 @@ interface CaseResult {
 function loadCases(): readonly BenchmarkCase[] {
   const raw = readFileSync(path.join(__dirname, "number-benchmark.json"), "utf8");
   const cases = JSON.parse(raw) as BenchmarkCase[];
-  if (cases.length !== 100) {
-    throw new Error(`number-benchmark.json: expected exactly 100 cases, found ${cases.length}`);
+  // 100 original cases (KB-006) + 10 cross-unit cases (KB-005f, NB101-NB110).
+  if (cases.length !== 110) {
+    throw new Error(`number-benchmark.json: expected exactly 110 cases, found ${cases.length}`);
   }
   return cases;
 }
@@ -74,7 +79,8 @@ function matchesExpected(item: ParsedItem, expected: ExpectedOutcome): boolean {
     item.unit === expected.unit &&
     item.rate === expected.rate &&
     item.total === expected.total &&
-    item.priceType === expected.priceType
+    item.priceType === expected.priceType &&
+    (expected.rateUnit === undefined || item.rateUnit === expected.rateUnit)
   );
 }
 
@@ -106,7 +112,7 @@ function classify(benchmarkCase: BenchmarkCase): CaseResult {
 
 function formatItem(item: ParsedItem | undefined): string {
   if (!item) return "(no item)";
-  return `spokenName="${item.spokenName}" catalogId=${item.catalogId} matchStatus=${item.matchStatus} qty=${item.qty} unit="${item.unit}" rate=${item.rate} total=${item.total} priceType=${item.priceType}`;
+  return `spokenName="${item.spokenName}" catalogId=${item.catalogId} matchStatus=${item.matchStatus} qty=${item.qty} rateUnit=${item.rateUnit} unit="${item.unit}" rate=${item.rate} total=${item.total} priceType=${item.priceType}`;
 }
 
 function formatExpected(expected: ExpectedOutcome): string {

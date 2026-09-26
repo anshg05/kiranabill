@@ -29,9 +29,9 @@
  */
 
 import type { ParsedItem } from "./grammar.js";
-import { extractSpokenNumbers, extractSpokenNumberEntries, unitsAreCompatible, convertPriceBetweenUnits } from "./grammar.js";
+import { extractSpokenNumbers, extractSpokenNumberEntries, unitsAreCompatible, unitScale } from "./grammar.js";
 import type { CatalogEntry } from "./catalog.js";
-import { formatRupees, type Paise } from "./money.js";
+import { formatRupees, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
 import { getEffectivePrice, type LearningState } from "./learning.js";
 
 export type ReviewCode =
@@ -94,8 +94,10 @@ function consumeOne(pool: number[], value: number): boolean {
 function itemConsumedNumbers(item: ParsedItem, includeQty: boolean): number[] {
   const values: number[] = [];
   if (includeQty && item.qty !== null) values.push(item.qty);
-  if (item.rate !== null) values.push(item.rate / 100);
-  if (item.total !== null) values.push(item.total / 100);
+  // Transcript numbers are rupees; stored money is paise. A decimal shift,
+  // not a division (KB-005f, no-division.test.ts).
+  if (item.rate !== null) values.push(paiseToRupeeNumber(item.rate));
+  if (item.total !== null) values.push(paiseToRupeeNumber(item.total));
   return values;
 }
 
@@ -153,16 +155,27 @@ export function evaluateReviewFlags(
     }
 
     if (item.rate !== null && entry) {
-      const effectivePrice = effectivePriceInItemUnit(item, entry, opts);
-      if (effectivePrice !== null && isOutsideBand(item.rate, effectivePrice)) {
-        push(
-          flags,
-          `item-${index}-unusual_rate`,
-          "unusual_rate",
-          "HIGH",
-          `Rate ${formatRupees(item.rate)}/${item.unit || entry.unit} — usually ${formatRupees(effectivePrice)}. Check?`,
-          index,
-        );
+      // KB-005f (D36): the rate is per item.rateUnit, the shop price per the
+      // catalog unit. Compare them in one unit by scaling the FINER unit's
+      // price UP by 1000 - multiplication only, never a per-gram price
+      // rounded to whole paise (KI-30's basis).
+      const shopPrice = shopPriceInCatalogUnit(entry, opts);
+      const rateUnit = item.rateUnit ?? (item.unit || entry.unit);
+      const scale = unitScale(rateUnit, entry.unit);
+      if (scale !== null) {
+        const actualComparable = scale === -3 ? item.rate * 1000 : item.rate;
+        const expectedComparable = scale === 3 ? shopPrice * 1000 : shopPrice;
+        if (isOutsideBand(actualComparable, expectedComparable)) {
+          const usual = rateUnit === entry.unit ? formatRupees(shopPrice) : `${formatRupees(shopPrice)}/${entry.unit}`;
+          push(
+            flags,
+            `item-${index}-unusual_rate`,
+            "unusual_rate",
+            "HIGH",
+            `Rate ${formatRupees(item.rate)}/${rateUnit} — usually ${usual}. Check?`,
+            index,
+          );
+        }
       }
     }
 
@@ -182,9 +195,13 @@ export function evaluateReviewFlags(
       entry &&
       (item.priceType === "default" || item.priceType === "rate")
     ) {
-      const effectivePrice = effectivePriceInItemUnit(item, entry, opts);
-      if (effectivePrice !== null) {
-        const expectedTotal = Math.round(item.qty * effectivePrice);
+      // KB-005f (D36): the expected total is computed exactly - the spoken
+      // qty times the shop price, shifted by 1000 across gm/kg or ml/liter,
+      // half-up once (D11) - the same arithmetic grammar.ts bills with.
+      // "500 gram chini" at 4500/kg expects Rs.22.50, not the old Rs.25.
+      const scale = unitScale(item.unit || entry.unit, entry.unit);
+      if (scale !== null) {
+        const expectedTotal = lineTotalPaiseScaled(item.qty, shopPriceInCatalogUnit(entry, opts), scale);
         if (isOutsideBand(item.total, expectedTotal)) {
           push(
             flags,
@@ -205,25 +222,20 @@ export function evaluateReviewFlags(
 }
 
 /**
- * The shop's effective price for this item's product, expressed in the
- * unit the item ACTUALLY carries - not the catalog entry's own unit
- * blindly multiplied against a differently-scaled qty (the real bug
- * KB-208's own real-data check caught: "500 gram" multiplied straight
- * against a per-kg price, off by 1000x). Returns null when the item's
- * unit isn't convertible to the catalog entry's unit at all - unit_mismatch
- * already flags that separately; unusual_rate/unusual_total simply don't
- * apply when there's no sound basis for the comparison.
+ * The shop's effective price for this item's product, per the catalog
+ * entry's OWN unit - learning.ts's confirmed price when there is one,
+ * else the catalog default. Callers do the cross-unit comparison exactly
+ * (KB-005f): unusual_rate scales the finer-unit price up by 1000,
+ * unusual_total uses lineTotalPaiseScaled. This used to re-express the
+ * price in the item's unit by dividing by 1000 and rounding to whole paise
+ * - the same KI-30 basis error as grammar.ts ("expected ₹25" for 500 gm of
+ * a 4500/kg product). Incompatible units: the callers skip the comparison
+ * (unitScale() is null) - unit_mismatch already flags that separately.
  */
-function effectivePriceInItemUnit(
-  item: ParsedItem,
-  entry: CatalogEntry,
-  opts: EvaluateReviewFlagsOptions | undefined,
-): Paise | null {
-  const priceInCatalogUnit = opts
+function shopPriceInCatalogUnit(entry: CatalogEntry, opts: EvaluateReviewFlagsOptions | undefined): Paise {
+  return opts
     ? getEffectivePrice(opts.learningState, entry.id, entry.suggestedPricePaise, opts.nowMs)
     : entry.suggestedPricePaise;
-  const targetUnit = item.unit || entry.unit;
-  return convertPriceBetweenUnits(priceInCatalogUnit, entry.unit, targetUnit);
 }
 
 function isOutsideBand(actual: Paise, expected: Paise): boolean {

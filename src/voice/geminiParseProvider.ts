@@ -57,6 +57,14 @@ function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): Pa
     qty: raw.qty,
     unit: raw.unit,
     rate: raw.rate,
+    // KB-005f: Gemini returns no rate unit, so its own `unit` is taken as
+    // the rate's unit - Gemini's CLAIM, not verified. For a spoken gm/ml
+    // qty on a per-kg product the prompt multiplies the per-kg price by the
+    // gram count (docs/12-PARKED.md KI-34): these rates and totals are
+    // untrusted and must be recomputed client-side before KB-302 puts
+    // Layer 2 output on a bill. They are HIGH-flagged by unusual_rate /
+    // unusual_total meanwhile (reviewFlags.test.ts, KB-005f).
+    rateUnit: raw.rate === null ? null : raw.unit,
     total: raw.total,
     priceType: raw.priceType,
   };
