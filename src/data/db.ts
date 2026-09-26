@@ -32,12 +32,20 @@ import Dexie, { type EntityTable } from "dexie";
 export type SyncStatus = "pending" | "synced" | "conflict";
 
 export interface LocalBill {
+  /** Must be a UUID (crypto.randomUUID() - KB-307 generates it): bills.local_id
+   * is uuid and push_bill casts it, so anything else is a permanent 22P02
+   * conflict (docs/07-DECISIONS.md D37). */
   localId: string;
   serverId?: string;
   shopId: string;
   status: "draft" | "final" | "cancelled";
   syncStatus: SyncStatus;
   receiptNumber: string;
+  /** KB-110b / KI-31: which allocation path produced receiptNumber (D24) -
+   * receiptNumbers.ts consumeNextNumber() returns it; KB-307 stores it here.
+   * Pushed as bills.receipt_number_source; a permanent label, never a
+   * trigger for renumbering. */
+  receiptNumberSource: "block" | "fallback";
   customerName: string;
   customerMobile: string | null;
   subtotalPaise: number;
@@ -60,6 +68,9 @@ export interface LocalBillItem {
   qty: number | null;
   unit: string | null;
   ratePaise: number | null;
+  /** KB-110b / D36: the unit ratePaise is per (ParsedItem.rateUnit). null
+   * exactly when ratePaise is null - bill_items_rate_unit_iff_rate. */
+  rateUnit: string | null;
   totalPaise: number;
   priceType: "rate" | "total" | "default" | "unknown";
   source: "voice" | "fastpath" | "manual";
@@ -229,7 +240,30 @@ export class KiranaBillDB extends Dexie {
       shops: "&id, syncStatus",
       syncState: "&tableName",
     });
+
+    // KB-110b: two new fields, no index changes (stores() is only needed for
+    // index changes, so version 2 declares none - Dexie carries v1's forward).
+    // The upgrade is defined even though nothing writes bills locally in
+    // production yet (docs/12-PARKED.md KI-32), and is exercised in db.test.ts.
+    this.version(2).upgrade(async (tx) => {
+      // D23: a fallback receipt number embeds the full device UUID
+      // ("{prefix}-{uuid}-{n}"); a block number never contains one. So this
+      // is deterministic, not a guess.
+      await tx.table("bills").toCollection().modify((bill: Partial<LocalBill>) => {
+        if (bill.receiptNumberSource === undefined) {
+          bill.receiptNumberSource = FALLBACK_RECEIPT_PATTERN.test(bill.receiptNumber ?? "") ? "fallback" : "block";
+        }
+      });
+      // The pre-D36 meaning: a rate was per the line's own unit.
+      await tx.table("billItems").toCollection().modify((item: Partial<LocalBillItem>) => {
+        if (item.rateUnit === undefined) {
+          item.rateUnit = item.ratePaise === null || item.ratePaise === undefined ? null : (item.unit ?? null);
+        }
+      });
+    });
   }
 }
+
+const FALLBACK_RECEIPT_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 export const db = new KiranaBillDB();

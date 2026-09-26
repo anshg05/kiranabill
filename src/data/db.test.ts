@@ -22,6 +22,7 @@ describe("KiranaBillDB", () => {
         status: "draft",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 15000,
@@ -46,6 +47,7 @@ describe("KiranaBillDB", () => {
           status: "draft",
           syncStatus: "pending",
           receiptNumber: "KB-0001",
+          receiptNumberSource: "block",
           customerName: "Cash",
           customerMobile: null,
           subtotalPaise: 1000,
@@ -62,6 +64,7 @@ describe("KiranaBillDB", () => {
           status: "final",
           syncStatus: "synced",
           receiptNumber: "KB-0002",
+          receiptNumberSource: "block",
           customerName: "Cash",
           customerMobile: null,
           subtotalPaise: 2000,
@@ -85,6 +88,7 @@ describe("KiranaBillDB", () => {
         status: "final",
         syncStatus: "synced",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Ramesh Kumar",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -116,6 +120,7 @@ describe("KiranaBillDB", () => {
         qty: 5,
         unit: "kg",
         ratePaise: 3000,
+        rateUnit: "kg",
         totalPaise: 15000,
         priceType: "rate",
         source: "voice",
@@ -134,6 +139,7 @@ describe("KiranaBillDB", () => {
           qty: 1,
           unit: "kg",
           ratePaise: 9000,
+          rateUnit: "kg",
           totalPaise: 9000,
           priceType: "rate",
           source: "manual",
@@ -155,6 +161,7 @@ describe("KiranaBillDB", () => {
           qty: 5,
           unit: "kg",
           ratePaise: 3000,
+          rateUnit: "kg",
           totalPaise: 15000,
           priceType: "rate",
           source: "voice",
@@ -171,6 +178,7 @@ describe("KiranaBillDB", () => {
           qty: 1,
           unit: "kg",
           ratePaise: 9000,
+          rateUnit: "kg",
           totalPaise: 9000,
           priceType: "rate",
           source: "voice",
@@ -393,5 +401,58 @@ describe("schema version upgrade (rehearsal of the Dexie mechanism, not a real m
     });
 
     v2.close();
+  });
+});
+
+// KB-110b: the REAL version 1 -> version 2 upgrade KiranaBillDB ships.
+// A database written by the v1 schema (the exact v1 stores() string from
+// db.ts) is opened by the current KiranaBillDB class; its upgrade() must
+// backfill LocalBill.receiptNumberSource and LocalBillItem.rateUnit.
+describe("KB-110b: KiranaBillDB version 1 -> 2 upgrade (real)", () => {
+  const name = `test-v1-v2-${crypto.randomUUID()}`;
+
+  afterEach(async () => {
+    await Dexie.delete(name);
+  });
+
+  it("backfills receiptNumberSource (fallback iff the number embeds a UUID - D23) and rateUnit (the line's unit iff it has a rate)", async () => {
+    const v1 = new Dexie(name);
+    v1.version(1).stores({
+      bills: "&localId, shopId, status, syncStatus, createdAt, customerName, totalPaise, [shopId+status]",
+      billItems: "++id, billLocalId, &[billLocalId+lineNo]",
+      learnedAliases: "&localId, shopId, syncStatus",
+      provisionalProducts: "&localId, shopId, syncStatus",
+      priceObservations: "&localId, shopId, syncStatus",
+      learningEvents: "&localId, shopId, syncStatus",
+      shopProducts: "&id, shopId, displayName, *aliases",
+      baseProducts: "&id, displayName, *aliases",
+      receiptNumberBlocks: "&id, shopId, syncStatus, [shopId+nextNumber]",
+      shops: "&id, syncStatus",
+      syncState: "&tableName",
+    });
+    await v1.open();
+    const deviceUuid = "550e8400-e29b-41d4-a716-446655440000";
+    const bill = (localId: string, receiptNumber: string) => ({
+      localId, shopId: "shop-1", status: "final", syncStatus: "pending", receiptNumber,
+      customerName: "Cash", customerMobile: null, subtotalPaise: 100, totalPaise: 100, schemaVersion: 1,
+      deviceId: deviceUuid, createdAt: "2026-09-27T10:00:00.000Z", finalizedAt: "2026-09-27T10:00:00.000Z", syncedAt: null,
+    });
+    await v1.table("bills").bulkAdd([bill("b-block", "KB-000042"), bill("b-fallback", `KB-${deviceUuid}-3`)]);
+    const line = (lineNo: number, ratePaise: number | null, unit: string) => ({
+      billLocalId: "b-block", shopId: "shop-1", lineNo, shopProductId: null, displayName: "x", spokenName: null,
+      qty: 1, unit, ratePaise, totalPaise: 100, priceType: ratePaise === null ? "total" : "rate", source: "manual",
+      reviewFlags: [], wasEdited: false,
+    });
+    await v1.table("billItems").bulkAdd([line(1, 4500, "kg"), line(2, null, "piece")]);
+    v1.close();
+
+    const db = new KiranaBillDB(name);
+    await db.open();
+    expect(db.verno).toBe(2);
+    expect((await db.bills.get("b-block"))?.receiptNumberSource).toBe("block");
+    expect((await db.bills.get("b-fallback"))?.receiptNumberSource).toBe("fallback");
+    const items = await db.billItems.where("billLocalId").equals("b-block").sortBy("lineNo");
+    expect(items.map((i) => i.rateUnit)).toEqual(["kg", null]);
+    db.close();
   });
 });

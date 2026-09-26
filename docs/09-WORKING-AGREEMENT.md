@@ -1,6 +1,6 @@
 # 09 — Working Agreement
 
-**Last updated:** 26 Sep 2026 (rev 5) · **Status:** Active from first commit
+**Last updated:** 27 Sep 2026 (rev 6) · **Status:** Active from first commit
 
 How work gets done on this project. Engineering standards, the AI session protocol, and the
 definition of done.
@@ -246,6 +246,7 @@ own full diff (`git show`, or GitHub's commit view) after each commit.
 | Layer | Tool | Coverage expectation |
 |---|---|---|
 | `domain/` | Vitest | **High.** Money math, grammar, validator, learning. These are the correctness core. |
+| Sync + schema, real stack | Vitest, `*.e2e.test.ts`, project `e2e` — `npm run test:e2e` | **Required for any sync or schema ticket** (`07-DECISIONS.md` D37). Runs against the local Docker stack, calling the shipped code (D21, D32); refuses non-local URLs. Not part of `npm test`, which never needs Docker. |
 | Performance budgets | Vitest, `*.perf.test.ts`, project `perf` | Run by `npm test` **alone, after** every other file — never in the parallel pool. Steady state only (warm-up, cold call not asserted). `07-DECISIONS.md` D35. |
 | RLS policies | SQL negative tests | **Mandatory.** Two shops, zero cross-visibility, every table. |
 | Voice pipeline | Eval suite + number benchmark | Re-run on every change to parsing or prompts |

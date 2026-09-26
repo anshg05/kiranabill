@@ -1,6 +1,6 @@
 # 02 — System Architecture
 
-**Last updated:** 18 Aug 2026 (rev 2) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 3) · **Status:** Final for MVP
 **Read `07-DECISIONS.md` before changing anything here.**
 
 ---
@@ -115,6 +115,13 @@ sequenceDiagram
 
 **Idempotency:** every bill carries a client-generated UUID `local_id` with a unique constraint on
 `(shop_id, local_id)`. Re-sending a bill is a no-op, so retries are always safe.
+
+**Bills specifically (`KB-110b`, `07-DECISIONS.md` D37):** a bill and all its items go up in **one atomic call**
+to the `push_bill()` Postgres function (SECURITY INVOKER — RLS stays the boundary). A retry with identical
+content returns the same id; different content is a `KB409` conflict, surfaced, never silently overwritten.
+Only finalised/cancelled bills are pushed — drafts stay on the device. Failures are classified by an explicit
+list (permanent: RLS, trigger, integrity, data errors; everything else — deadlocks, timeouts, network, unknown
+codes — retries with backoff).
 
 ---
 

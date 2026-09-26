@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 26 Sep 2026 (rev 23) · Supersedes rev 22
+**Last updated:** 27 Sep 2026 (rev 24) · Supersedes rev 23
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1109,6 +1109,73 @@ KI-35). Layer 2's rate unit is Gemini's own claim and untrusted (KI-34).
 **Out of scope, decided separately:** how the rate and its unit are *displayed* (KB-303 / KB-308); persisting
 `rate_unit` (a `bill_items` column, a `LocalBillItem` field, the push mapping) is `KB-110b`'s — nothing
 writes `bill_items` yet (KI-32).
+
+---
+
+## Rev 24 — 27 Sep 2026
+
+### D37 — Bills push through one atomic, idempotent SECURITY INVOKER function; drafts stay local 🟢
+
+**Owner decisions, 26–27 Sep 2026, `KB-110b`. Closes `12-PARKED.md` KI-29 and KI-31.** Migration `supabase/migrations/20260927090000_push_bill.sql`.
+
+**1. `push_bill(p_bill jsonb, p_items jsonb) returns uuid`** — one RPC per bill. PostgREST runs it in one
+transaction: it inserts the bill as **draft**, inserts every item, then sets it **final** (and **cancelled**
+if that's the target), so `bill_items_immutability` never sees an item added to a final bill — the KI-29 bug,
+where the old client upserted the bill as final first and every item insert was rejected. **SECURITY
+INVOKER, never DEFINER:** every statement runs as the caller under the existing `bills`/`bill_items` RLS
+(hard rule 4). `shop_id` and `bill_id` on items come from the function, never from the payload. Execute is
+revoked from `public`/`anon`, granted to `authenticated`. Chosen over client-side ordering (draft upsert →
+items → final update) because that is 3+ requests, non-atomic, and needs its own "already final?" round
+trip. This also removes KB-110's documented "delete then reinsert items isn't atomic" window.
+
+**2. "Already done" (idempotent retry):** the bill already exists for `(shop_id, local_id)` AND every
+immutable bill field (`receipt_number`, `receipt_number_source`, `customer_name`, `customer_mobile`,
+`subtotal_paise`, `total_paise`, `schema_version`, `device_id`) and the full item set (all content columns,
+compared with `EXCEPT` both ways plus a count) are identical. Same status → return the existing id (no-op
+success). `final` → `cancelled` → apply the cancel (only `status` changes, so `bills_immutability`'s D18 jsonb
+diff passes). **Anything else → `KB409`** → the device marks the bill `conflict` and logs both versions; local
+data is never discarded. Every comparison is `IS NOT DISTINCT FROM` and the caller tests `IS NOT TRUE`: a
+missing/null payload field is a **mismatch, never NULL** — an AND-chain of `=` would return NULL, `if not NULL`
+does not raise, and a divergent retry would silently succeed (owner's review; real-stack tests for an omitted
+`receipt_number_source` and a null `total_paise` → KB409). A concurrent push of the same bill is absorbed
+inside the function (`unique_violation` → re-read → compare); `syncNow()` also joins an in-flight run instead
+of starting a second one.
+
+**3. Only `final` and `cancelled` bills are pushed; drafts stay on the device.** `bills.receipt_number` is
+NOT NULL and a draft has no receipt number yet (assigned at finalise, `16-APP-FLOW.md` §4); no doc requires
+draft sync — a draft survives in IndexedDB (`16-APP-FLOW.md` §6). `push_bill` rejects any other status with
+`KB400`.
+
+**4. `LocalBill.localId` must be a UUID.** `bills.local_id` is `uuid` and `push_bill` casts it — anything else
+is a permanent `22P02` conflict. `KB-307` generates it with `crypto.randomUUID()`; the e2e test uses real
+UUIDs.
+
+**5. Error classification (`sync.ts` `isPermanentError`, shared by every push function).** PERMANENT →
+`conflict`: 42501, P0001, every 23xxx, every 22xxx, KB400, KB409. TRANSIENT → retry with backoff: no code
+(network), 40P01, 40001, 57014, 08xxx, 53xxx, 55P03, PGRST*, and **any unknown code** (logged) — a retrying
+bill is recoverable, a false `conflict` is not. Replaces `code.length === 5`, which made deadlocks,
+serialization failures and timeouts permanent. **23503 is permanent because every `shop_product` is
+server-originated today** (pulled, never created locally). When `KB-311`/`KB-314` let a device create
+`shop_products`, a bill could push before its product exists — **revisit push order / 23503 then. Trigger:
+`KB-311`.**
+
+**6. Schema.** `bill_items.rate_unit` (D36) with `check ((rate_paise is null) = (rate_unit is null))` and **no
+unit-vocabulary check** (units are free text; a value list would make valid custom-unit lines permanent
+23514 conflicts — KI-16). Backfilled `rate_unit = unit` where `rate_paise` is set, with
+`bill_items_immutability` disabled only for that statement inside one `DO` block (it can't be left off),
+proven against a seeded final + cancelled bill. **Same-shop integrity:** `unique (id, shop_id)` on `bills` +
+composite FK `bill_items (bill_id, shop_id) → bills (id, shop_id)` — before it, a shop-B user could attach an
+item to a shop-A bill (RLS checked only the item's own shop; the immutability trigger reads the parent
+through RLS and saw nothing) — proven by `test:rls` failing before the migration, passing after. **The plain
+`bill_items_bill_id_fkey` was dropped:** redundant (both columns NOT NULL, so the composite FK enforces
+everything it did) and *not* harmless — with both present PostgREST found two `bills`↔`bill_items`
+relationships and rejected every embed ("Could not embed because more than one relationship was found"),
+found by the first real e2e run, not by any mocked test. Local data: Dexie version 2 adds
+`LocalBill.receiptNumberSource` and `LocalBillItem.rateUnit` with a defined upgrade.
+
+**Verification standard added:** `npm run test:e2e` (a Vitest project on the real local Docker stack, calling
+the shipped code — D21, D32) is required for any sync or schema ticket; `npm test` runs unit + perf only and
+never needs Docker.
 
 ---
 

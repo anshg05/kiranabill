@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 20 Sep 2026 (rev 6) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 7) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -189,6 +189,7 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `shop_id` | `uuid` NOT NULL | RLS key |
 | `local_id` | `uuid` NOT NULL | Client-generated **idempotency key** |
 | `receipt_number` | `text` NOT NULL | From the device's reserved block |
+| `receipt_number_source` | `text` NOT NULL | `'block'` \| `'fallback'` (default `'block'`). Which allocation path produced the number — a permanent label, never a trigger for renumbering (`07-DECISIONS.md` D24). Pushed since `KB-110b`. |
 | `customer_name` | `text` | Defaults to `'Cash'`. **Never blocks finalise.** |
 | `customer_mobile` | `text` NULL | Optional. Stored for future udhaar. |
 | `subtotal_paise` | `bigint` NOT NULL | |
@@ -198,7 +199,8 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `device_id` | `text` | |
 | `created_at`, `finalized_at`, `synced_at` | `timestamptz` | |
 
-**Unique:** `(shop_id, local_id)` · `(shop_id, receipt_number)`
+**Unique:** `(shop_id, local_id)` · `(shop_id, receipt_number)` · `(id, shop_id)` (target of `bill_items`' composite FK, `KB-110b`)
+`local_id` is a client-generated **UUID** (`crypto.randomUUID()`) — `push_bill` casts it; anything else is a permanent `22P02`.
 **Immutable once `status = 'final'`.** Enforced by a trigger, not by convention.
 
 ### `bill_items`
@@ -213,6 +215,7 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `qty` | `numeric(12,3)` | Quantities are genuinely fractional (0.5 kg). Not money. |
 | `unit` | `text` | |
 | `rate_paise` | `bigint` NULL | NULL when `price_type = 'total'` |
+| `rate_unit` | `text` NULL | The unit `rate_paise` is per (`07-DECISIONS.md` D36) — "500 gm at ₹45/**kg**". `check ((rate_paise is null) = (rate_unit is null))`. No vocabulary check (units are free text — `KI-16`). Added `KB-110b`. |
 | `total_paise` | `bigint` NOT NULL | |
 | `price_type` | `text` | `'rate'` \| `'total'` \| `'default'` \| `'unknown'` |
 | `source` | `text` | `'voice'` \| `'fastpath'` \| `'manual'` — measures fast-path coverage |
@@ -274,6 +277,11 @@ different roles hiding under "mirror the server tables":
 
 - **Local-first (push)**: `bills`, `bill_items`, and the four learning tables. Written locally first;
   real per-row `sync_status`; pushed by the sync worker (`KB-110`).
+  **Bills push through `push_bill(p_bill, p_items)`** (`KB-110b`, D37): one SECURITY INVOKER Postgres
+  function, one transaction — bill inserted as draft, items inserted, then finalised; an identical retry is a
+  no-op, a divergent one is `KB409`. **Only `final`/`cancelled` bills are pushed; drafts stay on the device.**
+  `bill_items` rows reference their bill through a composite FK `(bill_id, shop_id) → bills (id, shop_id)`, so an
+  item can only belong to a bill of its own shop.
 - **Read-cache (pull-only)**: `shop_products`, `base_products`. Per §0's own rule — *"every write goes
   to Postgres... the cache is downstream of the database, never the other way round"* — these rows are
   never written locally first and carry no meaningful per-row `sync_status`. Freshness is tracked at

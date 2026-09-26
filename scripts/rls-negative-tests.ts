@@ -394,6 +394,126 @@ async function main(): Promise<void> {
         ]);
       }
     );
+
+    // KB-110b: bill_items_insert's RLS checks only the item's OWN shop_id,
+    // and the plain bill_id FK doesn't care which shop the bill belongs to.
+    // bill_items_immutability reads the parent through RLS, so it sees
+    // nothing for another shop's bill and lets the insert through. The
+    // composite FK bill_items (bill_id, shop_id) -> bills (id, shop_id)
+    // closes it structurally - 23503, whatever RLS can see.
+    await checkRejects(
+      client,
+      "cross-shop integrity: owner B cannot attach an item (shop_id B) to a shop-A bill (KB-110b composite FK)",
+      "23503",
+      async () => {
+        await asUser(client, ownerB);
+        await client.query(
+          `insert into bill_items (id, bill_id, shop_id, line_no, display_name, total_paise, price_type, source)
+           values ($1, $2, $3, 99, 'smuggled', 100, 'total', 'manual')`,
+          [randomUUID(), billA, shopB]
+        );
+      }
+    );
+
+    // --- KB-110b: push_bill (SECURITY INVOKER - RLS stays the boundary) ---
+
+    const pushLocalId = randomUUID();
+    const pushBill = (overrides: Record<string, unknown> = {}) => ({
+      shop_id: shopA,
+      local_id: pushLocalId,
+      receipt_number: "RLS-PUSH-000001",
+      receipt_number_source: "block",
+      customer_name: "Cash",
+      customer_mobile: null,
+      subtotal_paise: 2250,
+      total_paise: 2250,
+      status: "final",
+      schema_version: 1,
+      device_id: "rls-test-device",
+      created_at: "2026-09-27T09:00:00.000Z",
+      finalized_at: "2026-09-27T09:00:05.000Z",
+      ...overrides,
+    });
+    const pushItems = [
+      {
+        line_no: 1, shop_product_id: null, display_name: "Chini", spoken_name: "chini", qty: 500,
+        unit: "gm", rate_paise: 4500, rate_unit: "kg", total_paise: 2250, price_type: "default",
+        source: "fastpath", review_flags: [], was_edited: false,
+        shop_id: shopB, // a smuggled shop_id in the payload - push_bill must ignore it
+      },
+    ];
+    const callPushBill = async (bill: Record<string, unknown>, items: unknown[]) =>
+      (await client.query(`select push_bill($1::jsonb, $2::jsonb) as id`, [JSON.stringify(bill), JSON.stringify(items)])).rows[0].id as string;
+    const serverSnapshot = async () =>
+      JSON.stringify(
+        (
+          await client.query(
+            `select b.status, b.receipt_number_source, b.total_paise, i.shop_id, i.qty, i.unit, i.rate_paise, i.rate_unit, i.total_paise as item_total
+             from bills b join bill_items i on i.bill_id = b.id where b.shop_id = $1 and b.local_id = $2`,
+            [shopA, pushLocalId]
+          )
+        ).rows
+      );
+
+    let pushedId = "";
+    let snapshotAfterFirstPush = "";
+    await check(client, "push_bill: owner A pushes a final bill + cross-unit item atomically; item shop_id comes from the function", async () => {
+      await asUser(client, ownerA);
+      pushedId = await callPushBill(pushBill(), pushItems);
+      snapshotAfterFirstPush = await serverSnapshot();
+      const rows = JSON.parse(snapshotAfterFirstPush) as Array<Record<string, unknown>>;
+      if (rows.length !== 1) throw new Error(`expected 1 item row, got ${rows.length}`);
+      const row = rows[0]!;
+      if (row.status !== "final" || row.shop_id !== shopA || row.rate_unit !== "kg" || row.receipt_number_source !== "block") {
+        throw new Error(`unexpected server state: ${snapshotAfterFirstPush}`);
+      }
+      return `bill ${pushedId} final with 1 item, item shop_id = shop A (payload's shop B ignored), rate_unit kg`;
+    });
+
+    await check(client, "push_bill: an identical retry (lost response) is a no-op success returning the same id", async () => {
+      await asUser(client, ownerA);
+      const retryId = await callPushBill(pushBill(), pushItems);
+      if (retryId !== pushedId) throw new Error(`retry returned ${retryId}, expected ${pushedId}`);
+      if ((await serverSnapshot()) !== snapshotAfterFirstPush) throw new Error("server state changed on an identical retry");
+      return "same id, server unchanged";
+    });
+
+    await checkRejects(client, "push_bill NULL-safety: a retry OMITTING receipt_number_source is a mismatch (KB409), not a silent success", "KB409", async () => {
+      await asUser(client, ownerA);
+      const bill = pushBill();
+      delete (bill as Record<string, unknown>).receipt_number_source;
+      await callPushBill(bill, pushItems);
+    });
+
+    await checkRejects(client, "push_bill NULL-safety: a retry with total_paise null is a mismatch (KB409), not a silent success", "KB409", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(pushBill({ total_paise: null }), pushItems);
+    });
+
+    await check(client, "push_bill NULL-safety: after both rejected retries the server row is unchanged", async () => {
+      await asUser(client, ownerA);
+      if ((await serverSnapshot()) !== snapshotAfterFirstPush) throw new Error("server state changed after a rejected retry");
+      return "unchanged";
+    });
+
+    await checkRejects(client, "push_bill: owner B cannot push a bill into shop A (bills_insert WITH CHECK)", "42501", async () => {
+      await asUser(client, ownerB);
+      await callPushBill(pushBill({ local_id: randomUUID(), receipt_number: "RLS-PUSH-000099" }), pushItems);
+    });
+
+    await check(client, "push_bill: owner B re-using shop A's local_id in THEIR OWN shop creates a separate shop-B bill and never touches A's", async () => {
+      await asUser(client, ownerB);
+      const idB = await callPushBill(pushBill({ shop_id: shopB, receipt_number: "RLS-PUSH-B-000001" }), pushItems);
+      if (idB === pushedId) throw new Error("returned shop A's bill id");
+      await asUser(client, ownerA);
+      if ((await serverSnapshot()) !== snapshotAfterFirstPush) throw new Error("shop A's bill changed");
+      return `new shop-B bill ${idB}; shop A's bill unchanged`;
+    });
+
+    await checkRejects(client, "push_bill: the anon role cannot execute it", "42501", async () => {
+      await client.query("set local role anon");
+      await callPushBill(pushBill({ local_id: randomUUID() }), pushItems);
+    });
   } finally {
     await client.query("rollback");
     await client.end();

@@ -1,10 +1,11 @@
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { KiranaBillDB } from "./db";
+import { KiranaBillDB, type LocalBill } from "./db";
 import {
   syncNow,
   pushBills,
+  pushLearnedAliases,
   pushLearningEvents,
   pushPriceObservations,
   pullShop,
@@ -74,7 +75,15 @@ function makeMockClient(handlers: Record<string, Handler>): SupabaseClient {
     return builder;
   };
 
-  return { from } as unknown as SupabaseClient;
+  // KB-110b: bills are pushed through client.rpc("push_bill", ...). A handler
+  // keyed "rpc:<name>" receives ("rpc", args, {}).
+  const rpc = (name: string, args: unknown) => {
+    const handler = handlers[`rpc:${name}`];
+    if (!handler) throw new Error(`no handler for rpc "${name}"`);
+    return Promise.resolve(handler("rpc", args, {}));
+  };
+
+  return { from, rpc } as unknown as SupabaseClient;
 }
 
 describe("sync.ts", () => {
@@ -99,6 +108,7 @@ describe("sync.ts", () => {
         status: "final",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -123,8 +133,7 @@ describe("sync.ts", () => {
       });
 
       const client = makeMockClient({
-        bills: () => ({ data: { id: serverBillId }, error: null }),
-        bill_items: () => ({ data: [], error: null }),
+        "rpc:push_bill": () => ({ data: serverBillId, error: null }),
         learning_events: () => ({ data: { id: serverEventId }, error: null }),
       });
 
@@ -149,6 +158,7 @@ describe("sync.ts", () => {
         status: "final",
         syncStatus: "pending", // deliberately never pushed in this test
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -194,6 +204,7 @@ describe("sync.ts", () => {
         status: "final",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -206,7 +217,7 @@ describe("sync.ts", () => {
       });
 
       const client = makeMockClient({
-        bills: () => ({
+        "rpc:push_bill": () => ({
           data: null,
           error: { code: "42501", message: "new row violates row-level security policy" },
         }),
@@ -226,6 +237,7 @@ describe("sync.ts", () => {
         status: "final",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -238,7 +250,7 @@ describe("sync.ts", () => {
       });
 
       const client = makeMockClient({
-        bills: () => ({
+        "rpc:push_bill": () => ({
           data: null,
           error: { message: "fetch failed" }, // no .code - not a structured Postgres error
         }),
@@ -258,6 +270,7 @@ describe("sync.ts", () => {
         status: "cancelled",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 999999, // a smuggled change alongside a cancel - exactly KB-103's own trigger test case
@@ -270,7 +283,7 @@ describe("sync.ts", () => {
       });
 
       const client = makeMockClient({
-        bills: () => ({
+        "rpc:push_bill": () => ({
           data: null,
           error: { code: "P0001", message: "bills: cancelling a finalised bill may only change status" },
         }),
@@ -337,6 +350,7 @@ describe("sync.ts", () => {
         syncStatus: "synced",
         serverId: "server-bill-1",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -519,6 +533,7 @@ describe("sync.ts", () => {
         status: "final",
         syncStatus: "pending",
         receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
         customerName: "Cash",
         customerMobile: null,
         subtotalPaise: 1000,
@@ -531,8 +546,7 @@ describe("sync.ts", () => {
       });
 
       const client = makeMockClient({
-        bills: () => ({ data: { id: "server-bill-1" }, error: null }),
-        bill_items: () => ({ data: [], error: null }),
+        "rpc:push_bill": () => ({ data: "server-bill-1", error: null }),
         learned_aliases: () => ({ data: [], error: null }),
         provisional_products: () => ({ data: [], error: null }),
         price_observations: () => ({ data: [], error: null }),
@@ -548,5 +562,187 @@ describe("sync.ts", () => {
       const bill = await localDb.bills.get("bill-1");
       expect(bill?.syncStatus).toBe("synced");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KB-110b (docs/07-DECISIONS.md D37, docs/12-PARKED.md KI-29/KI-31): bills
+// push through push_bill() in one call; drafts stay local; an explicit error
+// classification shared by every push function; one sync run at a time.
+// These prove the client's orchestration only - scripts/rls-negative-tests.ts
+// and src/data/sync.e2e.test.ts prove the real schema interaction (D21).
+// ---------------------------------------------------------------------------
+describe("sync.ts - KB-110b push_bill path", () => {
+  let localDb: KiranaBillDB;
+
+  beforeEach(() => {
+    localDb = new KiranaBillDB(`test-sync-110b-${crypto.randomUUID()}`);
+  });
+
+  afterEach(async () => {
+    await localDb.delete();
+  });
+
+  const billLocalId = "6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a11";
+
+  async function addBill(overrides: Partial<LocalBill> = {}) {
+    await localDb.bills.add({
+      localId: billLocalId,
+      shopId: "shop-1",
+      status: "final",
+      syncStatus: "pending",
+      receiptNumber: "KB-000007",
+      receiptNumberSource: "block",
+      customerName: "Cash",
+      customerMobile: null,
+      subtotalPaise: 5250,
+      totalPaise: 5250,
+      schemaVersion: 1,
+      deviceId: "device-1",
+      createdAt: "2026-09-27T10:00:00.000Z",
+      finalizedAt: "2026-09-27T10:00:05.000Z",
+      syncedAt: null,
+      ...overrides,
+    });
+  }
+
+  it("sends the bill and ALL its items in one push_bill call - rate_unit, receipt_number_source included - and stores the returned server id", async () => {
+    await addBill({ receiptNumberSource: "fallback" });
+    await localDb.billItems.bulkAdd([
+      { billLocalId, shopId: "shop-1", lineNo: 2, shopProductId: null, displayName: "Chawal", spokenName: "chawal", qty: 5, unit: "kg", ratePaise: null, rateUnit: null, totalPaise: 3000, priceType: "total", source: "fastpath", reviewFlags: [], wasEdited: false },
+      { billLocalId, shopId: "shop-1", lineNo: 1, shopProductId: null, displayName: "Chini", spokenName: "chini", qty: 500, unit: "gm", ratePaise: 4500, rateUnit: "kg", totalPaise: 2250, priceType: "default", source: "fastpath", reviewFlags: [], wasEdited: false },
+    ]);
+
+    const calls: unknown[] = [];
+    const client = makeMockClient({
+      "rpc:push_bill": (_op, args) => {
+        calls.push(args);
+        return { data: "server-bill-uuid", error: null };
+      },
+    });
+
+    const result = await pushBills(client, localDb);
+    expect(result.anyTransientFailure).toBe(false);
+    expect(calls).toHaveLength(1);
+    const args = calls[0] as { p_bill: Record<string, unknown>; p_items: Array<Record<string, unknown>> };
+    expect(args.p_bill).toMatchObject({ local_id: billLocalId, status: "final", receipt_number_source: "fallback", total_paise: 5250 });
+    expect(args.p_items.map((i) => i.line_no)).toEqual([1, 2]); // line order, not insertion order
+    expect(args.p_items[0]).toMatchObject({ qty: 500, unit: "gm", rate_paise: 4500, rate_unit: "kg", total_paise: 2250 });
+    expect(args.p_items[1]).toMatchObject({ rate_paise: null, rate_unit: null });
+
+    const bill = await localDb.bills.get(billLocalId);
+    expect(bill?.syncStatus).toBe("synced");
+    expect(bill?.serverId).toBe("server-bill-uuid");
+  });
+
+  it("drafts are never pushed - they stay on the device, still pending (D37)", async () => {
+    await addBill({ status: "draft" });
+    const client = makeMockClient({
+      "rpc:push_bill": () => {
+        throw new Error("push_bill must not be called for a draft");
+      },
+    });
+    const result = await pushBills(client, localDb);
+    expect(result.anyTransientFailure).toBe(false);
+    expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("pending");
+  });
+
+  // Every row of D37's classification table, through the real pushBills().
+  const PERMANENT = ["42501", "P0001", "23505", "23503", "23502", "23514", "22P02", "KB400", "KB409"];
+  const TRANSIENT = ["40P01", "40001", "57014", "08006", "53300", "55P03", "PGRST202", "XX999"];
+
+  for (const code of PERMANENT) {
+    it(`classification: ${code} is PERMANENT - the bill is marked conflict, not retried`, async () => {
+      await addBill();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const client = makeMockClient({ "rpc:push_bill": () => ({ data: null, error: { code, message: `simulated ${code}` } }) });
+      const result = await pushBills(client, localDb);
+      expect(result.anyTransientFailure).toBe(false);
+      expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("conflict");
+      warn.mockRestore();
+    });
+  }
+
+  for (const code of TRANSIENT) {
+    it(`classification: ${code} is TRANSIENT - the bill stays pending and the cycle backs off`, async () => {
+      await addBill();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const client = makeMockClient({ "rpc:push_bill": () => ({ data: null, error: { code, message: `simulated ${code}` } }) });
+      const result = await pushBills(client, localDb);
+      expect(result.anyTransientFailure).toBe(true);
+      expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("pending");
+      // Only a code outside both lists is logged as unclassified.
+      const loggedUnclassified = warn.mock.calls.some((c) => String(c[0]).includes("unclassified error code"));
+      expect(loggedUnclassified).toBe(code === "XX999");
+      warn.mockRestore();
+    });
+  }
+
+  it("classification: no code at all (a network failure) is TRANSIENT", async () => {
+    await addBill();
+    const client = makeMockClient({ "rpc:push_bill": () => ({ data: null, error: { message: "fetch failed" } }) });
+    const result = await pushBills(client, localDb);
+    expect(result.anyTransientFailure).toBe(true);
+    expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("pending");
+  });
+
+  it("the classification is shared: a deadlock (40P01) on learned_aliases is transient too, 42501 still permanent", async () => {
+    const alias = (localId: string) => ({
+      localId,
+      shopId: "shop-1",
+      syncStatus: "pending" as const,
+      alias: "chinni",
+      shopProductId: "sp-1",
+      hitCount: 1,
+      confidence: 0.5,
+      source: "correction" as const,
+      updatedAt: "2026-09-27T10:00:00.000Z",
+      deviceId: "device-1",
+    });
+    await localDb.learnedAliases.bulkAdd([alias("alias-deadlock"), alias("alias-rls")]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const client = makeMockClient({
+      learned_aliases: (_op, payload) => {
+        const code = (payload as { local_id: string }).local_id === "alias-deadlock" ? "40P01" : "42501";
+        return { data: null, error: { code, message: `simulated ${code}` } };
+      },
+    });
+    const result = await pushLearnedAliases(client, localDb);
+    warn.mockRestore();
+    expect(result.anyTransientFailure).toBe(true);
+    expect((await localDb.learnedAliases.get("alias-deadlock"))?.syncStatus).toBe("pending");
+    expect((await localDb.learnedAliases.get("alias-rls"))?.syncStatus).toBe("conflict");
+  });
+
+  it("re-entrancy: two overlapping syncNow() calls run ONE cycle - push_bill is called once, both callers share the result", async () => {
+    await addBill();
+    let pushCalls = 0;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const client = makeMockClient({
+      "rpc:push_bill": (() => {
+        pushCalls += 1;
+        return gate.then(() => ({ data: "server-bill-uuid", error: null }));
+      }) as unknown as Handler,
+      learned_aliases: () => ({ data: [], error: null }),
+      provisional_products: () => ({ data: [], error: null }),
+      price_observations: () => ({ data: [], error: null }),
+      receipt_number_blocks: () => ({ data: [], error: null }),
+      shops: () => ({ data: null, error: { message: "not found" } }),
+      shop_products: () => ({ data: [], error: null }),
+      base_products: () => ({ data: [], error: null }),
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const first = syncNow({ client, localDb, shopId: "shop-1" });
+    const second = syncNow({ client, localDb, shopId: "shop-1" });
+    expect(second).toBe(first);
+    release();
+    await Promise.all([first, second]);
+    warn.mockRestore();
+    expect(pushCalls).toBe(1);
+    expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("synced");
   });
 });

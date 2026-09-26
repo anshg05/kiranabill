@@ -13,17 +13,42 @@ const BASE_INTERVAL_MS = 15_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
 
 /**
- * A Postgres/PostgREST error carries a real SQLSTATE-shaped `code`
- * (5 characters - "42501" for an RLS rejection, "P0001" for a plpgsql
- * raise, confirmed against KB-104/KB-105's own findings). A network-level
- * failure (timeout, fetch throws, no response) has no such code. That
- * distinction is exactly what syncStatus's third state, "conflict", is
- * for: a permanent rejection should stop retrying and surface to the
- * user, not burn backoff cycles forever on something that will never
- * succeed.
+ * KB-110b: which failures are PERMANENT (mark the row `conflict`, stop
+ * retrying) and which are TRANSIENT (leave it `pending`, back off, retry).
+ * Shared by every push function in this file.
+ *
+ * This used to be `code.length === 5` - "any real SQLSTATE is permanent".
+ * That stranded a real bill as `conflict` on a momentary database hiccup:
+ * deadlock (40P01), serialization failure (40001), statement timeout (57014),
+ * connection trouble (08xxx), resource exhaustion (53xxx) and lock-not-
+ * available (55P03) are all 5-character SQLSTATEs and all transient.
+ *
+ * Now an explicit list. PERMANENT - the same request will fail the same way
+ * forever: RLS/permission (42501), a trigger raise (P0001), integrity
+ * violations (23xxx: 23505 unique, 23503 FK, 23502 not-null, 23514 check),
+ * data exceptions (22xxx: 22P02 bad uuid/number, ...), and push_bill's own
+ * KB400 (a draft was pushed - a client bug) / KB409 (the server already has
+ * different content for this bill).
+ *
+ * Everything else is TRANSIENT, including codes this list has never seen:
+ * a retrying bill is recoverable, a false `conflict` is not (docs/07-
+ * DECISIONS.md D37). Unknown codes are logged so they can be classified.
+ * No code at all = a network-layer failure = transient.
  */
-function isPermanentError(error: PostgrestError | null): boolean {
-  return typeof error?.code === "string" && error.code.length === 5;
+const PERMANENT_CODES = new Set(["42501", "P0001", "KB400", "KB409"]);
+const KNOWN_TRANSIENT_PREFIXES = ["08", "40", "53", "57"];
+
+export function isPermanentError(error: PostgrestError | null): boolean {
+  const code = error?.code;
+  if (typeof code !== "string" || code.length === 0) return false;
+  if (PERMANENT_CODES.has(code)) return true;
+  if (code.length === 5 && (code.startsWith("23") || code.startsWith("22"))) return true;
+  const knownTransient =
+    code.startsWith("PGRST") || code === "55P03" || (code.length === 5 && KNOWN_TRANSIENT_PREFIXES.some((p) => code.startsWith(p)));
+  if (!knownTransient) {
+    console.warn(`[sync] unclassified error code ${code} - treated as transient (retrying): ${error?.message}`);
+  }
+  return false;
 }
 
 interface PushResult {
@@ -98,104 +123,72 @@ function logDiscardedEdit(params: {
 }
 
 // ---------------------------------------------------------------------
-// Phase 1: push bills (and, per bill, its items) - awaited to completion
-// before phase 2 (learningEvents) ever starts. Structured as two
-// sequential top-level steps in syncNow(), not an interleaved loop, so a
-// learningEvent can never be checked against a parent bill push that
-// hasn't resolved yet this cycle.
+// Phase 1: push bills - awaited to completion before phase 2
+// (learningEvents) ever starts, so a learningEvent can never be checked
+// against a parent bill push that hasn't resolved yet this cycle.
+//
+// KB-110b (docs/07-DECISIONS.md D37, docs/12-PARKED.md KI-29): each bill and
+// ALL its items go up in ONE call to the push_bill() Postgres function
+// (SECURITY INVOKER - RLS stays the boundary), which inserts the bill as
+// draft, inserts the items, then finalises - in one transaction. The old
+// path upserted the bill as "final" first and inserted items after, which
+// bill_items_immutability always rejected, and whose retry then hit
+// bills_immutability (final->final) and marked the bill conflict with zero
+// items server-side. push_bill also makes a lost-response retry a no-op
+// success (identical content -> same id) and a divergent one a KB409.
+//
+// Only final and cancelled bills are pushed. Drafts stay on the device
+// (D37): bills.receipt_number is NOT NULL and a draft has no number yet.
 // ---------------------------------------------------------------------
 
-async function pushBillItemsForBill(
-  client: SupabaseClient,
-  localDb: KiranaBillDB,
-  billLocalId: string,
-  serverBillId: string,
-  shopId: string,
-): Promise<boolean> {
-  const items = await localDb.billItems.where("billLocalId").equals(billLocalId).toArray();
-
-  // No unique constraint exists on bill_items beyond its own primary key
-  // (checked directly against supabase/migrations/20260917194832_billing.sql -
-  // there is no unique(bill_id, line_no)), so there is no natural upsert
-  // target for a line item. Delete-then-reinsert the full current set
-  // instead - safe specifically because bill_items can only be freely
-  // mutated while the parent bill is still draft (bill_items_enforce_immutability,
-  // KB-103), so this never runs against an already-immutable set.
-  //
-  // Known, deliberate limitation: this is not atomic across the two
-  // requests. A network drop between the delete and the reinsert leaves
-  // the server with zero items for this bill until the next successful
-  // retry. Acceptable for MVP (single device per shop, app always reads
-  // from local storage, never from another device's view of server data)
-  // but worth revisiting with an atomic RPC if this ever becomes a real
-  // problem outside single-device use.
-  const { error: deleteError } = await client.from("bill_items").delete().eq("bill_id", serverBillId);
-  if (deleteError) {
-    console.warn(`[sync] bill_items delete failed for bill ${serverBillId}: ${deleteError.message}`);
-    return false;
-  }
-
-  if (items.length === 0) return true;
-
-  const { error: insertError } = await client.from("bill_items").insert(
-    items.map((item) => ({
-      bill_id: serverBillId,
-      shop_id: shopId,
-      line_no: item.lineNo,
-      shop_product_id: item.shopProductId,
-      display_name: item.displayName,
-      spoken_name: item.spokenName,
-      qty: item.qty,
-      unit: item.unit,
-      rate_paise: item.ratePaise,
-      total_paise: item.totalPaise,
-      price_type: item.priceType,
-      source: item.source,
-      review_flags: item.reviewFlags,
-      was_edited: item.wasEdited,
-    })),
-  );
-
-  if (insertError) {
-    console.warn(`[sync] bill_items insert failed for bill ${serverBillId}: ${insertError.message}`);
-    return false;
-  }
-
-  return true;
-}
-
 export async function pushBills(client: SupabaseClient, localDb: KiranaBillDB): Promise<PushResult> {
-  const pending = await localDb.bills.where("syncStatus").equals("pending").sortBy("createdAt");
+  const pending = (await localDb.bills.where("syncStatus").equals("pending").sortBy("createdAt")).filter(
+    (bill) => bill.status === "final" || bill.status === "cancelled",
+  );
   let anyTransientFailure = false;
 
   for (const bill of pending) {
-    const { data, error } = await client
-      .from("bills")
-      .upsert(
-        {
-          shop_id: bill.shopId,
-          local_id: bill.localId,
-          receipt_number: bill.receiptNumber,
-          customer_name: bill.customerName,
-          customer_mobile: bill.customerMobile,
-          subtotal_paise: bill.subtotalPaise,
-          total_paise: bill.totalPaise,
-          status: bill.status,
-          schema_version: bill.schemaVersion,
-          device_id: bill.deviceId,
-          created_at: bill.createdAt,
-          finalized_at: bill.finalizedAt,
-        },
-        { onConflict: "shop_id,local_id" },
-      )
-      .select("id")
-      .single();
+    const items = await localDb.billItems.where("billLocalId").equals(bill.localId).sortBy("lineNo");
 
-    if (error || !data) {
+    const { data, error } = await client.rpc("push_bill", {
+      p_bill: {
+        shop_id: bill.shopId,
+        local_id: bill.localId,
+        receipt_number: bill.receiptNumber,
+        receipt_number_source: bill.receiptNumberSource,
+        customer_name: bill.customerName,
+        customer_mobile: bill.customerMobile,
+        subtotal_paise: bill.subtotalPaise,
+        total_paise: bill.totalPaise,
+        status: bill.status,
+        schema_version: bill.schemaVersion,
+        device_id: bill.deviceId,
+        created_at: bill.createdAt,
+        finalized_at: bill.finalizedAt,
+      },
+      p_items: items.map((item) => ({
+        line_no: item.lineNo,
+        shop_product_id: item.shopProductId,
+        display_name: item.displayName,
+        spoken_name: item.spokenName,
+        qty: item.qty,
+        unit: item.unit,
+        rate_paise: item.ratePaise,
+        rate_unit: item.rateUnit,
+        total_paise: item.totalPaise,
+        price_type: item.priceType,
+        source: item.source,
+        review_flags: item.reviewFlags,
+        was_edited: item.wasEdited,
+      })),
+    });
+
+    if (error || typeof data !== "string") {
       if (isPermanentError(error)) {
         await localDb.bills.update(bill.localId, { syncStatus: "conflict" as SyncStatus });
         console.warn(
           `[sync] bills: permanent failure for localId=${bill.localId}: ${error?.code} ${error?.message}`,
+          { localBill: bill, localItems: items },
         );
       } else {
         anyTransientFailure = true;
@@ -203,18 +196,9 @@ export async function pushBills(client: SupabaseClient, localDb: KiranaBillDB): 
       continue;
     }
 
-    const itemsOk = await pushBillItemsForBill(client, localDb, bill.localId, data.id, bill.shopId);
-    if (!itemsOk) {
-      // Bill itself synced; items didn't. Leave the bill pending so this
-      // whole bill (and its items) is retried together next cycle, rather
-      // than marking the bill synced while its items silently lag behind.
-      anyTransientFailure = true;
-      continue;
-    }
-
     await localDb.bills.update(bill.localId, {
       syncStatus: "synced" as SyncStatus,
-      serverId: data.id,
+      serverId: data,
       syncedAt: new Date().toISOString(),
     });
   }
@@ -689,7 +673,24 @@ export interface SyncNowOptions {
   shopId: string;
 }
 
-export async function syncNow(options: SyncNowOptions): Promise<{ anyTransientFailure: boolean }> {
+/**
+ * KB-110b: only one sync run at a time. startSyncLoop's timer and its
+ * "online" listener can both call syncNow() - two overlapping runs would push
+ * the same pending bill twice at once. push_bill absorbs that race (the
+ * loser re-reads and compares), but there's no reason to cause it: a second
+ * caller simply joins the run already in flight.
+ */
+let syncInFlight: Promise<{ anyTransientFailure: boolean }> | null = null;
+
+export function syncNow(options: SyncNowOptions): Promise<{ anyTransientFailure: boolean }> {
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = runSyncCycle(options).finally(() => {
+    syncInFlight = null;
+  });
+  return syncInFlight;
+}
+
+async function runSyncCycle(options: SyncNowOptions): Promise<{ anyTransientFailure: boolean }> {
   const client = options.client ?? supabase;
   const localDb = options.localDb ?? defaultDb;
   const shopId = options.shopId;
