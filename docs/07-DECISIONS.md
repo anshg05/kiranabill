@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 20 Sep 2026 (rev 19) · Supersedes rev 18
+**Last updated:** 26 Sep 2026 (rev 20) · Supersedes rev 19
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -924,10 +924,88 @@ generation lacks — check `ai.google.dev` again then, don't assume this table s
 
 ---
 
+## Rev 20 — 26 Sep 2026
+
+**Recorded retroactively.** D28–D31 were real calls made on the dates given, recorded until now only
+in `10-TRACKER.md` rows and ticket handoffs, never here. D32 is a standing rule that emerged from
+`KB-206`. Written up during the 26 Sep docs housekeeping pass so a future session finds them where it
+looks for decisions.
+
+### D28 — Build tool: Antigravity → **Claude Code** 🟢
+
+**Supersedes:** T1 (18 Aug 2026, "Antigravity, single tool through MVP"). **Decided:** 21 Aug 2026,
+by the owner — `10-TRACKER.md` Recent changes, 21 Aug: Antigravity's quota ran out mid-`KB-000`.
+
+Claude Code has been the build agent for every ticket since. `CLAUDE.md` (auto-loaded) plus
+`18-AGENT-CONTRACT.md` are its operating rules. The handoff cost zero — the new tool picked the project
+up from the docs, which is the property T1's own "exit cost: zero" claim (`11-STACK-DECISIONS.md`
+SD-015) depended on. Matching stack entry: `SD-025`, superseding SD-015. T1's rationale for an *IDE*
+over a cloud agent ("seeing every file change matters more than agent throughput") is preserved in
+practice by the PLAN → approval → small-diff flow, not by the tool itself.
+
+### D29 — Git: **single branch, all work on `main`** 🟢
+
+**Supersedes:** `09-WORKING-AGREEMENT.md` §B4's original feature-branch rule ("never commit to `main`
+directly"). **Decided:** 20 Aug 2026, by the owner — `10-TRACKER.md` Recent changes, 20 Aug: "Branch
+workflow dropped — solo dev works on `main`, committing after each working step."
+
+Never create or check out another branch; commit to `main` after each verified step. The ticket ID in
+the commit message carries what a branch name used to. Binding statement: `CLAUDE.md` "Git". §B4 and
+`10-TRACKER.md` ("then ticket branches") contradicted this until 26 Sep 2026 and were aligned then.
+Related gotcha: a Claude Code session once launched in an isolated worktree, which breaks this rule —
+`12-PARKED.md` NI-20.
+
+### D30 — Layer 3 review flags: flag-only for unit/qty problems; `unusual_total` on computed totals only 🟢
+
+**Decided:** 22 Sep 2026, by the owner, during `KB-208` (`src/domain/reviewFlags.ts`).
+
+1. **`invalid_qty`, `invalid_unit`, `unit_mismatch` are flag-only, severity MEDIUM, and never
+   substitute a value.** `legacy/validator.js` silently replaced a bad value with a plausible one
+   (qty → 1, unit → a fallback) when these fired — a direct conflict with hard rule 7 ("never
+   auto-change a price or unit — suggest only"). The severity follows from that behavior decision, not
+   the other way round. `reviewFlags.ts` only ever reads items and produces flags; it never mutates a
+   `ParsedItem`.
+2. **`unusual_total` applies only to a *computed* total** — `priceType` `"default"` or `"rate"` —
+   **never to `"total"`**, a spoken `ka`/`ki` override. A spoken total is a deliberate shopkeeper
+   statement (Rule 2, the differentiator). The first implementation HIGH-flagged `"5 kg chawal 30 ka"`
+   itself; the real-data check over all 125 eval fixtures caught it before commit.
+
+### D31 — `resetLearning()` is **local-only**, and says so in its type 🟢
+
+**Decided:** 22 Sep 2026, by the owner, during `KB-210` (`src/data/learningAudit.ts`).
+
+`resetLearning()` clears a shop's `learnedAliases` / `provisionalProducts` / `priceObservations` in
+IndexedDB only. Matching server rows are **not** deleted: `KB-110`'s sync worker has no generalized
+delete propagation, and building it as a side effect of a settings action would be scope creep. The
+limitation is structural, not a comment — the result type's `remoteDeletionNotPerformed` is the
+literal `true`, never `boolean`, plus a warning string, so no caller can write a success path that
+drops the caveat. `learningEvents` is **not** cleared (`08-LEARNING-ENGINE.md` §10 rule 6 applies to
+the reset itself); a `learning_reset` event recording the cleared counts is appended instead. Open
+consequence and close triggers: `12-PARKED.md` NI-27 — `KB-312`'s Developer Mode screen must surface
+the warning.
+
+### D32 — Real-verification scripts call the **shipped code path**, never a parallel request 🟢
+
+**Standing rule**, from `KB-206` (22 Sep 2026); companion to D21.
+
+`KB-204`'s real verification against Groq passed while the shipped `groqTranscriptionProvider.ts` was
+broken (`KI-28`: every upload named `"audio"` with no extension, which Groq rejects) — the script
+built its own request with a hardcoded `"audio.wav"` instead of calling `transcribe()`. `KB-206`'s
+end-to-end script called the real function and caught it.
+
+**Rule:** a script that claims real-infrastructure verification must invoke the actual shipped
+function or endpoint, not re-implement its request construction against the same external API. A
+real-infrastructure test only proves what it actually exercises. D21 says mocked suites never prove
+real schema interaction; D32 says a hand-rolled "real" call doesn't prove the shipped code either.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 21 Aug 2026 | Antigravity as the single build tool (T1) | **Claude Code** (D28) | Antigravity quota exhausted mid-`KB-000`; the docs carried the handoff at zero cost. Recorded here 26 Sep 2026. |
+| 20 Aug 2026 | Feature branches, never commit to `main` (`09` §B4) | **Single branch, `main`** (D29) | Owner decision — solo developer; the ticket ID in the commit message does the branch name's job. Recorded here 26 Sep 2026. |
 | 08 Sep 2026 | Banker's rounding for money (`03-DATA-MODEL.md` section 8, rev 2) | **Half-up rounding** (D11) | Owner's error, caught during `KB-003`. Predictability for the shopkeeper checking a total by hand beats statistical unbiasedness. |
 | 16 Aug (r2) | Online only | **Offline + online, levels 1–2 in MVP** | Owner decision. Local-first; immutable bills make sync tractable. |
 | 16 Aug (r2) | Client-side catalog threshold 5,000 | **~1,000 with current code; 10,000 after a real index** | Benchmarked. Current matcher is O(n) and unusable past ~2,000 on a budget phone. Memoising the index build does not help. |

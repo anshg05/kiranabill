@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 20 Sep 2026 (rev 8)
+**Last updated:** 26 Sep 2026 (rev 9)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -193,7 +193,7 @@ Recorded so they aren't re-proposed every few months.
 | Not using | Why not | Reconsider when |
 |---|---|---|
 | Redux / Zustand / Jotai | React state plus a small context is enough for this app's size | State bugs actually appear |
-| Tailwind vs plain CSS | Undecided — see Open below | Before `KB-301` |
+| Tailwind vs plain CSS | ~~Undecided — see Open below~~ **Closed 17 Aug 2026 — Tailwind, see SD-011.** Row kept as history (26 Sep 2026 note). | — |
 | GraphQL | REST + Supabase client is simpler for one consumer | Never, probably |
 | Docker | Nothing to containerise; Netlify and Supabase are managed | Self-hosting anything |
 | Microservices | One person, one app | Never |
@@ -222,6 +222,11 @@ Was SD-Q1.
 Tailwind also generates markedly better with AI tools, which matters when AI writes most of the code.
 **Design tokens are defined in `tailwind.config.ts` from `13-DESIGN.md`** — not scattered as raw
 utility values. That keeps the visual language in one place and reviewable.
+
+**Amendment, 26 Sep 2026 — the `tailwind.config.ts` line above is stale.** `KB-000` pinned **Tailwind
+v4** (20 Aug 2026): tokens live in an `@theme` block in `src/index.css`, and there is **no
+`tailwind.config.ts` and no PostCSS config** — v4's Vite plugin handles both. `13-DESIGN.md` §8 is the
+current spec. The decision (Tailwind, tokens in one reviewable place) stands; only the file changed.
 
 ## SD-012 — Local storage: **Dexie** · closed 17 Aug 2026
 
@@ -361,6 +366,21 @@ can't exercise meaningfully.
 
 **Exit cost: low.** Dev-only, used only by `db.test.ts`; no production bundle impact, no ripple into
 `domain/`.
+
+## SD-025 — Development tooling: **Claude Code** · 26 Sep 2026 (decided 21 Aug 2026)
+
+**Supersedes SD-015** (Antigravity), which is left as written. Decision record: `07-DECISIONS.md`
+D28 (supersedes T1). Antigravity's quota ran out mid-`KB-000`; Claude Code has built every ticket
+since, bootstrapped from `CLAUDE.md` (auto-loaded) and `18-AGENT-CONTRACT.md`.
+
+| Rejected | Why |
+|---|---|
+| Staying on Antigravity | Quota exhausted mid-ticket — the failure mode SD-015's own Codex-backup row anticipated |
+| Codex as primary | Same reasoning as SD-015: tighter quota, and one tool means one code style |
+
+**Exit cost: zero, as SD-015 predicted and 21 Aug 2026 demonstrated** — the switch cost nothing
+because the docs, not the tool, hold the project's context. Keep it that way: rules live in
+`CLAUDE.md`/`18-AGENT-CONTRACT.md`, never in a tool-specific config only one agent reads.
 
 ## How to add to this document
 
