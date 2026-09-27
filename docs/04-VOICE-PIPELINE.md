@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 26 Sep 2026 (rev 3) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -120,8 +120,18 @@ for the shopkeeper to complete.
 [product] [qty] [unit] [price] ka|ki        → as row 2
 ```
 
-- Hindi numerals: `ek do teen chaar paanch chhe saat aath nau das bees pachas sau`
-- Fractions: `aadha` (0.5) `paav` (0.25) `sawa` (1.25) `dedh` (1.5) `dhai` (2.5) `paune` (−0.25)
+- Hindi numerals: `ek do teen chaar paanch chhe saat aath nau das bees pachas(pachaas)`
+- Fractions: `aadha` (0.5) `paav` (0.25) `sawa` (1.25) `dedh` (1.5) `dhai` (2.5) `paune` (−0.25);
+  `saadhe N` = N + 0.5 (`saadhe teen` = 3.5; `KB-302`)
+- **Compound numbers (`KB-302`, owner):** a multiplier word — `sau`/`सौ` (×100), `hazaar`/`हज़ार`/`हजार`
+  (×1000) — combines **only** with the number token immediately before it: `paanch sau` 500, `5 सौ` 500,
+  `dhai sau` 250, `sawa sau` 125, `paune sau` 75 (¾ × 100), `paune do sau` 175, `saadhe teen sau` 350. A bare
+  multiplier is its own value (`sau kilo` = 100). A thousands group immediately followed by a hundreds group
+  adds (`ek hazaar paanch sau` = 1500); a **whole** hundreds/thousands group immediately followed by a whole
+  number under 100 adds (`do sau pachas` = 250, `ek hazaar do sau pachas` = 1250), never after a fractional
+  group (`dhai sau pachas` stays 250, 50). Anything in between — a unit, a marker, a product word — keeps
+  numbers apart (`teen packet sau wala` = 3 packets at ₹100). No lakh. Before this, "paanch sau gram chini"
+  billed 100 gm for ₹5 with no flag. Benchmark NB111–NB129.
 - Units and aliases: `kilo/kg/kilogram`, `gram/gm`, `litre/liter/ltr`, `packet/pkt`, `piece/pcs`, `dozen`, `bori/bag`
 - **Cross-unit lines (`07-DECISIONS.md` D36, `KB-005f`):** a line keeps qty and unit exactly as spoken; its rate carries
   its own unit (`rateUnit`). "500 gram chini" → qty 500 gm, rate ₹45 per **kg**, total ₹22.50 — computed exactly

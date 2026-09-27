@@ -41,7 +41,7 @@ function main(): void {
   const allCases = [...voiceCases, ...numberCases];
 
   if (voiceCases.length !== 25) throw new Error(`voice-cases.json: expected 25 cases, found ${voiceCases.length}`);
-  if (numberCases.length !== 110) throw new Error(`number-benchmark.json: expected 110 cases (100 + KB-005f's 10), found ${numberCases.length}`);
+  if (numberCases.length !== 129) throw new Error(`number-benchmark.json: expected 129 cases (100 + KB-005f's 10 + KB-302's 19), found ${numberCases.length}`);
 
   console.log(`Fast-path coverage probe (KB-009) - ${allCases.length} cases (${voiceCases.length} eval + ${numberCases.length} number-benchmark)\n`);
 

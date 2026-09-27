@@ -1485,5 +1485,287 @@
       "priceType": "default"
     },
     "note": "reverse direction: Ajwain 50 paise/gm, rateUnit gm; total was already right, representation changes"
+  },
+  {
+    "id": "NB111",
+    "category": "compound",
+    "utterance": "paanch sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 2250,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. Before the fix: 100 gm for a Rs.5 total, no flag."
+  },
+  {
+    "id": "NB112",
+    "category": "compound",
+    "utterance": "पांच सौ ग्राम चीनी",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 2250,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. Devanagari form of NB111."
+  },
+  {
+    "id": "NB113",
+    "category": "compound",
+    "utterance": "dhai sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 250,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 1125,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. dhai (2.5) x sau = 250."
+  },
+  {
+    "id": "NB114",
+    "category": "compound",
+    "utterance": "dedh sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 150,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 675,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. dedh (1.5) x sau = 150."
+  },
+  {
+    "id": "NB115",
+    "category": "compound",
+    "utterance": "sawa sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 125,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 563,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. sawa (1.25) x sau = 125; 562.5 paise half-up once (D11) = 563."
+  },
+  {
+    "id": "NB116",
+    "category": "compound",
+    "utterance": "25 kilo chawal do hazaar ka",
+    "expected": {
+      "safe": false,
+      "qty": 25,
+      "unit": "kg",
+      "rate": null,
+      "total": 200000,
+      "priceType": "total"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. do hazaar = 2000 as a ka total. Before the fix: bail."
+  },
+  {
+    "id": "NB117",
+    "category": "compound",
+    "utterance": "ek hazaar paanch sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 1500,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 6750,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. A thousands group immediately followed by a hundreds group adds: 1000 + 500 = 1500."
+  },
+  {
+    "id": "NB118",
+    "category": "compound",
+    "utterance": "5 सौ ग्राम चीनी",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 2250,
+      "priceType": "default"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. Digit + multiplier word: 5 सौ = 500."
+  },
+  {
+    "id": "NB119",
+    "category": "compound",
+    "utterance": "2 kilo rajma do sau wala",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 20000,
+      "rateUnit": "kg",
+      "total": 40000,
+      "priceType": "rate"
+    },
+    "note": "Compound Hindi number (KB-302, owner): a multiplier word (sau/सौ, hazaar/हज़ार/हजार) combines ONLY with the number token immediately before it. do sau wala = rate Rs.200. Before the fix: rate Rs.100 ('do' silently dropped), total Rs.200 instead of Rs.400."
+  },
+  {
+    "id": "NB120",
+    "category": "compound-guard",
+    "utterance": "teen packet surf excel sau wala",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "packet",
+      "rate": 10000,
+      "rateUnit": "packet",
+      "total": 30000,
+      "priceType": "rate"
+    },
+    "note": "Guard (KB-302, owner): a multiplier with anything between it and the previous number must NOT combine. 3 packets @ Rs.100 - never 300 (\"packet\" and the product sit between teen and sau)."
+  },
+  {
+    "id": "NB121",
+    "category": "compound-guard",
+    "utterance": "2 kilo chini sau ka",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    "note": "Guard (KB-302, owner): a multiplier with anything between it and the previous number must NOT combine. 'chini' sits between 2 kilo and sau: total Rs.100."
+  },
+  {
+    "id": "NB122",
+    "category": "compound",
+    "utterance": "do sau pachas gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 250,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 1125,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). Tens after a WHOLE hundreds group add: 200 + 50."
+  },
+  {
+    "id": "NB123",
+    "category": "compound",
+    "utterance": "5 kilo chini teen sau pachas ka",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "total": 35000,
+      "priceType": "total"
+    },
+    "note": "KB-302 (owner, round 2). teen sau pachas = 350 as a ka total."
+  },
+  {
+    "id": "NB124",
+    "category": "compound",
+    "utterance": "ek hazaar do sau pachas gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 1250,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 5625,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). 1000 + 200 + 50."
+  },
+  {
+    "id": "NB125",
+    "category": "compound",
+    "utterance": "paune sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 75,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 338,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). paune sau = 3/4 x 100 = 75 (was 99.75); 337.5 half-up = 338."
+  },
+  {
+    "id": "NB126",
+    "category": "compound",
+    "utterance": "paune do sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 175,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 788,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). paune do = 1.75, x sau = 175 (was 100 gm for Rs.1.75); 787.5 half-up = 788."
+  },
+  {
+    "id": "NB127",
+    "category": "compound",
+    "utterance": "saadhe teen kilo chini",
+    "expected": {
+      "safe": false,
+      "qty": 3.5,
+      "unit": "kg",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 15750,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). saadhe N = N + 0.5. Before: 3 kg of an unmatched 'saadhe chini', no price, no flag."
+  },
+  {
+    "id": "NB128",
+    "category": "compound",
+    "utterance": "saadhe teen sau gram chini",
+    "expected": {
+      "safe": false,
+      "qty": 350,
+      "unit": "gm",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 1575,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). saadhe teen = 3.5, x sau = 350. Before: 100 gm for Rs.3."
+  },
+  {
+    "id": "NB129",
+    "category": "compound",
+    "utterance": "साढ़े तीन किलो चीनी",
+    "expected": {
+      "safe": false,
+      "qty": 3.5,
+      "unit": "kg",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 15750,
+      "priceType": "default"
+    },
+    "note": "KB-302 (owner, round 2). Devanagari form of NB127."
   }
 ]

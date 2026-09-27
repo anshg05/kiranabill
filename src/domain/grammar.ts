@@ -76,10 +76,24 @@ const HINDI_NUMBERS: Record<string, number> = {
   chaudah: 14, चौदह: 14, pandrah: 15, पंद्रह: 15, solah: 16, सोलह: 16,
   satrah: 17, सत्रह: 17, atharah: 18, अठारह: 18, unnees: 19, उन्नीस: 19,
   bees: 20, बीस: 20, pachees: 25, पचीस: 25, tees: 30, तीस: 30,
-  chaalees: 40, चालीस: 40, pachaas: 50, पचास: 50,
+  chaalees: 40, चालीस: 40, pachaas: 50, pachas: 50, पचास: 50,
   saath: 60, साठ: 60, sattar: 70, सत्तर: 70, assi: 80, अस्सी: 80,
-  nabbe: 90, नब्बे: 90, sau: 100, सौ: 100,
+  nabbe: 90, नब्बे: 90,
 };
+
+// KB-302 (owner): multiplier words. Not plain numbers - they combine with the
+// number token IMMEDIATELY before them ("paanch sau" = 500, "5 सौ" = 500,
+// "dhai sau" = 250); bare, they stand alone ("sau kilo" = 100). Kept out of
+// HINDI_NUMBERS so sawa/paune multiply them ("sawa sau" = 125, "paune sau" =
+// 75) instead of adding (100.25 / 99.75). No lakh (owner).
+const MULTIPLIERS: Record<string, number> = {
+  sau: 100, सौ: 100,
+  hazaar: 1000, हज़ार: 1000, हजार: 1000,
+};
+
+// KB-302 (owner): saadhe N = N + 0.5 ("saadhe teen" = 3.5). Needs a following
+// number; bare, it stays an ordinary word.
+const SAADHE_WORDS = new Set(["saadhe", "saade", "sadhe", "साढ़े", "साढे"]);
 
 // dedh/dhai are idiomatic to these exact values - nobody says "dedh teen".
 // aadha/paav don't compose with a following number either. D13.
@@ -188,7 +202,15 @@ export function unitScale(qtyUnit: string, rateUnit: string): 0 | 3 | -3 | null 
 // ---------------------------------------------------------------------------
 
 type Classified =
-  | { readonly type: "num"; readonly value: number }
+  | {
+      readonly type: "num";
+      readonly value: number;
+      /** KB-302: set on a multiplier word (sau/hazaar) until composed. */
+      readonly multiplier?: number;
+      /** KB-302: a composed hundreds/thousands group, and whether its
+       * multiplicand was whole ("do sau" yes, "dhai sau" no). */
+      readonly group?: { readonly whole: boolean };
+    }
   | { readonly type: "unit"; readonly unit: string }
   | { readonly type: "rate" }
   | { readonly type: "total" }
@@ -244,6 +266,26 @@ function classifySegment(words: readonly string[]): Classified[] {
       continue;
     }
 
+    if (SAADHE_WORDS.has(word)) {
+      const nextWord = words[i + 1];
+      const nextValue =
+        nextWord === undefined ? undefined : HINDI_NUMBERS[nextWord] ?? (/^\d+$/.test(nextWord) ? Number(nextWord) : undefined);
+      if (nextValue !== undefined) {
+        out.push({ type: "num", value: nextValue + 0.5 });
+        i += 2;
+        continue;
+      }
+      out.push({ type: "word", raw: word });
+      i += 1;
+      continue;
+    }
+
+    if (MULTIPLIERS[word] !== undefined) {
+      out.push({ type: "num", value: MULTIPLIERS[word], multiplier: MULTIPLIERS[word] });
+      i += 1;
+      continue;
+    }
+
     if (FIXED_FRACTIONS[word] !== undefined) {
       out.push({ type: "num", value: FIXED_FRACTIONS[word] });
       i += 1;
@@ -290,6 +332,62 @@ function classifySegment(words: readonly string[]): Classified[] {
     i += 1;
   }
 
+  return composeNumbers(out);
+}
+
+// 3 decimals (numeric(12,3)) against float drift - via toFixed, because the
+// money path has no division (no-division.test.ts, D36).
+const roundQty = (value: number): number => Number(value.toFixed(3));
+
+/**
+ * KB-302 (owner) - Hindi compound numbers, on ADJACENT tokens only (a unit,
+ * marker or word in between always keeps numbers apart):
+ *  1. N + multiplier -> N x multiplier: "paanch sau" 500, "dhai sau" 250,
+ *     "paune do sau" 175, "5 सौ" 500. A bare multiplier is its own value.
+ *  2. thousands group + hundreds group -> sum: "ek hazaar paanch sau" 1500.
+ *  3. WHOLE group + a whole number under 100 -> sum: "do sau pachas" 250,
+ *     "ek hazaar do sau pachas" 1250 - never after a fractional group
+ *     ("dhai sau pachas" stays 250, 50).
+ */
+function composeNumbers(tokens: readonly Classified[]): Classified[] {
+  // Pass 1: multiplication.
+  const multiplied: Classified[] = [];
+  for (const token of tokens) {
+    const prev = multiplied[multiplied.length - 1];
+    if (token.type === "num" && token.multiplier !== undefined) {
+      if (prev && prev.type === "num" && prev.multiplier === undefined && prev.group === undefined) {
+        multiplied[multiplied.length - 1] = {
+          type: "num",
+          value: roundQty(prev.value * token.multiplier),
+          group: { whole: Number.isInteger(prev.value) },
+        };
+      } else {
+        multiplied.push({ type: "num", value: token.multiplier, group: { whole: true } });
+      }
+      continue;
+    }
+    multiplied.push(token);
+  }
+
+  // Passes 2 + 3: addition onto a group.
+  const out: Classified[] = [];
+  for (const token of multiplied) {
+    const prev = out[out.length - 1];
+    if (prev && prev.type === "num" && prev.group && token.type === "num") {
+      const thousandsThenHundreds = token.group !== undefined && prev.value >= 1000 && prev.value % 1000 === 0 && token.value < 1000;
+      const wholeGroupThenTens =
+        token.group === undefined && prev.group.whole && Number.isInteger(token.value) && token.value > 0 && token.value < 100;
+      if (thousandsThenHundreds || wholeGroupThenTens) {
+        out[out.length - 1] = {
+          type: "num",
+          value: roundQty(prev.value + token.value),
+          group: { whole: prev.group.whole && (token.group?.whole ?? true) },
+        };
+        continue;
+      }
+    }
+    out.push(token);
+  }
   return out;
 }
 

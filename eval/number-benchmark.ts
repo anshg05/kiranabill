@@ -62,9 +62,10 @@ interface CaseResult {
 function loadCases(): readonly BenchmarkCase[] {
   const raw = readFileSync(path.join(__dirname, "number-benchmark.json"), "utf8");
   const cases = JSON.parse(raw) as BenchmarkCase[];
-  // 100 original cases (KB-006) + 10 cross-unit cases (KB-005f, NB101-NB110).
-  if (cases.length !== 110) {
-    throw new Error(`number-benchmark.json: expected exactly 110 cases, found ${cases.length}`);
+  // 100 original cases (KB-006) + 10 cross-unit cases (KB-005f, NB101-NB110)
+  // + 19 compound-number cases (KB-302, NB111-NB129).
+  if (cases.length !== 129) {
+    throw new Error(`number-benchmark.json: expected exactly 129 cases, found ${cases.length}`);
   }
   return cases;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseUtterance, diagnoseUtterance, type ParsedItem } from "./grammar";
+import { parseUtterance, diagnoseUtterance, extractSpokenNumbers, type ParsedItem } from "./grammar";
 import { getCatalogEntryById } from "./catalog";
 import { lineTotalPaise } from "./money";
 import voiceCases from "../../eval/voice-cases.json";
@@ -510,11 +510,11 @@ describe("diagnoseUtterance - self-consistency with parseUtterance across every 
     ...(numberBenchmarkCases as Array<{ utterance: string }>).map((c) => c.utterance),
   ];
 
-  it("loaded both fixtures - 25 + 110 = 135 utterances (KB-005f added NB101-NB110)", () => {
-    expect(allUtterances).toHaveLength(135);
+  it("loaded both fixtures - 25 + 129 = 154 utterances (KB-005f added NB101-NB110, KB-302 NB111-NB129)", () => {
+    expect(allUtterances).toHaveLength(154);
   });
 
-  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 135 cases", () => {
+  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 154 cases", () => {
     const disagreements: string[] = [];
     for (const utterance of allUtterances) {
       const diagnosticHit = diagnoseUtterance(utterance).hit;
@@ -524,5 +524,107 @@ describe("diagnoseUtterance - self-consistency with parseUtterance across every 
       }
     }
     expect(disagreements).toEqual([]);
+  });
+});
+
+// KB-302 (owner, Option A): compound Hindi numbers. A multiplier word -
+// sau/सौ (x100), hazaar/हज़ार/हजार (x1000) - combines ONLY with the number
+// token immediately before it; nothing may sit in between. A thousands group
+// immediately followed by a hundreds group adds (ek hazaar paanch sau = 1500).
+// No lakh. Layer 1 and the number-safety checks share this tokenizer, so both
+// are tested. Before this, "paanch sau gram chini" billed 100 gm for Rs.5 with
+// no flag, and "do sau wala" silently dropped the "do".
+describe("compound Hindi numbers - sau / hazaar", () => {
+  describe("extractSpokenNumbers reads the composed number", () => {
+    it.each([
+      ["paanch sau gram chini", [500]],
+      ["पांच सौ ग्राम चीनी", [500]],
+      ["dhai sau gram chini", [250]],
+      ["dedh sau gram chini", [150]],
+      ["sawa sau gram chini", [125]],
+      ["25 kilo chawal do hazaar ka", [25, 2000]],
+      ["ek hazaar paanch sau gram chini", [1500]],
+      ["5 सौ ग्राम चीनी", [500]],
+      ["2 kilo rajma do sau wala", [2, 200]],
+    ])("%s -> %j", (text, expected) => {
+      expect(extractSpokenNumbers(text)).toEqual(expected);
+    });
+
+    it.each([
+      ["sau kilo besan", [100]],
+      ["teen packet surf excel sau wala", [3, 100]],
+      ["2 kilo chini sau ka", [2, 100]],
+    ])("must NOT combine across other words: %s -> %j", (text, expected) => {
+      expect(extractSpokenNumbers(text)).toEqual(expected);
+    });
+  });
+
+  describe("Layer 1 bills the composed number", () => {
+    const chiniGrams = (qty: number, total: number) => ({ catalogId: "27", qty, unit: "gm", rate: 4500, rateUnit: "kg", total, priceType: "default" });
+
+    it.each([
+      ["paanch sau gram chini", chiniGrams(500, 2250)],
+      ["पांच सौ ग्राम चीनी", chiniGrams(500, 2250)],
+      ["dhai sau gram chini", chiniGrams(250, 1125)],
+      ["dedh sau gram chini", chiniGrams(150, 675)],
+      ["sawa sau gram chini", chiniGrams(125, 563)],
+      ["ek hazaar paanch sau gram chini", chiniGrams(1500, 6750)],
+      ["5 सौ ग्राम चीनी", chiniGrams(500, 2250)],
+      ["25 kilo chawal do hazaar ka", { catalogId: "11", qty: 25, unit: "kg", rate: null, total: 200000, priceType: "total" }],
+      ["2 kilo rajma do sau wala", { catalogId: "22", qty: 2, unit: "kg", rate: 20000, rateUnit: "kg", total: 40000, priceType: "rate" }],
+    ])("%s", (text, expected) => {
+      expect(parseOne(text)).toMatchObject(expected);
+    });
+
+    it.each([
+      ["sau kilo besan", { catalogId: "4", qty: 100, unit: "kg", rate: 9000, total: 900000, priceType: "default" }],
+      ["teen packet surf excel sau wala", { catalogId: "189", qty: 3, unit: "packet", rate: 10000, total: 30000, priceType: "rate" }],
+      ["2 kilo chini sau ka", { catalogId: "27", qty: 2, unit: "kg", rate: null, total: 10000, priceType: "total" }],
+    ])("must NOT change: %s", (text, expected) => {
+      expect(parseOne(text)).toMatchObject(expected);
+    });
+  });
+});
+
+// KB-302 (owner, round 2): tens after a WHOLE hundreds/thousands group,
+// paune/sawa before a multiplier multiply (¾ x 100, not 100 - 0.25), and
+// saadhe N = N + 0.5 (was silently wrong: "saadhe teen kilo chini" billed 3 kg
+// of an unmatched "saadhe chini").
+describe("compound Hindi numbers - tens, paune/sawa, saadhe", () => {
+  it.each([
+    ["do sau pachas gram chini", [250]],
+    ["5 kilo chini teen sau pachas ka", [5, 350]],
+    ["ek hazaar do sau pachas gram chini", [1250]],
+    ["hazaar ka", [1000]],
+    ["paune sau gram chini", [75]],
+    ["paune do sau gram chini", [175]],
+    ["saadhe teen kilo chini", [3.5]],
+    ["saadhe teen sau gram chini", [350]],
+    ["साढ़े तीन किलो चीनी", [3.5]],
+  ])("extractSpokenNumbers: %s -> %j", (text, expected) => {
+    expect(extractSpokenNumbers(text)).toEqual(expected);
+  });
+
+  it("tens never compose after a fractional group: dhai sau pachas -> [250, 50], never 300", () => {
+    expect(extractSpokenNumbers("dhai sau pachas")).toEqual([250, 50]);
+  });
+
+  it("guard: 'chini sau ka aur daal pachas ka' stays two items, ₹100 and ₹50", () => {
+    const items = parseUtterance("chini sau ka aur daal pachas ka");
+    expect(items?.map((i) => i.total)).toEqual([10000, 5000]);
+  });
+
+  const chiniGrams = (qty: number, total: number) => ({ catalogId: "27", qty, unit: "gm", rate: 4500, rateUnit: "kg", total, priceType: "default" });
+  it.each([
+    ["do sau pachas gram chini", chiniGrams(250, 1125)],
+    ["ek hazaar do sau pachas gram chini", chiniGrams(1250, 5625)],
+    ["paune sau gram chini", chiniGrams(75, 338)],
+    ["paune do sau gram chini", chiniGrams(175, 788)],
+    ["saadhe teen sau gram chini", chiniGrams(350, 1575)],
+    ["saadhe teen kilo chini", { catalogId: "27", qty: 3.5, unit: "kg", rate: 4500, total: 15750, priceType: "default" }],
+    ["साढ़े तीन किलो चीनी", { catalogId: "27", qty: 3.5, unit: "kg", rate: 4500, total: 15750, priceType: "default" }],
+    ["5 kilo chini teen sau pachas ka", { catalogId: "27", qty: 5, unit: "kg", rate: null, total: 35000, priceType: "total" }],
+  ])("Layer 1: %s", (text, expected) => {
+    expect(parseOne(text)).toMatchObject(expected);
   });
 });
