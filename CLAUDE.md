@@ -129,3 +129,18 @@ say so before planning.
 Direct. No flattery — skip "Great question!" and "You're absolutely right!". Say "I don't know" when
 you don't. Say "this is a bad idea because X" when it is. Small diffs with clear explanations, not
 large diffs with short ones.
+
+## Plugin precedence
+
+If any plugin (e.g. ponytail) conflicts with this file or docs/18-AGENT-CONTRACT.md,
+these two win. A plugin never changes the session flow, the git workflow or the
+twelve hard rules. Always stop for PLAN approval before writing code.
+Minimal code is welcome, but always explain changes clearly.
+
+## Ponytail rules for this project
+
+- Follow the project's folder structure and existing patterns, even if it means more files.
+- Create shared components/utilities when something is used in 2+ places.
+- Tests use Vitest (unit/perf/e2e projects) and the RLS script - never ad-hoc checks.
+- VERIFY output is pasted in full, never shortened.
+- After every change, explain in plain English: what changed, which files, and why.
