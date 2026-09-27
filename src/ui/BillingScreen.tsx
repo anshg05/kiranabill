@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Menu, Mic, Plus } from "lucide-react";
+import { Loader2, Menu, Mic, Plus, Square } from "lucide-react";
 import { parseUtterance, type ParsedItem } from "@/domain/grammar";
 import { sumPaise } from "@/domain/money";
 import { useAuth } from "@/providers/AuthProvider";
 import { formatAmount, formatQty, formatRate } from "./billFormat";
+import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -21,20 +22,95 @@ function devTryLines(): ParsedItem[] {
 }
 
 export function BillingScreen() {
-  const { signOut } = useAuth();
-  // The bill being built. KB-302/303/305 write into it; the shell only reads.
+  const { signOut, session } = useAuth();
+  // The bill being built. KB-302/303/305 write into it.
   const [lines] = useState<ParsedItem[]>(devTryLines);
-  return <BillView lines={lines} onSignOut={() => void signOut()} />;
+  // Voice needs a LIVE session (offline-session mode has none - D38).
+  const voice = useVoiceBilling({ accessToken: session?.access_token ?? null });
+  return <BillView lines={lines} onSignOut={() => void signOut()} voice={voice.view} onMicTap={voice.onMicTap} />;
 }
 
 interface BillViewProps {
   lines: readonly ParsedItem[];
   onSignOut: () => void;
+  voice?: VoiceView;
+  onMicTap?: () => void;
+}
+
+function mmss(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** The one line above the buttons: offline reason, failure, listening
+ * timer, or the transcript (05-FRONTEND-SPEC.md section 2 voice states). */
+function VoiceStatus({ voice }: { voice: VoiceView }) {
+  const base = "min-h-6 px-4 pt-2 text-[13px]";
+  if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{voice.disabledReason}</p>;
+  if (voice.phase === "failed" && voice.message) {
+    return (
+      <p role="alert" className={`${base} text-danger`}>
+        {voice.message}
+      </p>
+    );
+  }
+  if (voice.phase === "listening") {
+    return (
+      <p className={`${base} text-indigo tabular-nums`}>
+        सुन रहे हैं… {mmss(voice.elapsedMs)}
+      </p>
+    );
+  }
+  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>सुन रहे हैं…</p>;
+  if (voice.transcript) {
+    return (
+      <p data-testid="voice-transcript" className={`${base} text-ink`}>
+        “{voice.transcript}”
+      </p>
+    );
+  }
+  return <p className={base} />;
+}
+
+function MicButton({ voice, onMicTap }: { voice: VoiceView; onMicTap?: () => void }) {
+  const cls =
+    "flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-indigo px-3 font-medium text-surface disabled:opacity-50";
+  const icon = { size: 20, strokeWidth: 1.5, "aria-hidden": true } as const;
+  if (voice.phase === "listening") {
+    return (
+      <button type="button" onClick={onMicTap} aria-label="Stop recording" className={`${cls} animate-pulse`}>
+        <Square {...icon} />
+        रोकें
+      </button>
+    );
+  }
+  if (voice.phase === "requesting") {
+    return (
+      <button type="button" disabled className={cls}>
+        <Mic {...icon} />
+        Mic permission…
+      </button>
+    );
+  }
+  if (voice.phase === "transcribing" || voice.phase === "resolving") {
+    return (
+      <button type="button" disabled className={cls}>
+        <Loader2 {...icon} className="animate-spin" />
+        सुन रहे हैं…
+      </button>
+    );
+  }
+  return (
+    <button type="button" onClick={onMicTap} disabled={!onMicTap || voice.disabledReason !== null} className={cls}>
+      <Mic {...icon} />
+      बोलने के लिए दबाएं
+    </button>
+  );
 }
 
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
-export function BillView({ lines, onSignOut }: BillViewProps) {
+export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: BillViewProps) {
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.total === null ? [] : [l.total])));
 
@@ -122,20 +198,15 @@ export function BillView({ lines, onSignOut }: BillViewProps) {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 border-t border-line px-4 py-3">
-          {/* Disabled until their tickets land; the reason is a tooltip only
-              (owner, 27 Sep 2026). A disabled button fires no hover events,
-              so the title sits on a wrapper. */}
-          <span title="Voice billing isn't available yet">
-            <button
-              type="button"
-              disabled
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-indigo px-3 font-medium text-surface disabled:opacity-50"
-            >
-              <Mic size={20} strokeWidth={1.5} aria-hidden />
-              बोलने के लिए दबाएं
-            </button>
-          </span>
+        <div className="border-t border-line">
+          <VoiceStatus voice={voice} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 px-4 py-3">
+          {/* Add item / Bill Banao: disabled until KB-305 / KB-307; the reason is
+              a tooltip only (owner, 27 Sep 2026). A disabled button fires no
+              hover events, so the title sits on a wrapper. */}
+          <MicButton voice={voice} onMicTap={onMicTap} />
           <span title="Adding items isn't available yet">
             <button
               type="button"

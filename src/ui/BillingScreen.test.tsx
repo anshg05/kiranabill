@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, describe, it, expect } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { parseUtterance, type ParsedItem } from "@/domain/grammar";
 import { formatRupees, sumPaise } from "@/domain/money";
 import { BillView } from "./BillingScreen";
 import { formatAmount, formatRate } from "./billFormat";
+import { IDLE_VOICE, OFFLINE_REASON, type VoiceView } from "./useVoiceBilling";
 import voiceCases from "../../eval/voice-cases.json";
 import numberBenchmark from "../../eval/number-benchmark.json";
 
@@ -112,11 +113,64 @@ describe("BillView", () => {
     expect(formatRupees(expected)).toBe("₹690"); // 5 kg × ₹120 + ₹90
   });
 
-  it("mic, Add item and Bill Banao are disabled until their tickets land", () => {
+  it("Add item and Bill Banao stay disabled until KB-305 / KB-307", () => {
     renderBill(parsed("VC023"));
-    expect((screen.getByRole("button", { name: /बोलने के लिए दबाएं/ }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: /Add item/ }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Bill Banao" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+// KB-302: every voice state of 05-FRONTEND-SPEC.md section 2 renders, and the
+// mic is only ever disabled with a visible reason.
+describe("BillView voice states", () => {
+  const view = (v: Partial<VoiceView>): VoiceView => ({ ...IDLE_VOICE, ...v });
+  const renderVoice = (v: Partial<VoiceView>, onMicTap = vi.fn()) => {
+    render(<BillView lines={[]} onSignOut={() => {}} voice={view(v)} onMicTap={onMicTap} />);
+    return onMicTap;
+  };
+  const mic = () => screen.getAllByRole("button").find((b) => b.className.includes("bg-indigo")) as HTMLButtonElement;
+
+  it("idle: the mic is enabled and tapping it calls onMicTap", () => {
+    const onMicTap = renderVoice({});
+    expect(mic().textContent).toBe("बोलने के लिए दबाएं");
+    expect(mic().disabled).toBe(false);
+    act(() => mic().click());
+    expect(onMicTap).toHaveBeenCalledOnce();
+  });
+
+  it("offline / offline session: mic disabled, the one-line reason VISIBLE (05 section 7)", () => {
+    renderVoice({ disabledReason: OFFLINE_REASON });
+    expect(mic().disabled).toBe(true);
+    expect(screen.getByText(OFFLINE_REASON)).toBeTruthy();
+  });
+
+  it("requesting permission: 'Mic permission…', never a blank pulsing button", () => {
+    renderVoice({ phase: "requesting" });
+    expect(mic().textContent).toBe("Mic permission…");
+    expect(mic().disabled).toBe(true);
+  });
+
+  it("listening: the mic becomes a pulsing stop button, with the elapsed timer", () => {
+    renderVoice({ phase: "listening", elapsedMs: 65_400 });
+    expect(screen.getByRole("button", { name: "Stop recording" }).className).toContain("animate-pulse");
+    expect(screen.getByText("सुन रहे हैं… 1:05")).toBeTruthy();
+  });
+
+  it("transcribing: spinner, mic disabled", () => {
+    renderVoice({ phase: "transcribing" });
+    expect(mic().disabled).toBe(true);
+    expect(mic().querySelector(".animate-spin")).not.toBeNull();
+  });
+
+  it("transcript ready: shown before items resolve", () => {
+    renderVoice({ phase: "resolving", transcript: "do kilo chini" });
+    expect(screen.getByTestId("voice-transcript").textContent).toBe("“do kilo chini”");
+  });
+
+  it("failed: inline alert, and the mic stays usable (never a dead end)", () => {
+    renderVoice({ phase: "failed", message: "No microphone found" });
+    expect(screen.getByRole("alert").textContent).toBe("No microphone found");
+    expect(mic().disabled).toBe(false);
   });
 });
 

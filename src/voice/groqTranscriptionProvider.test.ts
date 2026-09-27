@@ -37,6 +37,20 @@ describe("groqTranscriptionProvider", () => {
     expect(file.name).toBe("audio.wav");
   });
 
+  it("KB-302: ignores MediaRecorder's codec parameters - Safari's audio/mp4;codecs=... uploads as .mp4, not the webm fallback", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ text: "" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = createGroqTranscriptionProvider("test-key");
+
+    const names: string[] = [];
+    for (const type of ["audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "Audio/MP4; codecs=\"mp4a.40.2\""]) {
+      await provider.transcribe(new Blob(["audio"], { type }), {});
+      const form = fetchMock.mock.calls.at(-1)![1].body as FormData;
+      names.push((form.get("file") as File).name);
+    }
+    expect(names).toEqual(["audio.mp4", "audio.webm", "audio.mp4"]);
+  });
+
   it("falls back to a .webm extension when the Blob carries no recognized type", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

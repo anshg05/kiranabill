@@ -33,7 +33,11 @@ const MIME_TO_EXTENSION: Record<string, string> = {
 };
 
 function audioFilename(audio: Blob): string {
-  const extension = MIME_TO_EXTENSION[audio.type] ?? "webm";
+  // KB-302: MediaRecorder types carry codec parameters ("audio/mp4;codecs=
+  // mp4a.40.2" on Safari) - look up the bare media type only, or Safari's
+  // mp4 audio would upload under the webm fallback.
+  const mediaType = audio.type.split(";")[0]!.trim().toLowerCase();
+  const extension = MIME_TO_EXTENSION[mediaType] ?? "webm";
   return `audio.${extension}`;
 }
 
