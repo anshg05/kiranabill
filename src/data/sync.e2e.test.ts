@@ -109,7 +109,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
       payload: { e2e: true }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deviceId,
     });
 
-    const result = await syncNow({ client, localDb, shopId });
+    const result = await syncNow({ client, localDb, shopId, deviceId });
     expect(result.anyTransientFailure).toBe(false);
 
     const rows = await serverBill(bill1);
@@ -142,7 +142,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
 
   it("2. a lost-response retry (same content pushed again) is a no-op success - still exactly 1 bill + 3 items, local synced", async () => {
     await localDb.bills.update(bill1, { syncStatus: "pending" });
-    const result = await syncNow({ client, localDb, shopId });
+    const result = await syncNow({ client, localDb, shopId, deviceId });
     expect(result.anyTransientFailure).toBe(false);
     const rows = await serverBill(bill1);
     expect(rows).toHaveLength(1);
@@ -153,7 +153,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
   it("4. cancel after sync: server status becomes cancelled, every other column identical (bills_immutability's jsonb diff passes)", async () => {
     const before = (await serverBill(bill1))[0]!;
     await localDb.bills.update(bill1, { status: "cancelled", syncStatus: "pending" });
-    await syncNow({ client, localDb, shopId });
+    await syncNow({ client, localDb, shopId, deviceId });
     const after = (await serverBill(bill1))[0]!;
     expect(after.status).toBe("cancelled");
     expect({ ...after, status: "x" }).toEqual({ ...before, status: "x" });
@@ -163,7 +163,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
   it("5. a bill finalised AND cancelled offline, pushed once, lands cancelled with its items", async () => {
     const bill2 = crypto.randomUUID();
     await writeFinalisedBill(bill2, crossUnitItems(bill2), localDb, "cancelled");
-    await syncNow({ client, localDb, shopId });
+    await syncNow({ client, localDb, shopId, deviceId });
     const server = (await serverBill(bill2))[0]!;
     expect(server.status).toBe("cancelled");
     expect(server.bill_items).toHaveLength(3);
@@ -184,7 +184,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
   it("3. a DIVERGENT retry (a local item total changed after sync) is KB409 -> local conflict, server unchanged", async () => {
     const bill4 = crypto.randomUUID();
     await writeFinalisedBill(bill4, crossUnitItems(bill4));
-    await syncNow({ client, localDb, shopId });
+    await syncNow({ client, localDb, shopId, deviceId });
     const before = (await serverBill(bill4))[0]!;
 
     const line1 = await localDb.billItems.where("[billLocalId+lineNo]").equals([bill4, 1]).first();
@@ -194,7 +194,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     const warnings: string[] = [];
     console.warn = (...args: unknown[]) => warnings.push(String(args[0]));
     try {
-      const result = await syncNow({ client, localDb, shopId });
+      const result = await syncNow({ client, localDb, shopId, deviceId });
       expect(result.anyTransientFailure).toBe(false);
     } finally {
       console.warn = originalWarn;
@@ -207,7 +207,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
   it("8. concurrency: two overlapping syncNow() calls, AND two overlapping pushBills() bypassing the guard (push_bill's own race path) -> one bill, no conflict", async () => {
     const bill5 = crypto.randomUUID();
     await writeFinalisedBill(bill5, crossUnitItems(bill5));
-    await Promise.all([syncNow({ client, localDb, shopId }), syncNow({ client, localDb, shopId })]);
+    await Promise.all([syncNow({ client, localDb, shopId, deviceId }), syncNow({ client, localDb, shopId, deviceId })]);
     expect(await serverBill(bill5)).toHaveLength(1);
     expect((await localDb.bills.get(bill5))?.syncStatus).toBe("synced");
 

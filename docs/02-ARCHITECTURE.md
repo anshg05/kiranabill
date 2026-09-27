@@ -146,6 +146,13 @@ codes — retries with backoff).
 
 **Non-negotiable:** a half-built bill is never lost to a network blink.
 
+**Offline start (`KB-315`, `07-DECISIONS.md` D38):** a signed-in shopkeeper opening the app with no network
+reaches a working app from IndexedDB alone — the device remembers the last user with a real session and, when
+the token refresh fails only because the network is down, runs an **offline session** from that user's local
+database (cached shop, products, this device's receipt block). Offline sessions can run indefinitely; **nothing
+syncs until a real session exists** — `syncNow()` skips every cycle without one, so offline bills can't be
+mis-pushed as `anon`.
+
 ---
 
 ## 4. Receipt numbering across offline

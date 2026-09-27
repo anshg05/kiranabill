@@ -190,6 +190,12 @@ export interface LocalShop {
   updatedAt: string;
 }
 
+/** KB-315: small per-user key/value store (e.g. activeShopId). */
+export interface LocalMeta {
+  key: string;
+  value: string;
+}
+
 export interface LocalSyncState {
   tableName: string;
   lastSyncedAt: string | null;
@@ -209,8 +215,9 @@ export class KiranaBillDB extends Dexie {
   receiptNumberBlocks!: EntityTable<LocalReceiptNumberBlock, "id">;
   shops!: EntityTable<LocalShop, "id">;
   syncState!: EntityTable<LocalSyncState, "tableName">;
+  meta!: EntityTable<LocalMeta, "key">;
 
-  constructor(name = "kiranabill") {
+  constructor(name: string) {
     super(name);
 
     this.version(1).stores({
@@ -261,9 +268,27 @@ export class KiranaBillDB extends Dexie {
         }
       });
     });
+
+    // KB-315: per-user key/value meta (activeShopId). Additive - no upgrade needed.
+    this.version(3).stores({ meta: "&key" });
   }
 }
 
 const FALLBACK_RECEIPT_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
-export const db = new KiranaBillDB();
+/**
+ * KB-315 (docs/07-DECISIONS.md D38): one local database PER SIGNED-IN USER,
+ * `kiranabill-<userId>`. Sign-out closes it and deletes nothing; the same user
+ * signing back in continues (unsynced bills included); another user on the
+ * same device gets a separate, empty database - no cross-shop data on the
+ * device. Replaces the old module-level `db` (one shared "kiranabill"
+ * database), which is abandoned, not deleted: nothing of value was ever
+ * written to it (no bills - KI-32).
+ */
+export function shopDbName(userId: string): string {
+  return `kiranabill-${userId}`;
+}
+
+export function openShopDb(userId: string): KiranaBillDB {
+  return new KiranaBillDB(shopDbName(userId));
+}

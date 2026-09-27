@@ -298,3 +298,16 @@ describe("receiptNumbers.ts", () => {
     });
   });
 });
+
+// KB-315 (D38): a block reserved by ANOTHER device (e.g. this install before an
+// IndexedDB wipe) is never consumed - this device falls back instead.
+describe("consumeNextNumber - this device's blocks only (KB-315)", () => {
+  it("ignores another device's block with numbers left and uses the fallback", async () => {
+    const localDb = new KiranaBillDB(`rn-315-${crypto.randomUUID()}`);
+    await localDb.receiptNumberBlocks.put({ id: "blk-old", shopId: "shop-1", deviceId: "device-OLD", blockStart: 1, blockEnd: 50, nextNumber: 3, allocatedAt: "x", syncStatus: "synced" });
+    const result = await consumeNextNumber({} as never, localDb, "shop-1", "device-NEW");
+    expect(result.source).toBe("fallback");
+    expect((await localDb.receiptNumberBlocks.get("blk-old"))?.nextNumber).toBe(3); // untouched
+    await localDb.delete();
+  });
+});

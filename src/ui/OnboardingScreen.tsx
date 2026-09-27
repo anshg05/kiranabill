@@ -24,7 +24,8 @@ export function OnboardingScreen() {
       name: name.trim(),
       phone: phone.trim() || null,
       catalogChoice,
-      deviceId: crypto.randomUUID(),
+      // KB-315: no deviceId here any more - ShopProvider uses the device's
+      // persistent id (device.ts), not a throwaway UUID (KI-32).
     }).catch((err) => {
       setSubmitting(false);
       setError(err instanceof Error ? err.message : String(err));

@@ -1,6 +1,6 @@
 # 16 — App Flow
 
-**Last updated:** 18 Aug 2026 · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 · **Status:** Final for MVP
 
 Journeys, sequences and state machines. `05-FRONTEND-SPEC.md` describes screens; this describes
 how a person moves through them and what the system does underneath.
@@ -76,7 +76,18 @@ sequenceDiagram
 ```
 
 **The number block is reserved during onboarding**, so the very first bill works even if the network
-drops immediately after.
+drops immediately after. *(Built in `KB-315` — `bootstrapAfterOnboarding`, stamped with the device's persistent
+id; a start with no usable block reserves again when online.)*
+
+### Sign-out (added 27 Sep 2026, `KB-315`, `07-DECISIONS.md` D38)
+
+Sign-out stops the sync loop, forgets this device's remembered user (so an offline restart can't resume as
+them), and ends the Supabase session. **Local data is not deleted** — each user has their own local database,
+and the same user signing back in continues where they left off, unsynced bills included.
+
+**Required of the UI (not built yet — `KB-312` Settings / `KB-313` offline UI):** before signing out, if any
+bills are still unsynced, **warn with the count** ("3 bills haven't reached the server yet — they'll stay on
+this phone and sync when you sign back in"). Never a silent sign-out over unsynced bills.
 
 ---
 

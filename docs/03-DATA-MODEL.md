@@ -289,6 +289,13 @@ different roles hiding under "mirror the server tables":
 - **Hybrid**: `receipt_number_blocks` — reserved with a real online write, then read and decremented
   locally while offline (§4 above). Neither pure shape.
 
+**Local databases (`KB-315`, `07-DECISIONS.md` D38):** one IndexedDB database **per signed-in user**,
+`kiranabill-<userId>` (all the tables above, plus a `meta` key/value table holding `activeShopId`), and one
+per-installation database, `kiranabill-device`, holding the persistent `deviceId` and the last signed-in
+`activeUserId` (offline sessions). Sign-out deletes neither. The `shop_products` pull cursor is kept per shop
+(`sync_state` key `shopProducts:<shopId>`). Receipt blocks are pulled and consumed only by the device that
+reserved them. The old shared `kiranabill` database is abandoned (never held bills).
+
 **A local cache of `shops` is also required, even though no earlier section of this document said so
 explicitly.** A receipt must render while offline (name, phone, `bill_language`, `receipt_prefix`,
 `logo_url`) — that only works if these fields are cached locally, following the same last-write-wins

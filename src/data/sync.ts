@@ -1,6 +1,6 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
-import { db as defaultDb, type KiranaBillDB, type SyncStatus } from "@/data/db";
+import type { KiranaBillDB, SyncStatus } from "@/data/db";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -409,8 +409,15 @@ export async function pushPriceObservations(client: SupabaseClient, localDb: Kir
 // place).
 // ---------------------------------------------------------------------
 
+// KB-315: the pull cursor is kept PER SHOP (it used to be one global
+// "shopProducts" key - a second shop on the same database would have skipped
+// every product older than the first shop's cursor).
+function shopProductsCursorKey(shopId: string): string {
+  return `shopProducts:${shopId}`;
+}
+
 export async function pullShopProducts(client: SupabaseClient, localDb: KiranaBillDB, shopId: string): Promise<void> {
-  const state = await localDb.syncState.get("shopProducts");
+  const state = await localDb.syncState.get(shopProductsCursorKey(shopId));
   const cursor = state?.lastSyncedAt ?? null;
 
   let query = client.from("shop_products").select("*").eq("shop_id", shopId);
@@ -444,7 +451,7 @@ export async function pullShopProducts(client: SupabaseClient, localDb: KiranaBi
     cursor,
   );
   await localDb.syncState.put({
-    tableName: "shopProducts",
+    tableName: shopProductsCursorKey(shopId),
     lastSyncedAt: newestUpdatedAt,
     cursor: null,
     pendingCount: 0,
@@ -494,12 +501,21 @@ export async function pullBaseProducts(client: SupabaseClient, localDb: KiranaBi
 // locally-mutated nextNumber.
 // ---------------------------------------------------------------------
 
+// KB-315 (docs/07-DECISIONS.md D38): only THIS device's blocks. Pulling every
+// block of the shop let a device (e.g. one whose IndexedDB was wiped and now
+// has a new deviceId) pull another install's block back and reissue numbers
+// that install had already used offline but never pushed.
 export async function pullReceiptNumberBlocks(
   client: SupabaseClient,
   localDb: KiranaBillDB,
   shopId: string,
+  deviceId: string,
 ): Promise<void> {
-  const { data, error } = await client.from("receipt_number_blocks").select("*").eq("shop_id", shopId);
+  const { data, error } = await client
+    .from("receipt_number_blocks")
+    .select("*")
+    .eq("shop_id", shopId)
+    .eq("device_id", deviceId);
   if (error || !data) {
     console.warn(`[sync] receiptNumberBlocks pull failed: ${error?.message}`);
     return;
@@ -669,8 +685,17 @@ export async function pullShop(client: SupabaseClient, localDb: KiranaBillDB, sh
 
 export interface SyncNowOptions {
   client?: SupabaseClient;
-  localDb?: KiranaBillDB;
+  /** The signed-in user's own database (openShopDb(userId), D38). */
+  localDb: KiranaBillDB;
   shopId: string;
+  /** This installation's id (device.ts) - blocks are pulled per device. */
+  deviceId: string;
+}
+
+export interface SyncCycleResult {
+  anyTransientFailure: boolean;
+  /** True when the cycle did nothing because there was no live session. */
+  skippedNoSession?: boolean;
 }
 
 /**
@@ -680,9 +705,9 @@ export interface SyncNowOptions {
  * loser re-reads and compares), but there's no reason to cause it: a second
  * caller simply joins the run already in flight.
  */
-let syncInFlight: Promise<{ anyTransientFailure: boolean }> | null = null;
+let syncInFlight: Promise<SyncCycleResult> | null = null;
 
-export function syncNow(options: SyncNowOptions): Promise<{ anyTransientFailure: boolean }> {
+export function syncNow(options: SyncNowOptions): Promise<SyncCycleResult> {
   if (syncInFlight) return syncInFlight;
   syncInFlight = runSyncCycle(options).finally(() => {
     syncInFlight = null;
@@ -690,10 +715,21 @@ export function syncNow(options: SyncNowOptions): Promise<{ anyTransientFailure:
   return syncInFlight;
 }
 
-async function runSyncCycle(options: SyncNowOptions): Promise<{ anyTransientFailure: boolean }> {
+async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   const client = options.client ?? supabase;
-  const localDb = options.localDb ?? defaultDb;
-  const shopId = options.shopId;
+  const { localDb, shopId, deviceId } = options;
+
+  // KB-315 (docs/07-DECISIONS.md D38): NEVER sync without a real session.
+  // In offline-session mode, or after auth-js drops a session whose refresh
+  // token was rejected, every request would go out as anon: push_bill would
+  // answer 42501 and every offline-created bill would be marked a PERMANENT
+  // conflict. So no live session -> skip the whole cycle; everything stays
+  // pending; report it as transient so the loop backs off and retries. A real
+  // 42501 then only ever means a real RLS rejection.
+  const { data: sessionData } = await client.auth.getSession();
+  if (!sessionData.session) {
+    return { anyTransientFailure: true, skippedNoSession: true };
+  }
 
   // Phase 1: bills (and their items). Fully awaited before phase 2 starts -
   // a strict two-phase cycle, not an interleaved loop, so a learningEvent
@@ -718,29 +754,68 @@ async function runSyncCycle(options: SyncNowOptions): Promise<{ anyTransientFail
   // Pulls.
   await pullShopProducts(client, localDb, shopId);
   await pullBaseProducts(client, localDb);
-  await pullReceiptNumberBlocks(client, localDb, shopId);
+  await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
   await pullShop(client, localDb, shopId);
 
   return mergeResults([billsResult, learningEventsResult, ...otherPushResults]);
 }
 
+// ---------------------------------------------------------------------
+// The loop. KB-315: started once a shop is active, stopped on sign-out.
+// Idempotent start (a running flag - the old `if (loopTimer)` check let two
+// quick calls both start, since the timer is only set after the first cycle),
+// and the "online" listener is removed on stop (it used to leak). The event
+// source is injectable: Node (tests, e2e) has no `window`.
+// ---------------------------------------------------------------------
+
+export interface OnlineEventSource {
+  addEventListener(type: "online", listener: () => void): void;
+  removeEventListener(type: "online", listener: () => void): void;
+}
+
+let loopRunning = false;
 let loopTimer: ReturnType<typeof setTimeout> | null = null;
 let currentBackoffMs = BASE_INTERVAL_MS;
+let onlineSource: OnlineEventSource | null = null;
+let onlineListener: (() => void) | null = null;
 
 async function runLoop(options: SyncNowOptions): Promise<void> {
-  const { anyTransientFailure } = await syncNow(options);
+  if (!loopRunning) return;
+  let anyTransientFailure = true;
+  try {
+    ({ anyTransientFailure } = await syncNow(options));
+  } catch (err) {
+    // e.g. the database was closed by sign-out mid-cycle. Never let an
+    // exception kill the loop silently - log, back off, try again.
+    console.warn("[sync] cycle failed:", err);
+  }
+  if (!loopRunning) return;
   currentBackoffMs = anyTransientFailure ? Math.min(currentBackoffMs * 2, MAX_BACKOFF_MS) : BASE_INTERVAL_MS;
   loopTimer = setTimeout(() => void runLoop(options), currentBackoffMs);
 }
 
-export function startSyncLoop(options: SyncNowOptions): void {
-  if (loopTimer) return;
+export function startSyncLoop(
+  options: SyncNowOptions,
+  eventSource: OnlineEventSource | null = typeof window !== "undefined" ? window : null,
+): void {
+  if (loopRunning) return;
+  loopRunning = true;
   currentBackoffMs = BASE_INTERVAL_MS;
+  onlineSource = eventSource;
+  onlineListener = () => void syncNow(options);
+  onlineSource?.addEventListener("online", onlineListener);
   void runLoop(options);
-  window.addEventListener("online", () => void syncNow(options));
 }
 
 export function stopSyncLoop(): void {
+  loopRunning = false;
   if (loopTimer) clearTimeout(loopTimer);
   loopTimer = null;
+  if (onlineSource && onlineListener) onlineSource.removeEventListener("online", onlineListener);
+  onlineSource = null;
+  onlineListener = null;
+}
+
+export function isSyncLoopRunning(): boolean {
+  return loopRunning;
 }

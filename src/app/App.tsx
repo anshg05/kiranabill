@@ -47,7 +47,9 @@ function ShopGate() {
 }
 
 function AuthGate() {
-  const { loading, user } = useAuth();
+  // KB-315: userId is the live user OR, offline, the last signed-in user on
+  // this device (D38) - the app runs from their local database either way.
+  const { loading, userId, mode, deviceDb } = useAuth();
 
   if (loading) {
     return (
@@ -57,10 +59,10 @@ function AuthGate() {
     );
   }
 
-  if (!user) return <SignInScreen />;
+  if (!userId) return <SignInScreen />;
 
   return (
-    <ShopProvider userId={user.id}>
+    <ShopProvider userId={userId} online={mode === "online"} deviceDb={deviceDb}>
       <ShopGate />
     </ShopProvider>
   );

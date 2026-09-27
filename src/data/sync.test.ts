@@ -6,6 +6,12 @@ import {
   syncNow,
   pushBills,
   pushLearnedAliases,
+  pullShopProducts,
+  pullReceiptNumberBlocks,
+  startSyncLoop,
+  stopSyncLoop,
+  isSyncLoopRunning,
+  type OnlineEventSource,
   pushLearningEvents,
   pushPriceObservations,
   pullShop,
@@ -83,7 +89,17 @@ function makeMockClient(handlers: Record<string, Handler>): SupabaseClient {
     return Promise.resolve(handler("rpc", args, {}));
   };
 
-  return { from, rpc } as unknown as SupabaseClient;
+  // KB-315: syncNow() refuses to run without a live session. A mock client
+  // has one unless the test passes handlers["auth:session"] returning null.
+  const auth = {
+    getSession: async () => {
+      const override = handlers["auth:session"];
+      const session = override ? override("session", null, {}).data : { user: { id: "user-1" } };
+      return { data: { session }, error: null };
+    },
+  };
+
+  return { from, rpc, auth } as unknown as SupabaseClient;
 }
 
 describe("sync.ts", () => {
@@ -556,7 +572,7 @@ describe("sync.ts", () => {
         base_products: () => ({ data: [], error: null }),
       });
 
-      const result = await syncNow({ client, localDb, shopId: "shop-1" });
+      const result = await syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
       expect(result.anyTransientFailure).toBe(false);
 
       const bill = await localDb.bills.get("bill-1");
@@ -736,13 +752,108 @@ describe("sync.ts - KB-110b push_bill path", () => {
     });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const first = syncNow({ client, localDb, shopId: "shop-1" });
-    const second = syncNow({ client, localDb, shopId: "shop-1" });
+    const first = syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
+    const second = syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
     expect(second).toBe(first);
     release();
     await Promise.all([first, second]);
     warn.mockRestore();
     expect(pushCalls).toBe(1);
     expect((await localDb.bills.get(billLocalId))?.syncStatus).toBe("synced");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KB-315 (docs/07-DECISIONS.md D38): never sync without a live session; the
+// loop's lifecycle; per-shop cursor; this device's blocks only.
+// ---------------------------------------------------------------------------
+describe("sync.ts - KB-315", () => {
+  let localDb: KiranaBillDB;
+
+  beforeEach(() => {
+    localDb = new KiranaBillDB(`test-sync-315-${crypto.randomUUID()}`);
+  });
+
+  afterEach(async () => {
+    stopSyncLoop();
+    await localDb.delete();
+  });
+
+  const everyTableEmpty: Record<string, Handler> = {
+    "rpc:push_bill": () => ({ data: "server-bill-uuid", error: null }),
+    learned_aliases: () => ({ data: [], error: null }),
+    provisional_products: () => ({ data: [], error: null }),
+    price_observations: () => ({ data: [], error: null }),
+    receipt_number_blocks: () => ({ data: [], error: null }),
+    shops: () => ({ data: null, error: { message: "not found" } }),
+    shop_products: () => ({ data: [], error: null }),
+    base_products: () => ({ data: [], error: null }),
+  };
+
+  it("NO live session -> the whole cycle is skipped: nothing is pushed, the bill stays pending (never a conflict), reported transient", async () => {
+    await localDb.bills.add({
+      localId: "6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12", shopId: "shop-1", status: "final", syncStatus: "pending",
+      receiptNumber: "KB-000001", receiptNumberSource: "block", customerName: "Cash", customerMobile: null,
+      subtotalPaise: 100, totalPaise: 100, schemaVersion: 1, deviceId: "device-1",
+      createdAt: "2026-09-27T10:00:00.000Z", finalizedAt: "2026-09-27T10:00:00.000Z", syncedAt: null,
+    });
+    const client = makeMockClient({
+      "auth:session": () => ({ data: null, error: null }),
+      "rpc:push_bill": () => {
+        throw new Error("push_bill must not be called without a live session");
+      },
+    });
+    const result = await syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
+    expect(result).toEqual({ anyTransientFailure: true, skippedNoSession: true });
+    expect((await localDb.bills.get("6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12"))?.syncStatus).toBe("pending");
+  });
+
+  it("loop lifecycle: start is idempotent (one 'online' listener), stop removes the listener and marks it stopped", async () => {
+    const listeners = new Set<() => void>();
+    const source: OnlineEventSource = {
+      addEventListener: (_t, l) => listeners.add(l),
+      removeEventListener: (_t, l) => listeners.delete(l),
+    };
+    const client = makeMockClient(everyTableEmpty);
+    const options = { client, localDb, shopId: "shop-1", deviceId: "device-1" };
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    startSyncLoop(options, source);
+    startSyncLoop(options, source);
+    expect(isSyncLoopRunning()).toBe(true);
+    expect(listeners.size).toBe(1);
+
+    stopSyncLoop();
+    expect(isSyncLoopRunning()).toBe(false);
+    expect(listeners.size).toBe(0);
+    warn.mockRestore();
+  });
+
+  it("the shop_products pull cursor is kept PER SHOP", async () => {
+    const seenFilters: Array<Record<string, unknown>> = [];
+    const client = makeMockClient({
+      shop_products: (_op, _payload, filters) => {
+        seenFilters.push({ ...filters });
+        return { data: [{ id: `p-${filters.shop_id}`, shop_id: filters.shop_id, updated_at: "2026-09-27T10:00:00.000Z", aliases: [] }], error: null };
+      },
+    });
+    await pullShopProducts(client, localDb, "shop-1");
+    await pullShopProducts(client, localDb, "shop-2");
+    expect(seenFilters[1]).toEqual({ shop_id: "shop-2" }); // no cursor inherited from shop-1
+    expect((await localDb.syncState.get("shopProducts:shop-1"))?.lastSyncedAt).toBe("2026-09-27T10:00:00.000Z");
+    expect(await localDb.syncState.get("shopProducts:shop-2")).toBeDefined();
+    expect(await localDb.syncState.get("shopProducts")).toBeUndefined();
+  });
+
+  it("receipt blocks are pulled for THIS device only", async () => {
+    let filters: Record<string, unknown> = {};
+    const client = makeMockClient({
+      receipt_number_blocks: (_op, _payload, f) => {
+        filters = { ...f };
+        return { data: [], error: null };
+      },
+    });
+    await pullReceiptNumberBlocks(client, localDb, "shop-1", "device-A");
+    expect(filters).toEqual({ shop_id: "shop-1", device_id: "device-A" });
   });
 });

@@ -117,8 +117,11 @@ export async function consumeNextNumber(
   const shop = await localDb.shops.get(shopId);
   const prefix = shop?.receiptPrefix ?? "KB";
 
+  // KB-315 (D38): only a block THIS device reserved. Another install's block
+  // (e.g. from before an IndexedDB wipe) may have numbers that install already
+  // used offline and never pushed - consuming it could reissue them.
   const blocks = await localDb.receiptNumberBlocks.where("shopId").equals(shopId).sortBy("blockStart");
-  const activeBlock = blocks.find((b) => b.nextNumber <= b.blockEnd);
+  const activeBlock = blocks.find((b) => b.deviceId === deviceId && b.nextNumber <= b.blockEnd);
 
   if (!activeBlock) {
     return { receiptNumber: await allocateFallbackNumber(localDb, deviceId, prefix), source: "fallback" };

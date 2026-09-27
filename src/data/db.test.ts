@@ -448,7 +448,7 @@ describe("KB-110b: KiranaBillDB version 1 -> 2 upgrade (real)", () => {
 
     const db = new KiranaBillDB(name);
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3); // upgrades through v2 (this backfill) and v3 (KB-315 meta table)
     expect((await db.bills.get("b-block"))?.receiptNumberSource).toBe("block");
     expect((await db.bills.get("b-fallback"))?.receiptNumberSource).toBe("fallback");
     const items = await db.billItems.where("billLocalId").equals("b-block").sortBy("lineNo");

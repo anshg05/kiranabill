@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 27 Sep 2026 (rev 24) · Supersedes rev 23
+**Last updated:** 27 Sep 2026 (rev 25) · Supersedes rev 24
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1176,6 +1176,53 @@ found by the first real e2e run, not by any mocked test. Local data: Dexie versi
 **Verification standard added:** `npm run test:e2e` (a Vitest project on the real local Docker stack, calling
 the shipped code — D21, D32) is required for any sync or schema ticket; `npm test` runs unit + perf only and
 never needs Docker.
+
+---
+
+## Rev 25 — 27 Sep 2026
+
+### D38 — Runtime bootstrap: per-user local DB, persistent device id, offline sessions, never sync without a real session 🟢
+
+**Owner decisions, 27 Sep 2026, `KB-315`. Closes `12-PARKED.md` KI-32.**
+
+**1. One local database per signed-in user — `kiranabill-<userId>`.** Sign-out stops the sync loop and closes
+it; **nothing is deleted**. The same user signing back in continues, unsynced bills included; another user on
+the same device gets a separate, empty database, so no shop's cached data is ever shown to another account.
+**The old single `kiranabill` IndexedDB is abandoned, not deleted** — nothing of value was ever written to it
+(no bills: KI-32), and an automatic delete is an irreversible action for no gain.
+
+**2. A persistent device id in its own database, `kiranabill-device`** (per installation, not per user):
+created once with `crypto.randomUUID()` inside one transaction (two tabs can't mint two), and used everywhere a
+`device_id` is written — `copy_base_catalog`, receipt blocks, bills, learning rows, the fallback receipt number
+(D23). The throwaway `crypto.randomUUID()` in `OnboardingScreen` is gone. **If IndexedDB is wiped**, the next
+start mints a new id: unsynced local rows are lost (unrecoverable); the old install's unused receipt numbers
+are skipped, never reused; fallback numbers embed the new UUID.
+
+**3. Receipt blocks belong to the device that reserved them.** `pullReceiptNumberBlocks` pulls only this
+device's blocks and `consumeNextNumber` only numbers from them — both used to take any block of the shop, so a
+wiped device could pull its old block back and reissue numbers the old install had used offline and never
+pushed. The first block is reserved at onboarding (`16-APP-FLOW.md` §2) and again on any online start with no
+usable block.
+
+**4. Offline session.** `@supabase/auth-js` returns `session: null` + a retryable error when an expired access
+token (~1 h) can't be refreshed because the network is down — keeping the stored session (proven against the
+real library, `bootstrap.e2e.test.ts` case 4). The device remembers the last user who signed in with a real
+session (`activeUserId`); that case becomes an **offline session** for them, running from their local database.
+A non-retryable failure (a rejected refresh token) or no remembered user → sign-in screen. An explicit sign-out
+forgets `activeUserId`. **Offline-session mode can run indefinitely on the last sign-in. Nothing reaches the
+server until a real session exists.**
+
+**5. Never sync without a real session.** `syncNow()` checks `auth.getSession()` first; no live session → the
+whole cycle is skipped, everything stays pending, and it reports transient (the loop backs off). Without this,
+an offline session reconnecting with a rejected refresh token would sync as `anon`: `push_bill` → 42501 → every
+offline-created bill a permanent conflict. With it, a real 42501 only ever means a real RLS rejection. Proven:
+offline session → rejected refresh on reconnect → nothing pushed, all pending, none in conflict → sign in again
+→ pushed (`bootstrap.e2e.test.ts` case 7).
+
+**6. The sync loop** starts once a shop is active and stops on sign-out; start is idempotent and stop removes
+the `online` listener (it used to leak). The `shop_products` pull cursor is per shop. **Sign-out with unsynced
+rows: the UI must warn with the count of unsynced bills** (KB-312 / KB-313; `16-APP-FLOW.md` "Sign-out") — not
+built here. Multiple open tabs each run a loop — safe today, not solved (`12-PARKED.md` KI-39).
 
 ---
 

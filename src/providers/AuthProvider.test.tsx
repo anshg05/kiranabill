@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
+import "fake-indexeddb/auto";
 import { describe, it, expect, vi } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { SupabaseClient, Session, User } from "@supabase/supabase-js";
+import { AuthRetryableFetchError, AuthApiError } from "@supabase/supabase-js";
 import { AuthProvider, useAuth } from "./AuthProvider";
+import { DeviceDB, getActiveUserId, setActiveUserId } from "@/data/device";
 
 function makeSession(overrides: Partial<User> = {}): Session {
   const user = {
@@ -50,7 +53,9 @@ function makeMockClient(initialSession: Session | null): MockClient {
     client,
     emitAuthChange: (session) => {
       act(() => {
-        authChangeCallback?.("SIGNED_IN", session);
+        // Faithful to auth-js: a session arrives as SIGNED_IN, its loss as
+        // SIGNED_OUT (KB-315 - AuthProvider now distinguishes the two).
+        authChangeCallback?.(session ? "SIGNED_IN" : "SIGNED_OUT", session);
       });
     },
     getSessionResult: { data: { session: initialSession } },
@@ -173,5 +178,69 @@ describe("AuthProvider / useAuth", () => {
     });
 
     expect(result.current).toBeInstanceOf(Error);
+  });
+});
+
+
+// KB-315 (docs/07-DECISIONS.md D38): the offline-session rule, through the
+// real provider with a mocked client and a real (fake-indexeddb) device DB.
+describe("AuthProvider - offline session (KB-315)", () => {
+  function clientWithGetSession(result: unknown) {
+    return {
+      auth: {
+        getSession: vi.fn().mockResolvedValue(result),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+    } as unknown as SupabaseClient;
+  }
+
+  it("a network (retryable) refresh failure + a remembered user -> offline mode for that user", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    await setActiveUserId(deviceDb, "user-offline");
+    const client = clientWithGetSession({ data: { session: null }, error: new AuthRetryableFetchError("Failed to fetch", 0) });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => <AuthProvider client={client} deviceDb={deviceDb}>{children}</AuthProvider>,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.mode).toBe("offline");
+    expect(result.current.userId).toBe("user-offline");
+    expect(result.current.session).toBeNull(); // no live session - nothing may sync
+  });
+
+  it("a retryable failure with NO remembered user -> signed out", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    const client = clientWithGetSession({ data: { session: null }, error: new AuthRetryableFetchError("Failed to fetch", 0) });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => <AuthProvider client={client} deviceDb={deviceDb}>{children}</AuthProvider>,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.mode).toBe("signedOut");
+  });
+
+  it("a NON-retryable failure (refresh token rejected) -> signed out, even with a remembered user", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    await setActiveUserId(deviceDb, "user-offline");
+    const client = clientWithGetSession({ data: { session: null }, error: new AuthApiError("Invalid Refresh Token", 400, "refresh_token_not_found") });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => <AuthProvider client={client} deviceDb={deviceDb}>{children}</AuthProvider>,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.mode).toBe("signedOut");
+  });
+
+  it("a live session is remembered as the device's active user; an explicit signOut forgets it", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    const client = clientWithGetSession({ data: { session: makeSession() }, error: null });
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: ({ children }) => <AuthProvider client={client} deviceDb={deviceDb}>{children}</AuthProvider>,
+    });
+    await waitFor(() => expect(result.current.mode).toBe("online"));
+    await waitFor(async () => expect(await getActiveUserId(deviceDb)).toBe("11111111-1111-1111-1111-111111111111"));
+    await act(async () => {
+      await result.current.signOut();
+    });
+    expect(result.current.mode).toBe("signedOut");
+    expect(await getActiveUserId(deviceDb)).toBeNull();
   });
 });
