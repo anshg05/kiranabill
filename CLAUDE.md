@@ -107,7 +107,8 @@ Full reasoning and rejected alternatives: `docs/11-STACK-DECISIONS.md`.
 npm test              # Vitest - unit tests in parallel, then perf tests alone (D35); no Docker needed
 npm run test:e2e      # real local Docker stack - REQUIRED for any sync or schema ticket (D37)
 npm run test:rls      # RLS negative tests, real local Postgres
-npx tsc --noEmit      # type check
+npm run typecheck     # tsc -b: src/, netlify/, eval/, scripts/, vite.config.ts (D40) - NOT `npx tsc --noEmit`
+npm run lint          # ESLint on every TS file: domain boundary + 5 core correctness rules
 npm run dev           # dev server
 npm run build         # production build
 ```

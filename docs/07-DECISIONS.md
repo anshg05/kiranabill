@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 27 Sep 2026 (rev 26) · Supersedes rev 25
+**Last updated:** 27 Sep 2026 (rev 27) · Supersedes rev 26
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1243,6 +1243,27 @@ project to work around it). Dev-only aids (`?try=<utterance>`, the email form) m
 `npm run build` output by grepping `dist/`.
 
 Recorded in `09-WORKING-AGREEMENT.md` §B5 (the UI row).
+
+### D40 — Every TypeScript file is type-checked by `tsc -b` and linted; `npx tsc --noEmit` retired 🟢
+
+**Owner decision, 27 Sep 2026, `KB-316`. Closes `12-PARKED.md` KI-36.**
+
+**1. Type-check = `tsc -b` over a solution `tsconfig.json`** that references five projects: `tsconfig.app.json`
+(`src/`, the old root config verbatim), `tsconfig.node.json` (`vite.config.ts`), `netlify/tsconfig.json`
+(production code — the same strictness as `src/`), `eval/tsconfig.json` and `scripts/tsconfig.json` (their
+existing, looser options, unchanged). `npm run typecheck` and `npm run build` (what Netlify runs) both use it, so
+a type error anywhere — including `netlify/functions` — fails the deploy. **`npx tsc --noEmit` is retired:** on a
+solution config (`"files": []`) it checks nothing and exits 0 (tested, TS 5.9.3). Build-info files live in
+`node_modules/.tmp/`.
+
+**2. The root `tsconfig.json` keeps `baseUrl` + `paths`** even though `tsc -b` ignores them there: Netlify's
+function bundler resolves `src/voice`'s `@/` imports from the nearest `tsconfig.json`. Dropping them would break
+the deployed `/voice` function while every local check still passed.
+
+**3. Lint covers every TS file** (`src/`, `netlify/`, `eval/`, `scripts/`, `vite.config.ts`) with the domain
+import boundary (D16) plus five ESLint core correctness rules — `no-debugger`, `no-unreachable`, `no-dupe-keys`,
+`no-dupe-else-if`, `no-self-assign`. No new dependency, no style rules. A TypeScript-aware rule set is
+`12-PARKED.md` SG-10.
 
 ---
 

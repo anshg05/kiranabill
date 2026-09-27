@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 27 Sep 2026 (rev 51) · **Current phase:** 3 — Billing UI, in progress. `KB-301` done 27 Sep 2026. Next: `KB-302` (voice control + states).
+**Last updated:** 27 Sep 2026 (rev 52) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316` done 27 Sep 2026. Next: `KB-302` (voice control + states).
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing — `KB-301` (billing screen shell) closed 27 Sep 2026: `npm test` 386/386, `tsc`, lint,
+**Working on:** nothing — `KB-316` (type-check + lint every TS file, KI-36) closed 27 Sep 2026 (D40). Before it, `KB-301` (billing screen shell) closed 27 Sep 2026: `npm test` 386/386, `tsc`, lint,
 build, `dist/` greps, and the owner's real-browser check (D39: 375px + desktop, long-bill scroll, sign-out and
 sign-back-in). Next: `KB-302`. The four HIGH defects found 26 Sep (`KI-29`–`KI-32`) are all fixed — see
 Next action.
@@ -38,17 +38,18 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 5. ~~**`KB-301`** — billing screen shell~~ — **done 27 Sep 2026** (D39 owner browser check passed). New: `KI-42`
    (no unique shop per owner — LOW), `KI-43` (catalog seed in bundle — LOW), `NI-29` (npm strips lockfile `libc`),
    `SG-09` (coarser-unit rate display + edited-rate storage — decide at `KB-303`).
-6. **`KB-302`** — voice control + states. Note `KI-36`'s trigger ("before `KB-302`"): type-check/lint coverage outside `src/`.
+6. ~~**`KB-316`** — type-check + lint every TS file (`KI-36`)~~ — **done 27 Sep 2026** (D40).
+7. **`KB-302`** — voice control + states.
 
-**Outstanding owner tasks:** `M-13` (connect the real Netlify site, set env vars) before any production
-deploy.
+**Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
+https://kiranabilling.netlify.app (see "Before deployment").
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
 **Test state (27 Sep, `KB-301`):** 386 tests in 28 files — Vitest project `unit` (385 tests, 27 files,
 parallel) then `perf` (1 test, run alone, D35). The perf test is `KI-23`-closed; reopens only on an isolated failure.
-**Type-checking gap:** `tsc` and ESLint cover `src/` only (`KI-36`) — any ticket editing `netlify/`, `eval/`,
-`scripts/` or `vite.config.ts` must run those files in VERIFY.
+**Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
+`eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
 **Eval harness:** `npm run eval` reports 0/0/0/25 — `eval/run-eval.ts` was never connected to
 `parseUtterance()` after `KB-005` (`KI-05`). The coverage probe and number benchmark do run the parser.
 **Key rotation:** Groq (`M-06`) and Gemini (`M-07`) both done — old keys deleted, new keys in
@@ -64,10 +65,12 @@ placeholder), `src/voice/` (server-side Groq/Gemini providers), `netlify/functio
 Must be done before any production deploy or the pilot. Added 27 Sep 2026 (owner). Each line points to
 where the detail lives; tick it off there and strike it here.
 
-- [ ] **`M-13`** — connect the real Netlify site and set the 4 env vars (`VITE_SUPABASE_URL`,
-  `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`). `17-MANUAL-TASKS.md` M-13.
-- [ ] **`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`, not just
-  `src/` (tsc) / `src/domain/` (ESLint). `12-PARKED.md` §A.
+- [x] ~~**`M-13`** — connect the real Netlify site and set the 4 env vars~~ — **done 27 Sep 2026 (owner):**
+  https://kiranabilling.netlify.app, the four env vars set with the **remote** Supabase URL and publishable key,
+  Supabase Auth Site URL + redirect URL set. **Every push to `main` now auto-deploys.** `NI-29` to be checked
+  against the first Netlify build log. `17-MANUAL-TASKS.md` M-13.
+- [x] ~~**`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`~~ — **done 27 Sep 2026,
+  `KB-316`** (D40): a type error in `netlify/functions` now fails `npm run build`, i.e. the Netlify deploy.
 - [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`).
   `12-PARKED.md` §A.
 - [ ] **`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.
@@ -263,6 +266,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 27 Sep 2026 | **`KB-316` done — every TypeScript file is type-checked and linted; `KI-36` closed (D40).** `tsc -b` over a solution tsconfig covers `src/`, `vite.config.ts`, `netlify/` (at `src/` strictness — production code), `eval/`, `scripts/` in both `npm run typecheck` and `npm run build`, so a type error in `netlify/functions` now fails the Netlify deploy. ESLint lints all 74 TS files: domain boundary + five core correctness rules (no dependency). Nothing surfaced — 0 type, 0 lint errors; no source file changed. Root tsconfig keeps `paths` for the function bundler; real `/voice` re-verified through `netlify dev` (401 unauthenticated; 200 with a real Groq transcript + Gemini parse); the live `/voice` unauthenticated check runs after this commit deploys (result in the KB-316 handoff). `npx tsc --noEmit` retired. Also: `M-13` done (owner) — site live, **every push to `main` auto-deploys**; `NI-29` answered (npm 11.6.0 vs Netlify's 11.19.0 — upgrade local npm); `SG-10` (type-aware lint) logged. | Agent + Owner |
 | 27 Sep 2026 | **`KB-301` done.** The S3 billing screen shell replaces the signed-in placeholder: cards at 375px, a table from `md`, TOTAL pinned, mic / Add item / Bill Banao present but disabled. Real `parseUtterance()` output in every UI test (new D39, `09` §B5). Rate shows its unit only across a real conversion ("₹45/kg" on 500 gm; plain "₹60" for packet-vs-piece). `ShopProvider` finally has tests (offline cache, network error, sync loop start/stop); a failed first load with no cached shop now shows Retry instead of onboarding (duplicate-shop risk — `KI-42`). KI-19 closed, and Mukta actually loads now (it never did). Dev-only local email sign-in and `?try=`, both proven absent from `dist/`. New deps: `lucide-react` (SD-026), `@fontsource/mukta` (SD-027, closes M-21 for Mukta). Production JS 543 → 683 kB (gzip 159 → 185 kB), mostly the catalog seed now reachable via `unitScale` (`KI-43`). Owner browser check passed the same day (screenshots reviewed: cards/table, `—` rules, ₹45/kg vs ₹60, ₹2013.75 long bill hand-checked, auto-scroll, sign-out/in). The check surfaced a dev-console `DatabaseClosedError` "[shop] bootstrap failed" — React StrictMode's double mount closing the first run's database mid-read; harmless (the stale run was already discarded) but misleading, and it would also fire on sign-out mid-load in production. Fixed: a cancelled run's error is now silent; StrictMode regression test added. | Agent + Owner |
 | 27 Sep 2026 | **Docs only — pre-deploy gaps recorded before `KB-301`.** `KI-40` (no service worker: the app can't load offline — HIGH, before the pilot; `KB-401` amended to include app-shell precaching) and `KI-41` (`push_bill()` doesn't verify totals add up — MEDIUM, before the pilot) added to `12-PARKED.md`. New "Before deployment" checklist in this file. Next: `KB-301`. | Owner + Agent |
 | 27 Sep 2026 | **`KB-315` done — the four pre-Phase-3 fixes are complete; `KB-301` is next.** A shopkeeper's device now has a persistent id, its own local database per signed-in user, a first receipt block reserved at onboarding, and a sync loop that runs while a shop is active and stops on sign-out. An offline start works from IndexedDB alone (offline session for the last real sign-in — `auth-js`'s real behaviour proven on the local stack), and — the owner's rule — nothing ever syncs without a real session, so offline bills can't become false conflicts. Device-scoped receipt blocks fixed a latent number-reuse path after a wipe. No migration. | Agent + Owner |

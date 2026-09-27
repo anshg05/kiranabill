@@ -77,7 +77,13 @@ supabase db push
 
 This is deliberate. An agent with write access to your database can drop a table by accident.
 
-### M-13 · Netlify
+### M-13 · Netlify — ✅ done 27 Sep 2026 (owner)
+
+**Done:** site https://kiranabilling.netlify.app, connected to the GitHub repo; the four env vars below set with
+the **remote** Supabase project URL and its publishable key (in `VITE_SUPABASE_ANON_KEY`); Supabase Auth Site URL
+and redirect URL set to the site. **Every push to `main` now auto-deploys** — a broken `npm run build` fails the
+deploy, and anything pushed is live.
+
 
 1. netlify.com → connect the GitHub repo
 2. Build command `npm run build`, publish directory `dist`

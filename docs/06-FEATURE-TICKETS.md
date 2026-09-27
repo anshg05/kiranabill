@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 27 Sep 2026 (rev 19) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 20) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -109,6 +109,7 @@ phase for new work (`KB-315` after `KB-314`). `KB-005d` (`KI-21`, done 15 Sep) w
 | **KB-005f** | Gram/ml default-price rounding (`KI-30`) | `grammar.ts`'s `convertPriceBetweenUnits()` rounded the per-gram/per-ml rate to whole paise before multiplying — "500 gram chini" billed ₹25, correct ₹22.50; 32 of 123 kg/liter products affected, silent. Fixed per D36: the line keeps its spoken qty/unit, the rate carries its own unit (`ParsedItem.rateUnit`, required), totals computed exactly in `money.ts`; no division in the money path (`no-division.test.ts`). Domain-only — persisting `rate_unit` is `KB-110b`'s. | ✅ **Done 26 Sep 2026** — closes `KI-30`; benchmark 110/0/0 |
 | **KB-110b** | Bill push path + `receipt_number_source` (`KI-29` + `KI-31`) | A finalised bill's first push can never sync its items (the immutability triggers reject them, then the retry marks the bill `conflict`); and `receipt_number_source` is never stored locally or pushed. One ticket — both are the bill push path. **Also persists `rate_unit` (added 26 Sep by `KB-005f`, D36):** a `bill_items.rate_unit` column (migration), a `LocalBillItem.rateUnit` field and the push mapping. Sync — most capable model (D33); real local-stack verification (D21, D32). | ✅ **Done 27 Sep 2026** — `push_bill()` (D37); closes `KI-29`, `KI-31`; migration `20260927090000_push_bill.sql` pushed 27 Sep 2026 (owner), confirmed live via `db dump --linked` |
 | **KB-315** | Runtime bootstrap (`KI-32`) | Persisted `deviceId`; first receipt block reserved at onboarding (`16-APP-FLOW.md` §2); local `shops` cache written; sync loop started. Prerequisite for `KB-307` finalising, numbering and syncing a bill. | ✅ **Done 27 Sep 2026** — D38; closes `KI-32`. Per-user local DB, persistent device id, offline session, no sync without a real session. |
+| **KB-316** | Type-check + lint every TS file (`KI-36`) | Added 27 Sep 2026 (owner), before `KB-302` — KI-36's trigger. `tsc -b` over a solution tsconfig (five projects) in `npm run typecheck` and `npm run build`; ESLint on every TS file with five core correctness rules. D40. | ✅ **Done 27 Sep 2026** — 0 errors surfaced; real `/voice` re-verified through `netlify dev`; live `/voice` unauthenticated check run after the deploy (result: KB-316 handoff) |
 
 ---
 

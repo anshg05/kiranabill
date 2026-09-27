@@ -1,33 +1,23 @@
+// KB-316 (docs/12-PARKED.md KI-36, docs/07-DECISIONS.md D40): a solution
+// config. `tsc -b` (npm run typecheck, and npm run build - what Netlify
+// runs) type-checks every project below. `tsc --noEmit` on THIS file checks
+// nothing - never use it as the type-check.
+//
+// baseUrl/paths stay here on purpose: Netlify's function bundler resolves
+// src/voice's `@/` imports from the nearest tsconfig.json, which is this one.
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting — strict */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-
-    /* Paths */
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"],
-  "exclude": ["legacy", "node_modules", "dist"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./netlify/tsconfig.json" },
+    { "path": "./eval/tsconfig.json" },
+    { "path": "./scripts/tsconfig.json" }
+  ]
 }

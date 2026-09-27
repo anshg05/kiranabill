@@ -1,6 +1,6 @@
 # 19 — Machine Setup
 
-**Last updated:** 26 Sep 2026 · **Status:** Active
+**Last updated:** 27 Sep 2026 · **Status:** Active
 **Purpose:** get a new machine to the exact state the old one was in, with nothing skipped and nothing guessed. Written from what this project's actual setup involved, including the real problems hit along the way — not a generic checklist.
 
 **Do these in order.** Each section assumes the previous one is done.
@@ -92,7 +92,7 @@ This installs everything already decided and logged in `docs/11-STACK-DECISIONS.
 
 **Sanity check before touching any environment variables:**
 ```bash
-npx tsc --noEmit
+npm run typecheck
 ```
 This should be clean even with no `.env.local` yet — type-checking doesn't need real credentials.
 
@@ -232,7 +232,7 @@ Already installed via `npm install` (`netlify-cli` is in `package.json`'s dev de
 npx netlify dev
 ```
 
-This emulates the real Netlify Functions runtime locally — no production Netlify site connection needed for this (that's `17-MANUAL-TASKS.md` M-13, still open, and not required for local development).
+This emulates the real Netlify Functions runtime locally — no production Netlify site connection needed for this (that's `17-MANUAL-TASKS.md` M-13 — done 27 Sep 2026, and not required for local development).
 
 **One real gotcha already found:** Netlify's function bundler scans every file directly inside `netlify/functions/` as a candidate function. Test files must live in `netlify/functions/_shared/`, not the top-level `netlify/functions/` directory, or the dev server crashes trying to treat a test file as an endpoint. This is already correctly structured in the repo — just don't add a new top-level test file there without checking this first.
 
@@ -244,7 +244,7 @@ Run all of these before considering the machine "ready." Compare the numbers aga
 
 ```bash
 npm run lint            # clean
-npx tsc --noEmit         # clean
+npm run typecheck        # clean - tsc -b over every project (D40); `npx tsc --noEmit` checks nothing now
 npm test                 # should match the test count in docs/10-TRACKER.md; runs "unit" in parallel, then "perf" alone
 npx vitest run --project perf   # the 16 ms perf test on its own (D35)
 npx supabase db reset    # all migrations apply cleanly, no errors
