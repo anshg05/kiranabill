@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 27 Sep 2026 (rev 49) · **Current phase:** 3 — Billing UI, not started. Pre-Phase-3 fixes `KB-005e`, `KB-005f`, `KB-110b`, `KB-315` all done. Next: `KB-301` (owner decision 26 Sep; see "Right now")
+**Last updated:** 27 Sep 2026 (rev 50) · **Current phase:** 3 — Billing UI, not started. Pre-Phase-3 fixes `KB-005e`, `KB-005f`, `KB-110b`, `KB-315` all done. Next: `KB-301` (owner decision 26 Sep; see "Right now")
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -62,6 +62,26 @@ parallel) then `perf` (1 test, run alone, D35). The perf test is `KI-23`-closed;
 **Codebase map:** `src/domain/` (pure logic), `src/data/` (Dexie, sync, receipt numbers, learning audit),
 `src/providers/` (React context only — Auth, Shop), `src/ui/` (S1, S2 only), `src/app/` (gates + a
 placeholder), `src/voice/` (server-side Groq/Gemini providers), `netlify/functions/` (`/voice`).
+
+---
+
+## Before deployment
+
+Must be done before any production deploy or the pilot. Added 27 Sep 2026 (owner). Each line points to
+where the detail lives; tick it off there and strike it here.
+
+- [ ] **`M-13`** — connect the real Netlify site and set the 4 env vars (`VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`). `17-MANUAL-TASKS.md` M-13.
+- [ ] **`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`, not just
+  `src/` (tsc) / `src/domain/` (ESLint). `12-PARKED.md` §A.
+- [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`).
+  `12-PARKED.md` §A.
+- [ ] **`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.
+  `12-PARKED.md` §A.
+- [ ] **`KI-38`** (part) — revoke `anon` EXECUTE on `copy_base_catalog`. `12-PARKED.md` §A, KI-38's notes.
+- [ ] **Supabase plan** — the free tier pauses a project after ~1 week of no activity. Confirm the current
+  plan terms and decide free vs paid before the pilot. (Owner, 27 Sep 2026; not yet checked against
+  Supabase's current terms.)
 
 ---
 
@@ -249,6 +269,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 27 Sep 2026 | **Docs only — pre-deploy gaps recorded before `KB-301`.** `KI-40` (no service worker: the app can't load offline — HIGH, before the pilot; `KB-401` amended to include app-shell precaching) and `KI-41` (`push_bill()` doesn't verify totals add up — MEDIUM, before the pilot) added to `12-PARKED.md`. New "Before deployment" checklist in this file. Next: `KB-301`. | Owner + Agent |
 | 27 Sep 2026 | **`KB-315` done — the four pre-Phase-3 fixes are complete; `KB-301` is next.** A shopkeeper's device now has a persistent id, its own local database per signed-in user, a first receipt block reserved at onboarding, and a sync loop that runs while a shop is active and stops on sign-out. An offline start works from IndexedDB alone (offline session for the last real sign-in — `auth-js`'s real behaviour proven on the local stack), and — the owner's rule — nothing ever syncs without a real session, so offline bills can't become false conflicts. Device-scoped receipt blocks fixed a latent number-reuse path after a wipe. No migration. | Agent + Owner |
 | 27 Sep 2026 | **`KB-110b` done — a finalised bill now reaches the server whole, exactly once.** `push_bill()` (SECURITY INVOKER, one transaction) replaces the push path that could never sync a final bill's items; retries are idempotent and divergence is a loud `KB409`; `receipt_number_source` and `rate_unit` persist. Two real findings beyond the plan: the owner's review caught that `NULL` would have made a divergent retry a silent success (fixed, real-stack tested), and the first real e2e run caught that keeping the plain `bill_id` FK beside the new composite one broke every PostgREST `bills → bill_items` embed (dropped). Error classification fixed for every synced table. `npm run test:e2e` is now required for sync/schema tickets. Owner pushed `20260927090000_push_bill.sql` the same day; confirmed live via `db dump --linked` (functions SECURITY INVOKER, no `anon` EXECUTE, composite FK present, plain FK absent, `rate_unit` + iff check). Next: `KB-315`. | Agent + Owner |
 | 26 Sep 2026 | **`KB-005f` done — cross-unit prices are exact; `KI-30` closed.** D36: a line keeps its spoken qty/unit and its rate carries its own unit; totals computed exactly with no division (`no-division.test.ts` guards it). "500 gram chini" now ₹22.50 (was ₹25). Benchmark 110/0/0 with 10 new cross-unit cases that the unfixed code got all wrong; coverage 126/135. The first design (normalise to the catalog unit) was dropped after a real check showed it would HIGH-flag every normalised line. Logged: `KI-34` (Layer 2 cross-unit totals untrusted — HIGH, test-backed loud, trigger `KB-302`), `KI-35` (`inferRateBasis` unwired), `KI-36` (nothing outside `src/` is type-checked — MEDIUM, trigger before `KB-302`/deploy). Next: `KB-110b`. | Agent + Owner |
