@@ -64,7 +64,7 @@ async function postForm(form: FormData, opts: VoiceApiOptions): Promise<unknown>
 }
 
 export interface TranscribeOptions extends VoiceApiOptions {
-  /** Whisper language hint; undefined = auto-detect (pending the owner's KB-302 measurement - its own 07-DECISIONS.md entry). */
+  /** Whisper language hint; undefined = auto-detect. The app sends "hi" (docs/07-DECISIONS.md D44). */
   language?: string;
   vocabulary?: readonly string[];
 }

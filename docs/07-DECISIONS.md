@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 27 Sep 2026 (rev 28) · Supersedes rev 27
+**Last updated:** 28 Sep 2026 (rev 29) · Supersedes rev 28
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1315,6 +1315,26 @@ the previous line's, any order within a line. No segmentation on commas or "aur"
 adds, never after a fractional group; anything in between keeps numbers apart; no lakh. `saadhe N` = N + 0.5.
 Fixed in the shared tokenizer, so Layer 1 and every number check read the same numbers. Benchmark NB111–NB129;
 the 135 earlier fixture utterances parse byte-identically.
+
+### D44 — Whisper language hint: "hi" 🟢
+
+**Owner decision, 28 Sep 2026, after `KB-302`'s real-mic measurement** (owner's own voice, `netlify dev`, the
+dev-only `?lang=` switch). **Auto-detect wrote spoken Hindi in Urdu script** — "دو کلو چینی…", "سابون ایک سو اسی
+روپے", "ایک کلو کاجو ہزار روپے" — which Layer 1 can't read and in which `extractSpokenNumbers` finds **no numbers
+at all** (`numbersHeard: []` on every Urdu transcript), so every number check went blind and some products went
+unmatched and unpriced. **`hi` gave Devanagari with digits** — "2 किलो चीनी और 3 पार लेजी 10 वाला", "5 किलो चावल
+30 का", "साबुन 180 रुपए" — every number visible, the right lines on the bill for 6 of 6 orders (one of them caught
+only by HIGH flags: KI-45). The app now always sends `language: "hi"` (`src/ui/useVoiceBilling.ts`); the dev switch
+keeps `?lang=auto|en` for measurements. Known cost: `hi` still glues some numbers to the next word ("दसवाला" —
+KI-44) and Layer 1 misses most Devanagari (KI-49) — both next ticket.
+
+### D45 — Warm mic: keep the stream 60 s after last use; never show "listening" before recording starts 🟢
+
+**Owner decision, 28 Sep 2026** (`KB-302` measured tap → listening at **165–289 ms** on every tap against a 100 ms
+budget; opening the mic costs ~150 ms each time). Keep the `MediaStream` open for 60 s after the last recording,
+then release it (the browser's recording indicator stays on for that window). **Hard rule: the listening state is
+never shown before `MediaRecorder` has actually started** — a lost first word is a wrong quantity. Budgets revised
+in `05-FRONTEND-SPEC.md` §10: first tap ≤ 300 ms, warm taps < 100 ms. Built in the next ticket, not `KB-302`.
 
 ---
 

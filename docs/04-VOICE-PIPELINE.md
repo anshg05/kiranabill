@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 27 Sep 2026 (rev 5) · **Status:** Final for MVP
+**Last updated:** 28 Sep 2026 (rev 6) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -84,10 +84,9 @@ capped at 600 characters (Whisper's prompt window is ~224 tokens).
 **Confidence:** Groq's real response carries no usable per-utterance confidence score in any response
 format — verified against the live API in `KB-204`. `TranscriptionProvider.transcribe()`'s
 `confidence?` is permanently unset for this provider. See `07-DECISIONS.md` D25.
-**Language hint (`KB-302`):** none — Whisper auto-detects — until the owner's measurement (a dev-only
-`?lang=hi|en|auto` switch; its own `07-DECISIONS.md` entry). With `hi` Whisper writes glued Devanagari
-("दुकीलोचीनी"); auto gave Latin Hinglish on test clips, also with glued words ("Dukilo", "Daswala") —
-`12-PARKED.md` KI-44.
+**Language hint:** `hi` (`07-DECISIONS.md` D44, 28 Sep 2026). On the owner's real voice, auto-detect wrote Hindi in
+**Urdu script** (unreadable for Layer 1 and the number checks); `hi` gives Devanagari with digits. `hi` still glues some
+numbers to the next word ("दसवाला" — `12-PARKED.md` KI-44), and Layer 1 misses most Devanagari (KI-49).
 
 ---
 

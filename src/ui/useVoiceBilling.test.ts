@@ -64,6 +64,27 @@ describe("useVoiceBilling", () => {
     expect(fetchMock.mock.calls[0]![1].headers).toEqual({ Authorization: "Bearer jwt" });
   });
 
+  // Owner decision after the KB-302 measurement: "auto" wrote Hindi in Urdu
+  // script; "hi" gave clean Devanagari with digits. Default = "hi".
+  it("sends the Whisper language hint 'hi' by default; dev ?lang=auto sends no hint", async () => {
+    const metaOf = (call: number) => JSON.parse((fetchMock.mock.calls[call]![1].body as FormData).get("meta") as string);
+    reply(200, { transcript: "do kilo chini" });
+    const first = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+    await speak(first.result);
+    expect(metaOf(0).language).toBe("hi");
+    first.unmount();
+
+    window.history.replaceState(null, "", "/?lang=auto");
+    try {
+      reply(200, { transcript: "do kilo chini" });
+      const second = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+      await speak(second.result);
+      expect(metaOf(1)).not.toHaveProperty("language");
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+
   it.each([
     [401, "Session expired — sign out and sign in again"],
     [429, "Too many voice requests — wait a minute and try again"],

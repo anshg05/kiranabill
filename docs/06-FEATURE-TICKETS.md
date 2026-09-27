@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 27 Sep 2026 (rev 21) · **Status:** Final for MVP
+**Last updated:** 28 Sep 2026 (rev 22) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -124,7 +124,7 @@ nothing renumbered.
 | ID | Ticket | Detail | Status |
 |---|---|---|---|
 | **KB-301** | Billing screen shell | S3. Table on desktop, cards on mobile. | ✅ **Done 27 Sep 2026** — owner's real-browser check passed (D39). Also: `ShopProvider` tests, Retry instead of onboarding on a failed first load, KI-19 font fix, dev-only email sign-in for the local stack. New dependencies: `lucide-react` (SD-026), `@fontsource/mukta` (SD-027). |
-| **KB-302** | Voice control + states | Every state in `05-FRONTEND-SPEC.md` §2. **Transcript shown before items resolve.** | 🟨 **Built 27 Sep 2026, not pushed — awaiting the owner's real-mic browser check and the `?lang=` measurement** (D39). Three local commits: (a) capture + states + transcript; the compound-number grammar fix (D43); (b) Layer 1 on the shop's catalog, text-only Layer 2 parse with guardrails, settling, number alignment, lines on the bill (D41, D42). Original note: ⬜ Not started. **Real dependency now concrete:** `KB-206`'s `/voice` endpoint is done and real-verified — this ticket calls it directly. Per `02-ARCHITECTURE.md` §5, this ticket also owns running Layer 1 (`grammar.ts`) client-side first and building the catalog slice before ever calling `/voice` for a Layer 2 parse — neither is `/voice`'s job. |
+| **KB-302** | Voice control + states | Every state in `05-FRONTEND-SPEC.md` §2. **Transcript shown before items resolve.** | ✅ **Done 28 Sep 2026** — owner's real-mic browser check passed (D39); language `hi` (D44). Three local commits: (a) capture + states + transcript; the compound-number grammar fix (D43); (b) Layer 1 on the shop's catalog, text-only Layer 2 parse with guardrails, settling, number alignment, lines on the bill (D41, D42). Original note: ⬜ Not started. **Real dependency now concrete:** `KB-206`'s `/voice` endpoint is done and real-verified — this ticket calls it directly. Per `02-ARCHITECTURE.md` §5, this ticket also owns running Layer 1 (`grammar.ts`) client-side first and building the catalog slice before ever calling `/voice` for a Layer 2 parse — neither is `/voice`'s job. |
 | **KB-303** | Editable bill table | Qty, rate, remove. `inputmode="decimal"`. Line totals recompute on edit. | ⬜ Not started. No new dependency. |
 | **KB-304** | Flag rendering | HIGH red inline / MEDIUM amber badge / LOW grey dot | ⬜ Not started. **Real dependency now concrete:** renders `src/domain/reviewFlags.ts`'s real `ReviewFlag[]` output (`KB-208`, done) — severity, `itemIndex`, and real human-readable `message` strings already exist (written to match `05-FRONTEND-SPEC.md`'s own "inline sentences, not icons" rule). This ticket renders that data; it doesn't design it. |
 | **KB-305** | **Add item with type-ahead** | S3a. Under 2 s from tap to item on bill. Depends on KB-201. | ⬜ Not started. **Dependency already satisfied:** `KB-201` (catalog index/matcher) was done via Phase 0 (`KB-005b`), confirmed in this file's own Phase 2 corrections above. |

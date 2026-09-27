@@ -92,6 +92,9 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
 
     (async () => {
       const device = await getOrCreateDeviceId(deviceDb);
+      // Cancelled meanwhile (StrictMode's dev double mount, sign-out mid-load):
+      // its db is already closed - don't read it (Dexie would log the error).
+      if (!active) return;
       const cached = await readCachedShop(db);
       if (!active) return;
       setDeviceId(device);

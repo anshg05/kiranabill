@@ -33,16 +33,19 @@ export const IDLE_VOICE: VoiceView = { phase: "idle", transcript: null, message:
 
 export const OFFLINE_REASON = "Offline — voice needs internet";
 
-/** Whisper language hint. undefined = auto-detect - the default until the
- * owner's KB-302 measurement decides (its own 07-DECISIONS.md entry). */
-const DEFAULT_LANGUAGE: string | undefined = undefined;
+/** Whisper language hint - "hi" (owner, 28 Sep 2026, docs/07-DECISIONS.md
+ * D44): on the owner's real voice, auto-detect wrote Hindi in Urdu script,
+ * which Layer 1 and every number check can't read; "hi" gave Devanagari
+ * with digits. */
+const DEFAULT_LANGUAGE = "hi";
 
 /** DEV ONLY (owner, 27 Sep 2026, Q4): `?lang=hi|en|auto` switches the hint for
- * the language measurement. Build-time `false` in production - removed by
- * `npm run build` (VERIFY greps dist/). */
+ * measurements; "auto" sends no hint. Build-time `false` in production -
+ * removed by `npm run build` (VERIFY greps dist/). */
 function devLanguage(): string | undefined {
   if (!import.meta.env.DEV) return DEFAULT_LANGUAGE;
   const lang = new URLSearchParams(window.location.search).get("lang");
+  if (lang === "auto") return undefined;
   if (lang === "hi" || lang === "en") return lang;
   return DEFAULT_LANGUAGE;
 }

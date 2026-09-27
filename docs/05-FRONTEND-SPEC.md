@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 28 Sep 2026 (rev 5) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -280,7 +280,7 @@ wearing a receipt's clothes.
 | Action | Budget |
 |---|---|
 | Keystroke → search results | < 16 ms (60 fps) |
-| Tap mic → listening | < 100 ms |
+| Tap mic → listening | **First tap ≤ 300 ms; warm taps (within 60 s of the last) < 100 ms** — never shown before recording has actually started (`07-DECISIONS.md` D45, 28 Sep 2026; measured 165–289 ms in `KB-302`, before the warm mic) |
 | Stop → transcript shown | < 1.5 s |
 | Fast-path item on screen | < 300 ms after transcript |
 | LLM-path item on screen | < 4 s after transcript |
