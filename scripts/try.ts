@@ -17,6 +17,7 @@
  */
 
 import { parseUtterance, type ParsedItem } from "../src/domain/grammar.js";
+import { SEED_PARSER_CATALOG } from "../src/domain/seedCatalog.js";
 import { getCatalogEntryById } from "../src/domain/catalog.js";
 import { formatRupees } from "../src/domain/money.js";
 
@@ -40,7 +41,7 @@ function main(): void {
   }
 
   const start = performance.now();
-  const items = parseUtterance(text);
+  const items = parseUtterance(text, SEED_PARSER_CATALOG);
   const elapsedMs = performance.now() - start;
 
   if (items === null) {

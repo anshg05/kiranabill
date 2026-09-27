@@ -43,10 +43,11 @@
  */
 import { describe, it, expect } from "vitest";
 import type { ParsedItem } from "./grammar";
+import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import type { CatalogEntry } from "./catalog";
 import { EMPTY_LEARNING_STATE, recordPriceObservation, type LearningState } from "./learning";
 import { rupeesToPaise } from "./money";
-import { evaluateReviewFlags, canFinalize, type ReviewFlag } from "./reviewFlags";
+import { evaluateReviewFlags, canFinalize, checkLayer2NumberOrder, type ReviewFlag } from "./reviewFlags";
 import { parseUtterance } from "./grammar";
 import { catalog as realCatalog } from "./catalog";
 
@@ -656,12 +657,62 @@ describe("KB-005f - review flags compare across units exactly", () => {
 
   it("the real parse of '500 gram chini' never fires number_dropped / qty_dropped - the spoken 500 stays on the line", () => {
     const transcript = "500 gram chini";
-    const items = parseUtterance(transcript);
+    const items = parseUtterance(transcript, SEED_PARSER_CATALOG);
     expect(items).not.toBeNull();
     const flags = evaluateReviewFlags(transcript, items!, realCatalog);
     expect(codesOf(flags)).not.toContain("number_dropped");
     expect(codesOf(flags)).not.toContain("qty_dropped");
     expect(codesOf(flags)).not.toContain("unusual_rate");
     expect(codesOf(flags)).not.toContain("unusual_total");
+  });
+});
+
+// KB-302 (owner, Q7; NI-26): ordered alignment for Layer 2 output. The
+// transcript's numbers in spoken order; each item's spoken-origin numbers
+// must be found AFTER the previous item's (any order within one item).
+describe("checkLayer2NumberOrder", () => {
+  const line = (over: Partial<ParsedItem>): ParsedItem => ({
+    spokenName: "x", catalogId: null, isCustom: true, matchStatus: "none",
+    qty: null, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "unknown", ...over,
+  });
+  const chini = (qty: number, total?: number) =>
+    line({ spokenName: "chini", catalogId: "27", qty, ...(total === undefined ? { priceType: "default", rate: 4500, rateUnit: "kg", total: qty * 4500 } : { priceType: "total", total }) });
+
+  it("aligned: 'do kilo chini aur teen parle g das wala' -> no flag", () => {
+    const items = [chini(2), line({ spokenName: "parle g", qty: 3, unit: "piece", rate: 1000, rateUnit: "piece", total: 3000, priceType: "rate" })];
+    expect(checkLayer2NumberOrder("do kilo chini aur teen parle g das wala", items)).toBeNull();
+  });
+
+  it("cross-item swap of qtys -> ONE bill-level HIGH flag", () => {
+    const items = [chini(3), line({ spokenName: "parle g", qty: 2, unit: "piece", rate: 1000, rateUnit: "piece", total: 2000, priceType: "rate" })];
+    expect(checkLayer2NumberOrder("do kilo chini aur teen parle g das wala", items)).toEqual(
+      expect.objectContaining({ code: "number_misaligned", severity: "HIGH", itemIndex: null }),
+    );
+  });
+
+  it("NI-26's own case: identical numbers, totals swapped between items -> caught (number_dropped can't see it)", () => {
+    const transcript = "2 kilo chini 90 rupay aur 2 kilo besan 180 rupay";
+    const swapped = [chini(2, 18000), line({ spokenName: "besan", catalogId: "4", qty: 2, priceType: "total", total: 9000 })];
+    const correct = [chini(2, 9000), line({ spokenName: "besan", catalogId: "4", qty: 2, priceType: "total", total: 18000 })];
+    expect(checkLayer2NumberOrder(transcript, swapped)?.code).toBe("number_misaligned");
+    expect(checkLayer2NumberOrder(transcript, correct)).toBeNull();
+    // The existing whole-bill check stays silent on the swap - the gap this closes.
+    expect(evaluateReviewFlags(transcript, swapped, realCatalog).some((f) => f.code === "number_dropped")).toBe(false);
+  });
+
+  it("any order within one item: 'chini 90 rupay 2 kilo'", () => {
+    expect(checkLayer2NumberOrder("chini 90 rupay 2 kilo", [chini(2, 9000)])).toBeNull();
+  });
+
+  it("an implied qty of 1 that was never spoken is not required ('sabun 180 rupay')", () => {
+    expect(checkLayer2NumberOrder("sabun 180 rupay", [line({ spokenName: "sabun", qty: 1, unit: "piece", priceType: "total", total: 18000 })])).toBeNull();
+  });
+
+  it("a default line's rate and total come from the catalog - only its qty must be spoken", () => {
+    expect(checkLayer2NumberOrder("500 gram chini", [line({ spokenName: "chini", catalogId: "27", qty: 500, unit: "gm", rate: 4500, rateUnit: "kg", total: 2250, priceType: "default" })])).toBeNull();
+  });
+
+  it("a number the item claims but nobody said -> flagged", () => {
+    expect(checkLayer2NumberOrder("chini aur besan", [chini(2)])?.code).toBe("number_misaligned");
   });
 });

@@ -34,7 +34,7 @@ export const IDLE_VOICE: VoiceView = { phase: "idle", transcript: null, message:
 export const OFFLINE_REASON = "Offline — voice needs internet";
 
 /** Whisper language hint. undefined = auto-detect - the default until the
- * owner's measurement decides (docs/07-DECISIONS.md D42). */
+ * owner's KB-302 measurement decides (its own 07-DECISIONS.md entry). */
 const DEFAULT_LANGUAGE: string | undefined = undefined;
 
 /** DEV ONLY (owner, 27 Sep 2026, Q4): `?lang=hi|en|auto` switches the hint for
@@ -47,7 +47,11 @@ function devLanguage(): string | undefined {
   return DEFAULT_LANGUAGE;
 }
 
+/** A failure whose message is written for the shopkeeper and shown as-is. */
+export class VoiceUserError extends Error {}
+
 function messageFor(err: unknown): string {
+  if (err instanceof VoiceUserError) return err.message;
   if (err instanceof VoiceApiError) {
     if (err.kind === "unauthorized") return "Session expired — sign out and sign in again";
     if (err.kind === "rate_limited") return "Too many voice requests — wait a minute and try again";
@@ -77,6 +81,9 @@ export interface UseVoiceBillingOptions {
   vocabulary?: readonly string[];
   /** Called with each transcript; resolves when its lines are on the bill (commit b). */
   onTranscript?: (transcript: string) => Promise<void>;
+  /** Set while voice can't run yet for a non-network reason (the shop's
+   * catalog still loading) - shown as the disabled reason. */
+  notReadyReason?: string | null;
   /** Injected in tests. */
   endpoint?: string;
 }
@@ -88,7 +95,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
   const [transcript, setTranscript] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const disabledReason = !opts.accessToken || !browserOnline ? OFFLINE_REASON : null;
+  const disabledReason = !opts.accessToken || !browserOnline ? OFFLINE_REASON : (opts.notReadyReason ?? null);
 
   // Capture errors (permission denied, no mic, unsupported) surface as "failed".
   useEffect(() => {

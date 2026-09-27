@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { transcribeAudio, VoiceApiError } from "./voiceApi";
+import { parseTranscript, transcribeAudio, VoiceApiError } from "./voiceApi";
 
 function respond(status: number, body: unknown): typeof fetch {
   return vi.fn().mockResolvedValue(
@@ -64,5 +64,26 @@ describe("transcribeAudio", () => {
   it("a non-JSON error page still maps by status", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response("<html>502</html>", { status: 502 })) as unknown as typeof fetch;
     expect((await errorOf(transcribeAudio(audio, { accessToken: "jwt", fetchImpl }))).kind).toBe("server");
+  });
+});
+
+describe("parseTranscript (Layer 1 miss, text only)", () => {
+  const chini = { id: "p-chini", displayName: "Chini", sourceCategory: "SUGAR", guardCategory: "sweet" as const, unit: "kg", suggestedPricePaise: 5200, aliases: ["chini", "cheeni"], isActive: true };
+
+  it("sends the transcript and only the four slice fields - no audio", async () => {
+    const fetchImpl = respond(200, { transcript: "do kilo chini", items: [{ spokenName: "chini" }] });
+    const items = await parseTranscript("do kilo chini", { accessToken: "jwt", catalogSlice: [chini], fetchImpl });
+    expect(items).toEqual([{ spokenName: "chini" }]);
+    const form = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as FormData;
+    expect(form.get("audio")).toBeNull();
+    expect(JSON.parse(form.get("meta") as string)).toEqual({
+      transcript: "do kilo chini",
+      catalogSlice: [{ id: "p-chini", displayName: "Chini", unit: "kg", suggestedPricePaise: 5200 }],
+    });
+  });
+
+  it("a response without items -> 'server'; 429 -> 'rate_limited'", async () => {
+    expect((await errorOf(parseTranscript("x", { accessToken: "jwt", catalogSlice: [], fetchImpl: respond(200, {}) }))).kind).toBe("server");
+    expect((await errorOf(parseTranscript("x", { accessToken: "jwt", catalogSlice: [], fetchImpl: respond(429, {}) }))).kind).toBe("rate_limited");
   });
 });

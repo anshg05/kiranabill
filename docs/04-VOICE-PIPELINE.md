@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 5) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -84,6 +84,10 @@ capped at 600 characters (Whisper's prompt window is ~224 tokens).
 **Confidence:** Groq's real response carries no usable per-utterance confidence score in any response
 format — verified against the live API in `KB-204`. `TranscriptionProvider.transcribe()`'s
 `confidence?` is permanently unset for this provider. See `07-DECISIONS.md` D25.
+**Language hint (`KB-302`):** none — Whisper auto-detects — until the owner's measurement (a dev-only
+`?lang=hi|en|auto` switch; its own `07-DECISIONS.md` entry). With `hi` Whisper writes glued Devanagari
+("दुकीलोचीनी"); auto gave Latin Hinglish on test clips, also with glued words ("Dukilo", "Daswala") —
+`12-PARKED.md` KI-44.
 
 ---
 
@@ -161,7 +165,7 @@ tracked product metric**, target ≥60%.
 | | |
 |---|---|
 | Provider | Gemini Flash-Lite via `ParseProvider` |
-| Called | **Only on Layer 1 miss** |
+| Called | **Only on a Layer 1 miss** — and a miss is more than `null` (D42): Layer 1's answer only counts if every line matched a product in the shop's catalog and no HIGH number flag fired. The client re-sends the **transcript**, text-only, never the audio (D41). |
 | Prompt | Static pricing-grammar rules + a relevance-ranked catalog slice |
 | Catalog slice | Top 30 relevant products, down from the predecessor's 80 — measure whether accuracy drops before assuming it does |
 | Caching | ~~Cache the static grammar block; it is byte-identical on every call and ~43% of the prompt~~ **Not currently achievable — verified against the real API in `KB-205`.** Gemini's explicit context caching requires 2,048 minimum tokens; the actual grammar prompt tokenizes to 1,233. See `07-DECISIONS.md` D26. |
@@ -170,6 +174,16 @@ tracked product metric**, target ≥60%.
 | Output | Strict JSON array of proposed items |
 
 **A parse response is a proposal, never financial truth.** It always passes through Layer 3.
+
+**Settling a Layer 2 line (`KB-302`, D42; closed `KI-34`).** Gemini's own `total`, default `rate` and
+`rateUnit` are never trusted. Its `catalogId` must exist in the **shop's** catalog (else the line is
+custom/unknown); a matched line displays the shop entry's name. `default` → the shop's price per the
+entry's unit, total recomputed with D36's exact cross-unit arithmetic; `rate` (wala) → per the spoken
+unit, total recomputed; `total` (ka / rupay) → the spoken total stands; `unknown` → no price. qty must be a
+valid `numeric(12,3)` (finite, > 0, < 10^9, ≤ 3 decimals) or it is dropped and flagged `invalid_qty`; money
+that isn't whole paise is dropped, never rounded. Then `reviewFlags` runs, plus an **ordered number
+alignment** check (`number_misaligned`, HIGH): each line's spoken numbers must appear in the transcript
+after the previous line's (NI-26).
 
 **Model:** `gemini-2.5-flash-lite` — verified live and still the cheapest Flash-Lite variant as of `KB-205` (20 Sep 2026). See `07-DECISIONS.md` D27; re-check before assuming this pricing still holds.
 

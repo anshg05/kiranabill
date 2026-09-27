@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildCatalogIndex, lookupCandidates, phoneticNormalize } from "./catalogIndex";
+import { buildCatalogIndex, buildCatalogSlice, lookupCandidates, phoneticNormalize } from "./catalogIndex";
+import { SEED_PARSER_CATALOG } from "./seedCatalog";
+import { catalog } from "./catalog";
 
 describe("phoneticNormalize", () => {
   it("ph -> f", () => {
@@ -16,7 +18,7 @@ describe("phoneticNormalize", () => {
 });
 
 describe("lookupCandidates - exact and phonetic matches", () => {
-  const index = buildCatalogIndex();
+  const index = buildCatalogIndex(catalog);
 
   it("an exact alias scores 1.0", () => {
     const candidates = lookupCandidates(index, "chawal");
@@ -43,5 +45,27 @@ describe("lookupCandidates - exact and phonetic matches", () => {
     for (let i = 1; i < candidates.length; i++) {
       expect(candidates[i]!.score).toBeLessThanOrEqual(candidates[i - 1]!.score);
     }
+  });
+});
+
+// KB-302: the Layer 2 catalog slice (docs/04-VOICE-PIPELINE.md section 4 -
+// top ~30 relevant products, from the SHOP's catalog).
+describe("buildCatalogSlice", () => {
+  it("every product spoken in a multi-item transcript is in the slice; at most 30", () => {
+    const slice = buildCatalogSlice(SEED_PARSER_CATALOG, "do kilo chini, teen parle g das wala aur ek kilo besan");
+    const ids = slice.map((e) => e.id);
+    expect(ids).toEqual(expect.arrayContaining(["27", "52", "4"])); // Chini, Parle-G 10, Besan
+    expect(slice.length).toBeLessThanOrEqual(30);
+    expect(new Set(ids).size).toBe(ids.length); // no duplicates
+  });
+
+  it("a long transcript is still capped at the limit", () => {
+    const words = SEED_PARSER_CATALOG.entries.slice(0, 80).map((e) => e.displayName).join(" aur ");
+    expect(buildCatalogSlice(SEED_PARSER_CATALOG, words)).toHaveLength(30);
+    expect(buildCatalogSlice(SEED_PARSER_CATALOG, words, 5)).toHaveLength(5);
+  });
+
+  it("nothing recognisable -> an empty slice (Gemini still returns unknown lines)", () => {
+    expect(buildCatalogSlice(SEED_PARSER_CATALOG, "   ")).toEqual([]);
   });
 });

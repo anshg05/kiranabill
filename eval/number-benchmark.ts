@@ -27,6 +27,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { parseUtterance, type ParsedItem, type PriceType } from "../src/domain/grammar.js";
+import { SEED_PARSER_CATALOG } from "../src/domain/seedCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -86,7 +87,7 @@ function matchesExpected(item: ParsedItem, expected: ExpectedOutcome): boolean {
 }
 
 function classify(benchmarkCase: BenchmarkCase): CaseResult {
-  const actualItems = parseUtterance(benchmarkCase.utterance);
+  const actualItems = parseUtterance(benchmarkCase.utterance, SEED_PARSER_CATALOG);
   const { expected } = benchmarkCase;
 
   if (actualItems === null) {

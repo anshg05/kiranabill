@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Menu, Mic, Plus, Square } from "lucide-react";
-import { parseUtterance, type ParsedItem } from "@/domain/grammar";
+import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
+import { extractSpokenNumbers, parseUtterance } from "@/domain/grammar";
 import { sumPaise } from "@/domain/money";
+import type { ReviewFlag } from "@/domain/reviewFlags";
+import { buildVocabularyPrompt } from "@/domain/vocabulary";
+import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
+import { parseTranscript } from "@/data/voiceApi";
+import { resolveUtterance, type BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
+import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate } from "./billFormat";
-import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import { IDLE_VOICE, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -12,26 +19,91 @@ import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 // (KB-307) plug into it later. Design: 13-DESIGN.md §3-§6c, §9.
 
 /** DEV ONLY (owner, 27 Sep 2026): `?try=<utterance>` fills the bill with real
- * parseUtterance() output so the layout can be checked in a browser before
- * voice exists. `import.meta.env.DEV` is a build-time `false` in production,
- * so this branch and its call are removed from `npm run build`. */
-function devTryLines(): ParsedItem[] {
+ * parseUtterance() output - against the SHOP's catalog (Q2) - so the layout
+ * can be checked in a browser. `import.meta.env.DEV` is a build-time `false`
+ * in production, so this branch and its call are removed from `npm run build`. */
+function devTryLines(shop: ParserCatalog): BillLine[] {
   if (!import.meta.env.DEV) return [];
   const utterance = new URLSearchParams(window.location.search).get("try");
-  return (utterance && parseUtterance(utterance)) || [];
+  const items = (utterance && parseUtterance(utterance, shop)) || [];
+  return items.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" }));
 }
 
 export function BillingScreen() {
   const { signOut, session } = useAuth();
-  // The bill being built. KB-302/303/305 write into it.
-  const [lines] = useState<ParsedItem[]>(devTryLines);
+  const { shop, localDb } = useShop();
+  // The bill being built (KB-303/305 will edit and add to it) and every
+  // review flag raised so far - stored for KB-304 to display.
+  const [lines, setLines] = useState<BillLine[]>([]);
+  const [, setFlags] = useState<ReviewFlag[]>([]);
+  const linesRef = useRef<BillLine[]>([]);
+  linesRef.current = lines;
+  const utteranceCount = useRef(0);
+
+  // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
+  // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
+  const [shopCatalog, setShopCatalog] = useState<ShopCatalog | null>(null);
+  useEffect(() => {
+    if (!localDb || !shop) return;
+    let active = true;
+    void loadShopCatalog(localDb, shop.id).then((c) => {
+      if (active) setShopCatalog(c);
+    });
+    return () => {
+      active = false;
+    };
+  }, [localDb, shop]);
+  const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog]);
+  const vocabulary = useMemo(
+    () => (shopCatalog ? buildVocabularyPrompt(shopCatalog.entries, shopCatalog.usageById).names : []),
+    [shopCatalog],
+  );
+
+  useEffect(() => {
+    if (parser) setLines((current) => (current.length ? current : devTryLines(parser)));
+  }, [parser]);
+
+  const accessToken = session?.access_token ?? null;
+  const onTranscript = useCallback(
+    async (transcript: string) => {
+      if (!parser || !accessToken) throw new VoiceUserError("Couldn't hear that — try again");
+      const resolved = await resolveUtterance(transcript, {
+        shop: parser,
+        parse: (text, catalogSlice) => parseTranscript(text, { accessToken, catalogSlice }),
+      });
+      if (import.meta.env.DEV) {
+        console.info("[voice] resolved", {
+          layer: resolved.layer,
+          lines: resolved.lines.map((l) => `${l.displayName} ${l.item.qty ?? "—"} ${l.item.unit} = ${l.item.total ?? "—"}`),
+          flags: resolved.flags.map((f) => `${f.severity} ${f.code}`),
+          numbersHeard: extractSpokenNumbers(transcript),
+        });
+      }
+      if (resolved.lines.length === 0) throw new VoiceUserError("No items heard in that — try again");
+      // Re-base each flag onto the bill's line numbers; ids stay unique per utterance.
+      const offset = linesRef.current.length;
+      const u = (utteranceCount.current += 1);
+      setLines((current) => [...current, ...resolved.lines]);
+      setFlags((current) => [
+        ...current,
+        ...resolved.flags.map((f) => ({ ...f, id: `u${u}-${f.id}`, itemIndex: f.itemIndex === null ? null : f.itemIndex + offset })),
+      ]);
+    },
+    [accessToken, parser],
+  );
+
   // Voice needs a LIVE session (offline-session mode has none - D38).
-  const voice = useVoiceBilling({ accessToken: session?.access_token ?? null });
+  const voice = useVoiceBilling({
+    accessToken,
+    vocabulary,
+    onTranscript,
+    notReadyReason: parser ? null : "Loading your catalog…",
+  });
   return <BillView lines={lines} onSignOut={() => void signOut()} voice={voice.view} onMicTap={voice.onMicTap} />;
 }
 
 interface BillViewProps {
-  lines: readonly ParsedItem[];
+  lines: readonly BillLine[];
   onSignOut: () => void;
   voice?: VoiceView;
   onMicTap?: () => void;
@@ -112,7 +184,7 @@ const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
 export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: BillViewProps) {
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
-  const total = sumPaise(lines.flatMap((l) => (l.total === null ? [] : [l.total])));
+  const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
 
   // 05 §2: the most recently added line scrolls into view.
   const endRef = useRef<HTMLDivElement>(null);
@@ -149,10 +221,10 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: Bil
         <div className="min-h-0 flex-1 overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
-            {lines.map((line, i) => (
+            {lines.map(({ item: line, displayName }, i) => (
               <li key={i} className="min-h-12 border-b border-line bg-surface px-4 py-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="capitalize">{line.spokenName}</span>
+                  <span className="capitalize">{displayName}</span>
                   <span className="font-semibold tabular-nums">{formatAmount(line.total)}</span>
                 </div>
                 <div className="text-[13px] text-ink-soft tabular-nums">
@@ -176,9 +248,9 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: Bil
               </tr>
             </thead>
             <tbody>
-              {lines.map((line, i) => (
+              {lines.map(({ item: line, displayName }, i) => (
                 <tr key={i} className="h-12 border-b border-line bg-surface">
-                  <td className="px-4 capitalize">{line.spokenName}</td>
+                  <td className="px-4 capitalize">{displayName}</td>
                   <td className="px-2 text-right tabular-nums">{formatQty(line.qty)}</td>
                   <td className="px-2">{line.qty === null ? formatQty(null) : line.unit}</td>
                   <td className="px-2 text-right tabular-nums">{formatRate(line)}</td>

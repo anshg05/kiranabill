@@ -11,7 +11,7 @@
  * scale-up benchmark - the real catalog is 482 products.
  */
 
-import { catalog, type CatalogEntry, type GuardCategory } from "./catalog.js";
+import type { CatalogEntry, GuardCategory } from "./catalog.js";
 
 /**
  * ph -> f, w -> v (docs/14-LEGACY-REFERENCE.md section 6: "phorchune" and
@@ -50,7 +50,7 @@ export interface CatalogIndex {
   readonly trigramMap: ReadonlyMap<string, readonly number[]>;
 }
 
-export function buildCatalogIndex(products: readonly CatalogEntry[] = catalog): CatalogIndex {
+export function buildCatalogIndex(products: readonly CatalogEntry[]): CatalogIndex {
   const entries: IndexEntry[] = [];
   for (const product of products) {
     for (const raw of [product.displayName, ...product.aliases]) {
@@ -70,6 +70,24 @@ export function buildCatalogIndex(products: readonly CatalogEntry[] = catalog): 
   });
 
   return { entries, trigramMap };
+}
+
+/**
+ * KB-302 (owner, Q2): everything Layer 1 needs from ONE catalog - the shop's
+ * own (data/shopCatalog.ts) in the app; the seed (seedCatalog.ts) only in
+ * tests, eval and scripts. Every function that parses takes one of these as
+ * a REQUIRED argument: a silent default to the seed is how Layer 1 came to
+ * price every shop from the base catalog instead of its own (D4).
+ */
+export interface ParserCatalog {
+  readonly entries: readonly CatalogEntry[];
+  readonly index: CatalogIndex;
+  readonly byId: ReadonlyMap<string, CatalogEntry>;
+}
+
+/** Build once per catalog (and again when it changes) - not per utterance. */
+export function prepareParserCatalog(entries: readonly CatalogEntry[]): ParserCatalog {
+  return { entries, index: buildCatalogIndex(entries), byId: new Map(entries.map((e) => [e.id, e])) };
 }
 
 export interface Candidate {
@@ -119,4 +137,29 @@ export function lookupCandidates(index: CatalogIndex, query: string, limit = 10)
   }
 
   return [...bestByProduct.values()].sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+/**
+ * KB-302: the Layer 2 catalog slice (docs/04-VOICE-PIPELINE.md section 4:
+ * "top 30 relevant products"). A whole multi-item transcript is a poor single
+ * query - it dilutes every product's score - so each word and each adjacent
+ * word pair is looked up on its own; a product keeps its best score. Pure;
+ * the server caps the slice again (netlify/functions/voice.mts).
+ */
+export function buildCatalogSlice(pc: ParserCatalog, transcript: string, limit = 30): CatalogEntry[] {
+  const words = transcript.split(/[\s,.;:!?।]+/).filter((w) => w.length > 0);
+  const queries = [...words, ...words.slice(1).map((w, i) => `${words[i]} ${w}`)];
+  const best = new Map<string, number>();
+  for (const q of queries) {
+    for (const c of lookupCandidates(pc.index, q, 5)) {
+      if (c.score > (best.get(c.catalogId) ?? 0)) best.set(c.catalogId, c.score);
+    }
+  }
+  return [...best.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .slice(0, limit)
+    .flatMap(([id]) => {
+      const entry = pc.byId.get(id);
+      return entry ? [entry] : [];
+    });
 }

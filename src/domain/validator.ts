@@ -10,11 +10,9 @@
  * functions with no caller. See docs/07-DECISIONS.md for that call.
  */
 
-import { catalog, type CatalogEntry } from "./catalog.js";
+import type { CatalogEntry } from "./catalog.js";
 import type { Paise } from "./money.js";
-import { buildCatalogIndex, lookupCandidates, type CatalogIndex } from "./catalogIndex.js";
-
-const DEFAULT_INDEX = buildCatalogIndex(catalog);
+import { lookupCandidates, type CatalogIndex } from "./catalogIndex.js";
 
 /**
  * Length-scaled minimum score, verbatim from docs/14-LEGACY-REFERENCE.md
@@ -75,7 +73,8 @@ export type MatchOutcome =
   | { readonly kind: "none" };
 
 export interface MatchOptions {
-  readonly index?: CatalogIndex;
+  /** Required (KB-302, Q2): the caller names the catalog - no silent seed default. */
+  readonly index: CatalogIndex;
   /** KB-008's learning hook - use counts per catalogId. Absent/empty until then. */
   readonly useCountById?: Readonly<Record<string, number>>;
 }
@@ -87,8 +86,8 @@ export interface MatchOptions {
  * rule 5: never block on an unknown product - the caller decides what to
  * do with "none", this function just refuses to invent a match).
  */
-export function matchProduct(spokenPhrase: string, opts: MatchOptions = {}): MatchOutcome {
-  const index = opts.index ?? DEFAULT_INDEX;
+export function matchProduct(spokenPhrase: string, opts: MatchOptions): MatchOutcome {
+  const index = opts.index;
   const trimmed = spokenPhrase.trim();
   if (!trimmed) return { kind: "none" };
 

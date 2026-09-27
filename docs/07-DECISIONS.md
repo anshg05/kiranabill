@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 27 Sep 2026 (rev 27) · Supersedes rev 26
+**Last updated:** 27 Sep 2026 (rev 28) · Supersedes rev 27
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1264,6 +1264,57 @@ the deployed `/voice` function while every local check still passed.
 import boundary (D16) plus five ESLint core correctness rules — `no-debugger`, `no-unreachable`, `no-dupe-keys`,
 `no-dupe-else-if`, `no-self-assign`. No new dependency, no style rules. A TypeScript-aware rule set is
 `12-PARKED.md` SG-10.
+
+### D41 — Voice round trips: transcript first; on a Layer 1 miss, a text-only parse — with guardrails 🟢
+
+**Owner decision, 27 Sep 2026, `KB-302` (Q1).** `02-ARCHITECTURE.md` §5 said "one HTTP round trip" and "Layer
+1 first" at once; the built `/voice` couldn't do both (the client has no transcript until `/voice` answers,
+and `/voice` always needed audio). Now: call 1 sends audio → transcript (shown at once); Layer 1 runs on the
+client; only on a miss, call 2 sends the **transcript** (no audio) + the catalog slice → parse only. One
+round trip on a hit, Groq billed once, and the parsed text is exactly the text on screen.
+
+Rejected: always parse (Gemini billed every utterance, and the transcript can't show before items);
+re-upload the audio on a miss (Groq billed twice; a second transcript may differ).
+
+**Guardrails — `/voice` must not become a free Gemini proxy** (each tested): a request is audio **or** a
+transcript, never both; transcript 1–600 characters (the vocabulary cap, 04 §2); slice ≤ 30 entries (04 §4),
+rebuilt server-side from only the four fields the prompt uses (`id` ≤ 64, `displayName` ≤ 80, `unit` ≤ 16,
+`suggestedPricePaise` an integer 0–10^9); text-only calls pass the same auth and per-shop rate limit as audio
+calls; the slice is validated **before** any provider is called.
+
+### D42 — Layer 1 uses the shop's catalog; a Layer 1 "hit" is strict; Layer 2 lines are settled and number-checked 🟢
+
+**Owner decisions, 27 Sep 2026, `KB-302` (Q2, Q3, Q5, Q7).**
+
+**1. The catalog is a required argument** of `parseUtterance`, `diagnoseUtterance`, `matchProduct` and
+`buildCatalogIndex` — no default. The app passes the **shop's** catalog from Dexie (shop prices, shop product
+ids, guard categories from the base product; D4); tests, eval and scripts pass the base seed explicitly
+(`src/domain/seedCatalog.ts`, imported by no production file). A silent default to the seed is how Layer 1
+came to price every shop from the base catalog.
+
+**2. A Layer 1 hit** requires: `parseUtterance` ≠ null, every line matched a product in the shop's catalog,
+and no HIGH `number_dropped` / `qty_dropped` / `number_unconsumed`. Anything else goes to Layer 2 — a comma
+order Layer 1 merged into one line, or a garbled transcript it turned into one "unknown product".
+
+**3. Settling Layer 2 (closes KI-34)** — `src/domain/layer2.ts`, rules in `04-VOICE-PIPELINE.md` §4: Gemini's
+catalogId must be in the shop's catalog; a matched line shows the shop's name; money re-derived with D36
+(default → shop price per the entry's unit; rate → per the spoken unit; total → spoken; unknown → none); qty
+must be a valid `numeric(12,3)` or it is dropped and flagged `invalid_qty` (MEDIUM); non-integer paise dropped.
+
+**4. Ordered number alignment for Layer 2 (NI-26)** — a new HIGH code, `number_misaligned`: the transcript's
+numbers in spoken order; each line's spoken-origin numbers (qty; rate on a "rate" line; total on a "total"
+line — a default line's catalog rate/total and an unspoken implied qty of 1 are skipped) must be found after
+the previous line's, any order within a line. No segmentation on commas or "aur" (Whisper drops commas).
+
+### D43 — Compound Hindi numbers: a multiplier combines only with the number immediately before it 🟢
+
+**Owner decision, 27 Sep 2026, `KB-302`** (found while building it: "paanch sau gram chini" billed 100 gm for
+₹5 with no flag; "do sau wala" dropped the "do"). Rules in `04-VOICE-PIPELINE.md` §3: `sau`/`सौ` ×100,
+`hazaar`/`हज़ार`/`हजार` ×1000 combine only with the adjacent number before them (digits and fractions too —
+`paune sau` = ¾ × 100 = 75, not 100 − 0.25); thousands + hundreds add; a whole group + a whole number under 100
+adds, never after a fractional group; anything in between keeps numbers apart; no lakh. `saadhe N` = N + 0.5.
+Fixed in the shared tokenizer, so Layer 1 and every number check read the same numbers. Benchmark NB111–NB129;
+the 135 earlier fixture utterances parse byte-identically.
 
 ---
 

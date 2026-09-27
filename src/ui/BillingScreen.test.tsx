@@ -2,6 +2,7 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { parseUtterance, type ParsedItem } from "@/domain/grammar";
+import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { formatRupees, sumPaise } from "@/domain/money";
 import { BillView } from "./BillingScreen";
 import { formatAmount, formatRate } from "./billFormat";
@@ -19,7 +20,7 @@ const fixtures: { id: string; utterance: string }[] = [...voiceCases, ...numberB
 function parsed(id: string): ParsedItem[] {
   const fixture = fixtures.find((f) => f.id === id);
   if (!fixture) throw new Error(`no fixture ${id}`);
-  const items = parseUtterance(fixture.utterance);
+  const items = parseUtterance(fixture.utterance, SEED_PARSER_CATALOG);
   if (!items) throw new Error(`${id} "${fixture.utterance}" did not parse`);
   return items;
 }
@@ -55,7 +56,8 @@ function views() {
 }
 
 function renderBill(lines: ParsedItem[]) {
-  render(<BillView lines={lines} onSignOut={() => {}} />);
+  // Layer 1 lines, as the screen builds them (KB-302: BillLine).
+  render(<BillView lines={lines.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" as const }))} onSignOut={() => {}} />);
 }
 
 describe("BillView", () => {
@@ -111,6 +113,13 @@ describe("BillView", () => {
     const expected = sumPaise(lines.map((l) => l.total as number));
     expect(screen.getByTestId("bill-total").textContent).toBe(formatRupees(expected));
     expect(formatRupees(expected)).toBe("₹690"); // 5 kg × ₹120 + ₹90
+  });
+
+  it("KB-302 (Q5b): a Layer 2 line shows the shop entry's name, not Gemini's spoken text", () => {
+    const [item] = parsed("VC023");
+    render(<BillView lines={[{ item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} onSignOut={() => {}} />);
+    expect(within(screen.getByRole("table")).getByText("Toor Daal")).toBeTruthy();
+    expect(screen.queryByText("तूर दाल")).toBeNull();
   });
 
   it("Add item and Bill Banao stay disabled until KB-305 / KB-307", () => {

@@ -48,7 +48,8 @@ export type ReviewCode =
   | "unit_mismatch"
   | "number_dropped"
   | "qty_dropped"
-  | "number_unconsumed";
+  | "number_unconsumed"
+  | "number_misaligned";
 
 export type ReviewSeverity = "HIGH" | "MEDIUM" | "LOW";
 
@@ -343,4 +344,53 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
 
 export function canFinalize(flags: readonly ReviewFlag[], acknowledgedIds: ReadonlySet<string>): boolean {
   return flags.every((flag) => flag.severity !== "HIGH" || acknowledgedIds.has(flag.id));
+}
+
+/**
+ * KB-302 (owner, Q7) - closes the gap NI-26 describes for Layer 2 output:
+ * a cross-item misassignment of numbers. The transcript's numbers are taken in
+ * spoken order; walking the items in the order Gemini returned them, each
+ * item's spoken-origin numbers must be found at positions AFTER every number
+ * the previous item used (any order within one item). Earliest-match is
+ * optimal, so a greedy walk is exact. Deliberately no segmentation on commas
+ * or "aur" - Whisper drops commas, which would make it noisy exactly where
+ * Layer 2 runs.
+ *
+ * An item's spoken-origin numbers: its qty; its rate on a "rate" line; its
+ * total on a "total" line. A "default" line's rate and total come from the
+ * catalog, not speech. A qty of exactly 1 that appears nowhere in the
+ * transcript is treated as implied ("sabun 180 rupay" -> 1 piece), not as a
+ * number that must be found.
+ */
+export function checkLayer2NumberOrder(transcript: string, items: readonly ParsedItem[]): ReviewFlag | null {
+  const spoken = extractSpokenNumberEntries(transcript).map((e) => e.value);
+  const used = new Array<boolean>(spoken.length).fill(false);
+  let floor = -1; // positions must be > floor
+
+  for (const item of items) {
+    const needed: number[] = [];
+    if (item.qty !== null && !(item.qty === 1 && !spoken.some((v) => Math.abs(v - 1) < NUMBER_MATCH_EPSILON))) {
+      needed.push(item.qty);
+    }
+    if (item.priceType === "rate" && item.rate !== null) needed.push(paiseToRupeeNumber(item.rate));
+    if (item.priceType === "total" && item.total !== null) needed.push(paiseToRupeeNumber(item.total));
+
+    let itemMax = floor;
+    for (const value of needed) {
+      const at = spoken.findIndex((v, i) => i > floor && !used[i] && Math.abs(v - value) < NUMBER_MATCH_EPSILON);
+      if (at === -1) {
+        return {
+          id: "bill-number_misaligned",
+          code: "number_misaligned",
+          severity: "HIGH",
+          message: "Couldn't match every number to its item in what was said — check each line's numbers.",
+          itemIndex: null,
+        };
+      }
+      used[at] = true;
+      itemMax = Math.max(itemMax, at);
+    }
+    floor = itemMax;
+  }
+  return null;
 }

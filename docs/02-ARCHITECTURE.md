@@ -1,6 +1,6 @@
 # 02 — System Architecture
 
-**Last updated:** 27 Sep 2026 (rev 3) · **Status:** Final for MVP
+**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP
 **Read `07-DECISIONS.md` before changing anything here.**
 
 ---
@@ -171,17 +171,23 @@ A sequential per-shop number cannot be assigned without the server.
 
 ## 5. The voice path
 
-One HTTP round trip, not two. See `04-VOICE-PIPELINE.md` for the full pipeline.
+One HTTP round trip on a Layer 1 hit; a second, text-only one on a miss (`07-DECISIONS.md` D41). See
+`04-VOICE-PIPELINE.md` for the full pipeline.
 
 ```
-mic → audio blob → POST /voice (binary, not base64)
-                     ├─ TranscriptionProvider  → transcript
-                     └─ ParseProvider          → items   (only if the client asks)
-                   ← { transcript, items?, usage, latency }
+mic → audio blob → POST /voice {audio, meta: {parse: false, vocabulary}}   (binary, not base64)
+                   ← { transcript }                 → shown at once
+client: Layer 1 on the transcript, against the SHOP's catalog (D42)
+  hit  → lines on the bill (no second call)
+  miss → POST /voice {meta: {transcript, catalogSlice}}   (no audio - Groq is never paid twice)
+         ← { transcript, items, usage }   → settled + checked (D42) → lines on the bill
 ```
 
 The client attempts **Layer 1 (deterministic)** on the transcript first. Only on a miss does it
-request a parse. In steady state most utterances never reach the LLM.
+request a parse — and it re-sends the transcript it already has, not the audio. In steady state most
+utterances never reach the LLM. *(Until KB-302 this section said "one HTTP round trip, not two" and
+"Layer 1 first" at once, which the built `/voice` could not do: the client only has a transcript after
+`/voice` answers. D41.)*
 
 ### Provider interfaces
 

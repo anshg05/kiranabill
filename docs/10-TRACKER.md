@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 27 Sep 2026 (rev 52) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316` done 27 Sep 2026. Next: `KB-302` (voice control + states).
+**Last updated:** 27 Sep 2026 (rev 53) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316` done. `KB-302` built (3 local commits, not pushed) — awaiting the owner's real-mic browser check.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing — `KB-316` (type-check + lint every TS file, KI-36) closed 27 Sep 2026 (D40). Before it, `KB-301` (billing screen shell) closed 27 Sep 2026: `npm test` 386/386, `tsc`, lint,
+**Working on:** `KB-302` (voice control + states) — built and verified by the agent 27 Sep 2026 (`npm test` 515/515, `test:e2e` 15/15, benchmark 129/129, real `/voice` round trips); **three local commits, not pushed — every push deploys live, so they go together after the owner's real-mic browser check and `?lang=` measurement** (D39). Open for the owner: NI-26's decision (fixtures 0 false positives, real audio 2/2 — KI-44). Before it, `KB-316` (type-check + lint every TS file, KI-36) closed 27 Sep 2026 (D40). Before that, `KB-301` (billing screen shell) closed 27 Sep 2026: `npm test` 386/386, `tsc`, lint,
 build, `dist/` greps, and the owner's real-browser check (D39: 375px + desktop, long-bill scroll, sign-out and
 sign-back-in). Next: `KB-302`. The four HIGH defects found 26 Sep (`KI-29`–`KI-32`) are all fixed — see
 Next action.
@@ -39,15 +39,16 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
    (no unique shop per owner — LOW), `KI-43` (catalog seed in bundle — LOW), `NI-29` (npm strips lockfile `libc`),
    `SG-09` (coarser-unit rate display + edited-rate storage — decide at `KB-303`).
 6. ~~**`KB-316`** — type-check + lint every TS file (`KI-36`)~~ — **done 27 Sep 2026** (D40).
-7. **`KB-302`** — voice control + states.
+7. **`KB-302`** — voice control + states. **Built 27 Sep 2026, not pushed** — awaiting the owner's browser check. New: `KI-44` (glued
+   numbers in Whisper output), `NI-30` (Safari/iOS recording). Closed: `KI-34`, `KI-43`. Next after it: `KB-303`.
 
 **Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
 https://kiranabilling.netlify.app (see "Before deployment").
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (27 Sep, `KB-301`):** 386 tests in 28 files — Vitest project `unit` (385 tests, 27 files,
-parallel) then `perf` (1 test, run alone, D35). The perf test is `KI-23`-closed; reopens only on an isolated failure.
+**Test state (27 Sep, `KB-302`):** 515 tests in 33 files — Vitest project `unit` (514 tests, 32 files,
+parallel) then `perf` (1 test, run alone, D35); `test:e2e` 15 in 2 files. Number benchmark 129/129; coverage probe 145/154 = 94.2%. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
 `eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
 **Eval harness:** `npm run eval` reports 0/0/0/25 — `eval/run-eval.ts` was never connected to
@@ -76,6 +77,9 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.
   `12-PARKED.md` §A.
 - [ ] **`KI-38`** (part) — revoke `anon` EXECUTE on `copy_base_catalog`. `12-PARKED.md` §A, KI-38's notes.
+- [ ] **Re-enable Supabase Auth sign-ups at pilot start.** Owner disabled new sign-ups on the remote project
+  (27 Sep 2026, after `M-13`): until the pilot, anyone with a Google account could otherwise create a shop and
+  spend Groq/Gemini credits through `/voice`. Existing accounts are unaffected.
 - [ ] **Supabase plan** — the free tier pauses a project after ~1 week of no activity. Confirm the current
   plan terms and decide free vs paid before the pilot. (Owner, 27 Sep 2026; not yet checked against
   Supabase's current terms.)
@@ -266,6 +270,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 27 Sep 2026 | **`KB-302` built — not pushed, awaiting the owner's real-mic check.** Tap the mic, speak, tap stop: the transcript shows at once, Layer 1 runs on the SHOP's catalog (D42 — the catalog is now a required argument; before, every shop was priced from the base seed), and only a real miss sends the transcript back for a text-only Gemini parse, behind guardrails (D41). Gemini's lines are settled with D36 money rules from the shop catalog (KI-34 closed) and checked for number misassignment (NI-26 — decision pending, KI-44). Every 05 §2 voice state; offline / offline-session → mic disabled with a visible reason. Found and fixed on the way, in its own commit: Hindi compound numbers ("paanch sau gram chini" billed 100 gm for ₹5, silently — D43; benchmark 129/129), and Safari's recording type (`audio/mp4;codecs=…` uploaded as webm). Bundle 690 → 581 kB (KI-43 closed — the seed no longer ships). Sign-ups disabled on the remote until the pilot (owner; Before deployment). | Agent + Owner |
 | 27 Sep 2026 | **`KB-316` done — every TypeScript file is type-checked and linted; `KI-36` closed (D40).** `tsc -b` over a solution tsconfig covers `src/`, `vite.config.ts`, `netlify/` (at `src/` strictness — production code), `eval/`, `scripts/` in both `npm run typecheck` and `npm run build`, so a type error in `netlify/functions` now fails the Netlify deploy. ESLint lints all 74 TS files: domain boundary + five core correctness rules (no dependency). Nothing surfaced — 0 type, 0 lint errors; no source file changed. Root tsconfig keeps `paths` for the function bundler; real `/voice` re-verified through `netlify dev` (401 unauthenticated; 200 with a real Groq transcript + Gemini parse); the live `/voice` unauthenticated check runs after this commit deploys (result in the KB-316 handoff). `npx tsc --noEmit` retired. Also: `M-13` done (owner) — site live, **every push to `main` auto-deploys**; `NI-29` answered (npm 11.6.0 vs Netlify's 11.19.0 — upgrade local npm); `SG-10` (type-aware lint) logged. | Agent + Owner |
 | 27 Sep 2026 | **`KB-301` done.** The S3 billing screen shell replaces the signed-in placeholder: cards at 375px, a table from `md`, TOTAL pinned, mic / Add item / Bill Banao present but disabled. Real `parseUtterance()` output in every UI test (new D39, `09` §B5). Rate shows its unit only across a real conversion ("₹45/kg" on 500 gm; plain "₹60" for packet-vs-piece). `ShopProvider` finally has tests (offline cache, network error, sync loop start/stop); a failed first load with no cached shop now shows Retry instead of onboarding (duplicate-shop risk — `KI-42`). KI-19 closed, and Mukta actually loads now (it never did). Dev-only local email sign-in and `?try=`, both proven absent from `dist/`. New deps: `lucide-react` (SD-026), `@fontsource/mukta` (SD-027, closes M-21 for Mukta). Production JS 543 → 683 kB (gzip 159 → 185 kB), mostly the catalog seed now reachable via `unitScale` (`KI-43`). Owner browser check passed the same day (screenshots reviewed: cards/table, `—` rules, ₹45/kg vs ₹60, ₹2013.75 long bill hand-checked, auto-scroll, sign-out/in). The check surfaced a dev-console `DatabaseClosedError` "[shop] bootstrap failed" — React StrictMode's double mount closing the first run's database mid-read; harmless (the stale run was already discarded) but misleading, and it would also fire on sign-out mid-load in production. Fixed: a cancelled run's error is now silent; StrictMode regression test added. | Agent + Owner |
 | 27 Sep 2026 | **Docs only — pre-deploy gaps recorded before `KB-301`.** `KI-40` (no service worker: the app can't load offline — HIGH, before the pilot; `KB-401` amended to include app-shell precaching) and `KI-41` (`push_bill()` doesn't verify totals add up — MEDIUM, before the pilot) added to `12-PARKED.md`. New "Before deployment" checklist in this file. Next: `KB-301`. | Owner + Agent |

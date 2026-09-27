@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 27 Sep 2026 (rev 3) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -124,6 +124,25 @@ a warning triangle is not.
   removed from production builds (D39).
 - **Shop load failure:** online, no cached shop, lookup failed → "Server se connect nahi ho paaya" + Retry, never
   onboarding (`12-PARKED.md` KI-42).
+
+### Implementation notes — voice (`KB-302`, 27 Sep 2026)
+
+- **Code:** `src/ui/useVoiceCapture.ts` (MediaRecorder, push-to-talk), `src/ui/useVoiceBilling.ts` (the voice
+  states), `src/data/voiceApi.ts` (POST `/voice`), `src/data/voiceBilling.ts` (Layer 1 → Layer 2 → Layer 3),
+  `src/data/shopCatalog.ts` (the shop's catalog from Dexie).
+- **States, as built:** idle "बोलने के लिए दबाएं"; "Mic permission…" while the browser asks; listening = the mic
+  becomes a pulsing stop button "रोकें" + `सुन रहे हैं… m:ss`; transcribing = spinner; the transcript appears in
+  quotes above the buttons before items resolve; failures are one inline line (permission denied, no mic,
+  unsupported, no internet, session expired, rate limit, nothing heard, no items) and the mic stays usable.
+- **Offline / offline session / catalog loading:** mic disabled with a **visible** one-line reason
+  ("Offline — voice needs internet", "Loading your catalog…") — unlike Add item / Bill Banao, whose reasons
+  are tooltips.
+- **"Add manually" on failure** needs Add item (`KB-305`); until then the mic is the only way out of a failure.
+- **Not in KB-302:** flag display and "focus the first flagged line" (`KB-304` — flags are stored per bill
+  line, re-based per utterance); editing (`KB-303`); the bill surviving a reload (`KB-313`).
+- **Dev only:** `?lang=hi|en|auto` (Whisper language hint for the owner's measurement) and `[voice]` console
+  logs (transcript, layer, lines, flags, numbers heard, tap→listening and stop→transcript timings); both
+  stripped from production builds (grepped).
 
 ### Add item (S3a)
 

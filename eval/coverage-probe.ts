@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { parseUtterance, diagnoseUtterance, type MissReason } from "../src/domain/grammar.js";
+import { SEED_PARSER_CATALOG } from "../src/domain/seedCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -53,8 +54,8 @@ function main(): void {
     ["eval/number-benchmark.json", numberCases],
   ] as const) {
     for (const c of cases) {
-      const actual = parseUtterance(c.utterance);
-      const diagnostics = diagnoseUtterance(c.utterance);
+      const actual = parseUtterance(c.utterance, SEED_PARSER_CATALOG);
+      const diagnostics = diagnoseUtterance(c.utterance, SEED_PARSER_CATALOG);
       if (actual !== null) {
         hits += 1;
       } else {

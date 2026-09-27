@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseUtterance, diagnoseUtterance, extractSpokenNumbers, type ParsedItem } from "./grammar";
+import { SEED_PARSER_CATALOG } from "./seedCatalog";
+import { prepareParserCatalog } from "./catalogIndex";
 import { getCatalogEntryById } from "./catalog";
 import { lineTotalPaise } from "./money";
 import voiceCases from "../../eval/voice-cases.json";
@@ -19,7 +21,7 @@ import numberBenchmarkCases from "../../eval/number-benchmark.json";
  */
 
 function parseOne(text: string): ParsedItem {
-  const items = parseUtterance(text);
+  const items = parseUtterance(text, SEED_PARSER_CATALOG);
   expect(items, `expected exactly one item for "${text}", got null (bailed out)`).not.toBeNull();
   expect(items!, `expected exactly one item for "${text}"`).toHaveLength(1);
   return items![0]!;
@@ -34,6 +36,25 @@ function catalogEntry(id: string) {
 // ---------------------------------------------------------------------------
 // Rule 1: "X wala" / "X wali" = X is the per-unit RATE
 // ---------------------------------------------------------------------------
+// KB-302 (owner, Q2): Layer 1 parses against the catalog it is GIVEN - the
+// shop's own (D4) - never silently against the base seed.
+describe("the catalog is a required argument - the shop's own catalog decides", () => {
+  const seedChini = getCatalogEntryById("27")!;
+  const shopChini = { ...seedChini, id: "shop-product-chini", suggestedPricePaise: 5200 };
+
+  it("a shop's own price wins: '2 kilo chini' bills the shop's ₹52/kg, not the seed's ₹45", () => {
+    const [line] = parseUtterance("2 kilo chini", prepareParserCatalog([shopChini]))!;
+    expect(line).toMatchObject({ catalogId: "shop-product-chini", rate: 5200, rateUnit: "kg", total: 10400, priceType: "default" });
+    // Same words against the seed, for contrast:
+    expect(parseUtterance("2 kilo chini", SEED_PARSER_CATALOG)![0]).toMatchObject({ catalogId: "27", total: 9000 });
+  });
+
+  it("a 'start empty' shop (no products): chini is an unknown product - never priced from the seed", () => {
+    const [line] = parseUtterance("2 kilo chini", prepareParserCatalog([]))!;
+    expect(line).toMatchObject({ catalogId: null, isCustom: true, rate: null, total: null, priceType: "unknown" });
+  });
+});
+
 describe("Rule 1 - wala/wali means per-unit rate", () => {
   it("qty unit product rate wala - 5 kg chawal 30 wala", () => {
     const item = parseOne("5 kg chawal 30 wala");
@@ -149,7 +170,7 @@ describe("Rule 3 - a bare price with no wala/ka/ki is a total", () => {
 // ---------------------------------------------------------------------------
 describe("Rule 4 - distinct variants by price are never merged", () => {
   it("chini spoken twice at different prices in one utterance -> two separate lines", () => {
-    const items = parseUtterance("chini 30 rupay aur chini 180 rupay");
+    const items = parseUtterance("chini 30 rupay aur chini 180 rupay", SEED_PARSER_CATALOG);
     expect(items).not.toBeNull();
     expect(items!).toHaveLength(2);
     const [first, second] = items!;
@@ -166,7 +187,7 @@ describe("Rule 4 - distinct variants by price are never merged", () => {
   });
 
   it("two different products in one utterance, each at catalog default price - 2 packet oreo aur 1 monaco", () => {
-    const items = parseUtterance("2 packet oreo aur 1 monaco");
+    const items = parseUtterance("2 packet oreo aur 1 monaco", SEED_PARSER_CATALOG);
     expect(items).not.toBeNull();
     expect(items!).toHaveLength(2);
     const [first, second] = items!;
@@ -413,15 +434,15 @@ describe("paune/chataak conflict - resolved", () => {
 // ---------------------------------------------------------------------------
 describe("Bail-out - null on ambiguity, not on an unknown product", () => {
   it("two bare numbers, no wala/ka/ki, no unit - unclear which is qty and which is price", () => {
-    expect(parseUtterance("chini 30 40")).toBeNull();
+    expect(parseUtterance("chini 30 40", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("conflicting units in one line", () => {
-    expect(parseUtterance("5 kg 3 liter chini 90 rupay")).toBeNull();
+    expect(parseUtterance("5 kg 3 liter chini 90 rupay", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("empty text", () => {
-    expect(parseUtterance("")).toBeNull();
+    expect(parseUtterance("", SEED_PARSER_CATALOG)).toBeNull();
   });
 });
 
@@ -435,23 +456,23 @@ describe("Bail-out - null on ambiguity, not on an unknown product", () => {
 // ---------------------------------------------------------------------------
 describe("Bail-out - orphaned wala/ka/rupay marker (KB-005d, KI-21)", () => {
   it("तीस misheard as पीस before 'ka' - used to return a confident ₹250 (5kg chawal's default price), now bails", () => {
-    expect(parseUtterance("5 kg chawal पीस ka")).toBeNull();
+    expect(parseUtterance("5 kg chawal पीस ka", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("दस misheard as दीस before 'rupay' - used to return a confident ₹20 (jeera's default price for 50gm), now bails", () => {
-    expect(parseUtterance("50 gram jeera दीस rupay")).toBeNull();
+    expect(parseUtterance("50 gram jeera दीस rupay", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("orphaned 'ki' (total marker variant) bails the same way as 'ka'", () => {
-    expect(parseUtterance("5 kg chawal पीस ki")).toBeNull();
+    expect(parseUtterance("5 kg chawal पीस ki", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("orphaned 'wali' (rate marker variant) bails the same way as 'wala'", () => {
-    expect(parseUtterance("5 kg chawal पीस wali")).toBeNull();
+    expect(parseUtterance("5 kg chawal पीस wali", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("this is a structural check, not a hardcoded word list - any unrecognised word orphaning a marker bails, not just पीस/दीस", () => {
-    expect(parseUtterance("5 kg chawal xyzzyword ka")).toBeNull();
+    expect(parseUtterance("5 kg chawal xyzzyword ka", SEED_PARSER_CATALOG)).toBeNull();
   });
 
   it("regression: a correctly-formed wala utterance is completely unaffected", () => {
@@ -480,27 +501,27 @@ describe("Bail-out - orphaned wala/ka/rupay marker (KB-005d, KI-21)", () => {
 // ---------------------------------------------------------------------------
 describe("diagnoseUtterance - reason categories match known bail cases", () => {
   it("empty text", () => {
-    expect(diagnoseUtterance("")).toEqual({ hit: false, reason: "empty utterance" });
+    expect(diagnoseUtterance("", SEED_PARSER_CATALOG)).toEqual({ hit: false, reason: "empty utterance" });
   });
 
   it("orphaned marker (KI-21)", () => {
-    expect(diagnoseUtterance("5 kg chawal पीस ka")).toEqual({ hit: false, reason: "orphaned marker" });
-    expect(diagnoseUtterance("50 gram jeera दीस rupay")).toEqual({ hit: false, reason: "orphaned marker" });
+    expect(diagnoseUtterance("5 kg chawal पीस ka", SEED_PARSER_CATALOG)).toEqual({ hit: false, reason: "orphaned marker" });
+    expect(diagnoseUtterance("50 gram jeera दीस rupay", SEED_PARSER_CATALOG)).toEqual({ hit: false, reason: "orphaned marker" });
   });
 
   it("ambiguous two-number utterance", () => {
-    expect(diagnoseUtterance("chini 30 40")).toEqual({ hit: false, reason: "ambiguous two-number utterance" });
+    expect(diagnoseUtterance("chini 30 40", SEED_PARSER_CATALOG)).toEqual({ hit: false, reason: "ambiguous two-number utterance" });
   });
 
   it("too many numbers / conflicting units", () => {
-    expect(diagnoseUtterance("5 kg 3 liter chini 90 rupay")).toEqual({
+    expect(diagnoseUtterance("5 kg 3 liter chini 90 rupay", SEED_PARSER_CATALOG)).toEqual({
       hit: false,
       reason: "too many numbers or conflicting units",
     });
   });
 
   it("a hit reports hit:true, reason:null", () => {
-    expect(diagnoseUtterance("5 kg chawal 30 ka")).toEqual({ hit: true, reason: null });
+    expect(diagnoseUtterance("5 kg chawal 30 ka", SEED_PARSER_CATALOG)).toEqual({ hit: true, reason: null });
   });
 });
 
@@ -517,8 +538,8 @@ describe("diagnoseUtterance - self-consistency with parseUtterance across every 
   it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 154 cases", () => {
     const disagreements: string[] = [];
     for (const utterance of allUtterances) {
-      const diagnosticHit = diagnoseUtterance(utterance).hit;
-      const actualHit = parseUtterance(utterance) !== null;
+      const diagnosticHit = diagnoseUtterance(utterance, SEED_PARSER_CATALOG).hit;
+      const actualHit = parseUtterance(utterance, SEED_PARSER_CATALOG) !== null;
       if (diagnosticHit !== actualHit) {
         disagreements.push(`"${utterance}": diagnoseUtterance said hit=${diagnosticHit}, parseUtterance said hit=${actualHit}`);
       }
@@ -610,7 +631,7 @@ describe("compound Hindi numbers - tens, paune/sawa, saadhe", () => {
   });
 
   it("guard: 'chini sau ka aur daal pachas ka' stays two items, ₹100 and ₹50", () => {
-    const items = parseUtterance("chini sau ka aur daal pachas ka");
+    const items = parseUtterance("chini sau ka aur daal pachas ka", SEED_PARSER_CATALOG);
     expect(items?.map((i) => i.total)).toEqual([10000, 5000]);
   });
 

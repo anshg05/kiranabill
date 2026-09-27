@@ -148,4 +148,69 @@ describe("netlify/functions/voice.mts", () => {
     expect(body.transcript).toBe("chini");
     expect(body.detail).toContain("Gemini parse failed");
   });
+
+  // KB-302 (owner, Q1): text-only parse on a Layer 1 miss - the transcript is
+  // re-sent, never the audio. Guardrails so /voice can't become a free Gemini
+  // proxy: transcript <= 600 chars, slice <= 30 entries with capped fields,
+  // and text-only calls go through the same per-shop rate limit.
+  describe("text-only parse (Layer 1 miss)", () => {
+    const entry = { id: "27", displayName: "Chini", unit: "kg", suggestedPricePaise: 4500 };
+    const textOnly = (meta: object) => makeRequest({ meta: JSON.stringify(meta) });
+
+    it("parses the given transcript with Gemini; Groq is never called", async () => {
+      parseMock.mockResolvedValue({ items: [{ spokenName: "chini" }], usage: { totalTokens: 9 }, latencyMs: 800 });
+      const res = await handler(textOnly({ transcript: "do kilo chini", catalogSlice: [entry] }), {} as never);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.transcript).toBe("do kilo chini");
+      expect(body.items).toHaveLength(1);
+      expect(transcribeMock).not.toHaveBeenCalled();
+      expect(parseMock).toHaveBeenCalledWith("do kilo chini", { catalogSlice: [entry] });
+    });
+
+    it("is counted against the same per-shop rate limit (429, Gemini not called)", async () => {
+      checkRateLimitMock.mockResolvedValue(false);
+      const res = await handler(textOnly({ transcript: "do kilo chini", catalogSlice: [entry] }), {} as never);
+      expect(res.status).toBe(429);
+      expect(checkRateLimitMock).toHaveBeenCalledWith("shop-1");
+      expect(parseMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ["a transcript over 600 characters", { transcript: "a".repeat(601), catalogSlice: [entry] }],
+      ["an empty transcript", { transcript: "   ", catalogSlice: [entry] }],
+      ["no catalogSlice", { transcript: "do kilo chini" }],
+      ["a slice of 31 entries", { transcript: "x", catalogSlice: Array.from({ length: 31 }, (_, i) => ({ ...entry, id: String(i) })) }],
+      ["an id over 64 chars", { transcript: "x", catalogSlice: [{ ...entry, id: "i".repeat(65) }] }],
+      ["a displayName over 80 chars", { transcript: "x", catalogSlice: [{ ...entry, displayName: "d".repeat(81) }] }],
+      ["a unit over 16 chars", { transcript: "x", catalogSlice: [{ ...entry, unit: "u".repeat(17) }] }],
+      ["a non-integer price", { transcript: "x", catalogSlice: [{ ...entry, suggestedPricePaise: 45.5 }] }],
+      ["a non-object entry", { transcript: "x", catalogSlice: ["Chini"] }],
+    ])("rejects %s with 400; Gemini not called", async (_label, meta) => {
+      const res = await handler(textOnly(meta), {} as never);
+      expect(res.status).toBe(400);
+      expect(parseMock).not.toHaveBeenCalled();
+    });
+
+    it("only the four fields Gemini uses are forwarded (extra fields dropped)", async () => {
+      parseMock.mockResolvedValue({ items: [], usage: {}, latencyMs: 1 });
+      await handler(textOnly({ transcript: "x", catalogSlice: [{ ...entry, aliases: ["a".repeat(5000)], secret: "y" }] }), {} as never);
+      expect(parseMock).toHaveBeenCalledWith("x", { catalogSlice: [entry] });
+    });
+
+    it("the slice caps also apply to the audio + parse:true mode", async () => {
+      transcribeMock.mockResolvedValue({ text: "chini", latencyMs: 5 });
+      const meta = { parse: true, catalogSlice: Array.from({ length: 31 }, (_, i) => ({ ...entry, id: String(i) })) };
+      const res = await handler(makeRequest({ audio: new Blob(["x"]), meta: JSON.stringify(meta) }), {} as never);
+      expect(res.status).toBe(400);
+      expect(parseMock).not.toHaveBeenCalled();
+    });
+
+    it("audio AND a transcript in one request is ambiguous -> 400", async () => {
+      const res = await handler(makeRequest({ audio: new Blob(["x"]), meta: JSON.stringify({ transcript: "x", catalogSlice: [entry] }) }), {} as never);
+      expect(res.status).toBe(400);
+      expect(transcribeMock).not.toHaveBeenCalled();
+    });
+  });
 });
+

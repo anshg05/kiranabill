@@ -1,3 +1,6 @@
+import type { CatalogEntry } from "@/domain/catalog";
+import type { ParsedItem } from "@/domain/grammar";
+
 // KB-302: the client side of POST /voice (netlify/functions/voice.mts,
 // docs/02-ARCHITECTURE.md section 5). Every failure comes back as a typed
 // VoiceApiError - the billing screen turns each kind into an inline message;
@@ -61,7 +64,7 @@ async function postForm(form: FormData, opts: VoiceApiOptions): Promise<unknown>
 }
 
 export interface TranscribeOptions extends VoiceApiOptions {
-  /** Whisper language hint; undefined = auto-detect (docs/07-DECISIONS.md D42 pending). */
+  /** Whisper language hint; undefined = auto-detect (pending the owner's KB-302 measurement - its own 07-DECISIONS.md entry). */
   language?: string;
   vocabulary?: readonly string[];
 }
@@ -79,4 +82,26 @@ export async function transcribeAudio(audio: Blob, opts: TranscribeOptions): Pro
     throw new VoiceApiError("server", "No transcript in the response");
   }
   return body.transcript;
+}
+
+export interface ParseTranscriptOptions extends VoiceApiOptions {
+  /** The shop's slice (domain/catalogIndex.ts buildCatalogSlice), <= 30 entries. */
+  catalogSlice: readonly CatalogEntry[];
+}
+
+/** Step 4 (Layer 1 miss, owner Q1): the TRANSCRIPT goes back for a parse -
+ * never the audio, so Groq is paid once and the parsed text is exactly the
+ * text on screen. Only the four fields the server forwards are sent. */
+export async function parseTranscript(transcript: string, opts: ParseTranscriptOptions): Promise<ParsedItem[]> {
+  const form = new FormData();
+  form.append(
+    "meta",
+    JSON.stringify({
+      transcript,
+      catalogSlice: opts.catalogSlice.map(({ id, displayName, unit, suggestedPricePaise }) => ({ id, displayName, unit, suggestedPricePaise })),
+    }),
+  );
+  const body = (await postForm(form, opts)) as { items?: unknown } | null;
+  if (!Array.isArray(body?.items)) throw new VoiceApiError("server", "No items in the parse response");
+  return body.items as ParsedItem[];
 }

@@ -28,7 +28,7 @@
  * any, changed behavior as a result).
  */
 
-import { getCatalogEntryById } from "./catalog.js";
+import type { ParserCatalog } from "./catalogIndex.js";
 import { lineTotalPaise, lineTotalPaiseScaled, rupeesToPaise, type Paise } from "./money.js";
 import { matchProduct } from "./validator.js";
 
@@ -150,8 +150,8 @@ interface CatalogMatch {
 
 /** Wraps validator.ts's matchProduct() - see the MatchStatus doc comment
  * above for why "ambiguous" and "none" are kept distinct. */
-function resolveCatalogMatch(spokenName: string): CatalogMatch {
-  const outcome = matchProduct(spokenName);
+function resolveCatalogMatch(spokenName: string, pc: ParserCatalog): CatalogMatch {
+  const outcome = matchProduct(spokenName, { index: pc.index });
   if (outcome.kind === "matched") {
     return { catalogId: outcome.catalogId, isCustom: false, matchStatus: "matched" };
   }
@@ -461,13 +461,13 @@ function qtyAndUnit(entry: NumEntry): { qty: number; unit: string } {
 /** Rule 5a: qty spoken, no price -> the catalog's own default price,
  * converted to the spoken unit. Never invents a price for an unresolved
  * product (rate/total stay null - there is nothing to derive it from). */
-function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, spokenName: string): ParsedItem | null {
+function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, spokenName: string, pc: ParserCatalog): ParsedItem | null {
   if (!match.catalogId) {
     return { spokenName, ...match, qty, unit: spokenUnit, rate: null, rateUnit: null, total: null, priceType: "unknown" };
   }
-  const entry = getCatalogEntryById(match.catalogId);
+  const entry = pc.byId.get(match.catalogId);
   if (!entry) {
-    throw new Error(`grammar.ts: matched catalogId "${match.catalogId}" that getCatalogEntryById cannot find`);
+    throw new Error(`grammar.ts: matched catalogId "${match.catalogId}" that the catalog cannot find`);
   }
   // KB-005f: the qty stays as spoken; the rate is the catalog price exactly
   // as stored, per the catalog's own unit - never re-scaled (KI-30).
@@ -486,8 +486,8 @@ function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, sp
 }
 
 /** Rule 2/3's "total price only, no qty/unit spoken" edge case - docs/07-DECISIONS.md D13 point 1. */
-function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenName: string): ParsedItem {
-  const entry = match.catalogId ? getCatalogEntryById(match.catalogId) : undefined;
+function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenName: string, pc: ParserCatalog): ParsedItem {
+  const entry = match.catalogId ? pc.byId.get(match.catalogId) : undefined;
   return {
     spokenName,
     ...match,
@@ -500,7 +500,7 @@ function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenNa
   };
 }
 
-function resolveSegment(rawSegment: string): ParsedItem | null {
+function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | null {
   const words = splitWords(rawSegment);
   if (words.length === 0) return null;
 
@@ -514,7 +514,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
 
   const spokenName = extractSpokenName(classified);
 
-  const match = resolveCatalogMatch(spokenName);
+  const match = resolveCatalogMatch(spokenName, pc);
 
   // Rule 5b: nothing numeric spoken at all - never guess a price, even for
   // a product that resolves in the catalog (hard rule 5: never block, and
@@ -551,7 +551,7 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
       const { qty, unit } = qtyAndUnit(qtyEntry);
       return { spokenName, ...match, qty, unit, rate: null, rateUnit: null, total: totalPaise, priceType: "total" };
     }
-    return resolveUnattachedTotal(totalPaise, match, spokenName);
+    return resolveUnattachedTotal(totalPaise, match, spokenName, pc);
   }
 
   // No wala/ka/ki anywhere. More than two bare numbers is beyond what this
@@ -563,15 +563,15 @@ function resolveSegment(rawSegment: string): ParsedItem | null {
     const only = nums[0]!; // nums.length === 1, bounds-guaranteed
     if (only.attachedUnit) {
       // Rule 5a: qty + unit, no price.
-      return resolveDefault(only.value, only.attachedUnit, match, spokenName);
+      return resolveDefault(only.value, only.attachedUnit, match, spokenName, pc);
     }
     if (only.isCurrency) {
       // Rule 3: a bare price via an explicit currency word, no qty/unit spoken.
-      return resolveUnattachedTotal(rupeesToPaise(only.value), match, spokenName);
+      return resolveUnattachedTotal(rupeesToPaise(only.value), match, spokenName, pc);
     }
     // Bare number, no unit, no currency word - "[qty][product]" pattern,
     // implicit piece count (docs/04-VOICE-PIPELINE.md section 3).
-    return resolveDefault(only.value, "piece", match, spokenName);
+    return resolveDefault(only.value, "piece", match, spokenName, pc);
   }
 
   // nums.length === 2, no rule word: Rule 3. Exactly one number must carry
@@ -637,7 +637,7 @@ export function extractSpokenNumberEntries(text: string): readonly SpokenNumberE
  * separated by "aur"; if any one segment can't be resolved, the whole
  * utterance bails rather than silently dropping a line.
  */
-export function parseUtterance(text: string): ParsedItem[] | null {
+export function parseUtterance(text: string, catalog: ParserCatalog): ParsedItem[] | null {
   const segments = text
     .split(/\baur\b/i)
     .map((segment) => segment.trim())
@@ -647,7 +647,7 @@ export function parseUtterance(text: string): ParsedItem[] | null {
 
   const items: ParsedItem[] = [];
   for (const segment of segments) {
-    const item = resolveSegment(segment);
+    const item = resolveSegment(segment, catalog);
     if (item === null) return null;
     items.push(item);
   }
@@ -687,7 +687,7 @@ export interface ParseDiagnostics {
   readonly reason: MissReason | null;
 }
 
-function diagnoseSegment(rawSegment: string): MissReason | null {
+function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | null {
   const words = splitWords(rawSegment);
   if (words.length === 0) return "empty utterance";
 
@@ -726,9 +726,9 @@ function diagnoseSegment(rawSegment: string): MissReason | null {
     const spokenUnit = only.attachedUnit ?? "piece";
 
     const spokenName = extractSpokenName(classified);
-    const match = resolveCatalogMatch(spokenName);
+    const match = resolveCatalogMatch(spokenName, pc);
     if (match.catalogId) {
-      const entry = getCatalogEntryById(match.catalogId);
+      const entry = pc.byId.get(match.catalogId);
       if (entry && unitScale(spokenUnit, entry.unit) === null) {
         return "incompatible unit for default price";
       }
@@ -746,7 +746,7 @@ function diagnoseSegment(rawSegment: string): MissReason | null {
 
 /** Diagnostic twin of parseUtterance() - same hit/miss outcome, plus a
  * grouped reason on every miss. Never used by parseUtterance itself. */
-export function diagnoseUtterance(text: string): ParseDiagnostics {
+export function diagnoseUtterance(text: string, catalog: ParserCatalog): ParseDiagnostics {
   const segments = text
     .split(/\baur\b/i)
     .map((segment) => segment.trim())
@@ -755,7 +755,7 @@ export function diagnoseUtterance(text: string): ParseDiagnostics {
   if (segments.length === 0) return { hit: false, reason: "empty utterance" };
 
   for (const segment of segments) {
-    const reason = diagnoseSegment(segment);
+    const reason = diagnoseSegment(segment, catalog);
     if (reason !== null) return { hit: false, reason };
   }
   return { hit: true, reason: null };
