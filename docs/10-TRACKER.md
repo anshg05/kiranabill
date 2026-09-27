@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 28 Sep 2026 (rev 54) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302` done. Next: voice accuracy + speed (plan awaiting owner approval) — not `KB-304` (owner).
+**Last updated:** 28 Sep 2026 (rev 55) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302` done. Next: voice accuracy + speed (plan awaiting owner approval) — not `KB-304` (owner).
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -77,6 +77,9 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.
   `12-PARKED.md` §A.
 - [ ] **`KI-38`** (part) — revoke `anon` EXECUTE on `copy_base_catalog`. `12-PARKED.md` §A, KI-38's notes.
+- [ ] **`KI-50` — Gemini on a paid tier.** The key is on Google's free tier (`limit: 20` requests, exhausted in one day of
+  testing, 28 Sep 2026); every Layer 2 parse then fails. Owner: enable billing on the project behind `GEMINI_API_KEY` (and
+  check Groq's quota for its key). `12-PARKED.md` §A.
 - [ ] **Re-enable Supabase Auth sign-ups at pilot start.** Owner disabled new sign-ups on the remote project
   (27 Sep 2026, after `M-13`): until the pilot, anyone with a Google account could otherwise create a shop and
   spend Groq/Gemini credits through `/voice`. Existing accounts are unaffected.
