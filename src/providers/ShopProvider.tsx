@@ -30,6 +30,11 @@ import { startSyncLoop, stopSyncLoop, type OnlineEventSource } from "@/data/sync
 interface ShopContextValue {
   shop: Shop | null;
   loading: boolean;
+  /** KB-301: online, no cached shop, and the server lookup failed. We can't
+   * tell "no shop yet" from "network down", so the gate shows Retry - never
+   * onboarding, which could create a second shop (12-PARKED.md KI-42). */
+  loadError: boolean;
+  retry: () => void;
   /** This user's local database - null until opened. */
   localDb: KiranaBillDB | null;
   /** This installation's persistent id (device.ts). */
@@ -59,6 +64,8 @@ function fromLocal(local: LocalShop, userId: string): Shop {
 export function ShopProvider({ children, userId, online, deviceDb, client = supabase, eventSource }: ShopProviderProps) {
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [localDb, setLocalDb] = useState<KiranaBillDB | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const dbRef = useRef<KiranaBillDB | null>(null);
@@ -79,6 +86,7 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
     }
 
     setLoading(true);
+    setLoadError(false);
     const db = openShopDb(userId);
     dbRef.current = db;
 
@@ -94,6 +102,7 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
         setLoading(false);
       }
 
+      let refreshFailed = false;
       if (online) {
         try {
           const found = await findOwnShop(client, userId);
@@ -105,13 +114,19 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
           // Network trouble: keep whatever is cached; never send a shopkeeper
           // with a cached shop back to onboarding.
           console.warn("[shop] refresh failed, continuing from local data:", err);
+          refreshFailed = true;
         }
       }
       if (!active) return;
       setShop(current);
+      setLoadError(refreshFailed && !current);
       setLoading(false);
       if (current) startLoop(db, current.id, device);
     })().catch((err) => {
+      // A cancelled run (cleanup already closed its db - React StrictMode's
+      // dev double mount, or sign-out mid-load) fails on the closed database.
+      // That is expected, not a bootstrap failure: stay silent.
+      if (!active) return;
       console.warn("[shop] bootstrap failed:", err);
       if (active) setLoading(false);
     });
@@ -122,7 +137,9 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
       db.close();
       dbRef.current = null;
     };
-  }, [client, deviceDb, online, startLoop, userId]);
+  }, [attempt, client, deviceDb, online, startLoop, userId]);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   const createShop = useCallback(
     async (params: { name: string; phone: string | null; catalogChoice: "ready" | "empty" }) => {
@@ -146,7 +163,7 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
   );
 
   return (
-    <ShopContext.Provider value={{ shop, loading, localDb, deviceId, createShop }}>{children}</ShopContext.Provider>
+    <ShopContext.Provider value={{ shop, loading, loadError, retry, localDb, deviceId, createShop }}>{children}</ShopContext.Provider>
   );
 }
 

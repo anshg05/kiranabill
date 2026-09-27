@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 26 Sep 2026 (rev 9)
+**Last updated:** 27 Sep 2026 (rev 10)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -381,6 +381,34 @@ since, bootstrapped from `CLAUDE.md` (auto-loaded) and `18-AGENT-CONTRACT.md`.
 **Exit cost: zero, as SD-015 predicted and 21 Aug 2026 demonstrated** — the switch cost nothing
 because the docs, not the tool, hold the project's context. Keep it that way: rules live in
 `CLAUDE.md`/`18-AGENT-CONTRACT.md`, never in a tool-specific config only one agent reads.
+
+## SD-026 — Icons: **`lucide-react` ^1.48.0** (runtime) · 27 Sep 2026
+
+`13-DESIGN.md` §9 already names Lucide; this entry picks the package. Owner decision, `KB-301`.
+
+| Rejected | Why |
+|---|---|
+| Inlining Lucide's SVG paths ourselves | Cheaper for `KB-301`'s 3 icons (09 §B6 rule 1), but Phase 3 passes 8+ (✕, flags, check, share, history, settings, search, offline/sync) — inlining now guarantees a migration later (owner) |
+| Emoji / another icon set | `13-DESIGN.md` §7 forbids emoji icons; §9 says one consistent set |
+
+ISC licence, actively released. Named imports are tree-shaken — only the icons used ship (~1 KB each).
+**Exit cost: low.** Each icon is a leaf component; replacing the package means swapping imports, no logic.
+
+## SD-027 — Fonts: **`@fontsource/mukta` ^5.3.0** (runtime, CSS + font files only) · 27 Sep 2026
+
+Self-hosts Mukta (`13-DESIGN.md` §4), closing `17-MANUAL-TASKS.md` M-21 for Mukta. Owner decision, `KB-301`.
+The app must open offline (`KI-40`), so a font CDN is out. Imported from `src/index.css` — weights 400/500/600/700
+(§4's scale); Vite copies the woff2/woff files into `dist/assets/` and serves them from our own origin (so
+`KB-401`'s service worker can precache them). Each weight is split by `unicode-range` (Devanagari, Latin,
+Latin-ext): the browser downloads only the subsets it renders. Zero JavaScript. OFL-1.1.
+
+| Rejected | Why |
+|---|---|
+| Google Fonts CDN | Doesn't work offline; a third-party request on every cold load |
+| M-21 as written (manual download into the repo) | TTF from Google Fonts: larger, not subsetted, and a manual step for something npm pins and versions |
+
+**Exit cost: near zero** — the files are static; worst case, vendor them into `src/assets/fonts/` and keep the
+same `@font-face` rules. IBM Plex Mono is not added yet: the receipt (`KB-308`) is its only user.
 
 ## How to add to this document
 

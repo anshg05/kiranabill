@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 27 Sep 2026 (rev 50) · **Current phase:** 3 — Billing UI, not started. Pre-Phase-3 fixes `KB-005e`, `KB-005f`, `KB-110b`, `KB-315` all done. Next: `KB-301` (owner decision 26 Sep; see "Right now")
+**Last updated:** 27 Sep 2026 (rev 51) · **Current phase:** 3 — Billing UI, in progress. `KB-301` done 27 Sep 2026. Next: `KB-302` (voice control + states).
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -12,21 +12,12 @@
 
 ## Right now
 
-**Phase:** 3 — Billing UI, **not started.** Phases 0, 1 and 2 are done for everything buildable without
+**Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing in `src/`. 26 Sep 2026 was a new-machine bootstrap plus a docs-only housekeeping
-pass (entry-point docs aligned to Phase 3 / Claude Code / single branch; `07-DECISIONS.md` D28–D32;
-`12-PARKED.md` cleanup; `remote-check.sql` removed).
-**Found 26 Sep, logged in `12-PARKED.md` §A, not fixed — all HIGH, ticketed 26 Sep (see Next action):**
-- `KI-29` — a finalised bill's first push can never sync its line items (item insert rejected by
-  `bill_items_enforce_immutability`, then the retry rejected by `bills_enforce_immutability` → `conflict`,
-  zero items server-side, learning events stranded). Blocks `KB-307`'s sync story.
-- `KI-30` — gram/ml default prices round the per-gram rate before multiplying: `npm run try "500 gram
-  chini"` → ₹25, correct ₹22.50. Silent, no flag.
-- `KI-31` — `bills.receipt_number_source` is never written locally or pushed; every fallback bill would
-  land server-side as `'block'`, defeating D24.
-- `KI-32` — runtime wiring gaps: nothing outside `src/data/` calls the sync loop, the pulls or
-  `reserveBlock`; onboarding reserves no first receipt block; `deviceId` is never persisted.
+**Working on:** nothing — `KB-301` (billing screen shell) closed 27 Sep 2026: `npm test` 386/386, `tsc`, lint,
+build, `dist/` greps, and the owner's real-browser check (D39: 375px + desktop, long-bill scroll, sign-out and
+sign-back-in). Next: `KB-302`. The four HIGH defects found 26 Sep (`KI-29`–`KI-32`) are all fixed — see
+Next action.
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -44,14 +35,17 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
    (both functions present, neither SECURITY DEFINER, no `anon` EXECUTE, composite FK present, plain
    `bill_items_bill_id_fkey` absent, `rate_unit` + iff check present). New: `KI-37` (reset audit event never syncs), `KI-38` (other cross-shop FKs).
 4. ~~**`KB-315`** — runtime bootstrap (`KI-32`)~~ — **done 27 Sep 2026** (D38). No migration. New: `KI-39` (multi-tab loops).
-5. **`KB-301`** — billing screen shell.
+5. ~~**`KB-301`** — billing screen shell~~ — **done 27 Sep 2026** (D39 owner browser check passed). New: `KI-42`
+   (no unique shop per owner — LOW), `KI-43` (catalog seed in bundle — LOW), `NI-29` (npm strips lockfile `libc`),
+   `SG-09` (coarser-unit rate display + edited-rate storage — decide at `KB-303`).
+6. **`KB-302`** — voice control + states. Note `KI-36`'s trigger ("before `KB-302`"): type-check/lint coverage outside `src/`.
 
 **Outstanding owner tasks:** `M-13` (connect the real Netlify site, set env vars) before any production
 deploy.
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (26 Sep, after `KB-005f`):** 330 tests in 24 files — Vitest project `unit` (329 tests, 23 files,
+**Test state (27 Sep, `KB-301`):** 386 tests in 28 files — Vitest project `unit` (385 tests, 27 files,
 parallel) then `perf` (1 test, run alone, D35). The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **Type-checking gap:** `tsc` and ESLint cover `src/` only (`KI-36`) — any ticket editing `netlify/`, `eval/`,
 `scripts/` or `vite.config.ts` must run those files in VERIFY.
@@ -60,7 +54,7 @@ parallel) then `perf` (1 test, run alone, D35). The perf test is `KI-23`-closed;
 **Key rotation:** Groq (`M-06`) and Gemini (`M-07`) both done — old keys deleted, new keys in
 `.env.local`, both real-verified against their live APIs. `KB-001` closed.
 **Codebase map:** `src/domain/` (pure logic), `src/data/` (Dexie, sync, receipt numbers, learning audit),
-`src/providers/` (React context only — Auth, Shop), `src/ui/` (S1, S2 only), `src/app/` (gates + a
+`src/providers/` (React context only — Auth, Shop), `src/ui/` (S1, S2, S3 shell), `src/app/` (gates + a
 placeholder), `src/voice/` (server-side Groq/Gemini providers), `netlify/functions/` (`/voice`).
 
 ---
@@ -269,6 +263,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 27 Sep 2026 | **`KB-301` done.** The S3 billing screen shell replaces the signed-in placeholder: cards at 375px, a table from `md`, TOTAL pinned, mic / Add item / Bill Banao present but disabled. Real `parseUtterance()` output in every UI test (new D39, `09` §B5). Rate shows its unit only across a real conversion ("₹45/kg" on 500 gm; plain "₹60" for packet-vs-piece). `ShopProvider` finally has tests (offline cache, network error, sync loop start/stop); a failed first load with no cached shop now shows Retry instead of onboarding (duplicate-shop risk — `KI-42`). KI-19 closed, and Mukta actually loads now (it never did). Dev-only local email sign-in and `?try=`, both proven absent from `dist/`. New deps: `lucide-react` (SD-026), `@fontsource/mukta` (SD-027, closes M-21 for Mukta). Production JS 543 → 683 kB (gzip 159 → 185 kB), mostly the catalog seed now reachable via `unitScale` (`KI-43`). Owner browser check passed the same day (screenshots reviewed: cards/table, `—` rules, ₹45/kg vs ₹60, ₹2013.75 long bill hand-checked, auto-scroll, sign-out/in). The check surfaced a dev-console `DatabaseClosedError` "[shop] bootstrap failed" — React StrictMode's double mount closing the first run's database mid-read; harmless (the stale run was already discarded) but misleading, and it would also fire on sign-out mid-load in production. Fixed: a cancelled run's error is now silent; StrictMode regression test added. | Agent + Owner |
 | 27 Sep 2026 | **Docs only — pre-deploy gaps recorded before `KB-301`.** `KI-40` (no service worker: the app can't load offline — HIGH, before the pilot; `KB-401` amended to include app-shell precaching) and `KI-41` (`push_bill()` doesn't verify totals add up — MEDIUM, before the pilot) added to `12-PARKED.md`. New "Before deployment" checklist in this file. Next: `KB-301`. | Owner + Agent |
 | 27 Sep 2026 | **`KB-315` done — the four pre-Phase-3 fixes are complete; `KB-301` is next.** A shopkeeper's device now has a persistent id, its own local database per signed-in user, a first receipt block reserved at onboarding, and a sync loop that runs while a shop is active and stops on sign-out. An offline start works from IndexedDB alone (offline session for the last real sign-in — `auth-js`'s real behaviour proven on the local stack), and — the owner's rule — nothing ever syncs without a real session, so offline bills can't become false conflicts. Device-scoped receipt blocks fixed a latent number-reuse path after a wipe. No migration. | Agent + Owner |
 | 27 Sep 2026 | **`KB-110b` done — a finalised bill now reaches the server whole, exactly once.** `push_bill()` (SECURITY INVOKER, one transaction) replaces the push path that could never sync a final bill's items; retries are idempotent and divergence is a loud `KB409`; `receipt_number_source` and `rate_unit` persist. Two real findings beyond the plan: the owner's review caught that `NULL` would have made a divergent retry a silent success (fixed, real-stack tested), and the first real e2e run caught that keeping the plain `bill_id` FK beside the new composite one broke every PostgREST `bills → bill_items` embed (dropped). Error classification fixed for every synced table. `npm run test:e2e` is now required for sync/schema tickets. Owner pushed `20260927090000_push_bill.sql` the same day; confirmed live via `db dump --linked` (functions SECURITY INVOKER, no `anon` EXECUTE, composite FK present, plain FK absent, `rate_unit` + iff check). Next: `KB-315`. | Agent + Owner |

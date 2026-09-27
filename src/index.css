@@ -1,11 +1,21 @@
 @import "tailwindcss";
 
+/* Mukta, self-hosted via @fontsource (M-21; 11-STACK-DECISIONS.md).
+ * Weights are 13-DESIGN.md section 4's scale. Each file is split by
+ * unicode-range, so the browser fetches only the Devanagari/Latin subsets it
+ * actually renders. Served from our own origin - no font CDN (offline app). */
+@import "@fontsource/mukta/400.css";
+@import "@fontsource/mukta/500.css";
+@import "@fontsource/mukta/600.css";
+@import "@fontsource/mukta/700.css";
+
 /*
  * KiranaBill design tokens — from docs/13-DESIGN.md §8.
  * These are the ONLY colours allowed in the app.
  * If you need a colour not listed here, add it to 13-DESIGN.md first.
  *
- * Typography: Mukta (body), IBM Plex Mono (numbers/amounts).
+ * Typography: Mukta for everything, numerals included (tabular-nums);
+ * IBM Plex Mono is the receipt's face only (13-DESIGN.md section 4, KB-308).
  * Dark mode: deferred — see 13-DESIGN.md §8.
  */
 @theme {
@@ -23,7 +33,8 @@
   --color-ok: #2E6B3E;
   --color-muted: #9A9689;
 
-  /* Fonts — self-hosted in Phase 3 (M-21). Google Fonts CDN for now. */
-  --font-body: "Mukta", sans-serif;
+  /* Fonts. Mukta is --font-sans, i.e. the DEFAULT, not opt-in (KI-19).
+   * IBM Plex Mono is not loaded yet - KB-308 (the receipt) self-hosts it. */
+  --font-sans: "Mukta", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 }

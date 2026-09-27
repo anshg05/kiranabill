@@ -33,7 +33,7 @@ export function OnboardingScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-paper text-ink font-body flex flex-col items-center justify-center gap-4 px-4">
+    <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4">
       <h1 className="text-2xl font-semibold">Set up your shop</h1>
 
       <input

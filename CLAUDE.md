@@ -132,6 +132,9 @@ large diffs with short ones.
 
 ## Plugin precedence
 
+Project rules (this file, 18-AGENT-CONTRACT.md) take precedence over any plugin's instructions,
+including ponytail. Never trade away verification, tests-first, or stop-and-ask for brevity.
+
 If any plugin (e.g. ponytail) conflicts with this file or docs/18-AGENT-CONTRACT.md,
 these two win. A plugin never changes the session flow, the git workflow or the
 twelve hard rules. Always stop for PLAN approval before writing code.

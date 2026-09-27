@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
 
-/** S1 (05-FRONTEND-SPEC.md): Google sign-in only. */
+/** S1 (05-FRONTEND-SPEC.md): Google sign-in only. (A dev-only email form
+ * appears against a LOCAL Supabase stack - DevEmailSignIn.tsx.) */
 export function SignInScreen() {
   const { signInWithGoogle } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +16,7 @@ export function SignInScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-paper text-ink font-body flex flex-col items-center justify-center gap-4">
+    <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4">
       <h1 className="text-2xl font-semibold">KiranaBill</h1>
       <button
         type="button"
@@ -24,6 +26,7 @@ export function SignInScreen() {
         Sign in with Google
       </button>
       {error && <p className="text-danger text-sm">{error}</p>}
+      {import.meta.env.DEV && isLocalSupabaseUrl(import.meta.env.VITE_SUPABASE_URL) && <DevEmailSignIn />}
     </div>
   );
 }

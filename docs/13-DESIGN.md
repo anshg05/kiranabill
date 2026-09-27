@@ -1,6 +1,6 @@
 # 13 — Design
 
-**Last updated:** 21 Aug 2026 (rev 3) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP · Validated against mockups
 
 ---
 
@@ -237,9 +237,10 @@ design decision and it goes in this document first.
 
 Usage: `bg-paper`, `text-ink`, `border-line`, `text-danger`, `bg-indigo`.
 
-> ⚠️ **Mukta must be `--font-sans`, not a separate `--font-body`.** The `KB-000` scaffold set
-> `--font-body`, which leaves Tailwind's system stack as the default and forces every component to
-> opt in with a class. Fix this when Phase 3 starts.
+> **Mukta is `--font-sans`, not a separate `--font-body`** — fixed in `KB-301` (`12-PARKED.md` KI-19). The
+> `KB-000` scaffold had set `--font-body`, leaving Tailwind's system stack as the default. Mukta is self-hosted
+> via `@fontsource/mukta`, imported at the top of `src/index.css` (`11-STACK-DECISIONS.md` SD-027) — never a
+> font CDN.
 
 > **Tailwind v4 tree-shakes unused tokens.** Only tokens some class actually references appear in
 > the built CSS. Verify tokens against `src/index.css`, never against `dist/`.

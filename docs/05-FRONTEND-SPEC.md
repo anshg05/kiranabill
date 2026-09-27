@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 20 Aug 2026 (rev 2) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 27 Sep 2026 (rev 3) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -106,6 +106,24 @@ The mockup gave a third of the screen to a "Bill so far" strip showing four word
 
 Flags are **inline sentences, not icons**. "Rate ₹6/kg — usually ₹52. Check?" is actionable;
 a warning triangle is not.
+
+### Implementation notes — S3 shell (`KB-301`, 27 Sep 2026)
+
+- **Code:** `src/ui/BillingScreen.tsx` (`BillView` is the presentational part), display rules in
+  `src/ui/billFormat.ts`. Mobile first: cards below Tailwind `md` (768px), a table from `md` up; max width 720px.
+- **Unknown values:** qty, rate or amount unknown → `—` (`13-DESIGN.md` §6c). The layout diagram above shows an
+  unpriced line's amount as `0`; §6c wins — `₹0` would read as free.
+- **Rate unit** (owner, 27 Sep 2026): the rate shows its unit only when a real conversion sits between the rate
+  and the line — `unitScale(unit, rateUnit)` is ±3: "500 gm chini" → `₹45/kg`. Same unit, or interchangeable
+  count units (packet vs piece, `unitScale` 0) → plain `₹60`.
+- **Units** are shown as the domain spells them (`gm`, `kg`, `piece`, `packet`) — the diagram's `pcs` is not
+  mapped. Item names are the spoken name, capitalised by CSS.
+- **Not built yet:** mic, Add item and Bill Banao are disabled (reason in a tooltip only); the customer row is
+  static "Cash" (`KB-306`); the ≡ menu holds only Sign out until S7 (`KB-312`).
+- **Dev only:** `?try=<utterance>` fills the bill with real `parseUtterance()` output for browser checks;
+  removed from production builds (D39).
+- **Shop load failure:** online, no cached shop, lookup failed → "Server se connect nahi ho paaya" + Retry, never
+  onboarding (`12-PARKED.md` KI-42).
 
 ### Add item (S3a)
 

@@ -2,38 +2,29 @@ import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { ShopProvider, useShop } from "@/providers/ShopProvider";
 import { SignInScreen } from "@/ui/SignInScreen";
 import { OnboardingScreen } from "@/ui/OnboardingScreen";
+import { BillingScreen } from "@/ui/BillingScreen";
 
-/**
- * Signed-in-with-a-shop placeholder until KB-1xx (S3 billing) exists.
- * The temporary sign-out button here has no permanent home yet either
- * (05-FRONTEND-SPEC.md's S7 doesn't specify one) - it exists only so the
- * sign-in/sign-out loop is testable without clearing browser storage by
- * hand.
- */
-function HasShopPlaceholder() {
-  const { user, signOut } = useAuth();
-  const { shop } = useShop();
-
+/** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
+ * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
+function ShopLoadError() {
+  const { retry } = useShop();
   return (
-    <div className="min-h-screen bg-paper text-ink font-body flex flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-semibold">KiranaBill</h1>
-      <p>Signed in as {user?.email}</p>
-      <p>Shop: {shop?.name}</p>
-      <p className="text-ink-soft text-sm">Billing (KB-1xx) isn&apos;t built yet.</p>
+    <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4">
+      <p>Server se connect nahi ho paaya</p>
       <button
         type="button"
-        onClick={() => void signOut()}
-        className="rounded-lg border border-line px-4 py-2 text-sm"
+        onClick={retry}
+        className="min-h-11 rounded-[6px] border border-line bg-surface px-6 font-medium"
       >
-        Sign out
+        Retry
       </button>
     </div>
   );
 }
 
 /** The Auth {Signed in?} -> HasShop? branch from 16-APP-FLOW.md's nav map. */
-function ShopGate() {
-  const { loading, shop } = useShop();
+export function ShopGate() {
+  const { loading, shop, loadError } = useShop();
 
   if (loading) {
     return (
@@ -43,7 +34,8 @@ function ShopGate() {
     );
   }
 
-  return shop ? <HasShopPlaceholder /> : <OnboardingScreen />;
+  if (loadError) return <ShopLoadError />;
+  return shop ? <BillingScreen /> : <OnboardingScreen />;
 }
 
 function AuthGate() {

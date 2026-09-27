@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 27 Sep 2026 (rev 25) · Supersedes rev 24
+**Last updated:** 27 Sep 2026 (rev 26) · Supersedes rev 25
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1223,6 +1223,26 @@ offline session → rejected refresh on reconnect → nothing pushed, all pendin
 the `online` listener (it used to leak). The `shop_products` pull cursor is per shop. **Sign-out with unsynced
 rows: the UI must warn with the count of unsynced bills** (KB-312 / KB-313; `16-APP-FLOW.md` "Sign-out") — not
 built here. Multiple open tabs each run a loop — safe today, not solved (`12-PARKED.md` KI-39).
+
+### D39 — UI verification standard: real parser output in tests, owner's real-browser check before close 🟢
+
+**Owner decision, 27 Sep 2026, `KB-301`.** Applies to every UI ticket from `KB-301` on.
+
+**1. Component tests render real `parseUtterance()` output** from `eval/voice-cases.json` or
+`eval/number-benchmark.json`, **never hand-built bills.** A hand-built `ParsedItem` can hold a combination
+the parser never produces (and miss one it does — `VC015` "Surf Excel ek packet" really parses as qty 1
+*packet* at ₹60 per *piece*, which is what the rate-unit display rule had to handle). Where a fixture carries
+expected numbers (`number-benchmark.json`), assert against them. Where no fixture can produce a case yet, test
+the pure formatting helper instead and say which later ticket adds the full-bill test (`KB-301`: the unpriced
+"—" amount → `KB-305`).
+
+**2. No UI ticket closes before the owner's real-browser check** at 375px and desktop width, with screenshots
+reviewed. The agent supplies the checklist; `npm run dev` against the **local** Supabase stack (dev-only email
+sign-in, `src/ui/DevEmailSignIn.tsx` — the local stack has no Google provider; never point dev at the remote
+project to work around it). Dev-only aids (`?try=<utterance>`, the email form) must be proven absent from
+`npm run build` output by grepping `dist/`.
+
+Recorded in `09-WORKING-AGREEMENT.md` §B5 (the UI row).
 
 ---
 
