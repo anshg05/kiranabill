@@ -12,6 +12,8 @@
     "test:e2e": "vitest run --project e2e",
     "seed:catalog": "tsx scripts/build-catalog-seed.ts",
     "eval": "tsx eval/run-eval.ts",
+    "eval:real": "tsx eval/real-transcripts.ts",
+    "eval:audio": "tsx eval/real-audio.ts",
     "try": "tsx scripts/try.ts",
     "bench:numbers": "tsx eval/number-benchmark.ts",
     "coverage:probe": "tsx eval/coverage-probe.ts",

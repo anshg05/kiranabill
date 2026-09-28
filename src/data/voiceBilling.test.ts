@@ -27,6 +27,15 @@ describe("resolveUtterance", () => {
     ]);
   });
 
+  // KB-317 (a): per-stage timings for the dev [voice] log.
+  it("reports its own timings: Layer 1 always; Gemini only when it was called", async () => {
+    const hit = await resolveUtterance(utterance("VC023"), { shop: SEED_PARSER_CATALOG, parse: vi.fn() });
+    expect(hit.timings.layer1Ms).toBeGreaterThanOrEqual(0);
+    expect(hit.timings.layer2Ms).toBeNull();
+    const miss = await resolveUtterance("दो किलो चीनी और तीन पारले जी दस वाला", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => []) });
+    expect(miss.timings.layer2Ms).toBeGreaterThanOrEqual(0);
+  });
+
   it("Q3: a comma order Layer 1 merges into one line (HIGH number flags) goes to Layer 2 instead", async () => {
     const transcript = "2 kilo chini, teen Parle-G 10 wala";
     const parse = vi.fn(async () => [

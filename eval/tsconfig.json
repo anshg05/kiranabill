@@ -8,7 +8,11 @@
     "strict": true,
     "noEmit": true,
     "tsBuildInfoFile": "../node_modules/.tmp/eval.tsbuildinfo",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    /* KB-317: eval runs the SHIPPED routing (src/data/voiceBilling.ts), which imports via @/ */
+    "baseUrl": "..",
+    "paths": { "@/*": ["src/*"] }
   },
   "include": ["*.ts"]
 }

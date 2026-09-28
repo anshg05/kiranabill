@@ -74,6 +74,8 @@ export function BillingScreen() {
       if (import.meta.env.DEV) {
         console.info("[voice] resolved", {
           layer: resolved.layer,
+          layer1Ms: Number(resolved.timings.layer1Ms.toFixed(2)),
+          geminiMs: resolved.timings.layer2Ms === null ? null : Math.round(resolved.timings.layer2Ms),
           lines: resolved.lines.map((l) => `${l.displayName} ${l.item.qty ?? "—"} ${l.item.unit} = ${l.item.total ?? "—"}`),
           flags: resolved.flags.map((f) => `${f.severity} ${f.code}`),
           numbersHeard: extractSpokenNumbers(transcript),

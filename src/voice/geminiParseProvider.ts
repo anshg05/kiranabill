@@ -70,8 +70,10 @@ function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): Pa
   };
 }
 
+// KB-317 (12-PARKED.md KI-50): a 429 is a quota - on the free tier a DAILY one -
+// and won't clear in seconds, so it is not retried; only server errors are.
 function isRetryable(status: number): boolean {
-  return status === 429 || status >= 500;
+  return status >= 500;
 }
 
 async function sleep(ms: number): Promise<void> {

@@ -7,6 +7,9 @@ dist/
 *.log
 *.tsbuildinfo
 
+# KB-317: the owner's recorded voice (dev-only ?save=1) - never committed.
+eval/real-audio/
+
 # Local Netlify folder
 .netlify
 

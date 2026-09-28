@@ -132,24 +132,16 @@ describe("geminiParseProvider", () => {
     expect(result.items[0]).toMatchObject({ catalogId: null, isCustom: true, matchStatus: "none" });
   });
 
-  it("retries on a 429 with exponential backoff, then succeeds", async () => {
-    vi.useFakeTimers();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 429, text: async () => "rate limited" })
-      .mockResolvedValueOnce({ ok: false, status: 429, text: async () => "rate limited" })
-      .mockResolvedValueOnce(mockGeminiSuccess([]));
+  // KB-317 (owner-approved plan; 12-PARKED.md KI-50): a 429 is a quota - on the
+  // free tier a DAILY one - and won't clear in seconds. It used to be retried 3x
+  // (0.5 + 1 + 2 s) before failing: ~3.7 s of waiting for a guaranteed error.
+  it("does not retry a 429 (quota) - fails at once, one call", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "quota exceeded" });
     vi.stubGlobal("fetch", fetchMock);
 
     const provider = createGeminiParseProvider("test-key");
-    const resultPromise = provider.parse("chini", { catalogSlice: [makeCatalogEntry()] });
-
-    await vi.advanceTimersByTimeAsync(500); // after attempt 1's failure
-    await vi.advanceTimersByTimeAsync(1000); // after attempt 2's failure
-
-    const result = await resultPromise;
-    expect(result.items).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await expect(provider.parse("chini", { catalogSlice: [makeCatalogEntry()] })).rejects.toThrow(/429.*quota exceeded/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("throws after exhausting all retries on a persistent 500", async () => {

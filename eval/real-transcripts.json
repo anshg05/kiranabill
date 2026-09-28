@@ -1,0 +1,92 @@
+[
+  {
+    "id": "RT01",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "2 किलो चीनी और 3 पार लेजी 10 वाला",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
+    ]
+  },
+  {
+    "id": "RT02",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "5 किलो चावल 30 का",
+    "expectedLines": [
+      { "catalogId": "11", "displayName": "Chawal", "qty": 5, "unit": "kg", "total": 3000 }
+    ],
+    "note": "'ka' = spoken total (settled rule). Owner is checking at a real counter whether '5 kilo chawal 30 ka' means Rs.30 total or the Rs.30/kg variety - if the latter, that is a separate decision, not KB-317."
+  },
+  {
+    "id": "RT03",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "500 ग्राम जीरा और एक पैकेट सर्फ एक्सल",
+    "expectedLines": [
+      { "catalogId": "104", "displayName": "Jeera", "qty": 500, "unit": "gm", "total": 20000 },
+      { "catalogId": "189", "displayName": "Surf Excel", "qty": 1, "unit": "packet", "total": 6000 }
+    ],
+    "note": "Unit 'packet' kept as spoken (D36). Gemini returned 0.5 gm here on the owner's run (KI-45)."
+  },
+  {
+    "id": "RT04",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "साबुन 180 रुपए",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
+    ],
+    "note": "Generic Sabun (614), never a brand unless a brand is said (owner). qty null: only a total was spoken - never invent a number (owner, 28 Sep 2026). CONFLICTS with 07-DECISIONS.md D13 point 1 (a matched product with only a total spoken gets qty 1 in the catalog's unit) - owner to decide at KB-317 commit 2's review."
+  },
+  {
+    "id": "RT05",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "5 किलो चीनी, 3 पारलेजी दसवाला और 2 किलो बेशन",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 5, "unit": "kg", "total": 22500 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 },
+      { "catalogId": "4", "displayName": "Besan", "qty": 2, "unit": "kg", "total": 18000 }
+    ],
+    "note": "'दसवाला' is KI-44 (number glued to 'wala')."
+  },
+  {
+    "id": "RT06",
+    "source": "owner, real voice, 28 Sep 2026, lang hi",
+    "transcript": "1 किलो आटा, 2 किलो बेशन",
+    "expectedLines": [
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 1, "unit": "kg", "total": 3800 },
+      { "catalogId": "4", "displayName": "Besan", "qty": 2, "unit": "kg", "total": 18000 }
+    ],
+    "note": "आटा = Chakki Aata (flour), never गेहूं (grain) - owner, 28 Sep 2026."
+  },
+  {
+    "id": "RT07",
+    "source": "owner, real voice, 28 Sep 2026, lang auto (Devanagari)",
+    "transcript": "2 किलो चीनी 3 पालेजी 10 वाला 1 किलो बेसन",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 },
+      { "catalogId": "4", "displayName": "Besan", "qty": 1, "unit": "kg", "total": 9000 }
+    ],
+    "note": "No separator at all (4 numbers in one run) - expected to stay a safe Layer 1 miss (-> Gemini)."
+  },
+  {
+    "id": "RT08",
+    "source": "owner, real voice, 28 Sep 2026, lang auto (Devanagari)",
+    "transcript": "2 किलो चीनी और 3 पारलेजी 10 वला",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
+    ]
+  },
+  {
+    "id": "RT09",
+    "source": "owner, real voice, 28 Sep 2026, lang auto (Devanagari). Owner said: 'do kilo chini, teen Parle-G das wala'",
+    "transcript": "दो किलो शक्कर दो किलो शक्कर पांगलेजी तीन दस वाला",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
+    ],
+    "expectedFlags": ["duplicate_line"],
+    "note": "Whisper repeated a segment (KI-46). Scored on the duplicate_line flag (KB-317 commit 3): shakkar = Chini (owner)."
+  }
+]

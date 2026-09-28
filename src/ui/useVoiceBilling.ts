@@ -50,6 +50,31 @@ function devLanguage(): string | undefined {
   return DEFAULT_LANGUAGE;
 }
 
+/** DEV ONLY (owner, KB-317): `?save=1` sends each recording + its transcript
+ * and timings to the dev server, which writes them under eval/real-audio/
+ * (gitignored - the owner's voice; vite.config.ts `devSaveRecording`). For the
+ * real-transcript fixtures and the Whisper model comparison. Removed from
+ * `npm run build` (VERIFY greps dist/). */
+function devSaveEnabled(): boolean {
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get("save") === "1";
+}
+
+async function devSaveRecording(audio: Blob, meta: Record<string, unknown>): Promise<void> {
+  const bytes = new Uint8Array(await audio.arrayBuffer());
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  try {
+    const res = await fetch("/__dev/save-recording", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioBase64: btoa(binary), mime: audio.type, meta }),
+    });
+    console.info("[voice] saved recording", await res.json());
+  } catch (err) {
+    console.warn("[voice] save recording failed (run `npm run dev` or `npx netlify dev`):", err);
+  }
+}
+
 /** A failure whose message is written for the shopkeeper and shown as-is. */
 export class VoiceUserError extends Error {}
 
@@ -137,15 +162,28 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
           setMessage(messageFor(err));
           return;
         }
+        // KB-317 (a): per-stage timings, dev only. stopToTranscript = recorder
+        // stop + upload + Groq; Layer 1 / Gemini are logged by the screen.
+        const timings = {
+          tapToListeningMs: capture.lastTapToListeningMs === null ? null : Math.round(capture.lastTapToListeningMs),
+          stopToTranscriptMs: Math.round(performance.now() - stoppedAt),
+        };
         if (import.meta.env.DEV) {
-          console.info("[voice]", {
-            lang: language ?? "auto",
-            tapToListeningMs: capture.lastTapToListeningMs?.toFixed(1),
-            stopToTranscriptMs: (performance.now() - stoppedAt).toFixed(0),
-            transcript: text,
-          });
+          console.info("[voice]", { lang: language ?? "auto", ...timings, transcript: text });
         }
+        const save = (outcome: string) => {
+          if (devSaveEnabled()) {
+            void devSaveRecording(audio, {
+              transcript: text,
+              lang: language ?? "auto",
+              ...timings,
+              stopToLinesMs: Math.round(performance.now() - stoppedAt),
+              outcome,
+            });
+          }
+        };
         if (!text) {
+          save("empty transcript");
           setPhase("failed");
           setMessage("Didn't catch anything — try again");
           return;
@@ -153,14 +191,18 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
         setTranscript(text);
         setMessage(null);
         if (!opts.onTranscript) {
+          save("transcript only");
           setPhase("done");
           return;
         }
         setPhase("resolving");
         try {
           await opts.onTranscript(text);
+          if (import.meta.env.DEV) console.info("[voice] stop → lines", Math.round(performance.now() - stoppedAt), "ms");
+          save("lines");
           setPhase("done");
         } catch (err) {
+          save(`failed: ${messageFor(err)}`);
           setPhase("failed");
           setMessage(messageFor(err));
         }

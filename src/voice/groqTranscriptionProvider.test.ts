@@ -89,6 +89,16 @@ describe("groqTranscriptionProvider", () => {
     expect(form.get("file")).toBeInstanceOf(Blob);
   });
 
+  it("KB-317: an explicit model (the eval's large-v3 vs turbo comparison) is sent; the default stays whisper-large-v3", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ text: "" }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createGroqTranscriptionProvider("k", "whisper-large-v3-turbo").transcribe(new Blob(["a"]), {});
+    await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {});
+    const models = fetchMock.mock.calls.map((c) => (c[1].body as FormData).get("model"));
+    expect(models).toEqual(["whisper-large-v3-turbo", "whisper-large-v3"]);
+  });
+
   it("truncates the vocabulary prompt to exactly 600 characters", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

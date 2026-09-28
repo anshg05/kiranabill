@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 28 Sep 2026 (rev 55) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302` done. Next: voice accuracy + speed (plan awaiting owner approval) — not `KB-304` (owner).
+**Last updated:** 28 Sep 2026 (rev 56) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302` done. `KB-317` (voice accuracy + speed) in progress — commit 1 of 4 done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** planning the next ticket — **voice accuracy + speed** (owner, 28 Sep 2026): `KB-302` works end to end, but the owner's real-mic run showed Layer 1 misses almost all real (Devanagari) input (KI-49), numbers glued to words (KI-44), Gemini mis-scaling (KI-45), repeated segments (KI-46), brand guesses (KI-47), and the mic budget missed (D45). `KB-302` closed 28 Sep 2026: owner's real-mic browser check passed (D39), language `hi` (D44), pushed. Before it, `KB-316` (type-check + lint every TS file, KI-36) and `KB-301` (billing screen shell) closed 27 Sep 2026.
+**Working on:** `KB-317` — voice accuracy + speed (owner, 28 Sep 2026). **Commit 1 (measure) done:** owner-confirmed real-transcript fixtures + `npm run eval:real` (baseline **1/9** real transcripts hit Layer 1 — KI-49), per-stage dev timings, dev-only `?save=1` recordings (to gitignored `eval/real-audio/`) + `npm run eval:audio` (whisper-large-v3 vs turbo, report only), no Gemini retry on 429 (KI-50). **Next:** the owner records ~20 orders with `?save=1&lang=hi`; then commit 2 (Layer 1 on Devanagari) — tests first, STOP for owner review. Open for the owner at commit 2: D13 point 1 vs RT04 (qty on a total-only line). Gemini fixes → `KB-318` after billing (KI-50).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -38,9 +38,9 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 6. ~~**`KB-316`** — type-check + lint every TS file (`KI-36`)~~ — **done 27 Sep 2026** (D40).
 7. ~~**`KB-302`** — voice control + states~~ — **done 28 Sep 2026** (D39 owner check; D41–D44). Closed `KI-34`, `KI-43`. New:
    `KI-44`–`KI-49`, `NI-30`.
-8. **Next: voice accuracy + speed** (owner, 28 Sep 2026 — NOT `KB-304`): measure first (latency breakdown, a real-transcript
-   fixture set + hit rate, model config), then KI-44, Devanagari coverage (KI-49), KI-45 + KI-47 prompt fixes, the
-   repeated-segment flag (KI-46), the 60 s warm mic (D45). Plan awaiting approval.
+8. **`KB-317`** — voice accuracy + speed (owner, 28 Sep 2026 — NOT `KB-304`). Commit 1 (measure) done; commit 2 (Layer 1 on
+   Devanagari: KI-44, KI-49) next, tests first + owner review; commit 3 `duplicate_line` (KI-46); commit 4 warm mic (D45).
+   Then `KB-318` (Gemini prompt: KI-45, KI-47, thinking config) after billing (KI-50).
 
 **Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
 https://kiranabilling.netlify.app (see "Before deployment").
@@ -273,6 +273,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 28 Sep 2026 | **`KB-317` commit 1 — measurement.** Real-transcript fixtures (the owner's 9 real transcripts, expected lines confirmed by the owner) + `npm run eval:real` through the shipped routing: **baseline 1/9 hit Layer 1** (typed fixtures: 94.2%). Dev-only per-stage timings (mic open, stop → transcript, Layer 1, Gemini, stop → lines); dev-only `?save=1` saves each recording + transcript to `eval/real-audio/` (gitignored — the owner's voice; Vite dev-server endpoint, absent from builds); `npm run eval:audio` re-transcribes them with whisper-large-v3 vs turbo (report only). A Gemini 429 is no longer retried (KI-50). | Agent + Owner |
 | 28 Sep 2026 | **`KB-302` done and pushed; the owner's real-mic run redirected the next ticket to voice accuracy + speed.** Browser check passed: every voice state, permission denied, offline, silence, 375px + desktop. Measured: `auto` wrote Hindi in Urdu script (numbers invisible) → **language `hi`** (D44); tap → listening 165–289 ms vs a 100 ms budget → **60 s warm mic, never 'listening' before recording starts, budgets revised** (D45, next ticket); stop → transcript 1.5–2.1 s warm. Found and logged with evidence: KI-45 (Gemini 500 g → 0.5 gm, HIGH-flagged), KI-46 (a repeated segment → duplicate lines, zero flags — silent wrong bill, HIGH), KI-47 (brand guesses), KI-48 (sync pulls while offline), **KI-49 (fixtures are Roman-script typed text; real Devanagari input misses Layer 1 almost entirely — the 94% figure doesn't describe real use, HIGH)**. NI-26: ordered check kept, KI-44 next. Also: `?lang=auto` sends no hint; Dexie's dev-only DatabaseClosedError log silenced by a guard in ShopProvider. | Owner + Agent |
 | 27 Sep 2026 | **`KB-302` built — not pushed, awaiting the owner's real-mic check.** Tap the mic, speak, tap stop: the transcript shows at once, Layer 1 runs on the SHOP's catalog (D42 — the catalog is now a required argument; before, every shop was priced from the base seed), and only a real miss sends the transcript back for a text-only Gemini parse, behind guardrails (D41). Gemini's lines are settled with D36 money rules from the shop catalog (KI-34 closed) and checked for number misassignment (NI-26 — decision pending, KI-44). Every 05 §2 voice state; offline / offline-session → mic disabled with a visible reason. Found and fixed on the way, in its own commit: Hindi compound numbers ("paanch sau gram chini" billed 100 gm for ₹5, silently — D43; benchmark 129/129), and Safari's recording type (`audio/mp4;codecs=…` uploaded as webm). Bundle 690 → 581 kB (KI-43 closed — the seed no longer ships). Sign-ups disabled on the remote until the pilot (owner; Before deployment). | Agent + Owner |
 | 27 Sep 2026 | **`KB-316` done — every TypeScript file is type-checked and linted; `KI-36` closed (D40).** `tsc -b` over a solution tsconfig covers `src/`, `vite.config.ts`, `netlify/` (at `src/` strictness — production code), `eval/`, `scripts/` in both `npm run typecheck` and `npm run build`, so a type error in `netlify/functions` now fails the Netlify deploy. ESLint lints all 74 TS files: domain boundary + five core correctness rules (no dependency). Nothing surfaced — 0 type, 0 lint errors; no source file changed. Root tsconfig keeps `paths` for the function bundler; real `/voice` re-verified through `netlify dev` (401 unauthenticated; 200 with a real Groq transcript + Gemini parse); the live `/voice` unauthenticated check runs after this commit deploys (result in the KB-316 handoff). `npx tsc --noEmit` retired. Also: `M-13` done (owner) — site live, **every push to `main` auto-deploys**; `NI-29` answered (npm 11.6.0 vs Netlify's 11.19.0 — upgrade local npm); `SG-10` (type-aware lint) logged. | Agent + Owner |

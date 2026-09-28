@@ -85,6 +85,32 @@ describe("useVoiceBilling", () => {
     }
   });
 
+  it("dev ?save=1 posts the recording + transcript + timings to the dev server; without it, nothing is sent", async () => {
+    reply(200, { transcript: "do kilo chini" });
+    const plain = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+    await speak(plain.result);
+    plain.unmount();
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual(["/voice"]);
+
+    window.history.replaceState(null, "", "/?save=1");
+    try {
+      reply(200, { transcript: "do kilo chini" });
+      reply(200, { saved: "2026-09-28T10-00-00-000Z" });
+      const saving = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+      await speak(saving.result);
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      const [url, init] = fetchMock.mock.calls[2]!;
+      expect(url).toBe("/__dev/save-recording");
+      const body = JSON.parse(init.body as string);
+      expect(body.mime).toBe("audio/webm;codecs=opus");
+      expect(atob(body.audioBase64)).toBe("audio");
+      expect(body.meta).toMatchObject({ transcript: "do kilo chini", lang: "hi", outcome: "transcript only" });
+      expect(typeof body.meta.stopToTranscriptMs).toBe("number");
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+
   it.each([
     [401, "Session expired — sign out and sign in again"],
     [429, "Too many voice requests — wait a minute and try again"],

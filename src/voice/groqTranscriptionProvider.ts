@@ -49,13 +49,15 @@ function buildVocabularyPrompt(vocabulary: string[] | undefined): string | undef
     : joined;
 }
 
-export function createGroqTranscriptionProvider(apiKey: string): TranscriptionProvider {
+/** `model` exists for the KB-317 eval's large-v3 vs turbo comparison
+ * (eval/real-audio.ts); the app always uses the default (04 section 2). */
+export function createGroqTranscriptionProvider(apiKey: string, model: string = GROQ_MODEL): TranscriptionProvider {
   return {
-    name: "groq-whisper-large-v3",
+    name: `groq-${model}`,
     async transcribe(audio, opts) {
       const form = new FormData();
       form.set("file", audio, audioFilename(audio));
-      form.set("model", GROQ_MODEL);
+      form.set("model", model);
       if (opts.language) form.set("language", opts.language);
       const prompt = buildVocabularyPrompt(opts.vocabulary);
       if (prompt) form.set("prompt", prompt);

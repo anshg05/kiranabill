@@ -1,10 +1,66 @@
-import { defineConfig, loadEnv } from "vite";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+const AUDIO_EXTENSIONS: Record<string, string> = { "audio/webm": "webm", "audio/mp4": "mp4", "audio/ogg": "ogg", "audio/wav": "wav" };
+const MAX_SAVE_BYTES = 20 * 1024 * 1024;
+
+/**
+ * KB-317, DEV SERVER ONLY (`apply: "serve"` - never part of `npm run build`):
+ * POST /__dev/save-recording, used by the app's `?save=1`
+ * (src/ui/useVoiceBilling.ts). Writes the owner's recording and its
+ * transcript/timings to eval/real-audio/<timestamp>.<ext> + .json - a folder
+ * that is gitignored (the owner's voice). File names are generated here, never
+ * taken from the request.
+ */
+function devSaveRecording(): Plugin {
+  return {
+    name: "kiranabill-dev-save-recording",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use("/__dev/save-recording", (req, res) => {
+        const reply = (status: number, body: object) => {
+          res.statusCode = status;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify(body));
+        };
+        if (req.method !== "POST") return reply(405, { error: "POST only" });
+        const chunks: Buffer[] = [];
+        let size = 0;
+        req.on("data", (c: Buffer) => {
+          size += c.length;
+          if (size <= MAX_SAVE_BYTES) chunks.push(c);
+        });
+        req.on("end", () => {
+          try {
+            if (size > MAX_SAVE_BYTES) return reply(413, { error: "too large" });
+            const { audioBase64, mime, meta } = JSON.parse(Buffer.concat(chunks).toString("utf8")) as {
+              audioBase64?: unknown;
+              mime?: unknown;
+              meta?: unknown;
+            };
+            if (typeof audioBase64 !== "string" || typeof mime !== "string") return reply(400, { error: "audioBase64 and mime required" });
+            const ext = AUDIO_EXTENSIONS[mime.split(";")[0]!.trim().toLowerCase()] ?? "bin";
+            const dir = path.resolve(process.cwd(), "eval", "real-audio");
+            mkdirSync(dir, { recursive: true });
+            const name = new Date().toISOString().replace(/[:.]/g, "-");
+            writeFileSync(path.join(dir, `${name}.${ext}`), Buffer.from(audioBase64, "base64"));
+            writeFileSync(path.join(dir, `${name}.json`), JSON.stringify({ audioFile: `${name}.${ext}`, mime, ...(meta as object) }, null, 2));
+            reply(200, { saved: `eval/real-audio/${name}.${ext}` });
+          } catch (err) {
+            reply(400, { error: String(err) });
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), devSaveRecording()],
   resolve: {
     alias: {
       "@": "/src",

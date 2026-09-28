@@ -22,6 +22,9 @@ export interface ResolvedUtterance {
   readonly lines: readonly BillLine[];
   /** itemIndex is relative to `lines`; the screen re-bases it onto the bill. */
   readonly flags: readonly ReviewFlag[];
+  /** KB-317: per-stage timings for the dev [voice] log. layer2Ms is null when
+   * Layer 1 hit and Gemini was never called. */
+  readonly timings: { readonly layer1Ms: number; readonly layer2Ms: number | null };
 }
 
 export interface ResolveDeps {
@@ -38,7 +41,9 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
   // answer is discarded, never shown: a comma order it merged into one line,
   // or a garbled transcript it turned into one "unknown product", goes to
   // Layer 2 instead.
+  const layer1Start = performance.now();
   const fast = parseUtterance(transcript, deps.shop);
+  const layer1Ms = performance.now() - layer1Start;
   if (fast) {
     const flags = evaluateReviewFlags(transcript, fast, deps.shop.entries);
     const hit =
@@ -49,13 +54,16 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
         layer: "fastpath",
         lines: fast.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" })),
         flags,
+        timings: { layer1Ms, layer2Ms: null },
       };
     }
   }
 
   // Layer 2 (owner Q1: the transcript, not the audio), settled (Q5 / KI-34),
   // then Layer 3 plus the ordered number alignment (Q7 / NI-26).
+  const layer2Start = performance.now();
   const proposed = await deps.parse(transcript, buildCatalogSlice(deps.shop, transcript));
+  const layer2Ms = performance.now() - layer2Start;
   const settled = settleLayer2Items(proposed, deps.shop);
   const items = settled.lines.map((l) => l.item);
   const misaligned = checkLayer2NumberOrder(transcript, items);
@@ -63,5 +71,6 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
     layer: "voice",
     lines: settled.lines.map((l) => ({ ...l, source: "voice" })),
     flags: [...evaluateReviewFlags(transcript, items, deps.shop.entries), ...settled.flags, ...(misaligned ? [misaligned] : [])],
+    timings: { layer1Ms, layer2Ms },
   };
 }
