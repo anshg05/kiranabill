@@ -224,9 +224,13 @@ function splitWords(text: string): string[] {
   const spaced = text
     .replace(/(\d)([a-zA-Zऀ-ॿ])/g, "$1 $2")
     .replace(/([a-zA-Zऀ-ॿ])(\d)/g, "$1 $2");
+  // KB-317: a "." between two digits is a decimal point ("3.5" is one
+  // number - Whisper writes "saadhe teen" that way); any other "." and the
+  // Devanagari danda are punctuation. Was /[.,!?]/: "3.5 kilo chawal" billed
+  // 5 kg for Rs.3.
   return spaced
     .toLowerCase()
-    .replace(/[.,!?]/g, " ")
+    .replace(/(?<!\d)\.|\.(?!\d)|[,!?।]/g, " ")
     .trim()
     .split(/\s+/)
     .filter((word) => word.length > 0);
@@ -334,6 +338,10 @@ function classifySegment(words: readonly string[]): Classified[] {
 
   return composeNumbers(out);
 }
+
+// KB-317: a digit number with more than 3 decimals can't be a quantity
+// (numeric(12,3)) - the segment bails rather than round it.
+const hasOverPreciseNumber = (words: readonly string[]): boolean => words.some((word) => /^\d+\.\d{4,}$/.test(word));
 
 // 3 decimals (numeric(12,3)) against float drift - via toFixed, because the
 // money path has no division (no-division.test.ts, D36).
@@ -503,6 +511,7 @@ function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenNa
 function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | null {
   const words = splitWords(rawSegment);
   if (words.length === 0) return null;
+  if (hasOverPreciseNumber(words)) return null;
 
   const classified = classifySegment(words);
   const nums = extractNums(classified);
@@ -680,7 +689,8 @@ export type MissReason =
   | "rate marker with no separate quantity"
   | "too many numbers or conflicting units"
   | "incompatible unit for default price"
-  | "ambiguous two-number utterance";
+  | "ambiguous two-number utterance"
+  | "number with more than 3 decimals";
 
 export interface ParseDiagnostics {
   readonly hit: boolean;
@@ -690,6 +700,7 @@ export interface ParseDiagnostics {
 function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | null {
   const words = splitWords(rawSegment);
   if (words.length === 0) return "empty utterance";
+  if (hasOverPreciseNumber(words)) return "number with more than 3 decimals";
 
   const classified = classifySegment(words);
   const nums = extractNums(classified);

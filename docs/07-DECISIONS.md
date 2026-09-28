@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 28 Sep 2026 (rev 29) · Supersedes rev 28
+**Last updated:** 29 Sep 2026 (rev 30) · Supersedes rev 29
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1336,12 +1336,30 @@ then release it (the browser's recording indicator stays on for that window). **
 never shown before `MediaRecorder` has actually started** — a lost first word is a wrong quantity. Budgets revised
 in `05-FRONTEND-SPEC.md` §10: first tap ≤ 300 ms, warm taps < 100 ms. Built in the next ticket, not `KB-302`.
 
+### D46 — Whisper stays on large-v3, not turbo 🟢
+
+**Owner decision, 29 Sep 2026, `KB-317`**, on `npm run eval:audio` over the owner's 18 real recordings (both models
+through the shipped Groq provider, language `hi`). Median Groq time: **large-v3 836 ms, turbo 713 ms** (~120 ms
+faster). But turbo **garbled a number** — "250 ग्राम जीरा" came back "दो स्वपचास ग्राम जीरा" — and glued words
+("किलोचीनी"), misspelt products ("मेगी", "आदा") and writes numbers as words. large-v3 gave the same text as at
+record time on all 18, with digits. A garbled number is the one failure this app exists to prevent; 120 ms doesn't
+buy it. Confirms `04-VOICE-PIPELINE.md`'s STT choice. Re-measure with `npm run eval:audio` if Groq changes models.
+
+### D47 — Only a total spoken → qty stays empty (supersedes D13 point 1) 🟢
+
+**Owner decision, 29 Sep 2026, `KB-317`** ("never invent a number"). When an item is spoken with only a total —
+"साबुन 180 रुपए", "namak 20 rupay ka" — the line is **qty `null`, unit `""`, total as spoken**, whether or not the
+product matches the catalog. D13 point 1 filled in qty 1 of the catalog's unit for a matched product; that is a
+number nobody said. Built in `KB-317` commit 2 (tests first); `KB-004` fixture VC005 ("ajwain 10 ki" → qty 1 gm)
+and any grammar test resting on D13 point 1 change with it, listed in that commit. D13 points 2–4 stand.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 29 Sep 2026 | D13 point 1: only a total spoken, product matched → qty 1 of the catalog's unit | **qty `null`, unit `""`** (D47) | Owner: never invent a number. |
 | 21 Aug 2026 | Antigravity as the single build tool (T1) | **Claude Code** (D28) | Antigravity quota exhausted mid-`KB-000`; the docs carried the handoff at zero cost. Recorded here 26 Sep 2026. |
 | 20 Aug 2026 | Feature branches, never commit to `main` (`09` §B4) | **Single branch, `main`** (D29) | Owner decision — solo developer; the ticket ID in the commit message does the branch name's job. Recorded here 26 Sep 2026. |
 | 08 Sep 2026 | Banker's rounding for money (`03-DATA-MODEL.md` section 8, rev 2) | **Half-up rounding** (D11) | Owner's error, caught during `KB-003`. Predictability for the shopkeeper checking a total by hand beats statistical unbiasedness. |

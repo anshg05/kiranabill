@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 28 Sep 2026 (rev 6) · **Status:** Final for MVP
+**Last updated:** 29 Sep 2026 (rev 7) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -106,6 +106,11 @@ Kirana speech encodes price semantics in postpositions. These five rules are the
 
 Rule 5 is the mature one. Most products would invent a default. This refuses to, and marks the line
 for the shopkeeper to complete.
+
+> 🔶 **Rule 2 — `ka` is always the line total (owner, 29 Sep 2026).** "5 kilo chawal **200 ka**" = ₹200 for the
+> 5 kg (₹40/kg works out, never spoken); "50 ka", "100 ka" the same. The "30 ka" in the example above and in
+> fixtures VC013 / RT02 is a grammar example, **not a real price** — no rice sells at ₹6/kg. If a real counter
+> ever uses `ka` for a rate, revisit here first, as a new decision.
 
 > ⚠️ **The grammar currently fails its own tests.** Eval case VC013 ("5 kg chawal 30 ka") returns
 > `price_type: 'rate'` and ₹100 instead of ₹30. VC001 and VC009 fail the default-price path.

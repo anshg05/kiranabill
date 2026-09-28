@@ -3,7 +3,7 @@ import { parseUtterance, diagnoseUtterance, extractSpokenNumbers, type ParsedIte
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { prepareParserCatalog } from "./catalogIndex";
 import { getCatalogEntryById } from "./catalog";
-import { lineTotalPaise } from "./money";
+import { lineTotalPaise, rupeesToPaise } from "./money";
 import voiceCases from "../../eval/voice-cases.json";
 import numberBenchmarkCases from "../../eval/number-benchmark.json";
 
@@ -647,5 +647,66 @@ describe("compound Hindi numbers - tens, paune/sawa, saadhe", () => {
     ["5 kilo chini teen sau pachas ka", { catalogId: "27", qty: 5, unit: "kg", rate: null, total: 35000, priceType: "total" }],
   ])("Layer 1: %s", (text, expected) => {
     expect(parseOne(text)).toMatchObject(expected);
+  });
+});
+
+// KB-317 (owner, 29 Sep 2026): Whisper writes "saadhe teen" as the digits
+// "3.5". splitWords() turned every "." into a space, so "3.5 किलो चावल" billed
+// Chawal 5 kg = Rs.3, silently - and extractSpokenNumbers() split it the same
+// way, so the number-alignment check agreed with the wrong reading. A dot
+// between two digits is a decimal point; any other "." (and the Devanagari
+// danda) is punctuation. Quantities keep at most 3 decimals (numeric(12,3)) -
+// more bails, never rounds.
+describe("KB-317 - a digit decimal is one number, never two", () => {
+  it.each([
+    ["3.5 किलो चावल", [3.5]],
+    ["3.5 किलो चावल और 250 ग्राम जीरा", [3.5, 250]],
+    ["12.50 रुपए", [12.5]],
+    ["2 किलो चीनी।", [2]],
+    ["2 kilo chini.", [2]],
+  ])("extractSpokenNumbers: %s -> %j", (text, expected) => {
+    expect(extractSpokenNumbers(text)).toEqual(expected);
+  });
+
+  const perKg = (catalogId: string, qty: number, unit: string, rate: number) => ({
+    catalogId, qty, unit, rate, rateUnit: unit, total: lineTotalPaise(qty, rate), priceType: "default",
+  });
+  it.each([
+    ["3.5 किलो चावल", perKg("11", 3.5, "kg", 5000)],
+    ["3.5 kilo chawal", perKg("11", 3.5, "kg", 5000)],
+    ["chawal 3.5 kg", perKg("11", 3.5, "kg", 5000)],
+    ["1.5 kilo chini", perKg("27", 1.5, "kg", 4500)],
+    ["0.5 kilo besan", perKg("4", 0.5, "kg", 9000)],
+    ["1.5 litre tel", perKg("33", 1.5, "liter", 13000)],
+    ["1.234 kilo chini", perKg("27", 1.234, "kg", 4500)],
+  ])("Layer 1: %s", (text, expected) => {
+    expect(parseOne(text)).toMatchObject(expected);
+  });
+
+  it("3.5 किलो चावल = 17500 paise (Rs.175), not 5 kg for Rs.3", () => {
+    expect(parseOne("3.5 किलो चावल")).toMatchObject({ qty: 3.5, total: 17500 });
+  });
+
+  it("a decimal rupee amount is exact paise via rupeesToPaise: 12.50 -> 1250", () => {
+    const item = parseOne("2 kilo chini 12.50 rupaye");
+    expect(item).toMatchObject({ catalogId: "27", qty: 2, unit: "kg", rate: null, total: rupeesToPaise(12.5), priceType: "total" });
+    expect(item.total).toBe(1250);
+  });
+
+  it("a decimal qty with a spoken total: 2.5 kilo chini 100 ka", () => {
+    expect(parseOne("2.5 kilo chini 100 ka")).toMatchObject({ catalogId: "27", qty: 2.5, unit: "kg", total: 10000, priceType: "total" });
+  });
+
+  it.each([
+    ["2 किलो चीनी।", "2 किलो चीनी"],
+    ["2 kilo chini.", "2 kilo chini"],
+    ["5 kilo chawal 30 ka.", "5 kilo chawal 30 ka"],
+  ])("a sentence-final '.' / '।' is inert: %s", (withStop, without) => {
+    expect(parseUtterance(withStop, SEED_PARSER_CATALOG)).toEqual(parseUtterance(without, SEED_PARSER_CATALOG));
+  });
+
+  it("more than 3 decimals bails, never rounds: 1.2345 किलो चीनी", () => {
+    expect(parseUtterance("1.2345 किलो चीनी", SEED_PARSER_CATALOG)).toBeNull();
+    expect(diagnoseUtterance("1.2345 किलो चीनी", SEED_PARSER_CATALOG)).toEqual({ hit: false, reason: "number with more than 3 decimals" });
   });
 });
