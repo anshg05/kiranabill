@@ -136,4 +136,24 @@ describe("resolveUtterance", () => {
     expect(r.lines[0]!.item).toMatchObject({ catalogId: null, total: 1000 });
     expect(r.flags.map((f) => f.code)).toContain("unknown_product");
   });
+
+  // KB-317 commit 3 (KI-46): the real case - Whisper repeated "दो किलो शक्कर",
+  // Layer 1 missed (no separator), and Gemini returned the line twice. Every
+  // number was consumed, so no number check fired; duplicate_line does.
+  it("KI-46 on the Gemini path: a repeated line -> HIGH duplicate_line, both lines kept", async () => {
+    const chini = () => gemini({ spokenName: "शक्कर", catalogId: "27", matchStatus: "matched", qty: 2, unit: "kg", rate: 4500, rateUnit: "kg", total: 9000, priceType: "default" });
+    const parle = gemini({ spokenName: "पांगलेजी", catalogId: "52", matchStatus: "matched", qty: 3, unit: "piece", rate: 1000, rateUnit: "piece", total: 3000, priceType: "rate" });
+    const parse = vi.fn(async () => [chini(), chini(), parle]);
+    const r = await resolveUtterance("दो किलो शक्कर दो किलो शक्कर पांगलेजी तीन दस वाला", { shop: SEED_PARSER_CATALOG, parse });
+    expect(r.layer).toBe("voice");
+    expect(r.lines.map((l) => l.displayName)).toEqual(["Chini", "Chini", "Parle-G 10"]);
+    expect(r.flags.filter((f) => f.code === "duplicate_line")).toEqual([expect.objectContaining({ severity: "HIGH", itemIndex: 1 })]);
+  });
+
+  it("KB-317 commit 3: a Layer 1 comma order said twice (RT22) -> fastpath, both lines, HIGH duplicate_line", async () => {
+    const r = await resolveUtterance("दो किलो चीनी, दो किलो चीनी", { shop: SEED_PARSER_CATALOG, parse: vi.fn() });
+    expect(r.layer).toBe("fastpath");
+    expect(r.lines).toHaveLength(2);
+    expect(r.flags.filter((f) => f.code === "duplicate_line").map((f) => [f.severity, f.itemIndex])).toEqual([["HIGH", 1]]);
+  });
 });

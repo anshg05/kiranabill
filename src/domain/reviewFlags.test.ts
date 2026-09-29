@@ -716,3 +716,55 @@ describe("checkLayer2NumberOrder", () => {
     expect(checkLayer2NumberOrder("chini aur besan", [chini(2)])?.code).toBe("number_misaligned");
   });
 });
+
+// ---------------------------------------------------------------------------
+// KB-317 commit 3 (KI-46, owner Q1: HIGH). Whisper repeats a segment ("दो किलो
+// शक्कर दो किलो शक्कर ...") and every number is consumed, so no number check
+// fires - two identical lines, silently. The repeat is FLAGGED, never
+// deduped: the same item twice can be real (Rule 4), so the shopkeeper
+// decides - and a HIGH flag must be acknowledged before the bill finalises.
+// ---------------------------------------------------------------------------
+describe("duplicate_line (HIGH) - an identical line repeated", () => {
+  const chini = (over: Partial<ParsedItem> = {}) => item({ priceType: "default", rate: rupeesToPaise(45), total: rupeesToPaise(90), ...over });
+
+  it("two identical Chini 2 kg Rs.90 lines -> one HIGH duplicate_line, on the repeat", () => {
+    const flags = evaluateReviewFlags("2 kilo chini, 2 kilo chini", [chini(), chini()], [catalogEntry()]);
+    const dup = flags.filter((f) => f.code === "duplicate_line");
+    expect(dup).toEqual([expect.objectContaining({ id: "item-1-duplicate_line", severity: "HIGH", itemIndex: 1 })]);
+    expect(dup[0]!.message).toContain("Chini");
+  });
+
+  it("three identical lines -> a flag on each repeat (lines 2 and 3)", () => {
+    const flags = evaluateReviewFlags("2 kilo chini, 2 kilo chini, 2 kilo chini", [chini(), chini(), chini()], [catalogEntry()]);
+    expect(flags.filter((f) => f.code === "duplicate_line").map((f) => f.itemIndex)).toEqual([1, 2]);
+  });
+
+  it("a repeat further down the bill is still caught: chini, besan, chini", () => {
+    const besan = item({ spokenName: "besan", catalogId: "4", qty: 1, priceType: "default", rate: rupeesToPaise(90), total: rupeesToPaise(90) });
+    const catalog = [catalogEntry(), catalogEntry({ id: "4", displayName: "Besan", suggestedPricePaise: rupeesToPaise(90) })];
+    const flags = evaluateReviewFlags("2 kilo chini, 1 kilo besan, 2 kilo chini", [chini(), besan, chini()], catalog);
+    expect(flags.filter((f) => f.code === "duplicate_line").map((f) => f.itemIndex)).toEqual([2]);
+  });
+
+  it.each([
+    ["a different qty", { qty: 3, total: rupeesToPaise(135) }],
+    ["a different unit", { unit: "gm", rateUnit: "kg", total: 9 }],
+    ["a different price (Rule 4: distinct variants by price)", { total: rupeesToPaise(100), priceType: "total" as const, rate: null }],
+    ["a different product", { catalogId: "28", spokenName: "pisi chini" }],
+  ])("same product twice but %s -> no duplicate_line", (_label, over) => {
+    const flags = evaluateReviewFlags("x", [chini(), chini(over)], [catalogEntry(), catalogEntry({ id: "28", displayName: "Pisi Chini" })]);
+    expect(codesOf(flags)).not.toContain("duplicate_line");
+  });
+
+  it("an unknown product said twice identically is caught by its spoken name", () => {
+    const unknown = () => item({ spokenName: "kuch naya", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", total: rupeesToPaise(50) });
+    const flags = evaluateReviewFlags("kuch naya 50, kuch naya 50", [unknown(), unknown()], []);
+    expect(flags.filter((f) => f.code === "duplicate_line").map((f) => f.itemIndex)).toEqual([1]);
+  });
+
+  it("blocks finalising until acknowledged (canFinalize)", () => {
+    const flags = evaluateReviewFlags("2 kilo chini, 2 kilo chini", [chini(), chini()], [catalogEntry()]);
+    expect(canFinalize(flags, new Set())).toBe(false);
+    expect(canFinalize(flags, new Set(["item-1-duplicate_line"]))).toBe(true);
+  });
+});

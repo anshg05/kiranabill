@@ -49,7 +49,8 @@ export type ReviewCode =
   | "number_dropped"
   | "qty_dropped"
   | "number_unconsumed"
-  | "number_misaligned";
+  | "number_misaligned"
+  | "duplicate_line";
 
 export type ReviewSeverity = "HIGH" | "MEDIUM" | "LOW";
 
@@ -218,8 +219,31 @@ export function evaluateReviewFlags(
   });
 
   evaluateNumberSafety(transcript, items, flags);
+  flagDuplicateLines(items, catalogById, flags);
 
   return flags;
+}
+
+/**
+ * KB-317 commit 3 (KI-46, owner Q1: HIGH). Whisper can repeat a segment
+ * ("दो किलो शक्कर दो किलो शक्कर ..."); every number is then consumed, so no
+ * number check fires and the bill silently carries the item twice. A line
+ * identical to an earlier one - same product (or, unmatched, the same spoken
+ * name), qty, unit, rate and total - is FLAGGED on the repeat, never deduped:
+ * the same item twice can be real (Rule 4), so the shopkeeper decides.
+ */
+function flagDuplicateLines(items: readonly ParsedItem[], catalogById: ReadonlyMap<string, CatalogEntry>, flags: ReviewFlag[]): void {
+  const seen = new Set<string>();
+  items.forEach((item, index) => {
+    const who = item.catalogId !== null ? `id:${item.catalogId}` : `name:${item.spokenName.trim().toLowerCase()}`;
+    const key = JSON.stringify([who, item.qty, item.unit, item.rate, item.rateUnit, item.total]);
+    if (!seen.has(key)) {
+      seen.add(key);
+      return;
+    }
+    const name = (item.catalogId ? catalogById.get(item.catalogId)?.displayName : undefined) ?? item.spokenName;
+    push(flags, `item-${index}-duplicate_line`, "duplicate_line", "HIGH", `"${name}" is on the bill twice, same quantity and price — said twice, or heard twice? Check.`, index);
+  });
 }
 
 /**
