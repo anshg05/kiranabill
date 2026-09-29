@@ -664,12 +664,13 @@ export interface SpokenNumberEntry {
 
 /**
  * KB-317: items in one utterance are separated by "aur", "और" or a comma -
- * the same split for parsing, diagnosing and the number checks, so all three
+ * the same split for parsing, diagnosing and every number check (reviewFlags.ts
+ * number_unconsumed calls this very function - never a copy), so they
  * read the same numbers. (और only as a whole word; a comma always, even
  * between digits - "1,500" becomes two segments, and the incomplete-segment
  * rule below makes that a safe miss.)
  */
-function splitSegments(text: string): string[] {
+export function splitItemSegments(text: string): string[] {
   return text
     .split(/\baur\b|(?<![\u0900-\u097F])और(?![\u0900-\u097F])|,/i)
     .map((segment) => segment.trim())
@@ -685,7 +686,7 @@ function segmentIsComplete(rawSegment: string): boolean {
 }
 
 export function extractSpokenNumberEntries(text: string): readonly SpokenNumberEntry[] {
-  const segments = splitSegments(text);
+  const segments = splitItemSegments(text);
 
   const entries: SpokenNumberEntry[] = [];
   for (const segment of segments) {
@@ -705,12 +706,12 @@ export function extractSpokenNumberEntries(text: string): readonly SpokenNumberE
  * anything is structurally ambiguous (docs/04-VOICE-PIPELINE.md section 3's
  * bail-out rule) - never for a merely unknown or unpriced product, which
  * always returns an item (Rule 5b). Multiple items in one utterance are
- * separated by "aur", "और" or a comma (splitSegments); if any one segment
+ * separated by "aur", "और" or a comma (splitItemSegments); if any one segment
  * can't be resolved, the whole utterance bails rather than silently dropping
  * a line.
  */
 export function parseUtterance(text: string, catalog: ParserCatalog): ParsedItem[] | null {
-  const segments = splitSegments(text);
+  const segments = splitItemSegments(text);
 
   if (segments.length === 0) return null;
   if (segments.length > 1 && !segments.every(segmentIsComplete)) return null;
@@ -820,7 +821,7 @@ function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | nu
 /** Diagnostic twin of parseUtterance() - same hit/miss outcome, plus a
  * grouped reason on every miss. Never used by parseUtterance itself. */
 export function diagnoseUtterance(text: string, catalog: ParserCatalog): ParseDiagnostics {
-  const segments = splitSegments(text);
+  const segments = splitItemSegments(text);
 
   if (segments.length === 0) return { hit: false, reason: "empty utterance" };
   if (segments.length > 1 && !segments.every(segmentIsComplete)) return { hit: false, reason: "a segment lacks a product or a number" };

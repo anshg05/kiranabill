@@ -554,6 +554,36 @@ describe("reviewFlags.ts - the 14-code confidence gate", () => {
       );
       expect(codesOf(flags)).not.toContain("number_unconsumed");
     });
+
+    // KB-317 (owner): the segments here are the PARSER's segments - the one
+    // splitter grammar.ts uses (aur / और / comma), never a copy. It used to
+    // split on "aur" only, so on a Devanagari और or comma order the counts never
+    // lined up and this check silently didn't run - including on the risk it
+    // exists for: two items whose numbers are SWAPPED (the whole-bill multiset
+    // balances, so number_dropped stays silent; NI-26).
+    const chiniLine = (qty: number, totalRupees: number) => item({ qty, total: rupeesToPaise(totalRupees) });
+    const chawalLine = (qty: number, totalRupees: number) =>
+      item({ spokenName: "चावल", catalogId: "11", qty, total: rupeesToPaise(totalRupees) });
+    const chawal = catalogEntry({ id: "11", displayName: "Chawal", suggestedPricePaise: rupeesToPaise(50) });
+
+    it.each([
+      ["a comma", "2 किलो चीनी 90 रुपए, 5 किलो चावल 300 रुपए"],
+      ["और", "2 किलो चीनी 90 रुपए और 5 किलो चावल 300 रुपए"],
+      ["aur (as before)", "2 kilo chini 90 rupay aur 5 kilo chawal 300 rupay"],
+    ])("numbers SWAPPED between two items, split by %s -> number_unconsumed (number_dropped can't see it)", (_sep, transcript) => {
+      const swapped = [chiniLine(5, 300), chawalLine(2, 90)];
+      const flags = evaluateReviewFlags(transcript, swapped, [catalogEntry(), chawal]);
+      expect(codesOf(flags)).not.toContain("number_dropped"); // every number consumed somewhere
+      expect(flags.filter((f) => f.code === "number_unconsumed").map((f) => f.itemIndex)).toEqual([0, 1]);
+    });
+
+    it.each([
+      ["a comma", "2 किलो चीनी 90 रुपए, 5 किलो चावल 300 रुपए"],
+      ["और", "2 किलो चीनी 90 रुपए और 5 किलो चावल 300 रुपए"],
+    ])("the same order, numbers on the right items, split by %s -> no number_unconsumed", (_sep, transcript) => {
+      const flags = evaluateReviewFlags(transcript, [chiniLine(2, 90), chawalLine(5, 300)], [catalogEntry(), chawal]);
+      expect(codesOf(flags)).not.toContain("number_unconsumed");
+    });
   });
 
   // ---------------------------------------------------------------------

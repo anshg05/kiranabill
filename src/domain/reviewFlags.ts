@@ -29,7 +29,7 @@
  */
 
 import type { ParsedItem } from "./grammar.js";
-import { extractSpokenNumbers, extractSpokenNumberEntries, unitsAreCompatible, unitScale } from "./grammar.js";
+import { extractSpokenNumbers, extractSpokenNumberEntries, splitItemSegments, unitsAreCompatible, unitScale } from "./grammar.js";
 import type { CatalogEntry } from "./catalog.js";
 import { formatRupees, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
 import { getEffectivePrice, type LearningState } from "./learning.js";
@@ -340,10 +340,12 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
   // 2/misaligned output, this specific risk class has no coverage from
   // either code - logged as docs/12-PARKED.md NI-26, not silently assumed
   // covered.
-  const segments = transcript
-    .split(/\baur\b/i)
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+  //
+  // KB-317 (owner): the PARSER's own segments - grammar.ts splitItemSegments
+  // (aur / और / comma), the one function, never a copy. This used to split on
+  // "aur" alone, so on every Devanagari और or comma order the counts never
+  // lined up and the check silently didn't run.
+  const segments = splitItemSegments(transcript);
 
   if (segments.length === items.length) {
     segments.forEach((segment, index) => {
