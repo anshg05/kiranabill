@@ -42,22 +42,58 @@ describe("matchProduct - length-scaled threshold (docs/14-LEGACY-REFERENCE.md se
 });
 
 describe("matchProduct - category guard (a dal never matches a soap)", () => {
-  it("rejects an otherwise-perfect match when the spoken phrase's inferred category conflicts with the candidate's guardCategory", () => {
-    // "Dal Soap" is a contrived name that scores a perfect 1.0 against the
-    // identical query - proving the rejection comes from the guard, not
-    // the threshold.
-    const index = buildCatalogIndex([syntheticEntry("X", "Dal Soap", "soap")]);
-    const unguarded = lookupCandidates(index, "dal soap");
-    expect(unguarded[0]!.score).toBe(1); // sanity check: would pass on score alone
+  // KB-317 / KI-55: this test used a contrived product literally NAMED "Dal
+  // Soap" - but a keyword inside the candidate's own name is no evidence
+  // against it (that is exactly how "maggi masala" billed Maggi Masala Mix).
+  // The guard's real job - a misheard dal landing on a soap whose name has no
+  // dal keyword in it - is tested with "Dhal Soap Bar" instead.
+  it("rejects an otherwise-passing match when the spoken phrase's inferred category conflicts with the candidate's guardCategory", () => {
+    const index = buildCatalogIndex([syntheticEntry("X", "Dhal Soap Bar", "soap")]);
+    const unguarded = lookupCandidates(index, "dal soap bar");
+    expect(unguarded[0]!.score).toBeGreaterThanOrEqual(0.74); // sanity check: would pass on score alone (multi-word bar)
 
-    const result = matchProduct("dal soap", { index });
+    const result = matchProduct("dal soap bar", { index });
     expect(result.kind).toBe("none"); // "dal" infers category dal; candidate is guarded "soap" - rejected
+  });
+
+  it("KI-55: a keyword inside the candidate's OWN name is not evidence against it - a product named 'Dal Soap' matches 'dal soap'", () => {
+    const index = buildCatalogIndex([syntheticEntry("X", "Dal Soap", "soap")]);
+    expect(matchProduct("dal soap", { index })).toMatchObject({ kind: "matched", catalogId: "X" });
   });
 
   it("does not reject a real match whose category already agrees - moong daal", () => {
     const result = matchProduct("moong daal", { index: SEED_PARSER_CATALOG.index });
     expect(result.kind).toBe("matched");
     expect(result.kind === "matched" && result.catalogId).toBe("18");
+  });
+});
+
+// KB-317 / KI-55 (HIGH, owner: fix inside KB-317): the guard's substring
+// keywords sent these catalog names to ANOTHER product, with full confidence.
+describe("matchProduct - KI-55: the category guard never sends a product's own name elsewhere", () => {
+  it.each([
+    ["maggi masala", "362"], // was 391 Maggi Masala Mix (Rs.25 vs Rs.10)
+    ["Maggi Masala", "362"],
+    ["मूंग दाल नमकीन", "412"], // was 18 Moong Daal
+    ["amul butter milk", "439"], // was 350 Amul Butter
+    ["coconut hair oil", "178"], // was 38 Nariyal Tel
+    ["दालचीनी", "115"], // was no match at all
+    ["dalchini", "115"],
+  ])("%s -> %s", (phrase, id) => {
+    expect(matchProduct(phrase, { index: SEED_PARSER_CATALOG.index })).toMatchObject({ kind: "matched", catalogId: id });
+  });
+
+  it.each([
+    ["daal", "16"],
+    ["chini", "27"],
+    ["moong daal", "18"],
+    // CURRENT BEHAVIOUR, not a requirement (owner): whether a bare generic word
+    // like "masala" should land on one product is the same question as "sabun"
+    // - to confirm at the catalog review (KI-53).
+    ["masala", "105"],
+  ])("the guard still keeps plain words where they were: %s -> %s", (phrase, id) => {
+    const outcome = matchProduct(phrase, { index: SEED_PARSER_CATALOG.index });
+    expect(outcome.kind === "matched" ? outcome.catalogId : null).toBe(id);
   });
 });
 

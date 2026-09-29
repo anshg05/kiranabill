@@ -53,6 +53,20 @@ function inferSpokenGuardCategory(spokenPhrase: string): string | null {
 }
 
 /**
+ * KB-317 / KI-55 (owner): a category keyword inside the candidate's OWN name
+ * is no evidence against it. "maggi masala" contains "masala", so the guard
+ * used to drop Maggi Masala (a snack) and bill Maggi Masala Mix (Rs.25, not
+ * Rs.10) with full confidence; likewise "मूंग दाल नमकीन" -> Moong Daal. Any
+ * keyword of the category counts ("daal" and "dal" are one word), so a
+ * product named "Dal Soap" matches "dal soap" - while a misheard dal still
+ * never lands on a soap whose name has no dal keyword in it.
+ */
+function nameCarriesCategory(alias: string, category: string): boolean {
+  const lower = alias.toLowerCase();
+  return (CATEGORY_GUARD_KEYWORDS[category] ?? []).some((keyword) => lower.includes(keyword));
+}
+
+/**
  * Ambiguous-match tie band - two candidates within this of each other, for
  * different products, are reported ambiguous rather than one silently
  * picked. docs/12-PARKED.md NI-22: unvalidated, no real speech data behind
@@ -107,7 +121,7 @@ export function matchProduct(spokenPhrase: string, opts: MatchOptions): MatchOut
 
   const passing = boosted.filter((candidate) => {
     if (candidate.score < threshold) return false;
-    if (spokenCategory && candidate.guardCategory !== spokenCategory) return false;
+    if (spokenCategory && candidate.guardCategory !== spokenCategory && !nameCarriesCategory(candidate.alias, spokenCategory)) return false;
     return true;
   });
 

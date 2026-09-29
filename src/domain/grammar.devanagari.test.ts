@@ -301,11 +301,15 @@ describe("product names as Whisper writes them", () => {
     expect(parseOne(text)).toMatchObject(expected);
   });
 
-  // दालचीनी contains "दाल", so the category guard (validator.ts) reads it as a
-  // dal and rejects Dalchini - a safe no-match (-> Gemini), pre-existing. What
-  // must never happen is landing on दाल or चीनी.
+  // दालचीनी contains "दाल"; the category guard used to read it as a dal and
+  // reject Dalchini (KI-55). It must never land on दाल or चीनी - and now it
+  // lands on Dalchini itself.
   it("100 ग्राम दालचीनी never lands on Toor Daal, Chini or Madhur Chini", () => {
     expect(["16", "27", "340"]).not.toContain(parse("100 ग्राम दालचीनी")?.[0]?.catalogId ?? null);
+  });
+
+  it("100 ग्राम दालचीनी -> Dalchini (115), Rs.100 (KI-55)", () => {
+    expect(parseOne("100 ग्राम दालचीनी")).toMatchObject({ catalogId: "115", qty: 100, unit: "gm", total: 10000 });
   });
 
   it.each([["2 किलो पालक"], ["2 किलो बेल"], ["एक सरसों"]])("no false product: %s never lands on Parle-G / Besan / Surf", (text) => {
@@ -337,19 +341,10 @@ describe("spelling folds - the same word however Whisper spells it", () => {
     expect(matchProduct(name, { index: SEED_PARSER_CATALOG.index })).toMatchObject({ kind: "matched", catalogId: id });
   });
 
-  // KI-55 (HIGH): the category guard's substring keywords already send these
-  // six aliases to ANOTHER product - identical with and without the folds
-  // (measured 29 Sep 2026), so not caused by them. Pinned so the list can only
-  // shrink; fixing the guard is its own decision.
-  const KNOWN_GUARD_MISMATCHES = [
-    "coconut hair oil (178) -> 38",
-    "Maggi Masala (362) -> 391",
-    "Maggi Masala (362) -> 391",
-    "maggi masala (362) -> 391",
-    "मूंग दाल नमकीन (412) -> 18",
-    "amul butter milk (439) -> 350",
-  ];
-  it("every alias of every active catalog product lands on its own product or on none - never on another (beyond KI-55's pinned six)", () => {
+  // KI-55 (owner: fixed inside KB-317): the six aliases the category guard
+  // sent to ANOTHER product (Maggi Masala -> Maggi Masala Mix, मूंग दाल नमकीन ->
+  // Moong Daal, ...) - the list is now empty and must stay empty.
+  it("every alias of every active catalog product lands on its own product or on none - never on another", () => {
     const wrong: string[] = [];
     for (const entry of SEED_PARSER_CATALOG.entries) {
       for (const alias of [entry.displayName, ...entry.aliases]) {
@@ -357,7 +352,7 @@ describe("spelling folds - the same word however Whisper spells it", () => {
         if (outcome.kind === "matched" && outcome.catalogId !== entry.id) wrong.push(`${alias} (${entry.id}) -> ${outcome.catalogId}`);
       }
     }
-    expect(wrong).toEqual(KNOWN_GUARD_MISMATCHES);
+    expect(wrong).toEqual([]);
   });
 });
 
