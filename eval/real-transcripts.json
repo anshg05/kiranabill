@@ -6,7 +6,9 @@
     "expectedLines": [
       { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
       { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
-    ]
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-00-11-055Z.webm"
   },
   {
     "id": "RT02",
@@ -15,7 +17,9 @@
     "expectedLines": [
       { "catalogId": "11", "displayName": "Chawal", "qty": 5, "unit": "kg", "total": 3000 }
     ],
-    "note": "'ka' = spoken total (settled rule). Owner is checking at a real counter whether '5 kilo chawal 30 ka' means Rs.30 total or the Rs.30/kg variety - if the latter, that is a separate decision, not KB-317."
+    "note": "'ka' = the line total (owner, 29 Sep 2026; 04-VOICE-PIPELINE.md section 3 Rule 2 note). Rs.30 for 5 kg is not a real rice price - this is a grammar example.",
+    "layer1": "hit",
+    "audio": "2026-09-28T17-58-43-827Z.webm"
   },
   {
     "id": "RT03",
@@ -25,7 +29,8 @@
       { "catalogId": "104", "displayName": "Jeera", "qty": 500, "unit": "gm", "total": 20000 },
       { "catalogId": "189", "displayName": "Surf Excel", "qty": 1, "unit": "packet", "total": 6000 }
     ],
-    "note": "Unit 'packet' kept as spoken (D36). Gemini returned 0.5 gm here on the owner's run (KI-45)."
+    "note": "Unit 'packet' kept as spoken (D36). Gemini returned 0.5 gm here on the owner's run (KI-45).",
+    "layer1": "hit"
   },
   {
     "id": "RT04",
@@ -34,7 +39,9 @@
     "expectedLines": [
       { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
     ],
-    "note": "Generic Sabun (614), never a brand unless a brand is said (owner). qty null: only a total was spoken - never invent a number (owner, 28 Sep 2026). CONFLICTS with 07-DECISIONS.md D13 point 1 (a matched product with only a total spoken gets qty 1 in the catalog's unit) - owner to decide at KB-317 commit 2's review."
+    "note": "Generic Sabun (614), never a brand unless a brand is said (owner). qty null: only a total was spoken - D47 (supersedes D13 point 1).",
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-10-305Z.webm"
   },
   {
     "id": "RT05",
@@ -45,7 +52,8 @@
       { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 },
       { "catalogId": "4", "displayName": "Besan", "qty": 2, "unit": "kg", "total": 18000 }
     ],
-    "note": "'दसवाला' is KI-44 (number glued to 'wala')."
+    "note": "'दसवाला' is KI-44 (number glued to 'wala').",
+    "layer1": "hit"
   },
   {
     "id": "RT06",
@@ -55,7 +63,8 @@
       { "catalogId": "2", "displayName": "Chakki Aata", "qty": 1, "unit": "kg", "total": 3800 },
       { "catalogId": "4", "displayName": "Besan", "qty": 2, "unit": "kg", "total": 18000 }
     ],
-    "note": "आटा = Chakki Aata (flour), never गेहूं (grain) - owner, 28 Sep 2026."
+    "note": "आटा = Chakki Aata (flour), never गेहूं (grain) - owner, 28 Sep 2026.",
+    "layer1": "hit"
   },
   {
     "id": "RT07",
@@ -66,7 +75,8 @@
       { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 },
       { "catalogId": "4", "displayName": "Besan", "qty": 1, "unit": "kg", "total": 9000 }
     ],
-    "note": "No separator at all (4 numbers in one run) - expected to stay a safe Layer 1 miss (-> Gemini)."
+    "note": "No separator at all (4 numbers in one run) - expected to stay a safe Layer 1 miss (-> Gemini). Layer 1: miss.",
+    "layer1": "miss"
   },
   {
     "id": "RT08",
@@ -75,7 +85,8 @@
     "expectedLines": [
       { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
       { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
-    ]
+    ],
+    "layer1": "hit"
   },
   {
     "id": "RT09",
@@ -87,6 +98,296 @@
       { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
     ],
     "expectedFlags": ["duplicate_line"],
-    "note": "Whisper repeated a segment (KI-46). Scored on the duplicate_line flag (KB-317 commit 3): shakkar = Chini (owner)."
+    "note": "Whisper repeated a segment (KI-46). Scored on the duplicate_line flag (KB-317 commit 3): shakkar = Chini (owner). Layer 1: miss (no separator); the duplicate_line flag is checked on the Gemini path.",
+    "layer1": "miss"
+  },
+  {
+    "id": "RT10",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "2 किलो चीनी प्रशान",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 }
+    ],
+    "layer1": "either",
+    "audio": "2026-09-28T17-58-34-547Z.webm",
+    "note": "Whisper added a word that wasn't said ('प्रशान'; turbo didn't). Layer 1 may miss - never a wrong line."
+  },
+  {
+    "id": "RT11",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "तीन पार लेजी दस वाला।",
+    "expectedLines": [
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-00-510Z.webm"
+  },
+  {
+    "id": "RT12",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "एक किलो आटा",
+    "expectedLines": [
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 1, "unit": "kg", "total": 3800 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-16-300Z.webm",
+    "note": "Was a confident WRONG hit: गेहूं Rs.32/kg (the आटा alias on गेहूं)."
+  },
+  {
+    "id": "RT13",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "500 ग्राम जीरा",
+    "expectedLines": [
+      { "catalogId": "104", "displayName": "Jeera", "qty": 500, "unit": "gm", "total": 20000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-25-716Z.webm"
+  },
+  {
+    "id": "RT14",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "250 ग्राम चायपत्ती",
+    "expectedLines": [
+      { "catalogId": "89", "displayName": "Chai Patti", "qty": 250, "unit": "gm", "total": 12500 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-36-380Z.webm"
+  },
+  {
+    "id": "RT15",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "एक पैकेट सर अफ एक्सल",
+    "expectedLines": [
+      { "catalogId": "189", "displayName": "Surf Excel", "qty": 1, "unit": "packet", "total": 6000 }
+    ],
+    "layer1": "either",
+    "audio": "2026-09-28T17-59-46-496Z.webm",
+    "note": "Whisper split 'surf' into 'सर अफ'. Layer 1 may miss."
+  },
+  {
+    "id": "RT16",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "दो मैगी",
+    "expectedLines": [
+      { "catalogId": "81", "displayName": "Maggi", "qty": 2, "unit": "piece", "total": 2800 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T17-59-51-141Z.webm"
+  },
+  {
+    "id": "RT17",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "आधा किलो बेशन",
+    "expectedLines": [
+      { "catalogId": "4", "displayName": "Besan", "qty": 0.5, "unit": "kg", "total": 4500 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-00-00-284Z.webm"
+  },
+  {
+    "id": "RT18",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "5 किलो आटा, 2 किलो दाल, 1 लिटर तेल",
+    "expectedLines": [
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 5, "unit": "kg", "total": 19000 },
+      { "catalogId": "16", "displayName": "Toor Daal", "qty": 2, "unit": "kg", "total": 18000 },
+      { "catalogId": "33", "displayName": "Tel (1L)", "qty": 1, "unit": "liter", "total": 13000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-00-23-853Z.webm",
+    "note": "दाल = Toor Daal (owner). Gemini said Ashirvaad Aata - a brand nobody said (KI-52)."
+  },
+  {
+    "id": "RT19",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "3.5 किलो चावल और 250 ग्राम जीरा",
+    "expectedLines": [
+      { "catalogId": "11", "displayName": "Chawal", "qty": 3.5, "unit": "kg", "total": 17500 },
+      { "catalogId": "104", "displayName": "Jeera", "qty": 250, "unit": "gm", "total": 10000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-00-42-437Z.webm",
+    "note": "KI-51: '3.5' was read as 3 and 5."
+  },
+  {
+    "id": "RT20",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "2 किलो आटा, 2 किलो आटा",
+    "expectedLines": [
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 2, "unit": "kg", "total": 7600 },
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 2, "unit": "kg", "total": 7600 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-01-18-209Z.webm",
+    "expectedFlags": ["duplicate_line"],
+    "note": "Owner repeated it on purpose. duplicate_line: KB-317 commit 3."
+  },
+  {
+    "id": "RT21",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "2 किलो शक्कर, 2 किलो चीनी",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-01-27-651Z.webm",
+    "expectedFlags": ["duplicate_line"],
+    "note": "शक्कर = Chini (owner) - so the same product twice. Gemini said Desi Shakkar (KI-52)."
+  },
+  {
+    "id": "RT22",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "दो किलो चीनी, दो किलो चीनी",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-01-57-198Z.webm",
+    "expectedFlags": ["duplicate_line"],
+    "note": "Owner repeated it on purpose. duplicate_line: KB-317 commit 3."
+  },
+  {
+    "id": "RT23",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "1 किलो मुंग दाल 1 किलो मसूल दाल 1 किलो तूअल दाल 1 किलो चना",
+    "expectedLines": [
+      { "catalogId": "18", "displayName": "Moong Daal", "qty": 1, "unit": "kg", "total": 11000 },
+      { "catalogId": "19", "displayName": "Masoor Daal", "qty": 1, "unit": "kg", "total": 9000 },
+      { "catalogId": "16", "displayName": "Toor Daal", "qty": 1, "unit": "kg", "total": 9000 },
+      { "catalogId": "24", "displayName": "Kala Chana", "qty": 1, "unit": "kg", "total": 8000 }
+    ],
+    "layer1": "miss",
+    "audio": "2026-09-28T18-05-37-358Z.webm",
+    "note": "No separator (4 numbers in one run) - a Layer 1 miss. Owner: split Moong/Masoor, toor = Toor Daal (16), चना = Kala Chana."
+  },
+  {
+    "id": "RT24",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "एक किलो देशी चना, एक किलो बरवटी दाल, एक किलो फुटाना",
+    "expectedLines": [
+      { "catalogId": "24", "displayName": "Kala Chana", "qty": 1, "unit": "kg", "total": 8000 },
+      { "catalogId": "629", "displayName": "बरबटी दाल", "qty": 1, "unit": "kg", "total": 8000 },
+      { "catalogId": "609", "displayName": "Futana", "qty": 1, "unit": "kg", "total": 9000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-06-28-955Z.webm",
+    "note": "फुटाना vs the catalog's फ़ुटाना (nukta); बरवटी vs बरबटी."
+  },
+  {
+    "id": "RT25",
+    "source": "owner, real voice, 28 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "साड़े तीन किलो चावल",
+    "expectedLines": [
+      { "catalogId": "11", "displayName": "Chawal", "qty": 3.5, "unit": "kg", "total": 17500 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-28T18-58-53-575Z.webm",
+    "note": "साड़े (ड़), not साढ़े: read as [3], 3 false HIGH flags on Gemini's correct line (owner, 29 Sep 2026)."
+  },
+  {
+    "id": "RT26",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "2 किलो चीनी और 3 परलेजी 10 वाला",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-29T03-17-58-980Z.webm",
+    "note": "परलेजी: a new Parle-G spelling on the first run after commit 2's aliases (owner)."
+  },
+  {
+    "id": "RT27",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "साबून 180 रुपए",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-29T03-19-19-327Z.webm",
+    "note": "साबून (ू) vs साबुन - the vowel-length fold."
+  },
+  {
+    "id": "RT28",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "5 किलो चावल 30 खाब",
+    "expectedLines": [
+      { "catalogId": "11", "displayName": "Chawal", "qty": 5, "unit": "kg", "total": 3000 }
+    ],
+    "layer1": "miss",
+    "audio": "2026-09-29T03-17-38-316Z.webm",
+    "note": "Whisper wrote 'खाब' for 'का' - the marker is lost, so Layer 1 must not guess (owner: expected miss). Gemini gave Chawal 5 kg Rs.30."
+  },
+  {
+    "id": "RT29",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "साबुन 880 रुपे",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 88000 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-29T03-20-53-600Z.webm",
+    "note": "The owner SAID 'ek sau assi' (180); Whisper wrote 880. Scored against the transcript: Layer 1 bills Rs.880 and nothing in the transcript can show the error - a spoken total is exempt from unusual_total by design. NI-32 (owner, 29 Sep 2026)."
+  },
+  {
+    "id": "RT30",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "7.5 किलो चावल",
+    "expectedLines": [
+      { "catalogId": "11", "displayName": "Chawal", "qty": 7.5, "unit": "kg", "total": 37500 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-29T03-20-21-649Z.webm",
+    "note": "A digit decimal (KI-51)."
+  },
+  {
+    "id": "RT31",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "साबुन एक सोस्सी रुपए",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
+    ],
+    "layer1": "miss",
+    "audio": "2026-09-29T03-20-37-015Z.webm",
+    "note": "'एक सौ अस्सी' garbled to 'एक सोस्सी': Layer 1 must not bill 1 piece of Sabun - a miss."
+  },
+  {
+    "id": "RT32",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "सामुन एक सुस्सी रुपए सामुन एक सुस्सी रुपए",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
+    ],
+    "layer1": "miss",
+    "audio": "2026-09-29T03-18-25-514Z.webm",
+    "note": "Garbled and repeated by Whisper: must be a miss, never a line."
+  },
+  {
+    "id": "RT33",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 browser check)",
+    "transcript": "सबुनिक स्वस्थिरुप है",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 }
+    ],
+    "layer1": "miss",
+    "audio": "2026-09-29T03-18-08-918Z.webm",
+    "note": "Whisper produced no number at all: must be a miss, never a line."
+  },
+  {
+    "id": "RT34",
+    "source": "owner, real voice, 29 Sep 2026, lang hi, ?save=1 recording (commit 2 second browser check)",
+    "transcript": "साबुन 180 रुपए, 2 किलो चीनी, 3 पालेजी दसवाला, आधा किलो बेसन, 1 किलो आटा",
+    "expectedLines": [
+      { "catalogId": "614", "displayName": "Sabun", "qty": null, "unit": "", "total": 18000 },
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 9000 },
+      { "catalogId": "52", "displayName": "Parle-G 10", "qty": 3, "unit": "piece", "total": 3000 },
+      { "catalogId": "4", "displayName": "Besan", "qty": 0.5, "unit": "kg", "total": 4500 },
+      { "catalogId": "2", "displayName": "Chakki Aata", "qty": 1, "unit": "kg", "total": 3800 }
+    ],
+    "layer1": "hit",
+    "audio": "2026-09-29T17-47-49-202Z.webm",
+    "note": "One breath, five items, commas only: fastpath in the browser, 5 correct lines, 0 flags, numbersHeard [180,2,3,10,0.5,1], total Rs.383 (owner)."
   }
 ]

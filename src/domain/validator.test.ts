@@ -62,8 +62,10 @@ describe("matchProduct - category guard (a dal never matches a soap)", () => {
 });
 
 describe("matchProduct - KI-20 duplicate handling (never silently pick array order)", () => {
-  it("'sabun' is a real, exact tie between id 160 and id 614 - reported ambiguous, not resolved", () => {
-    const result = matchProduct("sabun", { index: SEED_PARSER_CATALOG.index });
+  // KB-317 (owner) ended the 'sabun' tie: a bare sabun is the generic Sabun
+  // (614). 'bath soap' is still an exact alias of both 160 and 614 (KI-53).
+  it("'bath soap' is a real, exact tie between id 160 and id 614 - reported ambiguous, not resolved", () => {
+    const result = matchProduct("bath soap", { index: SEED_PARSER_CATALOG.index });
     expect(result.kind).toBe("ambiguous");
     if (result.kind === "ambiguous") {
       expect(result.candidateIds).toContain("160");

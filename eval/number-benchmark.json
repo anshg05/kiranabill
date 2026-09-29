@@ -1109,13 +1109,13 @@
     "utterance": "namak दस ka",
     "expected": {
       "safe": false,
-      "qty": 1,
-      "unit": "kg",
+      "qty": null,
+      "unit": "",
       "rate": null,
       "total": 1000,
       "priceType": "total"
     },
-    "note": "दस=10 as ka-total, no qty/unit spoken - falls back to catalog unit (namak=kg)"
+    "note": "दस=10 as ka-total, no qty/unit spoken. KB-317 / D47: qty null, unit '' (was qty 1 kg, the catalog unit, under D13 point 1)"
   },
   {
     "id": "NB085",

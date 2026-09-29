@@ -28,7 +28,7 @@
  * any, changed behavior as a result).
  */
 
-import type { ParserCatalog } from "./catalogIndex.js";
+import { normalizeDevanagari, type ParserCatalog } from "./catalogIndex.js";
 import { lineTotalPaise, lineTotalPaiseScaled, rupeesToPaise, type Paise } from "./money.js";
 import { matchProduct } from "./validator.js";
 
@@ -70,7 +70,7 @@ export interface ParsedItem {
 // Hindi numerals, verbatim from docs/14-LEGACY-REFERENCE.md section 3.
 const HINDI_NUMBERS: Record<string, number> = {
   ek: 1, एक: 1, do: 2, दो: 2, teen: 3, तीन: 3, char: 4, chaar: 4, चार: 4,
-  paanch: 5, panch: 5, पांच: 5, paach: 5, chhe: 6, chhah: 6, छह: 6,
+  paanch: 5, panch: 5, पांच: 5, paach: 5, पाच: 5, chhe: 6, chhah: 6, छह: 6,
   saat: 7, सात: 7, aath: 8, आठ: 8, nau: 9, nav: 9, नौ: 9, das: 10, दस: 10,
   gyarah: 11, ग्यारह: 11, barah: 12, बारह: 12, terah: 13, तेरह: 13,
   chaudah: 14, चौदह: 14, pandrah: 15, पंद्रह: 15, solah: 16, सोलह: 16,
@@ -93,22 +93,25 @@ const MULTIPLIERS: Record<string, number> = {
 
 // KB-302 (owner): saadhe N = N + 0.5 ("saadhe teen" = 3.5). Needs a following
 // number; bare, it stays an ordinary word.
-const SAADHE_WORDS = new Set(["saadhe", "saade", "sadhe", "साढ़े", "साढे"]);
+// KB-317: every spelling Whisper writes (ड and ढ are different letters; the
+// nukta is already folded away by normalizeDevanagari, so साढ़े arrives as साढे
+// and साड़े as साडे).
+const SAADHE_WORDS = new Set(["saadhe", "saade", "sadhe", "साढे", "साडे"]);
 
 // dedh/dhai are idiomatic to these exact values - nobody says "dedh teen".
 // aadha/paav don't compose with a following number either. D13.
 const FIXED_FRACTIONS: Record<string, number> = {
   aadha: 0.5, आधा: 0.5, adha: 0.5,
   paav: 0.25, पाव: 0.25, pav: 0.25,
-  dedh: 1.5, डेढ़: 1.5, deedh: 1.5,
-  dhai: 2.5, ढाई: 2.5, dhaai: 2.5,
+  dedh: 1.5, डेढ: 1.5, डेड: 1.5, deedh: 1.5,
+  dhai: 2.5, ढाई: 2.5, ढाइ: 2.5, डाई: 2.5, dhaai: 2.5,
 };
 
 // sawa/paune modify whichever number word follows ("paune do" = 2 - 0.25).
 // Bare form (no following number) defaults to the "...ek" reading. D13.
 const COMPOSITIONAL_FRACTIONS: Record<string, number> = {
   sawa: 0.25, सवा: 0.25,
-  paune: -0.25, पौने: -0.25,
+  paune: -0.25, पौने: -0.25, पोने: -0.25,
 };
 
 // chataak is a traditional small-weight UNIT (~50g), not a fraction
@@ -121,7 +124,7 @@ const CHATAAK_WORDS = new Set(["chataak", "chatak"]);
 const UNIT_ALIASES: Record<string, string> = {
   kg: "kg", kilo: "kg", kilogram: "kg", kilograms: "kg", किलो: "kg",
   gram: "gm", grams: "gm", gm: "gm", g: "gm", ग्राम: "gm",
-  liter: "liter", litre: "liter", ltr: "liter", l: "liter", लीटर: "liter",
+  liter: "liter", litre: "liter", ltr: "liter", l: "liter", लीटर: "liter", लिटर: "liter",
   ml: "ml", मिली: "ml",
   piece: "piece", pieces: "piece", pcs: "piece", pc: "piece", नग: "piece",
   packet: "packet", pack: "packet", pkt: "packet", पैकेट: "packet",
@@ -141,6 +144,16 @@ const COUNT_UNITS = new Set([
 const RATE_MARKERS = new Set(["wala", "wali"]);
 const TOTAL_MARKERS = new Set(["ka", "ki"]);
 const CURRENCY_FILLERS = new Set(["rupay", "rupaye", "rupaya", "rupee", "rupees", "rs"]);
+
+// KB-317: the Devanagari markers. Unlike the Latin ones they count as markers
+// ONLY straight after a number - का/की/के are everyday grammar inside names
+// ("सरसों का तेल", "नहाने का साबुन"), so anywhere else they stay part of the name.
+const DEVANAGARI_RATE_MARKERS = new Set(["वाला", "वाले", "वाली", "वला"]);
+const DEVANAGARI_TOTAL_MARKERS = new Set(["का", "की", "के"]);
+const DEVANAGARI_CURRENCY = new Set(["रुपए", "रुपये", "रुपया", "रुपे", "रूपए", "रूपये", "रूपया", "रु"]);
+
+// KI-44: Whisper glues a number word to wala ("दसवाला", "daswala").
+const GLUE_SUFFIXES = ["वाला", "वाले", "वाली", "wala", "wali"] as const;
 
 interface CatalogMatch {
   readonly catalogId: string | null;
@@ -228,12 +241,24 @@ function splitWords(text: string): string[] {
   // number - Whisper writes "saadhe teen" that way); any other "." and the
   // Devanagari danda are punctuation. Was /[.,!?]/: "3.5 kilo chawal" billed
   // 5 kg for Rs.3.
-  return spaced
-    .toLowerCase()
+  return normalizeDevanagari(spaced.toLowerCase())
     .replace(/(?<!\d)\.|\.(?!\d)|[,!?।]/g, " ")
     .trim()
     .split(/\s+/)
-    .filter((word) => word.length > 0);
+    .filter((word) => word.length > 0)
+    .flatMap(unglueWala);
+}
+
+/** KI-44: "दसवाला" -> "दस", "वाला" - only when what's before the suffix is a
+ * number word, so a name that merely ends in "wala" is never split. */
+function unglueWala(word: string): string[] {
+  for (const suffix of GLUE_SUFFIXES) {
+    if (word.length > suffix.length && word.endsWith(suffix)) {
+      const head = word.slice(0, -suffix.length);
+      if (HINDI_NUMBERS[head] !== undefined) return [head, suffix];
+    }
+  }
+  return [word];
 }
 
 function classifySegment(words: readonly string[]): Classified[] {
@@ -310,6 +335,23 @@ function classifySegment(words: readonly string[]): Classified[] {
 
     if (UNIT_ALIASES[word] !== undefined) {
       out.push({ type: "unit", unit: UNIT_ALIASES[word] });
+      i += 1;
+      continue;
+    }
+
+    const afterNumber = out[out.length - 1]?.type === "num";
+    if (afterNumber && DEVANAGARI_RATE_MARKERS.has(word)) {
+      out.push({ type: "rate" });
+      i += 1;
+      continue;
+    }
+    if (afterNumber && DEVANAGARI_TOTAL_MARKERS.has(word)) {
+      out.push({ type: "total" });
+      i += 1;
+      continue;
+    }
+    if (afterNumber && DEVANAGARI_CURRENCY.has(word)) {
+      out.push({ type: "currency" });
       i += 1;
       continue;
     }
@@ -494,13 +536,14 @@ function resolveDefault(qty: number, spokenUnit: string, match: CatalogMatch, sp
 }
 
 /** Rule 2/3's "total price only, no qty/unit spoken" edge case - docs/07-DECISIONS.md D13 point 1. */
-function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenName: string, pc: ParserCatalog): ParsedItem {
-  const entry = match.catalogId ? pc.byId.get(match.catalogId) : undefined;
+// D47 (owner, 29 Sep 2026; supersedes D13 point 1): only a total spoken ->
+// qty null, unit "", matched product or not - never a number nobody said.
+function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenName: string): ParsedItem {
   return {
     spokenName,
     ...match,
-    qty: entry ? 1 : null,
-    unit: entry ? entry.unit : "",
+    qty: null,
+    unit: "",
     rate: null,
     rateUnit: null,
     total: totalPaise,
@@ -560,7 +603,7 @@ function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | nul
       const { qty, unit } = qtyAndUnit(qtyEntry);
       return { spokenName, ...match, qty, unit, rate: null, rateUnit: null, total: totalPaise, priceType: "total" };
     }
-    return resolveUnattachedTotal(totalPaise, match, spokenName, pc);
+    return resolveUnattachedTotal(totalPaise, match, spokenName);
   }
 
   // No wala/ka/ki anywhere. More than two bare numbers is beyond what this
@@ -576,7 +619,7 @@ function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | nul
     }
     if (only.isCurrency) {
       // Rule 3: a bare price via an explicit currency word, no qty/unit spoken.
-      return resolveUnattachedTotal(rupeesToPaise(only.value), match, spokenName, pc);
+      return resolveUnattachedTotal(rupeesToPaise(only.value), match, spokenName);
     }
     // Bare number, no unit, no currency word - "[qty][product]" pattern,
     // implicit piece count (docs/04-VOICE-PIPELINE.md section 3).
@@ -619,11 +662,30 @@ export interface SpokenNumberEntry {
   readonly attachedUnit: string | null;
 }
 
-export function extractSpokenNumberEntries(text: string): readonly SpokenNumberEntry[] {
-  const segments = text
-    .split(/\baur\b/i)
+/**
+ * KB-317: items in one utterance are separated by "aur", "और" or a comma -
+ * the same split for parsing, diagnosing and the number checks, so all three
+ * read the same numbers. (और only as a whole word; a comma always, even
+ * between digits - "1,500" becomes two segments, and the incomplete-segment
+ * rule below makes that a safe miss.)
+ */
+function splitSegments(text: string): string[] {
+  return text
+    .split(/\baur\b|(?<![\u0900-\u097F])और(?![\u0900-\u097F])|,/i)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0);
+}
+
+/** KB-317 (owner): in a multi-item utterance every segment needs a product
+ * AND a number - otherwise the whole utterance is a miss ("चीनी, 2 किलो"),
+ * never a line silently merged, dropped or left without its number. */
+function segmentIsComplete(rawSegment: string): boolean {
+  const classified = classifySegment(splitWords(rawSegment));
+  return extractSpokenName(classified) !== "" && classified.some((token) => token.type === "num");
+}
+
+export function extractSpokenNumberEntries(text: string): readonly SpokenNumberEntry[] {
+  const segments = splitSegments(text);
 
   const entries: SpokenNumberEntry[] = [];
   for (const segment of segments) {
@@ -643,16 +705,15 @@ export function extractSpokenNumberEntries(text: string): readonly SpokenNumberE
  * anything is structurally ambiguous (docs/04-VOICE-PIPELINE.md section 3's
  * bail-out rule) - never for a merely unknown or unpriced product, which
  * always returns an item (Rule 5b). Multiple items in one utterance are
- * separated by "aur"; if any one segment can't be resolved, the whole
- * utterance bails rather than silently dropping a line.
+ * separated by "aur", "और" or a comma (splitSegments); if any one segment
+ * can't be resolved, the whole utterance bails rather than silently dropping
+ * a line.
  */
 export function parseUtterance(text: string, catalog: ParserCatalog): ParsedItem[] | null {
-  const segments = text
-    .split(/\baur\b/i)
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+  const segments = splitSegments(text);
 
   if (segments.length === 0) return null;
+  if (segments.length > 1 && !segments.every(segmentIsComplete)) return null;
 
   const items: ParsedItem[] = [];
   for (const segment of segments) {
@@ -690,7 +751,8 @@ export type MissReason =
   | "too many numbers or conflicting units"
   | "incompatible unit for default price"
   | "ambiguous two-number utterance"
-  | "number with more than 3 decimals";
+  | "number with more than 3 decimals"
+  | "a segment lacks a product or a number";
 
 export interface ParseDiagnostics {
   readonly hit: boolean;
@@ -758,12 +820,10 @@ function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | nu
 /** Diagnostic twin of parseUtterance() - same hit/miss outcome, plus a
  * grouped reason on every miss. Never used by parseUtterance itself. */
 export function diagnoseUtterance(text: string, catalog: ParserCatalog): ParseDiagnostics {
-  const segments = text
-    .split(/\baur\b/i)
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+  const segments = splitSegments(text);
 
   if (segments.length === 0) return { hit: false, reason: "empty utterance" };
+  if (segments.length > 1 && !segments.every(segmentIsComplete)) return { hit: false, reason: "a segment lacks a product or a number" };
 
   for (const segment of segments) {
     const reason = diagnoseSegment(segment, catalog);

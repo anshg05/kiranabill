@@ -32,12 +32,15 @@ describe("resolveUtterance", () => {
     const hit = await resolveUtterance(utterance("VC023"), { shop: SEED_PARSER_CATALOG, parse: vi.fn() });
     expect(hit.timings.layer1Ms).toBeGreaterThanOrEqual(0);
     expect(hit.timings.layer2Ms).toBeNull();
-    const miss = await resolveUtterance("दो किलो चीनी और तीन पारले जी दस वाला", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => []) });
+    // KB-317 commit 2: RT07 - no separator at all, stays a Layer 1 miss.
+    const miss = await resolveUtterance("2 किलो चीनी 3 पालेजी 10 वाला 1 किलो बेसन", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => []) });
     expect(miss.timings.layer2Ms).toBeGreaterThanOrEqual(0);
   });
 
-  it("Q3: a comma order Layer 1 merges into one line (HIGH number flags) goes to Layer 2 instead", async () => {
-    const transcript = "2 kilo chini, teen Parle-G 10 wala";
+  // KB-317 commit 2: a comma now separates items in Layer 1 (see the next
+  // test); an order with NO separator is what Layer 1 can't split.
+  it("Q3: an order Layer 1 can't split (no separator, HIGH number flags) goes to Layer 2 instead", async () => {
+    const transcript = "2 kilo chini teen Parle-G 10 wala";
     const parse = vi.fn(async () => [
       gemini({ spokenName: "chini", catalogId: "27", matchStatus: "matched", qty: 2, unit: "kg", rate: 4500, rateUnit: "kg", total: 9000, priceType: "default" }),
       gemini({ spokenName: "Parle-G", catalogId: "52", matchStatus: "matched", qty: 3, unit: "piece", rate: 1000, rateUnit: "piece", total: 3000, priceType: "rate" }),
@@ -53,6 +56,33 @@ describe("resolveUtterance", () => {
     expect(r.flags.filter((f) => f.severity === "HIGH")).toEqual([]);
   });
 
+  it("KB-317: a comma order splits in Layer 1 - two fastpath lines, Gemini never called", async () => {
+    const parse = vi.fn();
+    const r = await resolveUtterance("2 kilo chini, teen Parle-G 10 wala", { shop: SEED_PARSER_CATALOG, parse });
+    expect(parse).not.toHaveBeenCalled();
+    expect(r.layer).toBe("fastpath");
+    expect(r.lines.map((l) => [l.source, l.displayName, l.item.qty, l.item.total])).toEqual([
+      ["fastpath", "Chini", 2, 9000],
+      ["fastpath", "Parle-G 10", 3, 3000],
+    ]);
+  });
+
+  // KB-317 commit 2 (owner): the bill shows the SHOP's catalog name, never the
+  // spoken words - "चावल का" reached the bill as the item name.
+  it("a Layer 1 line shows the shop catalog's display name, not the spoken words", async () => {
+    const r = await resolveUtterance("5 किलो चावल 30 का", { shop: SEED_PARSER_CATALOG, parse: vi.fn() });
+    expect(r.layer).toBe("fastpath");
+    expect(r.lines.map((l) => [l.displayName, l.item.spokenName, l.item.total])).toEqual([["Chawal", "चावल", 3000]]);
+  });
+
+  it("the display name is THIS shop's own name for the product (D4), not the seed's", async () => {
+    const shop = prepareParserCatalog([
+      { id: "shop-chawal", displayName: "Sona Masoori", sourceCategory: "", guardCategory: "grain", unit: "kg", suggestedPricePaise: 6000, aliases: ["चावल", "chawal"], isActive: true },
+    ]);
+    const r = await resolveUtterance("2 किलो चावल", { shop, parse: vi.fn() });
+    expect(r.lines.map((l) => [l.displayName, l.item.catalogId, l.item.total])).toEqual([["Sona Masoori", "shop-chawal", 12000]]);
+  });
+
   it("Q3: Layer 1 turning a garbled transcript into one unknown line is a miss -> Layer 2", async () => {
     const parse = vi.fn(async () => []);
     const r = await resolveUtterance(" दुकीलोचीनी, टीन पारल जी दास वाला", { shop: SEED_PARSER_CATALOG, parse });
@@ -63,7 +93,8 @@ describe("resolveUtterance", () => {
 
   it("Layer 1 bail (null) -> Layer 2", async () => {
     const parse = vi.fn(async () => []);
-    await resolveUtterance("दो किलो चीनी और तीन पारले जी दस वाला", { shop: SEED_PARSER_CATALOG, parse });
+    // KB-317 commit 2: RT07 - no separator; the और/comma forms now hit Layer 1.
+    await resolveUtterance("2 किलो चीनी 3 पालेजी 10 वाला 1 किलो बेसन", { shop: SEED_PARSER_CATALOG, parse });
     expect(parse).toHaveBeenCalledOnce();
   });
 
@@ -93,7 +124,8 @@ describe("resolveUtterance", () => {
       gemini({ spokenName: "chini", catalogId: "27", matchStatus: "matched", qty: 3, unit: "kg", priceType: "default" }),
       gemini({ spokenName: "Parle-G", catalogId: "52", matchStatus: "matched", qty: 2, unit: "piece", rate: 1000, priceType: "rate" }),
     ]);
-    const r = await resolveUtterance("2 kilo chini, teen Parle-G 10 wala", { shop: SEED_PARSER_CATALOG, parse });
+    // KB-317 commit 2: no comma - the comma form now splits in Layer 1.
+    const r = await resolveUtterance("2 kilo chini teen Parle-G 10 wala", { shop: SEED_PARSER_CATALOG, parse });
     expect(r.flags.filter((f) => f.code === "number_misaligned")).toHaveLength(1);
   });
 

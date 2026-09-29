@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 29 Sep 2026 (rev 7) · **Status:** Final for MVP
+**Last updated:** 29 Sep 2026 (rev 8) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -116,6 +116,14 @@ for the shopkeeper to complete.
 > `price_type: 'rate'` and ₹100 instead of ₹30. VC001 and VC009 fail the default-price path.
 > **Phase 0 fixes this before anything else is built.** Porting a broken differentiator to a new
 > stack makes it broken and more expensive to fix.
+
+> 🔶 **Real input is Devanagari (D44, D48).** Layer 1 reads Whisper's `hi` output: items split on "aur", "और" or a
+> comma, and in a multi-item order every segment needs a product and a number or the whole order goes to Layer 2;
+> का/की/के, वाला/वाले/वाली/वला and रुपए/रुपये/रुपया are markers only straight after a number; nukta and chandrabindu
+> and vowel length, ै/ौ, श/ष→स and व→ब are folded on both sides of a product match (not ा, not transliteration —
+> both measured and rejected, D48); a digit decimal (`3.5`) is one number (KI-51); only a total spoken leaves qty
+> empty (D47). Owner's 33 real transcripts (`npm run eval:real`): 24 Layer 1 hits, 21 correct + 3 correct lines
+> awaiting the `duplicate_line` flag (`KB-317` commit 3); on RT01–RT25, 4 hits (1 wrong) before → 20 after.
 
 ### Patterns handled deterministically
 

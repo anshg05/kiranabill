@@ -50,6 +50,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { rupeesToPaise } from "../src/domain/money.js";
 import type { GuardCategory } from "../src/domain/catalog.js";
+import { KB317_ALIAS_FIXES, type CatalogAliasFix } from "./catalogAliasFixes.js";
 
 const EXPECTED_PRODUCT_COUNT = 482; // docs/14-LEGACY-REFERENCE.md section 9
 
@@ -617,6 +618,29 @@ function buildSeed(rawProducts: RawProduct[]): { seed: SeedProduct[]; report: Bu
   return { seed, report };
 }
 
+/**
+ * KB-317: the owner's alias rulings (scripts/catalogAliasFixes.ts - the same
+ * list the alias migration is generated from). Strict: a product that isn't
+ * exactly one entry, an alias to remove that isn't there or one to add that
+ * already is, stops the build - the list and the source must agree.
+ */
+function applyAliasFixes(seed: { displayName: string; aliases: string[]; isActive: boolean }[], fixes: readonly CatalogAliasFix[]): void {
+  for (const fix of fixes) {
+    const matches = seed.filter((p) => p.displayName === fix.displayName);
+    if (matches.length !== 1) throw new Error(`alias fix: "${fix.displayName}" matches ${matches.length} products, expected 1`);
+    const product = matches[0]!;
+    for (const alias of fix.remove ?? []) {
+      if (!product.aliases.includes(alias)) throw new Error(`alias fix: "${fix.displayName}" has no alias "${alias}" to remove`);
+      product.aliases = product.aliases.filter((a) => a !== alias);
+    }
+    for (const alias of fix.add ?? []) {
+      if (product.aliases.includes(alias)) throw new Error(`alias fix: "${fix.displayName}" already has alias "${alias}"`);
+      product.aliases.push(alias);
+    }
+    if (fix.deactivate) product.isActive = false;
+  }
+}
+
 function printReport(report: BuildReport): void {
   const sortedSourceCategories = Object.entries(report.sourceCategoryCounts).sort(([, a], [, b]) => b - a);
   const otherBreakdown = Object.entries(report.otherBySourceCategory).sort(([, a], [, b]) => b - a);
@@ -693,6 +717,7 @@ function main(): void {
   }
 
   const { seed, report } = buildSeed(rawProducts);
+  applyAliasFixes(seed, KB317_ALIAS_FIXES);
   writeFileSync(outPath, JSON.stringify(seed, null, 2) + "\n", "utf8");
   printReport(report);
 }

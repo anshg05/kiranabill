@@ -52,7 +52,9 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
     if (hit) {
       return {
         layer: "fastpath",
-        lines: fast.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" })),
+        // KB-317 (owner): the bill shows the shop's own name for the product,
+        // never the spoken words ("चावल का" reached the bill).
+        lines: fast.map((item) => ({ item, displayName: deps.shop.byId.get(item.catalogId!)?.displayName ?? item.spokenName, source: "fastpath" })),
         flags,
         timings: { layer1Ms, layer2Ms: null },
       };

@@ -76,8 +76,8 @@
     "expectedItems": [
       {
         "displayName": "Ajwain",
-        "qty": 1,
-        "unit": "gm",
+        "qty": null,
+        "unit": "",
         "rate": null,
         "total": 1000,
         "priceType": "total",
@@ -85,7 +85,7 @@
         "catalogId": "117"
       }
     ],
-    "notes": "Total-price mode using ki."
+    "notes": "Total-price mode using ki. KB-317 / D47: only a total spoken -> qty null, unit '' (was qty 1 gm under D13 point 1)."
   },
   {
     "id": "VC006",
@@ -268,16 +268,16 @@
     "expectedItems": [
       {
         "displayName": "Sabun",
-        "qty": 1,
-        "unit": "piece",
+        "qty": null,
+        "unit": "",
         "rate": null,
         "total": 18000,
         "priceType": "total",
-        "isCustom": true,
-        "catalogId": null
+        "isCustom": false,
+        "catalogId": "614"
       }
     ],
-    "notes": "Likely custom/ambiguous item with explicit total."
+    "notes": "Likely custom/ambiguous item with explicit total. KB-317 (owner): sabun = generic Sabun (614), was a Bath Sabun/Sabun tie; D47: qty null."
   },
   {
     "id": "VC017",

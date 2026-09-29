@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 29 Sep 2026 (rev 30) · Supersedes rev 29
+**Last updated:** 29 Sep 2026 (rev 31) · Supersedes rev 30
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1352,6 +1352,32 @@ buy it. Confirms `04-VOICE-PIPELINE.md`'s STT choice. Re-measure with `npm run e
 product matches the catalog. D13 point 1 filled in qty 1 of the catalog's unit for a matched product; that is a
 number nobody said. Built in `KB-317` commit 2 (tests first); `KB-004` fixture VC005 ("ajwain 10 ki" → qty 1 gm)
 and any grammar test resting on D13 point 1 change with it, listed in that commit. D13 points 2–4 stand.
+
+### D48 — Layer 1 reads Whisper's Devanagari; catalog alias fixes ship as a migration 🟢
+
+**Owner decisions, 29 Sep 2026, `KB-317` commit 2** — on the owner's 25 real transcripts Layer 1 answered 4 (1 wrong).
+1. **Items split on "aur", "और" and commas.** In a multi-item utterance every segment needs a product **and** a number,
+   or the whole utterance is a miss (→ Gemini) — never a line merged, dropped or left without its number.
+2. **Devanagari markers** — का/की/के (total), वाला/वाले/वाली/वला (rate), रुपए/रुपये/रुपया (currency) — count only
+   straight after a number; elsewhere they are part of the name ("सरसों का तेल"). A glued number word splits
+   ("दसवाला" → दस वाला).
+3. **Spellings fold, letters don't** (owner: general normalisation, not one alias per misspelling). Product matching
+   folds, on the catalog and the query alike: nukta and chandrabindu (फुटाना = फ़ुटाना), vowel length (साबून = साबुन),
+   ै/े and ौ/ो, श/ष → स (बेशन = बेसन), व → ब (बरवटी = बरबटी). **Measured** on every real Whisper spelling seen (28)
+   and every alias of every catalog product: +5 hits, 0 wrong, 0 new false matches, 0 aliases lost. **Rejected by
+   measurement:** folding ा (ताज़ा and तज became ties) and **Devanagari → Latin transliteration** (no gain over the folds;
+   विम, विम बार, मुरुक्कू became ties). Number and marker words keep their exact spelling; ड and ढ stay different
+   letters, so every fraction spelling Whisper writes is listed (साढ़े/साड़े/साढे/साडे, डेढ़/डेड़/डेढ, ढाई/ढाइ/डाई,
+   पौने/पोने), and every currency spelling (रुपए/रुपये/रुपया/रुपे/रूपए/रूपये/रूपया/रु).
+4. **The bill shows the shop catalog's name** for a Layer 1 line, never the spoken words.
+5. **Alias rulings:** आटा → Chakki Aata; sabun/साबुन → generic Sabun (614); bare shakkar → Chini; दाल and every
+   toor/tur/tuvar/arhar spelling → Toor Daal (16); **Arhar Daal (17) deactivated** (same pulse, ₹140 — never deleted).
+   Plus the Whisper spellings no fold reaches (a moved word boundary "पार लेजी", ल for र "मसूल", "चायपत्ती" as one
+   word) — 8 aliases, listed in `scripts/catalogAliasFixes.ts`.
+6. **Catalog alias fixes ship as a migration** that updates `base_products` and every existing shop's `source='base'`
+   copy (Layer 1 reads the shop's own Dexie copy — a seed edit alone never reaches an existing shop). One list,
+   `scripts/catalogAliasFixes.ts`, drives both the seed and the generated migration (a test fails on drift). Every
+   product lookup must match exactly one row or the migration aborts.
 
 ---
 

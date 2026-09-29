@@ -20,7 +20,45 @@ import type { CatalogEntry, GuardCategory } from "./catalog.js";
  * indexed "vim" - see catalogIndex.test.ts.
  */
 export function phoneticNormalize(text: string): string {
-  return text.toLowerCase().replace(/ph/g, "f").replace(/w/g, "v");
+  return foldDevanagariSpelling(normalizeDevanagari(text.toLowerCase())).replace(/ph/g, "f").replace(/w/g, "v");
+}
+
+/**
+ * KB-317 (owner: general normalisation, not one alias per misspelling):
+ * spelling differences Whisper makes on the same word, folded on index keys
+ * and queries alike - vowel length (साबून/साबुन, मुंग/मूंग), ै/े and ौ/ो,
+ * श/ष -> स (बेशन/बेसन, देशी/देसी), व -> ब (बरवटी/बरबटी). Measured on every real
+ * Whisper spelling seen (RT01-RT33) and every alias of every catalog product:
+ * no wrong match, no new false match, no alias that stops landing on its own
+ * product. NOT folded (measured unsafe): ा/none - ताज़ा and तज became ties.
+ * Matching only: grammar's number and marker words keep their exact spelling.
+ */
+const SPELLING_FOLDS: readonly (readonly [RegExp, string])[] = [
+  [/\u0942/g, "\u0941"], // ू -> ु
+  [/\u0940/g, "\u093F"], // ी -> ि
+  [/\u090A/g, "\u0909"], // ऊ -> उ
+  [/\u0908/g, "\u0907"], // ई -> इ
+  [/\u0948/g, "\u0947"], // ै -> े
+  [/\u094C/g, "\u094B"], // ौ -> ो
+  [/\u0910/g, "\u090F"], // ऐ -> ए
+  [/\u0914/g, "\u0913"], // औ -> ओ
+  [/[\u0936\u0937]/g, "\u0938"], // श, ष -> स
+  [/\u0935/g, "\u092C"], // व -> ब
+];
+
+function foldDevanagariSpelling(text: string): string {
+  return SPELLING_FOLDS.reduce((acc, [pattern, to]) => acc.replace(pattern, to), text);
+}
+
+/**
+ * KB-317: Whisper and the catalog spell the same Devanagari word two ways -
+ * with or without a nukta (फुटाना / फ़ुटाना, precomposed or combining) and with
+ * a chandrabindu or an anusvara (पाँच / पांच). Both fold to the plain form, on
+ * index keys and on every query alike. ड and ढ stay different letters: nukta
+ * folding turns ड़ into ड and ढ़ into ढ, never one into the other.
+ */
+export function normalizeDevanagari(text: string): string {
+  return text.normalize("NFD").replace(/़/g, "").replace(/ँ/g, "ं");
 }
 
 function normalizeForIndex(text: string): string {

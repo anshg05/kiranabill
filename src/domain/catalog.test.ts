@@ -86,9 +86,10 @@ describe("catalog seed", () => {
     }
   });
 
-  it("marks every seeded product active", () => {
+  // KB-317 (owner): Arhar Daal is deactivated - toor = arhar, Toor Daal only.
+  it("marks every seeded product active, except the ones KB-317 deactivated", () => {
     for (const product of catalog) {
-      expect(product.isActive).toBe(true);
+      expect(product.isActive, product.displayName).toBe(product.id !== "17");
     }
   });
 
@@ -105,5 +106,38 @@ describe("catalog seed", () => {
 
   it("returns undefined for an id that doesn't exist", () => {
     expect(getCatalogEntryById("does-not-exist")).toBeUndefined();
+  });
+});
+
+// KB-317 commit 2 - the owner's alias rulings (29 Sep 2026), asserted on the
+// seed itself. The same moves reach base_products and every existing shop's
+// shop_products through a migration (catalogAliases.e2e.test.ts).
+describe("KB-317 alias rulings - each spoken word lands on ONE product", () => {
+  const aliasesOf = (id: string) => (getCatalogEntryById(id)?.aliases ?? []).map((a) => a.toLowerCase());
+  const holders = (alias: string) =>
+    catalog.filter((e) => [e.displayName, ...e.aliases].some((a) => a.toLowerCase() === alias.toLowerCase())).map((e) => e.id);
+
+  it.each([
+    ["आटा", "2"], // Chakki Aata, never गेहूं (1)
+    ["साबुन", "614"], // generic Sabun, never Bath Sabun (160)
+    ["sabun", "614"],
+    ["शक्कर", "27"], // Chini; Desi Shakkar (32) only as "देशी शक्कर"
+    ["shakkar", "27"],
+    ["दाल", "16"], // generic dal = Toor Daal
+    ["तूर दाल", "16"], // toor = arhar, one pulse (owner) - was on Arhar Daal (17)
+    ["तुअर दाल", "16"],
+    ["toor dal", "16"],
+    ["tur daal", "16"],
+    ["tuvar dal", "16"],
+    ["अरहर दाल", "16"],
+  ])("%s -> only catalog id %s", (alias, id) => {
+    expect(aliasesOf(id)).toContain(alias.toLowerCase());
+    expect(holders(alias)).toEqual([id]);
+  });
+
+  it("Desi Shakkar keeps its own name, Bath Sabun its own", () => {
+    expect(holders("देशी शक्कर")).toEqual(["32"]);
+    expect(holders("नहाने का साबुन")).toEqual(["160"]);
+    expect(holders("bath soap")).toContain("160");
   });
 });

@@ -8,6 +8,11 @@ import { bootstrapAfterOnboarding, bootstrapOnStart } from "./bootstrap";
 import { consumeNextNumber } from "./receiptNumbers";
 import { startSyncLoop, stopSyncLoop, isSyncLoopRunning, syncNow, type OnlineEventSource } from "./sync";
 import { resolveAuthMode, signOutDevice } from "./offlineSession";
+import { catalog } from "@/domain/catalog";
+
+// copy_base_catalog() copies ACTIVE base products only - 482 seeded, 481 since
+// KB-317 deactivated Arhar Daal.
+const ACTIVE_BASE_PRODUCTS = catalog.filter((entry) => entry.isActive).length;
 
 /**
  * KB-315 (docs/12-PARKED.md KI-32, docs/07-DECISIONS.md D38) - real local
@@ -76,7 +81,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     return data;
   }
 
-  it("1. onboarding: deviceId persisted, copy_base_catalog stamped with it, first block reserved server-side, 482 products + the shop in Dexie, loop running", async () => {
+  it("1. onboarding: deviceId persisted, copy_base_catalog stamped with it, first block reserved server-side, every active base product + the shop in Dexie, loop running", async () => {
     const deviceDb = new DeviceDB(deviceDbName);
     deviceId = await getOrCreateDeviceId(deviceDb);
     await setActiveUserId(deviceDb, userId); // what AuthProvider does on a live session
@@ -89,11 +94,11 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
 
     const { data: products, error } = await client.from("shop_products").select("device_id").eq("shop_id", shopId);
     expect(error).toBeNull();
-    expect(products).toHaveLength(482);
+    expect(products).toHaveLength(ACTIVE_BASE_PRODUCTS);
     expect(new Set(products!.map((p) => p.device_id))).toEqual(new Set([deviceId])); // the persistent id, not a throwaway
 
     expect(await serverBlocks()).toEqual([{ device_id: deviceId, block_start: 1, block_end: 50 }]);
-    expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(482);
+    expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(ACTIVE_BASE_PRODUCTS);
 
     startSyncLoop({ client, localDb: db, shopId, deviceId }, onlineSource);
     expect(isSyncLoopRunning()).toBe(true);
@@ -110,7 +115,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
 
     const reopened = openShopDb(userId);
     expect(await reopened.shops.count()).toBe(1);
-    expect(await reopened.shopProducts.count()).toBe(482);
+    expect(await reopened.shopProducts.count()).toBe(ACTIVE_BASE_PRODUCTS);
     db = reopened;
 
     // Sign back in (the same user) - what the next session will do.
@@ -132,7 +137,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     const offlineClient = createClient(UNREACHABLE, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
     const shop = await bootstrapOnStart(offlineClient, db, { shopId, deviceId, online: false });
     expect(shop?.id).toBe(shopId);
-    expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(482);
+    expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(ACTIVE_BASE_PRODUCTS);
     const receipt = await consumeNextNumber(offlineClient, db, shopId, deviceId);
     expect(receipt).toEqual({ receiptNumber: "KB-000001", source: "block" });
 

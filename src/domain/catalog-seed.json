@@ -11,7 +11,6 @@
       "gehun",
       "gehu",
       "wheat",
-      "आटा",
       "गेहुं",
       "गेहू"
     ],
@@ -35,7 +34,8 @@
       "aata",
       "atta",
       "wheat flour",
-      "gehu atta"
+      "gehu atta",
+      "आटा"
     ],
     "isActive": true
   },
@@ -284,7 +284,18 @@
       "dal",
       "dhal",
       "lentils",
-      "दाल"
+      "दाल",
+      "arhar",
+      "arhar daal",
+      "tur daal",
+      "tuvar dal",
+      "toor dal",
+      "pigeon pea",
+      "अरहर दाल",
+      "तुअर दाल",
+      "तूर दाल",
+      "तुवर दाल",
+      "तूअल दाल"
     ],
     "isActive": true
   },
@@ -296,17 +307,9 @@
     "unit": "kg",
     "suggestedPricePaise": 14000,
     "aliases": [
-      "Arhar Daal",
-      "arhar daal",
-      "tur daal",
-      "tuvar dal",
-      "toor dal",
-      "pigeon pea",
-      "अरहर दाल",
-      "तुअर दाल",
-      "तूर दाल"
+      "Arhar Daal"
     ],
-    "isActive": true
+    "isActive": false
   },
   {
     "id": "18",
@@ -340,7 +343,8 @@
       "red lentil",
       "pink lentil",
       "मसूर दाल",
-      "मसूर की दाल"
+      "मसूर की दाल",
+      "मसूल दाल"
     ],
     "isActive": true
   },
@@ -571,7 +575,6 @@
     "suggestedPricePaise": 4800,
     "aliases": [
       "Desi Shakkar",
-      "shakkar",
       "desi shakkar",
       "khandsari",
       "raw sugar",
@@ -924,7 +927,11 @@
       "glucose biscuit",
       "पारले जी",
       "पारले",
-      "पारले-जी"
+      "पारले-जी",
+      "पार लेजी",
+      "पारलेजी",
+      "परलेजी",
+      "पालेजी"
     ],
     "isActive": true
   },
@@ -1552,7 +1559,8 @@
       "चाय के पत्ते",
       "chai pati",
       "cha patti",
-      "chaipatti"
+      "chaipatti",
+      "चायपत्ती"
     ],
     "isActive": true
   },
@@ -2787,11 +2795,9 @@
     "suggestedPricePaise": 3000,
     "aliases": [
       "Bath Sabun",
-      "sabun",
       "soap",
       "bathing soap",
       "bath soap",
-      "साबुन",
       "नहाने का साबुन"
     ],
     "isActive": true
@@ -7607,7 +7613,9 @@
       "व्हील साबुन",
       "bath sabun",
       "bathing sabun",
-      "bath soap"
+      "bath soap",
+      "sabun",
+      "साबुन"
     ],
     "isActive": true
   },

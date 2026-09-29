@@ -8,4 +8,6 @@ import { prepareParserCatalog, type ParserCatalog } from "./catalogIndex.js";
  * imports it by accident - VERIFY greps src/ for importers - and so its index
  * isn't built at app start.
  */
-export const SEED_PARSER_CATALOG: ParserCatalog = prepareParserCatalog(catalog);
+// Active products only - what copy_base_catalog() gives a new shop and
+// loadShopCatalog() reads (KB-317: Arhar Daal is deactivated).
+export const SEED_PARSER_CATALOG: ParserCatalog = prepareParserCatalog(catalog.filter((entry) => entry.isActive));

@@ -37,6 +37,9 @@ export interface RealTranscriptCase {
   expectedFlags?: string[];
   /** A recording in eval/real-audio/ this transcript came from (eval/real-audio.ts). */
   audio?: string;
+  /** KB-317 commit 2: what Layer 1 must do - answer correctly ("hit"), leave it
+   * to Gemini ("miss"), or either ("either"). Never a wrong line, in any case. */
+  layer1: "hit" | "miss" | "either";
   note?: string;
 }
 

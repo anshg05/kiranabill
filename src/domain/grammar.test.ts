@@ -117,11 +117,12 @@ describe("Rule 2 - ka/ki means total price, not rate", () => {
     expect(ka.total).not.toBe(wala.total);
   });
 
-  it("no qty/unit spoken, product resolves in catalog -> qty 1 of the catalog's OWN unit, not invented from nothing - ajwain 10 ki", () => {
+  // KB-317 / D47 (supersedes D13 point 1): was qty 1 of the catalog's unit.
+  it("no qty/unit spoken, product resolves in catalog -> qty null, unit '' - never a number nobody said - ajwain 10 ki", () => {
     const item = parseOne("ajwain 10 ki");
     expect(item.catalogId).toBe("117");
-    expect(item.qty).toBe(1);
-    expect(item.unit).toBe(catalogEntry("117").unit); // "gm"
+    expect(item.qty).toBeNull();
+    expect(item.unit).toBe("");
     expect(item.rate).toBeNull();
     expect(item.total).toBe(1000);
     expect(item.priceType).toBe("total");
