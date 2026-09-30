@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 29 Sep 2026 (rev 31) · Supersedes rev 30
+**Last updated:** 30 Sep 2026 (rev 32) · Supersedes rev 31
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1379,12 +1379,24 @@ and any grammar test resting on D13 point 1 change with it, listed in that commi
    `scripts/catalogAliasFixes.ts`, drives both the seed and the generated migration (a test fails on drift). Every
    product lookup must match exactly one row or the migration aborts.
 
+### D49 — Mic budgets: cold tap ≤ 1 s, warm < 100 ms; no start on pointerdown (supersedes D45's cold budget) 🟢
+
+**Owner decision, 30 Sep 2026, `KB-317` commit 4**, on the owner's browser measurement with the warm mic built:
+warm taps **52 / 53 / 61 / 58 ms** (< 100 ms — met); the cold tap **816 ms = getUserMedia 709 + recorder start 106**.
+The cold tap is dominated by the browser opening the device, which no code of ours shortens short of opening the mic
+before a tap — ruled out (the mic is never on unasked). **Cold budget: ≤ 1 s. Warm: < 100 ms, unchanged.** Starting
+on `pointerdown` instead of the click would save the measured 132–167 ms, but **not built**: a touch-scroll that
+begins on the mic button would open the mic unintended. D45's other rules stand: 60 s warm window, "listening" only
+once `MediaRecorder` has started, released when hidden / on leaving the screen / on sign-out, a recording in progress
+stopped and discarded when the app is hidden (owner confirmed), a mic opened after the tab went hidden closed at once.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 30 Sep 2026 | D45 / `05-FRONTEND-SPEC.md` §10: first (cold) tap → listening ≤ 300 ms | **≤ 1 s** (D49); warm < 100 ms unchanged | Measured: cold 816 ms, 709 of it the browser opening the device. |
 | 29 Sep 2026 | D13 point 1: only a total spoken, product matched → qty 1 of the catalog's unit | **qty `null`, unit `""`** (D47) | Owner: never invent a number. |
 | 21 Aug 2026 | Antigravity as the single build tool (T1) | **Claude Code** (D28) | Antigravity quota exhausted mid-`KB-000`; the docs carried the handoff at zero cost. Recorded here 26 Sep 2026. |
 | 20 Aug 2026 | Feature branches, never commit to `main` (`09` §B4) | **Single branch, `main`** (D29) | Owner decision — solo developer; the ticket ID in the commit message does the branch name's job. Recorded here 26 Sep 2026. |

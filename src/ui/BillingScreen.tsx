@@ -101,7 +101,11 @@ export function BillingScreen() {
     onTranscript,
     notReadyReason: parser ? null : "Loading your catalog…",
   });
-  return <BillView lines={lines} onSignOut={() => void signOut()} voice={voice.view} onMicTap={voice.onMicTap} />;
+  const onSignOut = () => {
+    voice.releaseMic(); // the warm mic goes off before anything else (D45)
+    void signOut();
+  };
+  return <BillView lines={lines} onSignOut={onSignOut} voice={voice.view} onMicTap={voice.onMicTap} onMicPointerDown={voice.onMicPointerDown} />;
 }
 
 interface BillViewProps {
@@ -109,6 +113,7 @@ interface BillViewProps {
   onSignOut: () => void;
   voice?: VoiceView;
   onMicTap?: () => void;
+  onMicPointerDown?: () => void;
 }
 
 function mmss(ms: number): string {
@@ -146,7 +151,7 @@ function VoiceStatus({ voice }: { voice: VoiceView }) {
   return <p className={base} />;
 }
 
-function MicButton({ voice, onMicTap }: { voice: VoiceView; onMicTap?: () => void }) {
+function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; onMicTap?: () => void; onMicPointerDown?: () => void }) {
   const cls =
     "flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-indigo px-3 font-medium text-surface disabled:opacity-50";
   const icon = { size: 20, strokeWidth: 1.5, "aria-hidden": true } as const;
@@ -175,7 +180,13 @@ function MicButton({ voice, onMicTap }: { voice: VoiceView; onMicTap?: () => voi
     );
   }
   return (
-    <button type="button" onClick={onMicTap} disabled={!onMicTap || voice.disabledReason !== null} className={cls}>
+    <button
+      type="button"
+      onPointerDown={onMicPointerDown}
+      onClick={onMicTap}
+      disabled={!onMicTap || voice.disabledReason !== null}
+      className={cls}
+    >
       <Mic {...icon} />
       बोलने के लिए दबाएं
     </button>
@@ -184,7 +195,7 @@ function MicButton({ voice, onMicTap }: { voice: VoiceView; onMicTap?: () => voi
 
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
-export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: BillViewProps) {
+export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMicPointerDown }: BillViewProps) {
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
 
@@ -280,7 +291,7 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap }: Bil
           {/* Add item / Bill Banao: disabled until KB-305 / KB-307; the reason is
               a tooltip only (owner, 27 Sep 2026). A disabled button fires no
               hover events, so the title sits on a wrapper. */}
-          <MicButton voice={voice} onMicTap={onMicTap} />
+          <MicButton voice={voice} onMicTap={onMicTap} onMicPointerDown={onMicPointerDown} />
           <span title="Adding items isn't available yet">
             <button
               type="button"

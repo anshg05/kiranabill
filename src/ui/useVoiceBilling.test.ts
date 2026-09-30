@@ -106,6 +106,10 @@ describe("useVoiceBilling", () => {
       expect(atob(body.audioBase64)).toBe("audio");
       expect(body.meta).toMatchObject({ transcript: "do kilo chini", lang: "hi", outcome: "transcript only" });
       expect(typeof body.meta.stopToTranscriptMs).toBe("number");
+      // KB-317 commit 4: the tap, split (D45) - cold/warm, getUserMedia vs recorder start.
+      expect(body.meta).toMatchObject({ tap: "cold" });
+      expect(typeof body.meta.getUserMediaMs).toBe("number");
+      expect(typeof body.meta.recorderStartMs).toBe("number");
     } finally {
       window.history.replaceState(null, "", "/");
     }
@@ -156,6 +160,45 @@ describe("useVoiceBilling", () => {
     await act(async () => result.current.onMicTap());
     expect(result.current.view.phase).toBe("idle");
     expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+  });
+
+  // KB-317 commit 4 (owner): signing out releases the warm mic at once - the
+  // screen calls releaseMic() before signOut().
+  it("releaseMic() turns a warm mic off at once (sign-out)", async () => {
+    const trackStop = vi.fn();
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: vi.fn(async () => ({ getTracks: () => [{ readyState: "live", stop: trackStop }] })) },
+    });
+    reply(200, { transcript: "do kilo chini" });
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+    await speak(result);
+    expect(trackStop).not.toHaveBeenCalled(); // warm (D45)
+    act(() => result.current.releaseMic());
+    expect(trackStop).toHaveBeenCalledTimes(1);
+  });
+
+  // KB-317 commit 4 - a measurement for the owner's pointerdown question: how
+  // much earlier than the click a press starts (dev log / ?save=1 meta only).
+  it("dev ?save=1 records pointerdown -> tap ms when the press was seen; null when it wasn't", async () => {
+    window.history.replaceState(null, "", "/?save=1");
+    try {
+      reply(200, { transcript: "do kilo chini" });
+      reply(200, { saved: "x" });
+      const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
+      act(() => result.current.onMicPointerDown());
+      await speak(result);
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+      expect(typeof JSON.parse(fetchMock.mock.calls[1]![1].body as string).meta.pointerDownToTapMs).toBe("number");
+
+      reply(200, { transcript: "do kilo chini" });
+      reply(200, { saved: "y" });
+      await speak(result); // no pointerdown this time (keyboard, say)
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+      expect(JSON.parse(fetchMock.mock.calls[3]![1].body as string).meta.pointerDownToTapMs).toBeNull();
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
   });
 
   it("the browser going offline disables the mic; coming back re-enables it", async () => {

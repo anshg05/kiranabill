@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeAudio, VoiceApiError } from "@/data/voiceApi";
 import { useVoiceCapture } from "./useVoiceCapture";
 
@@ -116,8 +116,20 @@ export interface UseVoiceBillingOptions {
   endpoint?: string;
 }
 
-export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView; onMicTap: () => void } {
+export interface VoiceBilling {
+  view: VoiceView;
+  onMicTap: () => void;
+  /** DEV measurement only (KB-317, owner): when the press started, to see how
+   * much earlier than the click a recording could start. Changes nothing. */
+  onMicPointerDown: () => void;
+  /** Turns the warm mic off now - the screen calls it before signing out (D45). */
+  releaseMic: () => void;
+}
+
+export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
   const capture = useVoiceCapture();
+  const pointerDownAtRef = useRef<number | null>(null);
+  const pointerDownToTapRef = useRef<number | null>(null);
   const browserOnline = useBrowserOnline();
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -136,6 +148,8 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
   const onMicTap = useCallback(() => {
     void (async () => {
       if (disabledReason || !opts.accessToken) return;
+      const pointerDownAt = pointerDownAtRef.current;
+      pointerDownAtRef.current = null;
 
       if (capture.phase === "listening") {
         const stoppedAt = performance.now();
@@ -164,8 +178,15 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
         }
         // KB-317 (a): per-stage timings, dev only. stopToTranscript = recorder
         // stop + upload + Groq; Layer 1 / Gemini are logged by the screen.
+        // Commit 4 (D45): the tap split - cold/warm, getUserMedia vs recorder
+        // start - and pointerdown -> tap (the owner's pointerdown question).
+        const tap = capture.lastTiming;
         const timings = {
-          tapToListeningMs: capture.lastTapToListeningMs === null ? null : Math.round(capture.lastTapToListeningMs),
+          tap: tap?.kind ?? null,
+          tapToListeningMs: tap ? Math.round(tap.tapToListeningMs) : null,
+          getUserMediaMs: tap ? Math.round(tap.getUserMediaMs) : null,
+          recorderStartMs: tap ? Math.round(tap.recorderStartMs) : null,
+          pointerDownToTapMs: pointerDownToTapRef.current === null ? null : Math.round(pointerDownToTapRef.current),
           stopToTranscriptMs: Math.round(performance.now() - stoppedAt),
         };
         if (import.meta.env.DEV) {
@@ -210,6 +231,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
       }
 
       if (capture.phase === "idle") {
+        pointerDownToTapRef.current = pointerDownAt === null ? null : performance.now() - pointerDownAt;
         setMessage(null);
         setTranscript(null);
         setPhase("requesting");
@@ -230,8 +252,14 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): { view: VoiceView
             ? "idle"
             : phase;
 
+  const onMicPointerDown = useCallback(() => {
+    pointerDownAtRef.current = performance.now();
+  }, []);
+
   return {
     view: { phase: livePhase, transcript, message, elapsedMs: capture.elapsedMs, disabledReason },
     onMicTap,
+    onMicPointerDown,
+    releaseMic: capture.release,
   };
 }
