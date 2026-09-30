@@ -50,7 +50,8 @@ export type ReviewCode =
   | "qty_dropped"
   | "number_unconsumed"
   | "number_misaligned"
-  | "duplicate_line";
+  | "duplicate_line"
+  | "already_on_bill";
 
 export type ReviewSeverity = "HIGH" | "MEDIUM" | "LOW";
 
@@ -235,8 +236,7 @@ export function evaluateReviewFlags(
 function flagDuplicateLines(items: readonly ParsedItem[], catalogById: ReadonlyMap<string, CatalogEntry>, flags: ReviewFlag[]): void {
   const seen = new Set<string>();
   items.forEach((item, index) => {
-    const who = item.catalogId !== null ? `id:${item.catalogId}` : `name:${item.spokenName.trim().toLowerCase()}`;
-    const key = JSON.stringify([who, item.qty, item.unit, item.rate, item.rateUnit, item.total]);
+    const key = lineIdentity(item);
     if (!seen.has(key)) {
       seen.add(key);
       return;
@@ -366,6 +366,41 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
       }
     });
   }
+}
+
+/** Two lines are "the same line" when they are the same product (or, unmatched,
+ * the same spoken name) at the same qty, unit, rate and total. */
+function lineIdentity(item: ParsedItem): string {
+  const who = item.catalogId !== null ? `id:${item.catalogId}` : `name:${item.spokenName.trim().toLowerCase()}`;
+  return JSON.stringify([who, item.qty, item.unit, item.rate, item.rateUnit, item.total]);
+}
+
+/**
+ * KB-303 (owner, decision 4): the same line said again in a LATER utterance -
+ * "2 kilo chini", then another tap, "2 kilo chini" - gets a MEDIUM
+ * already_on_bill on the later line. MEDIUM, not HIGH: across two taps the
+ * shopkeeper may well mean it; within one utterance it is Whisper repeating
+ * itself (duplicate_line, HIGH). itemIndex is the line's index in `lines`.
+ */
+export function flagAcrossUtterances(
+  lines: readonly { readonly item: ParsedItem; readonly utteranceId: number }[],
+  catalog: readonly CatalogEntry[],
+): ReviewFlag[] {
+  const catalogById = new Map(catalog.map((entry) => [entry.id, entry]));
+  const firstUtteranceByKey = new Map<string, number>();
+  const flags: ReviewFlag[] = [];
+  lines.forEach(({ item, utteranceId }, index) => {
+    const key = lineIdentity(item);
+    const first = firstUtteranceByKey.get(key);
+    if (first === undefined) {
+      firstUtteranceByKey.set(key, utteranceId);
+      return;
+    }
+    if (first === utteranceId) return; // within one utterance: duplicate_line's job
+    const name = (item.catalogId ? catalogById.get(item.catalogId)?.displayName : undefined) ?? item.spokenName;
+    push(flags, `bill-already_on_bill-${index}`, "already_on_bill", "MEDIUM", `"${name}" is already on the bill with the same quantity and price — added again? Check.`, index);
+  });
+  return flags;
 }
 
 export function canFinalize(flags: readonly ReviewFlag[], acknowledgedIds: ReadonlySet<string>): boolean {

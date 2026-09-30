@@ -24,7 +24,7 @@ import * as ts from "typescript";
  */
 
 const domainDir = path.dirname(fileURLToPath(import.meta.url));
-const MONEY_PATH_FILES = ["money.ts", "grammar.ts", "reviewFlags.ts"] as const;
+const MONEY_PATH_FILES = ["money.ts", "grammar.ts", "reviewFlags.ts", "billEdit.ts"] as const; // KB-303: billEdit.ts recomputes line totals
 
 function findForbidden(fileName: string): string[] {
   const source = readFileSync(path.join(domainDir, fileName), "utf8");
