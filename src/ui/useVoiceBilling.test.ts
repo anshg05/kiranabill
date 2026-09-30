@@ -201,6 +201,28 @@ describe("useVoiceBilling", () => {
     }
   });
 
+  // KB-317 (owner, 30 Sep): two silent taps in a row both logged "cold". The
+  // warm stream must survive ANY outcome - an empty transcript, a failure, an
+  // error from /voice - for 60 s after the recording ends.
+  it.each([
+    ["an empty transcript (silence)", () => reply(200, { transcript: "  " })],
+    ["a /voice 502", () => reply(502, { error: "x" })],
+    ["a network failure", () => fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"))],
+    ["a transcript whose items then fail", () => reply(200, { transcript: "kuch" })],
+  ])("the warm mic survives %s: the next tap reuses the stream (one getUserMedia, not two)", async (_label, arrange) => {
+    const getUserMedia = vi.fn(async () => ({ getTracks: () => [{ readyState: "live", stop() {} }] }));
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia } });
+    const onTranscript = vi.fn(async () => {
+      throw new Error("items failed");
+    });
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscript }));
+    arrange();
+    await speak(result);
+    reply(200, { transcript: "  " });
+    await speak(result);
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
+  });
+
   it("the browser going offline disables the mic; coming back re-enables it", async () => {
     const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
     expect(result.current.view.disabledReason).toBeNull();
