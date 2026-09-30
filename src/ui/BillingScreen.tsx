@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Menu, Mic, Plus, Square } from "lucide-react";
+import { Loader2, Menu, Mic, Plus, Square, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import { extractSpokenNumbers, parseUtterance } from "@/domain/grammar";
+import { displayRate, unitChoices } from "@/domain/billEdit";
 import { sumPaise } from "@/domain/money";
-import type { ReviewFlag } from "@/domain/reviewFlags";
 import { buildVocabularyPrompt } from "@/domain/vocabulary";
 import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
 import { parseTranscript } from "@/data/voiceApi";
 import { resolveUtterance, type BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
-import { formatAmount, formatQty, formatRate } from "./billFormat";
+import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
+import { useBillLines, type EditField } from "./useBillLines";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
@@ -32,14 +33,6 @@ function devTryLines(shop: ParserCatalog): BillLine[] {
 export function BillingScreen() {
   const { signOut, session } = useAuth();
   const { shop, localDb } = useShop();
-  // The bill being built (KB-303/305 will edit and add to it) and every
-  // review flag raised so far - stored for KB-304 to display.
-  const [lines, setLines] = useState<BillLine[]>([]);
-  const [, setFlags] = useState<ReviewFlag[]>([]);
-  const linesRef = useRef<BillLine[]>([]);
-  linesRef.current = lines;
-  const utteranceCount = useRef(0);
-
   // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
   // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
   const [shopCatalog, setShopCatalog] = useState<ShopCatalog | null>(null);
@@ -59,9 +52,24 @@ export function BillingScreen() {
     [shopCatalog],
   );
 
+  // KB-303: the bill being built - its lines, edits, removals and flags
+  // (useBillLines; KB-304 will display the flags, KB-305 adds items).
+  const bill = useBillLines(parser?.entries ?? NO_ENTRIES);
+  const { add: addToBill, rows } = bill;
   useEffect(() => {
-    if (parser) setLines((current) => (current.length ? current : devTryLines(parser)));
+    if (parser && rows.length === 0) {
+      const tried = devTryLines(parser);
+      if (tried.length) addToBill(tried, []);
+    }
+    // only when the catalog arrives - a dev ?try= bill, once
   }, [parser]);
+
+  // DEV: the bill's flags after every change - there is no flag UI until KB-304.
+  useEffect(() => {
+    if (import.meta.env.DEV && bill.rows.length) {
+      console.info("[bill] flags", bill.flags.map((f) => `${f.severity} ${f.code}@${f.itemIndex}`));
+    }
+  }, [bill.flags, bill.rows.length]);
 
   const accessToken = session?.access_token ?? null;
   const onTranscript = useCallback(
@@ -83,16 +91,9 @@ export function BillingScreen() {
       }
       // KB-317 commit 5: nothing usable in the transcript - it stays on screen, with this under it.
       if (resolved.lines.length === 0) throw new VoiceUserError(NO_ITEM_FOUND);
-      // Re-base each flag onto the bill's line numbers; ids stay unique per utterance.
-      const offset = linesRef.current.length;
-      const u = (utteranceCount.current += 1);
-      setLines((current) => [...current, ...resolved.lines]);
-      setFlags((current) => [
-        ...current,
-        ...resolved.flags.map((f) => ({ ...f, id: `u${u}-${f.id}`, itemIndex: f.itemIndex === null ? null : f.itemIndex + offset })),
-      ]);
+      addToBill(resolved.lines, resolved.flags);
     },
-    [accessToken, parser],
+    [accessToken, addToBill, parser],
   );
 
   // Voice needs a LIVE session (offline-session mode has none - D38).
@@ -106,15 +107,110 @@ export function BillingScreen() {
     voice.releaseMic(); // the warm mic goes off before anything else (D45)
     void signOut();
   };
-  return <BillView lines={lines} onSignOut={onSignOut} voice={voice.view} onMicTap={voice.onMicTap} onMicPointerDown={voice.onMicPointerDown} />;
+  return (
+    <BillView
+      lines={bill.rows}
+      onSignOut={onSignOut}
+      voice={voice.view}
+      onMicTap={voice.onMicTap}
+      onMicPointerDown={voice.onMicPointerDown}
+      onEdit={bill.edit}
+      onRemove={bill.remove}
+      removed={bill.removed}
+      onUndo={bill.undo}
+    />
+  );
 }
 
+const NO_ENTRIES: never[] = [];
+
 interface BillViewProps {
-  lines: readonly BillLine[];
+  /** A line; `id` is set once the bill is editable (KB-303). */
+  lines: readonly (BillLine & { readonly id?: string })[];
   onSignOut: () => void;
   voice?: VoiceView;
   onMicTap?: () => void;
   onMicPointerDown?: () => void;
+  /** KB-303: editing. Without these the bill is read-only (today's markup). */
+  onEdit?: (id: string, field: EditField, value: string) => string | null;
+  onRemove?: (id: string) => void;
+  /** The line "Undo" would bring back, while it can. */
+  removed?: { readonly displayName: string } | null;
+  onUndo?: () => void;
+}
+
+/**
+ * KB-303: a tappable value (44px) that becomes an inline number input - the
+ * numeric keyboard (inputmode=decimal), Enter / blur commits, Escape cancels.
+ * A rejected value keeps the input open with the reason under it; nothing
+ * changes until a value is accepted.
+ */
+function EditableValue({ label, text, initial, onCommit }: { label: string; text: string; initial: string; onCommit: (value: string) => string | null }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  if (draft === null) {
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        onClick={() => {
+          setDraft(initial);
+          setError(null);
+        }}
+        className="min-h-11 min-w-11 rounded-[6px] px-1 tabular-nums underline decoration-line decoration-dotted underline-offset-4"
+      >
+        {text}
+      </button>
+    );
+  }
+  const commit = () => {
+    const message = onCommit(draft);
+    if (message) setError(message);
+    else {
+      setDraft(null);
+      setError(null);
+    }
+  };
+  return (
+    <span className="inline-flex flex-col items-end">
+      <input
+        aria-label={label}
+        inputMode="decimal"
+        enterKeyHint="done"
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          else if (e.key === "Escape") {
+            setDraft(null);
+            setError(null);
+          }
+        }}
+        onBlur={commit}
+        className="h-11 w-24 rounded-[6px] border border-line bg-surface px-2 text-right tabular-nums"
+      />
+      {error && (
+        <span role="alert" className="text-[13px] text-danger">
+          {error}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** KB-303 (owner, decision 3): only compatible units are offered. */
+function UnitPicker({ label, line, onPick }: { label: string; line: BillLine["item"]; onPick: (unit: string) => void }) {
+  return (
+    <select aria-label={label} value={line.unit} onChange={(e) => onPick(e.target.value)} className="min-h-11 rounded-[6px] border border-line bg-surface px-1">
+      {!line.unit && <option value="">—</option>}
+      {unitChoices(line).map((u) => (
+        <option key={u} value={u}>
+          {u}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 function mmss(ms: number): string {
@@ -204,7 +300,34 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
-export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMicPointerDown }: BillViewProps) {
+export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMicPointerDown, onEdit, onRemove, removed, onUndo }: BillViewProps) {
+  // KB-303: the editable pieces of a line - or its plain text when read-only.
+  const qtyOf = (id: string | undefined, line: BillLine["item"], name: string) =>
+    onEdit && id ? (
+      <EditableValue label={`Qty for ${name}`} text={formatQty(line.qty)} initial={line.qty === null ? "" : String(line.qty)} onCommit={(v) => onEdit(id, "qty", v)} />
+    ) : (
+      formatQty(line.qty)
+    );
+  const rateOf = (id: string | undefined, line: BillLine["item"], name: string) =>
+    onEdit && id ? (
+      <EditableValue label={`Rate for ${name}`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
+    ) : (
+      formatRate(line)
+    );
+  // The amount is editable only where no rate exists (owner, decision 1).
+  const amountOf = (id: string | undefined, line: BillLine["item"], name: string) =>
+    onEdit && id && line.rate === null ? (
+      <EditableValue label={`Amount for ${name}`} text={formatAmount(line.total)} initial={paiseText(line.total || null)} onCommit={(v) => onEdit(id, "amount", v)} />
+    ) : (
+      formatAmount(line.total)
+    );
+  const removeOf = (id: string | undefined, name: string) =>
+    onRemove && id ? (
+      <button type="button" aria-label={`Remove ${name}`} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+        <X size={18} strokeWidth={1.5} aria-hidden />
+      </button>
+    ) : null;
+
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
 
@@ -243,19 +366,35 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
         <div className="min-h-0 flex-1 overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
-            {lines.map(({ item: line, displayName }, i) => (
-              <li key={i} className="min-h-12 border-b border-line bg-surface px-4 py-2">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="capitalize">{displayName}</span>
-                  <span className="font-semibold tabular-nums">{formatAmount(line.total)}</span>
-                </div>
-                <div className="text-[13px] text-ink-soft tabular-nums">
-                  <span>{line.qty === null ? formatQty(null) : `${formatQty(line.qty)} ${line.unit}`}</span>
-                  {" × "}
-                  <span>{formatRate(line)}</span>
-                </div>
-              </li>
-            ))}
+            {lines.map(({ item: line, displayName, id }, i) =>
+              onEdit && id ? (
+                <li key={id} className="min-h-12 border-b border-line bg-surface px-4 py-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="capitalize">{displayName}</span>
+                    <span className="ml-auto font-semibold tabular-nums">{amountOf(id, line, displayName)}</span>
+                    {removeOf(id, displayName)}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1 text-[13px] text-ink-soft tabular-nums">
+                    {qtyOf(id, line, displayName)}
+                    <UnitPicker label={`Unit for ${displayName}`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
+                    <span aria-hidden>×</span>
+                    {rateOf(id, line, displayName)}
+                  </div>
+                </li>
+              ) : (
+                <li key={id ?? i} className="min-h-12 border-b border-line bg-surface px-4 py-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="capitalize">{displayName}</span>
+                    <span className="font-semibold tabular-nums">{formatAmount(line.total)}</span>
+                  </div>
+                  <div className="text-[13px] text-ink-soft tabular-nums">
+                    <span>{line.qty === null ? formatQty(null) : `${formatQty(line.qty)} ${line.unit}`}</span>
+                    {" × "}
+                    <span>{formatRate(line)}</span>
+                  </div>
+                </li>
+              ),
+            )}
           </ul>
 
           {/* md and up: a table (05 §2). */}
@@ -267,16 +406,30 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
                 <th className="px-2 py-2 font-medium">Unit</th>
                 <th className="px-2 py-2 text-right font-medium">Rate</th>
                 <th className="px-4 py-2 text-right font-medium">Amount</th>
+                {onRemove && (
+                  <th className="w-11 px-1 py-2">
+                    <span className="sr-only">Remove</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {lines.map(({ item: line, displayName }, i) => (
-                <tr key={i} className="h-12 border-b border-line bg-surface">
+              {lines.map(({ item: line, displayName, id }, i) => (
+                <tr key={id ?? i} className="h-12 border-b border-line bg-surface">
                   <td className="px-4 capitalize">{displayName}</td>
-                  <td className="px-2 text-right tabular-nums">{formatQty(line.qty)}</td>
-                  <td className="px-2">{line.qty === null ? formatQty(null) : line.unit}</td>
-                  <td className="px-2 text-right tabular-nums">{formatRate(line)}</td>
-                  <td className="px-4 text-right font-semibold tabular-nums">{formatAmount(line.total)}</td>
+                  <td className="px-2 text-right tabular-nums">{qtyOf(id, line, displayName)}</td>
+                  <td className="px-2">
+                    {onEdit && id ? (
+                      <UnitPicker label={`Unit for ${displayName}`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
+                    ) : line.qty === null ? (
+                      formatQty(null)
+                    ) : (
+                      line.unit
+                    )}
+                  </td>
+                  <td className="px-2 text-right tabular-nums">{rateOf(id, line, displayName)}</td>
+                  <td className="px-4 text-right font-semibold tabular-nums">{amountOf(id, line, displayName)}</td>
+                  {onRemove && <td className="px-1">{removeOf(id, displayName)}</td>}
                 </tr>
               ))}
             </tbody>
@@ -291,6 +444,17 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
             {formatAmount(total)}
           </span>
         </div>
+
+        {/* KB-303: one-level undo for a removed line (owner) - never a confirm
+            dialog, which would be a question mid-bill (hard rule 6). */}
+        {removed && onUndo && (
+          <div role="status" className="flex items-center justify-between border-t border-line px-4 text-[13px]">
+            <span>{removed.displayName} removed</span>
+            <button type="button" onClick={onUndo} className="min-h-11 px-3 font-medium text-indigo">
+              Undo
+            </button>
+          </div>
+        )}
 
         <div className="border-t border-line">
           <VoiceStatus voice={voice} />

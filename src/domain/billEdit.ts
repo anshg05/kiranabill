@@ -99,7 +99,7 @@ function coarserUnit(unit: string): string {
  * per-gm catalog price (ajwain, 50 paise/gm) shows as Rs.500/kg. Multiplication
  * only. null when the line has no rate.
  */
-export function displayRate(item: ParsedItem): { paise: Paise; unit: string } | null {
+export function displayRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">): { paise: Paise; unit: string } | null {
   if (item.rate === null) return null;
   const unit = item.rateUnit ?? item.unit;
   const shown = coarserUnit(unit);

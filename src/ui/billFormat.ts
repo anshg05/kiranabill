@@ -1,5 +1,6 @@
 import type { ParsedItem } from "@/domain/grammar";
 import { unitScale } from "@/domain/grammar";
+import { displayRate } from "@/domain/billEdit";
 import { formatRupees, type Paise } from "@/domain/money";
 
 // KB-301: how a bill line's numbers are SHOWN. No arithmetic here - every
@@ -17,16 +18,24 @@ export function formatQty(qty: number | null): string {
 }
 
 /**
- * The rate, with its unit only when a real conversion sits between the rate
- * and the line (D36): "500 gm chini" at ₹45/kg shows "₹45/kg". Same unit, or
+ * The rate, shown per the COARSER unit of its pair (SG-09, KB-303 - owner):
+ * a per-gm catalog price shows per kg ("1 kilo ajwain" -> ₹500, never
+ * ₹0.50/gm). Its unit is added only when a real conversion sits between the
+ * rate and the line (D36): "500 gm chini" -> "₹45/kg". Same unit, or
  * interchangeable count units (packet vs piece, unitScale 0), shows plain
  * "₹60" (owner, 27 Sep 2026). An incompatible pair (unitScale null) should
  * never come out of the parser; if it does, the suffix is shown rather than
  * hiding a mismatch.
  */
 export function formatRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">): string {
-  if (item.rate === null) return UNKNOWN;
-  const plain = formatRupees(item.rate);
-  if (item.rateUnit === null) return plain;
-  return unitScale(item.unit, item.rateUnit) === 0 ? plain : `${plain}/${item.rateUnit}`;
+  const shown = displayRate(item);
+  if (shown === null) return UNKNOWN;
+  const plain = formatRupees(shown.paise);
+  if (item.rateUnit === null || !item.unit) return plain;
+  return unitScale(item.unit, shown.unit) === 0 ? plain : `${plain}/${shown.unit}`;
+}
+
+/** A paise value as the rupee text an input starts from ("45", "12.50"). */
+export function paiseText(paise: Paise | null): string {
+  return paise === null ? "" : formatRupees(paise).replace("₹", "");
 }
