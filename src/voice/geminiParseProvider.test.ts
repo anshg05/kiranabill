@@ -135,6 +135,18 @@ describe("geminiParseProvider", () => {
   // KB-317 (owner-approved plan; 12-PARKED.md KI-50): a 429 is a quota - on the
   // free tier a DAILY one - and won't clear in seconds. It used to be retried 3x
   // (0.5 + 1 + 2 s) before failing: ~3.7 s of waiting for a guaranteed error.
+  it("KB-317 diagnosis: onAttempt is called once per HTTP attempt with its status and ms - a 500 then a 200 is two calls", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "server error" })
+      .mockResolvedValueOnce({ ...mockGeminiSuccess([]), status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+    const seen: { attempt: number; status: number | string; ms: number }[] = [];
+    await createGeminiParseProvider("k", (a) => seen.push(a)).parse("x", { catalogSlice: [] });
+    expect(seen.map((a) => [a.attempt, a.status])).toEqual([[1, 500], [2, 200]]);
+    expect(seen.every((a) => a.ms >= 0)).toBe(true);
+  });
+
   it("does not retry a 429 (quota) - fails at once, one call", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "quota exceeded" });
     vi.stubGlobal("fetch", fetchMock);

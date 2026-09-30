@@ -117,8 +117,14 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     if (!slice) return badRequest(`'catalogSlice' must be at most ${SLICE_MAX_ENTRIES} entries with valid, short fields`);
   }
 
+  // KB-317 diagnosis: under `netlify dev` only, log each provider attempt
+  // (status, ms) so a slow or failed order can be explained afterwards.
+  const dev = process.env.NETLIFY_DEV === "true";
+  const gemini = createGeminiParseProvider(
+    geminiApiKey,
+    dev ? (a) => console.info(`[voice-dev] gemini attempt ${a.attempt}: ${a.status} in ${a.ms} ms`) : undefined,
+  );
   // The provider reads only id / displayName / unit / suggestedPricePaise.
-  const gemini = createGeminiParseProvider(geminiApiKey);
   const catalogSlice = (slice ?? []) as CatalogEntry[];
 
   if (textOnly) {
@@ -151,7 +157,9 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       language: meta.language,
       vocabulary: meta.vocabulary,
     });
+    if (dev) console.info(`[voice-dev] groq: ok in ${Math.round(transcribeResult.latencyMs)} ms (one attempt, no retry)`);
   } catch (err) {
+    if (dev) console.info(`[voice-dev] groq: failed after ${Math.round(performance.now() - start)} ms - ${(err as Error).message.slice(0, 120)}`);
     return new Response(
       JSON.stringify({ error: "Transcription failed", detail: (err as Error).message }),
       { status: 502 },

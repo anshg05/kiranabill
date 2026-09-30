@@ -80,7 +80,11 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createGeminiParseProvider(apiKey: string): ParseProvider {
+/** KB-317 diagnosis: called once per HTTP attempt. voice.mts passes a logger
+ * under `netlify dev` only; production passes none. */
+export type GeminiAttemptLog = (a: { attempt: number; status: number | "network-error"; ms: number }) => void;
+
+export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAttemptLog): ParseProvider {
   return {
     name: "gemini-flash-lite",
     async parse(transcript, opts) {
@@ -106,11 +110,19 @@ export function createGeminiParseProvider(apiKey: string): ParseProvider {
       let lastError: Error | null = null;
 
       for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
-        const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        const attemptStart = performance.now();
+        let response: Response;
+        try {
+          response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+        } catch (err) {
+          onAttempt?.({ attempt: attempt + 1, status: "network-error", ms: Math.round(performance.now() - attemptStart) });
+          throw err;
+        }
+        onAttempt?.({ attempt: attempt + 1, status: response.status, ms: Math.round(performance.now() - attemptStart) });
 
         if (response.ok) {
           const latencyMs = performance.now() - start;
