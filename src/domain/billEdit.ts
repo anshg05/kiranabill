@@ -186,16 +186,45 @@ export interface BillEntry {
   readonly original: ParsedItem;
 }
 
-/** One utterance: its lines' ids (in order) and the flags the voice pipeline
- * raised for them (itemIndex relative to lineIds). */
+/** One utterance: its lines' ids (in order), what was said, and the flags the
+ * voice pipeline raised for them (itemIndex relative to lineIds). */
 export interface UtteranceRecord {
   readonly id: number;
   readonly lineIds: readonly string[];
   readonly flags: readonly ReviewFlag[];
+  /** KB-304: shown above the utterance's bill-level flags ("Heard: ..."). */
+  readonly transcript?: string;
 }
 
 /**
- * The bill's flags after any edit or removal (KB-303).
+ * KB-304: a flag placed on the bill. A line flag has its `lineId`; a
+ * bill-level flag (number_dropped, qty_dropped, number_misaligned - about the
+ * utterance, not one line) has none, and is shown under `anchorLineId`, the
+ * utterance's last line, with its `transcript`. `key` is what a "Theek hai" is
+ * recorded against: the line (or the utterance's lines) AND their numbers -
+ * stable when OTHER lines come and go, different once these numbers change.
+ */
+export interface PlacedFlag extends ReviewFlag {
+  readonly lineId: string | null;
+  readonly utteranceId: number | null;
+  readonly anchorLineId: string;
+  readonly transcript: string;
+  readonly key: string;
+}
+
+/** A line's numbers - part of an acknowledgement's key. */
+function fingerprint(item: ParsedItem): string {
+  return JSON.stringify([item.qty, item.unit, item.rate, item.rateUnit, item.total]);
+}
+
+/** The key prefixes an edit to this line must clear (KB-304, owner: an
+ * acknowledgement lapses on any edit to its line). */
+export function acknowledgementScopes(lineId: string, utteranceId: number): readonly string[] {
+  return [`${lineId}|`, `u${utteranceId}|`];
+}
+
+/**
+ * The bill's flags after any edit or removal (KB-303), placed (KB-304).
  *  - An untouched utterance keeps exactly the flags the voice pipeline raised
  *    (Layer 2 settling, number alignment and all), re-based onto the bill.
  *  - An utterance with an edited or removed line is re-checked line by line -
@@ -205,29 +234,48 @@ export interface UtteranceRecord {
  *    alarms. duplicate_line is recomputed, so removing one of two clears it.
  *  - Across utterances: MEDIUM already_on_bill (owner, decision 4).
  */
-export function billFlags(entries: readonly BillEntry[], utterances: readonly UtteranceRecord[], catalog: readonly CatalogEntry[]): ReviewFlag[] {
+export function billFlags(entries: readonly BillEntry[], utterances: readonly UtteranceRecord[], catalog: readonly CatalogEntry[]): PlacedFlag[] {
   const billIndex = new Map(entries.map((e, i) => [e.id, i]));
-  const flags: ReviewFlag[] = [];
+  const entryOf = (id: string) => entries[billIndex.get(id)!]!;
+  const flags: PlacedFlag[] = [];
+  const place = (f: ReviewFlag, lineId: string | null, u: UtteranceRecord, present: readonly string[], id: string) => {
+    const anchorLineId = lineId ?? present[present.length - 1]!;
+    const key = lineId
+      ? `${lineId}|${f.code}|${fingerprint(entryOf(lineId).item)}`
+      : `u${u.id}|${f.id}|${present.map((p) => fingerprint(entryOf(p).item)).join("")}`;
+    flags.push({ ...f, id, itemIndex: lineId ? billIndex.get(lineId)! : null, lineId, utteranceId: u.id, anchorLineId, transcript: u.transcript ?? "", key });
+  };
   for (const u of utterances) {
     const present = u.lineIds.filter((id) => billIndex.has(id));
     if (present.length === 0) continue;
-    const touched = present.length !== u.lineIds.length || present.some((id) => {
-      const e = entries[billIndex.get(id)!]!;
-      return isEdited(e.item, e.original);
-    });
+    const touched = present.length !== u.lineIds.length || present.some((id) => isEdited(entryOf(id).item, entryOf(id).original));
     if (!touched) {
-      for (const f of u.flags) {
-        const at = f.itemIndex === null ? null : billIndex.get(u.lineIds[f.itemIndex]!) ?? null;
-        flags.push({ ...f, id: `u${u.id}-${f.id}`, itemIndex: at });
-      }
+      for (const f of u.flags) place(f, f.itemIndex === null ? null : u.lineIds[f.itemIndex]!, u, present, `u${u.id}-${f.id}`);
       continue;
     }
-    const items = present.map((id) => entries[billIndex.get(id)!]!.item);
+    const items = present.map((id) => entryOf(id).item);
     for (const f of evaluateReviewFlags("", items, catalog)) {
-      const at = f.itemIndex === null ? null : billIndex.get(present[f.itemIndex]!)!;
-      flags.push({ ...f, id: `u${u.id}-edited-${f.id}`, itemIndex: at });
+      place(f, f.itemIndex === null ? null : present[f.itemIndex]!, u, present, `u${u.id}-edited-${f.id}`);
     }
   }
-  flags.push(...flagAcrossUtterances(entries, catalog));
+  const byId = new Map(utterances.map((u) => [u.id, u]));
+  for (const f of flagAcrossUtterances(entries, catalog)) {
+    const line = entries[f.itemIndex!]!;
+    const u = byId.get(line.utteranceId);
+    flags.push({
+      ...f,
+      lineId: line.id,
+      utteranceId: line.utteranceId,
+      anchorLineId: line.id,
+      transcript: u?.transcript ?? "",
+      key: `${line.id}|${f.code}|${fingerprint(line.item)}`,
+    });
+  }
   return flags;
+}
+
+/** KB-304: the "N checks pending" count - HIGH flags not yet acknowledged
+ * (the same rule as reviewFlags.canFinalize). */
+export function pendingChecks(flags: readonly PlacedFlag[], acknowledged: ReadonlySet<string>): number {
+  return flags.filter((f) => f.severity === "HIGH" && !acknowledged.has(f.key)).length;
 }

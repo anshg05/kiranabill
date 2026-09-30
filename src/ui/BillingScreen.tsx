@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Menu, Mic, Plus, Square, X } from "lucide-react";
+import { Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import { extractSpokenNumbers, parseUtterance } from "@/domain/grammar";
+import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import { displayRate, unitChoices } from "@/domain/billEdit";
 import { sumPaise } from "@/domain/money";
 import { buildVocabularyPrompt } from "@/domain/vocabulary";
@@ -11,7 +12,7 @@ import { resolveUtterance, type BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
-import { useBillLines, type EditField } from "./useBillLines";
+import { useBillLines, type EditField, type ShownFlag } from "./useBillLines";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
@@ -21,13 +22,22 @@ import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, VoiceUserError, type VoiceV
 
 /** DEV ONLY (owner, 27 Sep 2026): `?try=<utterance>` fills the bill with real
  * parseUtterance() output - against the SHOP's catalog (Q2) - so the layout
- * can be checked in a browser. `import.meta.env.DEV` is a build-time `false`
- * in production, so this branch and its call are removed from `npm run build`. */
-function devTryLines(shop: ParserCatalog): BillLine[] {
+ * can be checked in a browser. KB-304: several utterances split by "|", each
+ * with its real review flags, so every severity can be seen. `import.meta.env.DEV`
+ * is a build-time `false` in production, so this branch and its call are
+ * removed from `npm run build`. */
+function devTryUtterances(shop: ParserCatalog): { transcript: string; lines: BillLine[]; flags: ReviewFlag[] }[] {
   if (!import.meta.env.DEV) return [];
-  const utterance = new URLSearchParams(window.location.search).get("try");
-  const items = (utterance && parseUtterance(utterance, shop)) || [];
-  return items.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" }));
+  const tried = new URLSearchParams(window.location.search).get("try") ?? "";
+  return tried
+    .split("|")
+    .map((t) => t.trim())
+    .flatMap((transcript) => {
+      const items = transcript ? parseUtterance(transcript, shop) : null;
+      if (!items) return [];
+      const lines = items.map((item): BillLine => ({ item, displayName: (item.catalogId && shop.byId.get(item.catalogId)?.displayName) || item.spokenName, source: "fastpath" }));
+      return [{ transcript, lines, flags: [...evaluateReviewFlags(transcript, items, shop.entries)] }];
+    });
 }
 
 export function BillingScreen() {
@@ -58,8 +68,7 @@ export function BillingScreen() {
   const { add: addToBill, rows } = bill;
   useEffect(() => {
     if (parser && rows.length === 0) {
-      const tried = devTryLines(parser);
-      if (tried.length) addToBill(tried, []);
+      for (const u of devTryUtterances(parser)) addToBill(u.lines, u.flags, u.transcript);
     }
     // only when the catalog arrives - a dev ?try= bill, once
   }, [parser]);
@@ -91,7 +100,7 @@ export function BillingScreen() {
       }
       // KB-317 commit 5: nothing usable in the transcript - it stays on screen, with this under it.
       if (resolved.lines.length === 0) throw new VoiceUserError(NO_ITEM_FOUND);
-      addToBill(resolved.lines, resolved.flags);
+      addToBill(resolved.lines, resolved.flags, transcript);
     },
     [accessToken, addToBill, parser],
   );
@@ -118,6 +127,9 @@ export function BillingScreen() {
       onRemove={bill.remove}
       removed={bill.removed}
       onUndo={bill.undo}
+      flags={bill.flags}
+      pending={bill.pending}
+      onAcknowledge={bill.acknowledge}
     />
   );
 }
@@ -136,6 +148,101 @@ interface BillViewProps {
   /** The line "Undo" would bring back, while it can. */
   removed?: { readonly displayName: string } | null;
   onUndo?: () => void;
+  /** KB-304: the bill's flags, placed, and the unacknowledged HIGH count. */
+  flags?: readonly ShownFlag[];
+  pending?: number;
+  onAcknowledge?: (key: string) => void;
+}
+
+const NO_FLAGS: readonly ShownFlag[] = [];
+
+/** "1 check pending", "3 checks pending". */
+function checksText(n: number): string {
+  return `${n} ${n === 1 ? "check" : "checks"} pending`;
+}
+
+/**
+ * KB-304: one HIGH flag - 05 §2: a red inline sentence and a "Theek hai"
+ * acknowledge button (13-DESIGN §6b: 1px DANGER border, transparent). Never
+ * colour alone (05 §9): a triangle icon and, for screen readers, "Must check".
+ * Acknowledged, the sentence stays readable, muted, marked "✓ Theek hai".
+ */
+function HighFlag({ flag, name, onAcknowledge }: { flag: ShownFlag; name: string | null; onAcknowledge: (flag: ShownFlag) => void }) {
+  return (
+    <div data-severity="HIGH" className={`flex flex-wrap items-center gap-x-2 text-[13px] ${flag.acknowledged ? "text-ink-soft" : "text-danger"}`}>
+      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+      <span className="sr-only">Must check: </span>
+      <span>{flag.message}</span>
+      {flag.acknowledged ? (
+        <span className="font-medium">✓ Theek hai</span>
+      ) : (
+        <button
+          type="button"
+          aria-label={`Theek hai — ${name ? `${name}: ` : ""}${flag.message}`}
+          onClick={() => onAcknowledge(flag)}
+          className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger"
+        >
+          Theek hai
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * KB-304: MEDIUM (an amber REVIEW badge) and LOW (a grey dot) inform, never
+ * block (04 §5). Their sentences open on tap (owner: the numbers stay the
+ * loudest thing on the line, 05 §8 rule 5); each carries an accessible name.
+ */
+function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; name: string; messages: readonly string[] }) {
+  const [open, setOpen] = useState(false);
+  const medium = severity === "MEDIUM";
+  return (
+    <div data-severity={severity} className="text-[13px]">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={`${medium ? "REVIEW" : "Note"} — ${name}`}
+        onClick={() => setOpen((o) => !o)}
+        className={
+          medium
+            ? "min-h-11 rounded-[6px] border border-warn px-2 text-[11px] font-semibold tracking-[0.04em] text-warn"
+            : "flex size-11 items-center justify-center rounded-[6px]"
+        }
+      >
+        {medium ? "REVIEW" : <span aria-hidden className="size-2 rounded-full bg-muted" />}
+      </button>
+      {open && (
+        <ul className={medium ? "text-warn" : "text-ink-soft"}>
+          {messages.map((m) => (
+            <li key={m}>{m}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** A line's (or an utterance's) flags: every HIGH sentence, then one REVIEW
+ * badge and one note dot for the rest. */
+function FlagList({ flags, name, onAcknowledge }: { flags: readonly ShownFlag[]; name: string | null; onAcknowledge: (flag: ShownFlag) => void }) {
+  const medium = flags.filter((f) => f.severity === "MEDIUM").map((f) => f.message);
+  const low = flags.filter((f) => f.severity === "LOW").map((f) => f.message);
+  return (
+    <div className="flex flex-col gap-1 py-1">
+      {flags
+        .filter((f) => f.severity === "HIGH")
+        .map((f) => (
+          <HighFlag key={f.key} flag={f} name={name} onAcknowledge={onAcknowledge} />
+        ))}
+      {(medium.length > 0 || low.length > 0) && (
+        <div className="flex flex-wrap items-start gap-2">
+          {medium.length > 0 && <FlagNote severity="MEDIUM" name={name ?? "this order"} messages={medium} />}
+          {low.length > 0 && <FlagNote severity="LOW" name={name ?? "this order"} messages={low} />}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -303,7 +410,65 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
-export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMicPointerDown, onEdit, onRemove, removed, onUndo }: BillViewProps) {
+export function BillView({
+  lines,
+  onSignOut,
+  voice = IDLE_VOICE,
+  onMicTap,
+  onMicPointerDown,
+  onEdit,
+  onRemove,
+  removed,
+  onUndo,
+  flags = NO_FLAGS,
+  pending = 0,
+  onAcknowledge,
+}: BillViewProps) {
+  // KB-304: flags per line, and each utterance's bill-level flags under its last line.
+  const lineFlags = (id: string) => flags.filter((f) => f.lineId === id);
+  const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
+  const nameOfLine = new Map(lines.map((l) => [l.id, l.displayName]));
+  const hasHigh = (id: string) => lineFlags(id).filter((f) => f.severity === "HIGH");
+
+  // Screen readers (05 §9): a new HIGH flag is announced once, with the count;
+  // "Theek hai" announces the new count.
+  const [announcement, setAnnouncement] = useState("");
+  const announced = useRef(new Set<string>());
+  useEffect(() => {
+    const fresh = flags.filter((f) => f.severity === "HIGH" && !f.acknowledged && !announced.current.has(f.key));
+    for (const f of flags) announced.current.add(f.key);
+    if (fresh.length) {
+      const said = fresh.map((f) => (f.lineId ? `${nameOfLine.get(f.lineId)}: ${f.message}` : f.message)).join(" ");
+      setAnnouncement(`${said} ${checksText(pending)}.`);
+    }
+    // nameOfLine is derived from lines, which flags already follow
+  }, [flags, pending]);
+  const acknowledge = (flag: ShownFlag) => {
+    onAcknowledge?.(flag.key);
+    setAnnouncement(`Checked. ${checksText(pending - 1)}.`);
+  };
+  const flagsBlock = (id: string, name: string) => {
+    const own = lineFlags(id);
+    return own.length > 0 ? <FlagList flags={own} name={name} onAcknowledge={acknowledge} /> : null;
+  };
+  const billLevelBlock = (id: string) => {
+    const after = billLevelAfter(id);
+    if (after.length === 0) return null;
+    return (
+      <div className="py-1">
+        <p className="text-[13px] text-ink-soft">Heard: “{after[0]!.transcript}”</p>
+        <FlagList flags={after} name={null} onAcknowledge={acknowledge} />
+      </div>
+    );
+  };
+  // 05 §2: a line with an unacknowledged HIGH flag gets a 3px DANGER left
+  // border; once acknowledged, a quiet LINE one.
+  const edge = (id: string) => {
+    const high = hasHigh(id);
+    if (high.length === 0) return "";
+    return high.some((f) => !f.acknowledged) ? "border-l-[3px] border-l-danger" : "border-l-[3px] border-l-line";
+  };
+
   // KB-303: the editable pieces of a line. `view` keeps field ids unique -
   // the card list and the table are both in the DOM (CSS picks one).
   type View = "card" | "table";
@@ -368,7 +533,7 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
-              <li key={id} className="min-h-12 border-b border-line bg-surface px-4 py-1">
+              <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="capitalize">{displayName}</span>
                   <span className="ml-auto font-semibold tabular-nums">{amountOf("card", id, line, displayName)}</span>
@@ -380,6 +545,8 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
                   <span aria-hidden>×</span>
                   {rateOf("card", id, line, displayName)}
                 </div>
+                {flagsBlock(id, displayName)}
+                {billLevelBlock(id)}
               </li>
             ))}
           </ul>
@@ -399,16 +566,30 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
               </tr>
             </thead>
             <tbody>
-              {lines.map(({ item: line, displayName, id }) => (
+              {lines.map(({ item: line, displayName, id }) => [
                 <tr key={id} className="h-12 border-b border-line bg-surface">
-                  <td className="px-4 capitalize">{displayName}</td>
+                  <td className={`px-4 capitalize ${edge(id)}`}>{displayName}</td>
                   <td className="px-2 text-right tabular-nums">{qtyOf("table", id, line, displayName)}</td>
                   <td className="px-2">{unitOf("table", id, line, displayName)}</td>
                   <td className="px-2 text-right tabular-nums">{rateOf("table", id, line, displayName)}</td>
                   <td className="px-4 text-right font-semibold tabular-nums">{amountOf("table", id, line, displayName)}</td>
                   <td className="px-1">{removeOf(id, displayName)}</td>
-                </tr>
-              ))}
+                </tr>,
+                lineFlags(id).length > 0 && (
+                  <tr key={`${id}-flags`} className="border-b border-line bg-surface">
+                    <td colSpan={6} className={`px-4 ${edge(id)}`}>
+                      {flagsBlock(id, displayName)}
+                    </td>
+                  </tr>
+                ),
+                billLevelAfter(id).length > 0 && (
+                  <tr key={`${id}-heard`} className="border-b border-line bg-surface">
+                    <td colSpan={6} className="border-l-[3px] border-l-danger px-4">
+                      {billLevelBlock(id)}
+                    </td>
+                  </tr>
+                ),
+              ])}
             </tbody>
           </table>
           <div ref={endRef} />
@@ -436,6 +617,9 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
         <div className="border-t border-line">
           <VoiceStatus voice={voice} />
         </div>
+        <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
+          {announcement}
+        </div>
 
         <div className="grid grid-cols-2 gap-2 px-4 py-3">
           {/* Add item / Bill Banao: disabled until KB-305 / KB-307; the reason is
@@ -452,6 +636,12 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
               Add item
             </button>
           </span>
+          {/* KB-304: unacknowledged HIGH flags - what Bill Banao will wait for (KB-307). */}
+          {pending > 0 && (
+            <p data-testid="checks-pending" className="col-span-2 text-center text-[13px] font-medium text-danger">
+              {checksText(pending)}
+            </p>
+          )}
           <span title="Finalising isn't available yet" className="col-span-2">
             <button
               type="button"

@@ -16,6 +16,7 @@ import {
   normalizeDigits,
   parseMoneyInput,
   parseQtyInput,
+  pendingChecks,
   unitChoices,
   type BillEntry,
   type UtteranceRecord,
@@ -311,6 +312,38 @@ describe("billFlags", () => {
     expect(flags[0]!.message).toContain("Chini");
     // removing the second clears it
     expect(billFlags(first.entries, [first.record, second.record], SEED_PARSER_CATALOG.entries)).toEqual([]);
+  });
+
+  // KB-304: where a flag belongs, and the key a "Theek hai" is recorded against.
+  it("KB-304: a line flag names its line and utterance; a bill-level flag names only its utterance", () => {
+    const u = utterance(1, "1 kilo besan", ["a"]);
+    const record = { ...u.record, flags: [{ id: "bill-number_dropped-7", code: "number_dropped" as const, severity: "HIGH" as const, message: "x", itemIndex: null }] };
+    const dup = utterance(2, "दो किलो चीनी, दो किलो चीनी", ["b", "c"]);
+    const flags = billFlags([...u.entries, ...dup.entries], [record, dup.record], SEED_PARSER_CATALOG.entries);
+    expect(flags.map((f) => [f.code, f.lineId, f.utteranceId])).toEqual([
+      ["number_dropped", null, 1],
+      ["duplicate_line", "c", 2],
+    ]);
+  });
+
+  it("KB-304: a flag's key survives another line's removal, and changes when its OWN line is edited", () => {
+    const first = utterance(1, "1 kilo besan", ["a"]);
+    const cheap = utterance(2, "2 kilo chini 5 wala", ["b"]); // HIGH unusual_rate
+    const keyOf = (entries: BillEntry[]) =>
+      billFlags(entries, [first.record, cheap.record], SEED_PARSER_CATALOG.entries).find((f) => f.code === "unusual_rate")!.key;
+    const before = keyOf([...first.entries, ...cheap.entries]);
+    expect(keyOf(cheap.entries)).toBe(before); // besan removed: same key
+    const edited = [{ ...cheap.entries[0]!, item: ok(editRate(cheap.entries[0]!.item, "6")) }]; // still unusual
+    expect(keyOf(edited)).not.toBe(before);
+  });
+
+  it("KB-304: pendingChecks counts unacknowledged HIGH flags only", () => {
+    const first = utterance(1, "2 kilo chini 5 wala", ["a"]); // HIGH unusual_rate + unusual_total
+    const second = utterance(2, "2 kilo chini 5 wala", ["b"]); // + MEDIUM already_on_bill
+    const flags = billFlags([...first.entries, ...second.entries], [first.record, second.record], SEED_PARSER_CATALOG.entries);
+    expect(flags.filter((f) => f.severity === "HIGH")).toHaveLength(4);
+    expect(pendingChecks(flags, new Set())).toBe(4);
+    expect(pendingChecks(flags, new Set([flags[0]!.key]))).toBe(3);
   });
 
   it("a different qty in another utterance is not 'already on the bill'", () => {
