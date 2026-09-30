@@ -33,11 +33,12 @@ function one(id: string): ParsedItem {
   return line;
 }
 
-/** Table body row n (row 0 is the header), as its cells' text. */
+/** Table body row n (row 0 is the header), as its cells' text - a unit
+ * picker read as its chosen value (KB-303: the bill is always editable). */
 function dataRowCells(n: number): (string | null)[] {
   const row = within(screen.getByRole("table")).getAllByRole("row")[n];
   if (!row) throw new Error(`no table row ${n}`);
-  return within(row).getAllByRole("cell").map((c) => c.textContent);
+  return within(row).getAllByRole("cell").map((c) => c.querySelector("select")?.value ?? c.textContent);
 }
 
 function nbExpected(id: string) {
@@ -55,9 +56,12 @@ function views() {
   ];
 }
 
+/** KB-303: the bill is always editable - lines carry ids, handlers are set. */
+const editing = { onEdit: () => null, onRemove: () => {} };
+
 function renderBill(lines: ParsedItem[]) {
   // Layer 1 lines, as the screen builds them (KB-302: BillLine).
-  render(<BillView lines={lines.map((item) => ({ item, displayName: item.spokenName, source: "fastpath" as const }))} onSignOut={() => {}} />);
+  render(<BillView lines={lines.map((item, i) => ({ id: `l${i}`, item, displayName: item.spokenName, source: "fastpath" as const }))} onSignOut={() => {}} {...editing} />);
 }
 
 describe("BillView", () => {
@@ -89,7 +93,7 @@ describe("BillView", () => {
 
   it("VC013 '5 kg chawal 30 ka': total-only line - rate '—', amount ₹30", () => {
     renderBill(parsed("VC013"));
-    expect(dataRowCells(1)).toEqual(["chawal", "5", "kg", "—", "₹30"]);
+    expect(dataRowCells(1)).toEqual(["chawal", "5", "kg", "—", "₹30", ""]); // KB-303: + the ✕ cell
     expect(screen.getByTestId("bill-total").textContent).toBe("₹30");
   });
 
@@ -101,8 +105,11 @@ describe("BillView", () => {
     expect(cells[1]).toBe("—");
     expect(cells).not.toContain("0");
     // Card: qty "—" (and rate "—": a total-only line), amount ₹180.
-    const card = within(screen.getByRole("list", { name: "Bill items" })).getByRole("listitem");
-    expect(card.textContent).toBe("sabun₹180— × —");
+    // KB-303: checked value by value - the card now holds a unit picker.
+    const card = within(within(screen.getByRole("list", { name: "Bill items" })).getByRole("listitem"));
+    expect(card.getByRole("button", { name: "sabun quantity" }).textContent).toBe("—");
+    expect(card.getByRole("button", { name: "sabun rate" }).textContent).toBe("—");
+    expect(card.getByRole("button", { name: "sabun amount" }).textContent).toBe("₹180");
   });
 
   it("VC023 mixed rate/total lines: TOTAL is the sum of the parsed line totals", () => {
@@ -117,7 +124,7 @@ describe("BillView", () => {
 
   it("KB-302 (Q5b): a Layer 2 line shows the shop entry's name, not Gemini's spoken text", () => {
     const [item] = parsed("VC023");
-    render(<BillView lines={[{ item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} onSignOut={() => {}} />);
+    render(<BillView lines={[{ id: "l0", item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} onSignOut={() => {}} {...editing} />);
     expect(within(screen.getByRole("table")).getByText("Toor Daal")).toBeTruthy();
     expect(screen.queryByText("तूर दाल")).toBeNull();
   });
@@ -134,7 +141,7 @@ describe("BillView", () => {
 describe("BillView voice states", () => {
   const view = (v: Partial<VoiceView>): VoiceView => ({ ...IDLE_VOICE, ...v });
   const renderVoice = (v: Partial<VoiceView>, onMicTap = vi.fn()) => {
-    render(<BillView lines={[]} onSignOut={() => {}} voice={view(v)} onMicTap={onMicTap} />);
+    render(<BillView lines={[]} onSignOut={() => {}} voice={view(v)} onMicTap={onMicTap} {...editing} />);
     return onMicTap;
   };
   const mic = () => screen.getAllByRole("button").find((b) => b.className.includes("bg-indigo")) as HTMLButtonElement;

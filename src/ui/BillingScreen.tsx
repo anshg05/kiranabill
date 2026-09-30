@@ -125,15 +125,14 @@ export function BillingScreen() {
 const NO_ENTRIES: never[] = [];
 
 interface BillViewProps {
-  /** A line; `id` is set once the bill is editable (KB-303). */
-  lines: readonly (BillLine & { readonly id?: string })[];
+  /** KB-303: the bill is always editable - every line has a stable id. */
+  lines: readonly (BillLine & { readonly id: string })[];
   onSignOut: () => void;
   voice?: VoiceView;
   onMicTap?: () => void;
   onMicPointerDown?: () => void;
-  /** KB-303: editing. Without these the bill is read-only (today's markup). */
-  onEdit?: (id: string, field: EditField, value: string) => string | null;
-  onRemove?: (id: string) => void;
+  onEdit: (id: string, field: EditField, value: string) => string | null;
+  onRemove: (id: string) => void;
   /** The line "Undo" would bring back, while it can. */
   removed?: { readonly displayName: string } | null;
   onUndo?: () => void;
@@ -145,7 +144,7 @@ interface BillViewProps {
  * A rejected value keeps the input open with the reason under it; nothing
  * changes until a value is accepted.
  */
-function EditableValue({ label, text, initial, onCommit }: { label: string; text: string; initial: string; onCommit: (value: string) => string | null }) {
+function EditableValue({ label, fieldId, text, initial, onCommit }: { label: string; fieldId: string; text: string; initial: string; onCommit: (value: string) => string | null }) {
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   if (draft === null) {
@@ -157,7 +156,7 @@ function EditableValue({ label, text, initial, onCommit }: { label: string; text
           setDraft(initial);
           setError(null);
         }}
-        className="min-h-11 min-w-11 rounded-[6px] px-1 tabular-nums underline decoration-line decoration-dotted underline-offset-4"
+        className="min-h-11 min-w-11 rounded-[6px] border border-line bg-paper px-2 tabular-nums text-ink"
       >
         {text}
       </button>
@@ -174,6 +173,8 @@ function EditableValue({ label, text, initial, onCommit }: { label: string; text
   return (
     <span className="inline-flex flex-col items-end">
       <input
+        id={fieldId}
+        name={fieldId}
         aria-label={label}
         inputMode="decimal"
         enterKeyHint="done"
@@ -187,6 +188,8 @@ function EditableValue({ label, text, initial, onCommit }: { label: string; text
             setError(null);
           }
         }}
+        // Owner: typing replaces the value; a small correction is one keystroke.
+        onFocus={(e) => e.currentTarget.select()}
         onBlur={commit}
         className="h-11 w-24 rounded-[6px] border border-line bg-surface px-2 text-right tabular-nums"
       />
@@ -200,9 +203,9 @@ function EditableValue({ label, text, initial, onCommit }: { label: string; text
 }
 
 /** KB-303 (owner, decision 3): only compatible units are offered. */
-function UnitPicker({ label, line, onPick }: { label: string; line: BillLine["item"]; onPick: (unit: string) => void }) {
+function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: string; line: BillLine["item"]; onPick: (unit: string) => void }) {
   return (
-    <select aria-label={label} value={line.unit} onChange={(e) => onPick(e.target.value)} className="min-h-11 rounded-[6px] border border-line bg-surface px-1">
+    <select id={fieldId} name={fieldId} aria-label={label} value={line.unit} onChange={(e) => onPick(e.target.value)} className="min-h-11 rounded-[6px] border border-line bg-surface px-1">
       {!line.unit && <option value="">—</option>}
       {unitChoices(line).map((u) => (
         <option key={u} value={u}>
@@ -301,32 +304,30 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
 export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMicPointerDown, onEdit, onRemove, removed, onUndo }: BillViewProps) {
-  // KB-303: the editable pieces of a line - or its plain text when read-only.
-  const qtyOf = (id: string | undefined, line: BillLine["item"], name: string) =>
-    onEdit && id ? (
-      <EditableValue label={`Qty for ${name}`} text={formatQty(line.qty)} initial={line.qty === null ? "" : String(line.qty)} onCommit={(v) => onEdit(id, "qty", v)} />
-    ) : (
-      formatQty(line.qty)
-    );
-  const rateOf = (id: string | undefined, line: BillLine["item"], name: string) =>
-    onEdit && id ? (
-      <EditableValue label={`Rate for ${name}`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
-    ) : (
-      formatRate(line)
-    );
+  // KB-303: the editable pieces of a line. `view` keeps field ids unique -
+  // the card list and the table are both in the DOM (CSS picks one).
+  type View = "card" | "table";
+  const qtyOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+    <EditableValue label={`${name} quantity`} fieldId={`${view}-${id}-qty`} text={formatQty(line.qty)} initial={line.qty === null ? "" : String(line.qty)} onCommit={(v) => onEdit(id, "qty", v)} />
+  );
+  const unitOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+    <UnitPicker label={`${name} unit`} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
+  );
+  const rateOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+    <EditableValue label={`${name} rate`} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
+  );
   // The amount is editable only where no rate exists (owner, decision 1).
-  const amountOf = (id: string | undefined, line: BillLine["item"], name: string) =>
-    onEdit && id && line.rate === null ? (
-      <EditableValue label={`Amount for ${name}`} text={formatAmount(line.total)} initial={paiseText(line.total || null)} onCommit={(v) => onEdit(id, "amount", v)} />
+  const amountOf = (view: View, id: string, line: BillLine["item"], name: string) =>
+    line.rate === null ? (
+      <EditableValue label={`${name} amount`} fieldId={`${view}-${id}-amount`} text={formatAmount(line.total)} initial={paiseText(line.total || null)} onCommit={(v) => onEdit(id, "amount", v)} />
     ) : (
       formatAmount(line.total)
     );
-  const removeOf = (id: string | undefined, name: string) =>
-    onRemove && id ? (
-      <button type="button" aria-label={`Remove ${name}`} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
-        <X size={18} strokeWidth={1.5} aria-hidden />
-      </button>
-    ) : null;
+  const removeOf = (id: string, name: string) => (
+    <button type="button" aria-label={`Remove ${name}`} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+      <X size={18} strokeWidth={1.5} aria-hidden />
+    </button>
+  );
 
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
@@ -366,35 +367,21 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
         <div className="min-h-0 flex-1 overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
-            {lines.map(({ item: line, displayName, id }, i) =>
-              onEdit && id ? (
-                <li key={id} className="min-h-12 border-b border-line bg-surface px-4 py-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="capitalize">{displayName}</span>
-                    <span className="ml-auto font-semibold tabular-nums">{amountOf(id, line, displayName)}</span>
-                    {removeOf(id, displayName)}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1 text-[13px] text-ink-soft tabular-nums">
-                    {qtyOf(id, line, displayName)}
-                    <UnitPicker label={`Unit for ${displayName}`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
-                    <span aria-hidden>×</span>
-                    {rateOf(id, line, displayName)}
-                  </div>
-                </li>
-              ) : (
-                <li key={id ?? i} className="min-h-12 border-b border-line bg-surface px-4 py-2">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="capitalize">{displayName}</span>
-                    <span className="font-semibold tabular-nums">{formatAmount(line.total)}</span>
-                  </div>
-                  <div className="text-[13px] text-ink-soft tabular-nums">
-                    <span>{line.qty === null ? formatQty(null) : `${formatQty(line.qty)} ${line.unit}`}</span>
-                    {" × "}
-                    <span>{formatRate(line)}</span>
-                  </div>
-                </li>
-              ),
-            )}
+            {lines.map(({ item: line, displayName, id }) => (
+              <li key={id} className="min-h-12 border-b border-line bg-surface px-4 py-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="capitalize">{displayName}</span>
+                  <span className="ml-auto font-semibold tabular-nums">{amountOf("card", id, line, displayName)}</span>
+                  {removeOf(id, displayName)}
+                </div>
+                <div className="flex flex-wrap items-center gap-1 text-[13px] text-ink-soft tabular-nums">
+                  {qtyOf("card", id, line, displayName)}
+                  {unitOf("card", id, line, displayName)}
+                  <span aria-hidden>×</span>
+                  {rateOf("card", id, line, displayName)}
+                </div>
+              </li>
+            ))}
           </ul>
 
           {/* md and up: a table (05 §2). */}
@@ -406,30 +393,20 @@ export function BillView({ lines, onSignOut, voice = IDLE_VOICE, onMicTap, onMic
                 <th className="px-2 py-2 font-medium">Unit</th>
                 <th className="px-2 py-2 text-right font-medium">Rate</th>
                 <th className="px-4 py-2 text-right font-medium">Amount</th>
-                {onRemove && (
-                  <th className="w-11 px-1 py-2">
-                    <span className="sr-only">Remove</span>
-                  </th>
-                )}
+                <th className="w-11 px-1 py-2">
+                  <span className="sr-only">Remove</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {lines.map(({ item: line, displayName, id }, i) => (
-                <tr key={id ?? i} className="h-12 border-b border-line bg-surface">
+              {lines.map(({ item: line, displayName, id }) => (
+                <tr key={id} className="h-12 border-b border-line bg-surface">
                   <td className="px-4 capitalize">{displayName}</td>
-                  <td className="px-2 text-right tabular-nums">{qtyOf(id, line, displayName)}</td>
-                  <td className="px-2">
-                    {onEdit && id ? (
-                      <UnitPicker label={`Unit for ${displayName}`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
-                    ) : line.qty === null ? (
-                      formatQty(null)
-                    ) : (
-                      line.unit
-                    )}
-                  </td>
-                  <td className="px-2 text-right tabular-nums">{rateOf(id, line, displayName)}</td>
-                  <td className="px-4 text-right font-semibold tabular-nums">{amountOf(id, line, displayName)}</td>
-                  {onRemove && <td className="px-1">{removeOf(id, displayName)}</td>}
+                  <td className="px-2 text-right tabular-nums">{qtyOf("table", id, line, displayName)}</td>
+                  <td className="px-2">{unitOf("table", id, line, displayName)}</td>
+                  <td className="px-2 text-right tabular-nums">{rateOf("table", id, line, displayName)}</td>
+                  <td className="px-4 text-right font-semibold tabular-nums">{amountOf("table", id, line, displayName)}</td>
+                  <td className="px-1">{removeOf(id, displayName)}</td>
                 </tr>
               ))}
             </tbody>
