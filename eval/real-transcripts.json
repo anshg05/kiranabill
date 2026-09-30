@@ -389,5 +389,50 @@
     "layer1": "hit",
     "audio": "2026-09-29T17-47-49-202Z.webm",
     "note": "One breath, five items, commas only: fastpath in the browser, 5 correct lines, 0 flags, numbersHeard [180,2,3,10,0.5,1], total Rs.383 (owner)."
+  },
+  {
+    "id": "RT35",
+    "source": "owner, SILENT tap (said nothing), 30 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "कर दो",
+    "expectedLines": [],
+    "layer1": "miss",
+    "audio": "2026-09-30T04-18-12-932Z.webm",
+    "note": "Whisper hallucinated on silence; Groq no_speech_prob 0.854 (>= 0.5) -> the provider drops it -> empty transcript -> \"Didn't catch anything\". If such a transcript still got through: no line, no flag -> \"Couldn't find an item — add it manually\" (KB-317 commit 5). Was: 0 lines + a HIGH number_dropped for \"दो\"."
+  },
+  {
+    "id": "RT36",
+    "source": "owner, SILENT tap (said nothing), 30 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "झाल",
+    "expectedLines": [],
+    "layer1": "miss",
+    "audio": "2026-09-30T04-18-23-225Z.webm",
+    "note": "Whisper hallucinated on silence; no_speech_prob 0.7607 - the lowest of the owner's five silent taps. Was: a junk \"झाल\" line on the bill (KB-317 commit 5)."
+  },
+  {
+    "id": "RT37",
+    "source": "owner, SILENT tap (said nothing), 30 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "झाल",
+    "expectedLines": [],
+    "layer1": "miss",
+    "audio": "2026-09-30T04-18-29-194Z.webm",
+    "note": "Whisper hallucinated on silence; no_speech_prob 0.8418 (KB-317 commit 5)."
+  },
+  {
+    "id": "RT38",
+    "source": "owner, SILENT tap (said nothing), 30 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "झाल",
+    "expectedLines": [],
+    "layer1": "miss",
+    "audio": "2026-09-30T04-18-43-932Z.webm",
+    "note": "Whisper hallucinated on silence; no_speech_prob 0.8569 (KB-317 commit 5)."
+  },
+  {
+    "id": "RT39",
+    "source": "owner, SILENT tap (said nothing), 30 Sep 2026, lang hi, ?save=1 recording",
+    "transcript": "झाल",
+    "expectedLines": [],
+    "layer1": "miss",
+    "audio": "2026-09-30T04-18-50-835Z.webm",
+    "note": "Whisper hallucinated on silence; no_speech_prob 0.8955 (KB-317 commit 5)."
   }
 ]

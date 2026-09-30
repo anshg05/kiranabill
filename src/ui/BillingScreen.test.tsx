@@ -6,7 +6,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { formatRupees, sumPaise } from "@/domain/money";
 import { BillView } from "./BillingScreen";
 import { formatAmount, formatRate } from "./billFormat";
-import { IDLE_VOICE, OFFLINE_REASON, type VoiceView } from "./useVoiceBilling";
+import { IDLE_VOICE, NO_ITEM_FOUND, OFFLINE_REASON, type VoiceView } from "./useVoiceBilling";
 import voiceCases from "../../eval/voice-cases.json";
 import numberBenchmark from "../../eval/number-benchmark.json";
 
@@ -179,6 +179,16 @@ describe("BillView voice states", () => {
   it("failed: inline alert, and the mic stays usable (never a dead end)", () => {
     renderVoice({ phase: "failed", message: "No microphone found" });
     expect(screen.getByRole("alert").textContent).toBe("No microphone found");
+    expect(mic().disabled).toBe(false);
+  });
+
+  // KB-317 commit 5 (owner): a transcript that produced no item keeps the
+  // transcript on screen, with the manual-add message under it.
+  it("no item found: the transcript stays visible, with 'Couldn't find an item — add it manually'", () => {
+    renderVoice({ phase: "failed", transcript: "झाल", message: NO_ITEM_FOUND });
+    expect(NO_ITEM_FOUND).toBe("Couldn't find an item — add it manually");
+    expect(screen.getByTestId("voice-transcript").textContent).toBe("“झाल”");
+    expect(screen.getByRole("alert").textContent).toBe(NO_ITEM_FOUND);
     expect(mic().disabled).toBe(false);
   });
 });

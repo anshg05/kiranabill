@@ -150,6 +150,36 @@ describe("resolveUtterance", () => {
     expect(r.flags.filter((f) => f.code === "duplicate_line")).toEqual([expect.objectContaining({ severity: "HIGH", itemIndex: 1 })]);
   });
 
+  // KB-317 commit 5 (owner): silence hallucination - the owner stayed silent;
+  // Whisper wrote "झाल" (x4) and "कर दो". "झाल" put 4 junk lines on the bill;
+  // "कर दो" gave 0 lines and a HIGH number_dropped for "दो".
+  it("a line with no catalog match, no qty, no rate and no total is not added - 'झाल' as Gemini returned it", async () => {
+    const junk = gemini({ spokenName: "झाल", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "", rate: null, rateUnit: null, total: null, priceType: "unknown" });
+    const r = await resolveUtterance("झाल", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => [junk]) });
+    expect(r.lines).toEqual([]);
+    expect(r.flags).toEqual([]);
+  });
+
+  it("zero lines -> no flags at all: 'कर दो' raises no HIGH number_dropped for the 'दो'", async () => {
+    const r = await resolveUtterance("कर दो", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => []) });
+    expect(r.lines).toEqual([]);
+    expect(r.flags).toEqual([]);
+  });
+
+  it("an unknown product WITH a number is still added (hard rule 5: never block on an unknown product)", async () => {
+    const unknownWithQty = gemini({ spokenName: "kuch naya", catalogId: null, qty: 2, unit: "piece", total: null, priceType: "unknown" });
+    const r = await resolveUtterance("kuch naya do", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => [unknownWithQty]) });
+    expect(r.lines.map((l) => l.item.spokenName)).toEqual(["kuch naya"]);
+  });
+
+  it("the junk line is dropped, the real ones stay - flags re-based on what's left", async () => {
+    const junk = gemini({ spokenName: "झाल", catalogId: null, qty: null, unit: "", total: null, priceType: "unknown" });
+    const chini = gemini({ spokenName: "चीनी", catalogId: "27", matchStatus: "matched", qty: 2, unit: "kg", rate: 4500, rateUnit: "kg", total: 9000, priceType: "default" });
+    const r = await resolveUtterance("झाल 2 किलो चीनी", { shop: SEED_PARSER_CATALOG, parse: vi.fn(async () => [junk, chini]) });
+    expect(r.lines.map((l) => l.displayName)).toEqual(["Chini"]);
+    expect(r.flags.every((f) => f.itemIndex === null || f.itemIndex === 0)).toBe(true);
+  });
+
   it("KB-317 commit 3: a Layer 1 comma order said twice (RT22) -> fastpath, both lines, HIGH duplicate_line", async () => {
     const r = await resolveUtterance("दो किलो चीनी, दो किलो चीनी", { shop: SEED_PARSER_CATALOG, parse: vi.fn() });
     expect(r.layer).toBe("fastpath");

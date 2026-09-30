@@ -67,12 +67,31 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
   const proposed = await deps.parse(transcript, buildCatalogSlice(deps.shop, transcript));
   const layer2Ms = performance.now() - layer2Start;
   const settled = settleLayer2Items(proposed, deps.shop);
-  const items = settled.lines.map((l) => l.item);
+
+  // KB-317 commit 5 (owner): a line with no catalog match AND no qty, rate or
+  // total is nothing the shopkeeper said - Whisper's silence hallucination
+  // ("झाल") became four such lines. It is not added. A line with a number is
+  // always kept (hard rule 5 - never block on an unknown product).
+  const kept = settled.lines.map((l) => !isEmptyLine(l.item));
+  const lines = settled.lines.filter((_, i) => kept[i]);
+  // Nothing left: no flags either - a HIGH number flag on a bill with no lines
+  // ("कर दो" -> "दो") is noise; the screen says what happened instead.
+  if (lines.length === 0) return { layer: "voice", lines: [], flags: [], timings: { layer1Ms, layer2Ms } };
+  const newIndex = kept.reduce<number[]>((acc, k, i) => (acc.push(k ? (acc[i - 1] ?? -1) + 1 : (acc[i - 1] ?? -1)), acc), []);
+  const settledFlags = settled.flags
+    .filter((f) => f.itemIndex === null || kept[f.itemIndex])
+    .map((f) => (f.itemIndex === null ? f : { ...f, itemIndex: newIndex[f.itemIndex]! }));
+
+  const items = lines.map((l) => l.item);
   const misaligned = checkLayer2NumberOrder(transcript, items);
   return {
     layer: "voice",
-    lines: settled.lines.map((l) => ({ ...l, source: "voice" })),
-    flags: [...evaluateReviewFlags(transcript, items, deps.shop.entries), ...settled.flags, ...(misaligned ? [misaligned] : [])],
+    lines: lines.map((l) => ({ ...l, source: "voice" })),
+    flags: [...evaluateReviewFlags(transcript, items, deps.shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])],
     timings: { layer1Ms, layer2Ms },
   };
+}
+
+function isEmptyLine(item: ParsedItem): boolean {
+  return item.catalogId === null && item.qty === null && item.rate === null && item.total === null;
 }

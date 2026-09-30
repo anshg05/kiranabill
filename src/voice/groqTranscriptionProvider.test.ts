@@ -132,6 +132,72 @@ describe("groqTranscriptionProvider", () => {
     expect(form.get("prompt")).toBeNull();
   });
 
+  // -------------------------------------------------------------------------
+  // KB-317 commit 5 (owner): silence hallucination. Silent taps came back as
+  // "झाल" / "कर दो" and became junk lines. Measured on all 47 saved recordings
+  // (30 Sep 2026): every speech segment has no_speech_prob <= 0.3022, every
+  // silent tap >= 0.6382 - avg_logprob does NOT separate them. A segment with
+  // no_speech_prob >= 0.5 is dropped.
+  // -------------------------------------------------------------------------
+  describe("KB-317: segments Whisper itself rates as no speech are dropped", () => {
+    const seg = (text: string, no_speech_prob: number, avg_logprob = -0.2) => ({ text, no_speech_prob, avg_logprob, start: 0, end: 1 });
+    const reply = (text: string, segments?: unknown[]) =>
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ text, ...(segments ? { segments } : {}) }) });
+
+    it("asks Groq for verbose_json with per-segment stats", async () => {
+      const fetchMock = reply("do kilo chini", [seg("do kilo chini", 0.01)]);
+      vi.stubGlobal("fetch", fetchMock);
+      await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), { language: "hi" });
+      const form = fetchMock.mock.calls[0]![1].body as FormData;
+      expect(form.get("response_format")).toBe("verbose_json");
+      expect(form.getAll("timestamp_granularities[]")).toEqual(["segment"]);
+    });
+
+    it.each([
+      ["a silent tap - 'झाल' at 0.7607 (owner's 04-18-23 recording)", "झाल", [seg(" झाल", 0.7607, -0.164)]],
+      ["a silent tap - 'कर दो' at 0.854", "कर दो", [seg(" कर दो", 0.854, -0.273)]],
+      ["the boundary - exactly 0.5", "झाल", [seg(" झाल", 0.5)]],
+    ])("%s -> empty transcript", async (_label, text, segments) => {
+      vi.stubGlobal("fetch", reply(text, segments));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("");
+    });
+
+    it("real speech is untouched - the highest real no_speech_prob measured (RT24, 0.3022) keeps its exact text", async () => {
+      const text = "एक किलो देशी चना, एक किलो बरवटी दाल, एक किलो फुटाना";
+      vi.stubGlobal("fetch", reply(text, [seg(" एक किलो देशी चना, एक किलो बरवटी दाल, एक किलो फुटाना", 0.3022, -0.077)]));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe(text);
+    });
+
+    it("just under the boundary (0.4999) is kept", async () => {
+      vi.stubGlobal("fetch", reply("दो किलो चीनी", [seg(" दो किलो चीनी", 0.4999)]));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("दो किलो चीनी");
+    });
+
+    // Owner: the rule is on the WHOLE recording, never per segment - dropping
+    // one segment could silently remove a real item in a noisy shop, and the
+    // transcript would hide it. A junk tail in a mixed recording is left to
+    // the no-information line guard (a loud false alarm beats a silent omission).
+    it("speech + a silent tail: ALL the text is kept (only an all-silent recording is dropped)", async () => {
+      vi.stubGlobal("fetch", reply("2 किलो चीनी झाल", [seg(" 2 किलो चीनी", 0.02), seg(" झाल", 0.89)]));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("2 किलो चीनी झाल");
+    });
+
+    it("a noisy shop: 'do kilo chini [noise] ek kilo besan' with the 2nd segment at 0.55 - besan is NOT lost", async () => {
+      vi.stubGlobal("fetch", reply("दो किलो चीनी एक किलो बेसन", [seg(" दो किलो चीनी", 0.1), seg(" एक किलो बेसन", 0.55)]));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("दो किलो चीनी एक किलो बेसन");
+    });
+
+    it("every segment silent -> the recording is silence: empty transcript", async () => {
+      vi.stubGlobal("fetch", reply("झाल कर दो", [seg(" झाल", 0.76), seg(" कर दो", 0.85)]));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("");
+    });
+
+    it("a response with no segments (unexpected) falls back to the plain text - never loses real speech", async () => {
+      vi.stubGlobal("fetch", reply("दो किलो चीनी"));
+      expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).text).toBe("दो किलो चीनी");
+    });
+  });
+
   it("throws a real error on a non-2xx response, including status and body", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,

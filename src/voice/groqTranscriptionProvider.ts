@@ -49,6 +49,24 @@ function buildVocabularyPrompt(vocabulary: string[] | undefined): string | undef
     : joined;
 }
 
+/**
+ * KB-317 commit 5 (owner): Whisper hallucinates words on silence ("झाल",
+ * "कर दो") and they became junk lines. Measured on all 47 saved recordings
+ * (30 Sep 2026): every speech recording's no_speech_prob <= 0.3022, every
+ * silent tap >= 0.6382 - avg_logprob does not separate them, and Whisper's
+ * default rule (> 0.6 AND logprob < -1) caught none. The rule is on the WHOLE
+ * recording (owner): silence only if EVERY segment is >= 0.5; if any segment
+ * is speech, all the text is kept - dropping one segment could silently
+ * remove a real item in a noisy shop. A junk tail is left to the
+ * no-information line guard (data/voiceBilling.ts). Quiet-room measurement:
+ * re-measure with counter noise at the pilot (NI-33).
+ */
+const NO_SPEECH_THRESHOLD = 0.5;
+
+function isSilence(segments: { no_speech_prob: number }[] | undefined): boolean {
+  return segments !== undefined && segments.length > 0 && segments.every((s) => s.no_speech_prob >= NO_SPEECH_THRESHOLD);
+}
+
 /** `model` exists for the KB-317 eval's large-v3 vs turbo comparison
  * (eval/real-audio.ts); the app always uses the default (04 section 2). */
 export function createGroqTranscriptionProvider(apiKey: string, model: string = GROQ_MODEL): TranscriptionProvider {
@@ -58,6 +76,9 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
       const form = new FormData();
       form.set("file", audio, audioFilename(audio));
       form.set("model", model);
+      // KB-317 commit 5: per-segment no_speech_prob, for the silence rule below.
+      form.set("response_format", "verbose_json");
+      form.append("timestamp_granularities[]", "segment");
       if (opts.language) form.set("language", opts.language);
       const prompt = buildVocabularyPrompt(opts.vocabulary);
       if (prompt) form.set("prompt", prompt);
@@ -75,8 +96,9 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
         throw new Error(`Groq transcription failed: ${response.status} ${body}`);
       }
 
-      const data = (await response.json()) as { text: string };
-      return { text: data.text, latencyMs };
+      const data = (await response.json()) as { text: string; segments?: { no_speech_prob: number }[] };
+      // verbose_json's text starts with a space; trimmed so /voice returns what it always did.
+      return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs };
     },
   };
 }

@@ -33,6 +33,9 @@ export const IDLE_VOICE: VoiceView = { phase: "idle", transcript: null, message:
 
 export const OFFLINE_REASON = "Offline — voice needs internet";
 
+/** KB-317 commit 5 (owner): the transcript produced no item - shown under it. */
+export const NO_ITEM_FOUND = "Couldn't find an item — add it manually";
+
 /** Whisper language hint - "hi" (owner, 28 Sep 2026, docs/07-DECISIONS.md
  * D44): on the owner's real voice, auto-detect wrote Hindi in Urdu script,
  * which Layer 1 and every number check can't read; "hi" gave Devanagari

@@ -11,7 +11,7 @@ import { resolveUtterance, type BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate } from "./billFormat";
-import { IDLE_VOICE, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
+import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -81,7 +81,8 @@ export function BillingScreen() {
           numbersHeard: extractSpokenNumbers(transcript),
         });
       }
-      if (resolved.lines.length === 0) throw new VoiceUserError("No items heard in that — try again");
+      // KB-317 commit 5: nothing usable in the transcript - it stays on screen, with this under it.
+      if (resolved.lines.length === 0) throw new VoiceUserError(NO_ITEM_FOUND);
       // Re-base each flag onto the bill's line numbers; ids stay unique per utterance.
       const offset = linesRef.current.length;
       const u = (utteranceCount.current += 1);
@@ -127,10 +128,18 @@ function VoiceStatus({ voice }: { voice: VoiceView }) {
   const base = "min-h-6 px-4 pt-2 text-[13px]";
   if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{voice.disabledReason}</p>;
   if (voice.phase === "failed" && voice.message) {
+    // KB-317 commit 5: a transcript that was heard stays visible above the failure.
     return (
-      <p role="alert" className={`${base} text-danger`}>
-        {voice.message}
-      </p>
+      <>
+        {voice.transcript && (
+          <p data-testid="voice-transcript" className={`${base} text-ink`}>
+            “{voice.transcript}”
+          </p>
+        )}
+        <p role="alert" className={`${base} text-danger`}>
+          {voice.message}
+        </p>
+      </>
     );
   }
   if (voice.phase === "listening") {
