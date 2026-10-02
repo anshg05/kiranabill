@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
+import type { ParsedItem } from "@/domain/grammar";
 import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
-import { displayRate, unitChoices } from "@/domain/billEdit";
+import { customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
 import { sumPaise } from "@/domain/money";
 import { buildVocabularyPrompt } from "@/domain/vocabulary";
 import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
@@ -14,7 +15,8 @@ import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
 import { useOrderResolver } from "./useOrderResolver";
-import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import { AddItemSheet } from "./AddItemSheet";
+import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -143,6 +145,10 @@ export function BillingScreen() {
       notAdded={bill.notAdded}
       onRetry={retry}
       onDismiss={bill.dismiss}
+      catalog={parser}
+      usage={shopCatalog?.usageById}
+      onAddByHand={bill.addByHand}
+      focusLineId={bill.focusLineId}
     />
   );
 }
@@ -169,6 +175,12 @@ interface BillViewProps {
   notAdded?: readonly NotAdded[];
   onRetry?: (id: string) => void;
   onDismiss?: (id: string) => void;
+  /** KB-305: the SHOP's catalog to add from by hand (null while it loads), its use counts. */
+  catalog?: ParserCatalog | null;
+  usage?: Readonly<Record<string, { readonly useCount?: number }>>;
+  onAddByHand?: (item: ParsedItem, displayName: string) => void;
+  /** KB-305: the hand-added line whose qty editor opens on arrival. */
+  focusLineId?: string | null;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -310,8 +322,23 @@ function FlagList({ flags, name, onAcknowledge }: { flags: readonly ShownFlag[];
  * A rejected value keeps the input open with the reason under it; nothing
  * changes until a value is accepted.
  */
-function EditableValue({ label, fieldId, text, initial, onCommit }: { label: string; fieldId: string; text: string; initial: string; onCommit: (value: string) => string | null }) {
-  const [draft, setDraft] = useState<string | null>(null);
+function EditableValue({
+  label,
+  fieldId,
+  text,
+  initial,
+  onCommit,
+  startOpen = false,
+}: {
+  label: string;
+  fieldId: string;
+  text: string;
+  initial: string;
+  onCommit: (value: string) => string | null;
+  /** KB-305: open (focused, value selected) when the line arrives. */
+  startOpen?: boolean;
+}) {
+  const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
   const [error, setError] = useState<string | null>(null);
   if (draft === null) {
     return (
@@ -389,7 +416,7 @@ function mmss(ms: number): string {
 
 /** The one line above the buttons: offline reason, failure, listening
  * timer, or the transcript (05-FRONTEND-SPEC.md section 2 voice states). */
-function VoiceStatus({ voice }: { voice: VoiceView }) {
+function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (query: string) => void }) {
   const base = "min-h-6 px-4 pt-2 text-[13px]";
   if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{voice.disabledReason}</p>;
   if (voice.phase === "failed" && voice.message) {
@@ -403,6 +430,17 @@ function VoiceStatus({ voice }: { voice: VoiceView }) {
         )}
         <p role="alert" className={`${base} text-danger`}>
           {voice.message}
+          {/* KB-305: "Couldn't find an item — add it manually" opens the add panel with the heard words. */}
+          {voice.message === NO_ITEM_FOUND && voice.transcript && onAddByHand && (
+            <button
+              type="button"
+              aria-label={`Add “${voice.transcript}” by hand`}
+              onClick={() => onAddByHand(voice.transcript!)}
+              className="ml-2 min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
+            >
+              Add by hand
+            </button>
+          )}
         </p>
       </>
     );
@@ -485,7 +523,17 @@ export function BillView({
   notAdded = NONE_NOT_ADDED,
   onRetry,
   onDismiss,
+  catalog = null,
+  usage,
+  onAddByHand,
+  focusLineId = null,
 }: BillViewProps) {
+  // KB-305: the add-item panel, and what its search starts with.
+  const [addItem, setAddItem] = useState<{ query: string } | null>(null);
+  const canAdd = catalog !== null && onAddByHand !== undefined;
+  // Both markups are in the DOM (CSS picks one); a new line's qty editor opens
+  // only in the visible one, so exactly one input takes focus.
+  const [wide] = useState(() => typeof window.matchMedia === "function" && window.matchMedia("(min-width: 48rem)").matches);
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
   const lineFlags = (id: string) => flags.filter((f) => f.lineId === id);
   const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
@@ -535,7 +583,14 @@ export function BillView({
   // the card list and the table are both in the DOM (CSS picks one).
   type View = "card" | "table";
   const qtyOf = (view: View, id: string, line: BillLine["item"], name: string) => (
-    <EditableValue label={`${name} quantity`} fieldId={`${view}-${id}-qty`} text={formatQty(line.qty)} initial={line.qty === null ? "" : String(line.qty)} onCommit={(v) => onEdit(id, "qty", v)} />
+    <EditableValue
+      label={`${name} quantity`}
+      fieldId={`${view}-${id}-qty`}
+      text={formatQty(line.qty)}
+      initial={line.qty === null ? "" : String(line.qty)}
+      onCommit={(v) => onEdit(id, "qty", v)}
+      startOpen={id === focusLineId && (view === "table") === wide}
+    />
   );
   const unitOf = (view: View, id: string, line: BillLine["item"], name: string) => (
     <UnitPicker label={`${name} unit`} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
@@ -591,7 +646,8 @@ export function BillView({
           <span>Cash</span>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="relative min-h-0 flex-1">
+        <div className="h-full overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
@@ -657,6 +713,25 @@ export function BillView({
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
           <div ref={endRef} />
         </div>
+        {addItem && canAdd && (
+          <AddItemSheet
+            catalog={catalog}
+            usage={usage}
+            initialQuery={addItem.query}
+            billTotal={total}
+            billCount={lines.length}
+            onPick={(entry) => {
+              onAddByHand(manualItem(entry), entry.displayName);
+              setAddItem(null);
+            }}
+            onCustom={(name) => {
+              onAddByHand(customItem(name), name);
+              setAddItem(null);
+            }}
+            onClose={() => setAddItem(null)}
+          />
+        )}
+        </div>
 
         {/* Pinned: TOTAL and the actions never scroll away (05 §2). */}
         <div className="flex items-baseline justify-between border-t border-line px-4 py-3">
@@ -678,21 +753,23 @@ export function BillView({
         )}
 
         <div className="border-t border-line">
-          <VoiceStatus voice={voice} />
+          <VoiceStatus voice={voice} onAddByHand={canAdd ? (query) => setAddItem({ query }) : undefined} />
         </div>
         <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
           {announcement}
         </div>
 
         <div className="grid grid-cols-2 gap-2 px-4 py-3">
-          {/* Add item / Bill Banao: disabled until KB-305 / KB-307; the reason is
-              a tooltip only (owner, 27 Sep 2026). A disabled button fires no
-              hover events, so the title sits on a wrapper. */}
+          {/* Add item (KB-305): disabled only while the shop catalog loads; Bill
+              Banao until KB-307. The reason is a tooltip only (owner, 27 Sep
+              2026) - a disabled button fires no hover events, so the title sits
+              on a wrapper. */}
           <MicButton voice={voice} onMicTap={onMicTap} onMicPointerDown={onMicPointerDown} />
-          <span title="Adding items isn't available yet">
+          <span title={canAdd ? undefined : "Loading your catalog…"}>
             <button
               type="button"
-              disabled
+              disabled={!canAdd}
+              onClick={() => setAddItem({ query: "" })}
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink disabled:opacity-50"
             >
               <Plus size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />

@@ -163,7 +163,8 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - Search runs against the **client-side catalog index** (see `KB-CATALOG-INDEX`)
 - Tap adds with the shop's price pre-filled, qty focused, qty defaulted to 1
 - **Target: under 2 seconds from tap to item on bill**
-- Adding a new product from here creates a `shop_product` directly
+- ~~Adding a new product from here creates a `shop_product` directly~~ **Superseded 2 Oct 2026 (owner, `KB-305`):** "+ Add “x” as a new product" adds a **bill line only** — qty "—", unit "—", price "—" (no qty without a unit, `KB-303`), MEDIUM `incomplete_item` until filled. The product itself comes through L1 at finalise (`08-LEARNING-ENGINE.md` §3, `KB-307`+) — hard rule 8.
+- **Implementation notes (`KB-305`, 2 Oct 2026):** a **non-modal panel** over the item list — TOTAL, the mic and Bill Banao stay visible and usable (§8 rule 1); search from 2 characters, at most 8 results, equal scores by the shop's use count; the shop's catalog from Dexie, inactive products never shown; a catalog pick is named by the product, never the typed fragment (no false alias at finalise); Android back closes the panel (a history entry while open), never the app; "Couldn't find an item — add it manually" carries an **Add by hand** button that opens the panel with the heard words.
 
 ---
 

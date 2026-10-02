@@ -201,3 +201,45 @@ export function buildCatalogSlice(pc: ParserCatalog, transcript: string, limit =
       return entry ? [entry] : [];
     });
 }
+
+/** KB-305: one type-ahead result - the product, and the alias that matched
+ * (shown when it isn't the product's name: "Poha · chiwda"). */
+export interface SearchResult {
+  readonly entry: CatalogEntry;
+  readonly alias: string;
+}
+
+/** Fewer than 2 characters is noise ("c" ranked Dahi and Cake first);
+ * "ची" (च + ी) is already 2. */
+const SEARCH_MIN_CHARS = 2;
+/** lookupCandidates' own cap, before the tie-break - wide enough that a
+ * product on an equal score is never cut before it's compared. */
+const SEARCH_POOL = 40;
+
+/**
+ * KB-305: the add-item type-ahead (05 S3a, §10: < 16 ms per keystroke) over
+ * the SHOP's catalog. Best score first; an equal score goes to the product
+ * this shop sells more (use count), then by name. An inactive product never
+ * appears, whatever catalog it's given. At most `limit` results.
+ */
+export function searchCatalog(
+  pc: ParserCatalog,
+  query: string,
+  usage: Readonly<Record<string, { readonly useCount?: number }>> = {},
+  limit = 8,
+): SearchResult[] {
+  if ([...query.trim()].length < SEARCH_MIN_CHARS) return [];
+  return lookupCandidates(pc.index, query, SEARCH_POOL)
+    .flatMap((c) => {
+      const entry = pc.byId.get(c.catalogId);
+      return entry?.isActive ? [{ entry, alias: c.alias, score: c.score }] : [];
+    })
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        (usage[b.entry.id]?.useCount ?? 0) - (usage[a.entry.id]?.useCount ?? 0) ||
+        a.entry.displayName.localeCompare(b.entry.displayName),
+    )
+    .slice(0, limit)
+    .map(({ entry, alias }) => ({ entry, alias }));
+}

@@ -4,6 +4,8 @@ import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { evaluateReviewFlags, type ReviewFlag } from "./reviewFlags";
 import {
   billFlags,
+  customItem,
+  manualItem,
   displayRate,
   editAmount,
   editQty,
@@ -350,5 +352,62 @@ describe("billFlags", () => {
     const first = utterance(1, "2 kilo chini", ["a"]);
     const second = utterance(2, "3 kilo chini", ["b"]);
     expect(billFlags([...first.entries, ...second.entries], [first.record, second.record], SEED_PARSER_CATALOG.entries)).toEqual([]);
+  });
+});
+
+// KB-305 (owner, 2 Oct 2026): a line added by hand. A catalog pick is qty 1 at
+// the SHOP's price (05 S3a), through the same editQty as KB-303. A custom item
+// is qty "—" AND unit "—" (KB-303: no qty without a unit), price "—".
+describe("KB-305 - lines added by hand", () => {
+  const entry = (id: string) => SEED_PARSER_CATALOG.byId.get(id)!;
+
+  it("catalog pick: Chini -> 1 kg at ₹45, total ₹45, named by the product (never the typed fragment)", () => {
+    expect(manualItem(entry("27"))).toEqual({
+      spokenName: "Chini", catalogId: "27", isCustom: false, matchStatus: "matched",
+      qty: 1, unit: "kg", rate: 4500, rateUnit: "kg", total: 4500, priceType: "default",
+    });
+  });
+
+  it("then edited like any line: 500 gm -> ₹22.50 exactly (D36)", () => {
+    const gm = editUnit(manualItem(entry("27")), "gm");
+    if (!gm.ok) throw new Error(gm.error);
+    const half = editQty(gm.item, "500");
+    expect(half.ok && half.item.total).toBe(2250);
+  });
+
+  it("every active seed product gives a qty-1 line whose total is its own price", () => {
+    for (const e of SEED_PARSER_CATALOG.entries) {
+      const item = manualItem(e);
+      expect([e.displayName, item.qty, item.unit, item.total]).toEqual([e.displayName, 1, e.unit, e.suggestedPricePaise]);
+    }
+  });
+
+  it("a catalog pick at the shop's price raises no flag", () => {
+    expect(evaluateReviewFlags("", [manualItem(entry("27"))], SEED_PARSER_CATALOG.entries)).toEqual([]);
+  });
+
+  it("custom item: the typed name, qty '—', unit '—', price '—'", () => {
+    expect(customItem("  kuch naya  ")).toEqual({
+      spokenName: "kuch naya", catalogId: null, isCustom: true, matchStatus: "none",
+      qty: null, unit: "", rate: null, rateUnit: null, total: null, priceType: "unknown",
+    });
+  });
+
+  it("custom item flags: LOW unknown_product + MEDIUM incomplete_item - never HIGH, never blocks", () => {
+    const flags = evaluateReviewFlags("", [customItem("kuch naya")], SEED_PARSER_CATALOG.entries);
+    expect(flags.map((f) => [f.severity, f.code]).sort()).toEqual([["LOW", "unknown_product"], ["MEDIUM", "incomplete_item"]]);
+  });
+
+  it("custom item: no qty without a unit (KB-303); unit, qty, rate -> incomplete_item clears", () => {
+    const item = customItem("kuch naya");
+    expect(editQty(item, "2")).toEqual({ ok: false, error: "Choose a unit" });
+    const kg = editUnit(item, "kg");
+    if (!kg.ok) throw new Error(kg.error);
+    const two = editQty(kg.item, "२"); // Devanagari digit
+    if (!two.ok) throw new Error(two.error);
+    const priced = editRate(two.item, "60");
+    if (!priced.ok) throw new Error(priced.error);
+    expect(priced.item).toMatchObject({ qty: 2, unit: "kg", rate: 6000, total: 12000 });
+    expect(evaluateReviewFlags("", [priced.item], SEED_PARSER_CATALOG.entries).map((f) => f.code)).toEqual(["unknown_product"]);
   });
 });

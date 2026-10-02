@@ -13,8 +13,8 @@ export interface BillLine {
   readonly item: ParsedItem;
   /** What the bill shows - the shop entry's name for a matched Layer 2 line (Q5b). */
   readonly displayName: string;
-  /** LocalBillItem.source: "fastpath" = Layer 1, "voice" = Layer 2. */
-  readonly source: "fastpath" | "voice";
+  /** LocalBillItem.source: "fastpath" = Layer 1, "voice" = Layer 2, "manual" = added by hand (KB-305). */
+  readonly source: "fastpath" | "voice" | "manual";
 }
 
 export interface ResolvedUtterance {

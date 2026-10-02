@@ -279,3 +279,48 @@ export function billFlags(entries: readonly BillEntry[], utterances: readonly Ut
 export function pendingChecks(flags: readonly PlacedFlag[], acknowledged: ReadonlySet<string>): number {
   return flags.filter((f) => f.severity === "HIGH" && !acknowledged.has(f.key)).length;
 }
+
+/**
+ * KB-305 (05 S3a): a catalog product added by hand - qty 1 at the SHOP's
+ * price, through the same editQty as any edit (KB-303). Named by the
+ * product, never by what was typed to find it: finalise must not learn a
+ * typed fragment ("chi") as an alias (owner, decision 4).
+ */
+export function manualItem(entry: CatalogEntry): ParsedItem {
+  const base: ParsedItem = {
+    spokenName: entry.displayName,
+    catalogId: entry.id,
+    isCustom: false,
+    matchStatus: "matched",
+    qty: null,
+    unit: "",
+    rate: entry.suggestedPricePaise,
+    rateUnit: entry.unit,
+    total: null,
+    priceType: "default",
+  };
+  const one = editQty(base, "1", entry.unit);
+  // A catalog unit the bill can't use leaves qty "—" for the shopkeeper (never a guess).
+  return one.ok ? one.item : base;
+}
+
+/**
+ * KB-305 (owner, 2 Oct 2026): a product not in the catalog, by the name the
+ * shopkeeper typed. Qty "—" AND unit "—" (KB-303: no qty without a unit),
+ * price "—" - incomplete_item (MEDIUM) until filled. Only a bill line: the
+ * product itself comes through L1 at finalise (08 section 3, KB-307+).
+ */
+export function customItem(name: string): ParsedItem {
+  return {
+    spokenName: name.trim(),
+    catalogId: null,
+    isCustom: true,
+    matchStatus: "none",
+    qty: null,
+    unit: "",
+    rate: null,
+    rateUnit: null,
+    total: null,
+    priceType: "unknown",
+  };
+}

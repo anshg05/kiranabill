@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCatalogIndex, buildCatalogSlice, lookupCandidates, phoneticNormalize } from "./catalogIndex";
+import { buildCatalogIndex, buildCatalogSlice, lookupCandidates, phoneticNormalize, prepareParserCatalog, searchCatalog } from "./catalogIndex";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { catalog } from "./catalog";
 
@@ -67,5 +67,57 @@ describe("buildCatalogSlice", () => {
 
   it("nothing recognisable -> an empty slice (Gemini still returns unknown lines)", () => {
     expect(buildCatalogSlice(SEED_PARSER_CATALOG, "   ")).toEqual([]);
+  });
+});
+
+// KB-305: the add-item type-ahead (05 S3a) - over the SHOP's catalog, Roman
+// and Devanagari alike; the shopkeeper picks, so nothing here guesses a brand.
+describe("searchCatalog (KB-305 type-ahead)", () => {
+  const names = (q: string, usage = {}) => searchCatalog(SEED_PARSER_CATALOG, q, usage).map((r) => r.entry.displayName);
+
+  it.each([
+    ["chini", "Chini"],
+    ["cheeni", "Chini"],
+    ["चीनी", "Chini"],
+    ["शक्कर", "Chini"],
+    ["aata", "Chakki Aata"], // the generic first, brands after (KI-47 / KI-52: nothing guessed)
+    ["आटा", "Chakki Aata"],
+    ["sabun", "Sabun"],
+    ["साबुन", "Sabun"],
+    ["parle", "Parle-G 10"],
+  ])("%s -> %s first", (query, first) => {
+    expect(names(query)[0]).toBe(first);
+  });
+
+  it("at most 8 results", () => {
+    expect(names("dal").length).toBeLessThanOrEqual(8);
+    expect(names("dal").length).toBeGreaterThan(1);
+  });
+
+  it("a single Roman letter is noise ('c' ranked Dahi first) - nothing until 2 characters; 'ची' (2) searches", () => {
+    expect(names("c")).toEqual([]);
+    expect(names(" c ")).toEqual([]);
+    expect(names("ची")).toContain("Chini");
+  });
+
+  it("each result carries the alias that matched (shown when it isn't the name)", () => {
+    const [top] = searchCatalog(SEED_PARSER_CATALOG, "cheeni");
+    expect(top!.alias).toBe("cheeni");
+  });
+
+  it("an inactive product never appears - even from a catalog that still holds it (Arhar Daal, id 17)", () => {
+    const withInactive = prepareParserCatalog(catalog); // the FULL seed, incl. isActive: false
+    expect(catalog.find((e) => e.id === "17")).toMatchObject({ displayName: "Arhar Daal", isActive: false });
+    for (const q of ["arhar", "Arhar Daal", "अरहर"]) {
+      expect(searchCatalog(withInactive, q).map((r) => r.entry.id)).not.toContain("17");
+      expect(searchCatalog(SEED_PARSER_CATALOG, q).map((r) => r.entry.id)).not.toContain("17");
+    }
+  });
+
+  it("an equal score is broken by the shop's own use count, then by name", () => {
+    // "surf": Surf Excel and Washing Powder both score 1.00 (both carry the alias).
+    const wp = catalog.find((e) => e.displayName === "Washing Powder")!.id;
+    expect(names("surf").slice(0, 2)).toEqual(["Surf Excel", "Washing Powder"]);
+    expect(names("surf", { [wp]: { useCount: 7 } }).slice(0, 2)).toEqual(["Washing Powder", "Surf Excel"]);
   });
 });

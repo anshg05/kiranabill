@@ -129,7 +129,7 @@ describe("BillView", () => {
     expect(screen.queryByText("तूर दाल")).toBeNull();
   });
 
-  it("Add item and Bill Banao stay disabled until KB-305 / KB-307", () => {
+  it("Bill Banao stays disabled until KB-307; Add item is disabled while there is no shop catalog to search (KB-305)", () => {
     renderBill(parsed("VC023"));
     expect((screen.getByRole("button", { name: /Add item/ }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Bill Banao" }) as HTMLButtonElement).disabled).toBe(true);

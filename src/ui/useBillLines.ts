@@ -13,7 +13,8 @@ import {
   type PlacedFlag,
   type UtteranceRecord,
 } from "@/domain/billEdit";
-import type { ReviewFlag } from "@/domain/reviewFlags";
+import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
+import type { ParsedItem } from "@/domain/grammar";
 import type { BillLine } from "@/data/voiceBilling";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
@@ -62,10 +63,12 @@ interface State {
   readonly acknowledged: ReadonlySet<string>;
   readonly notAdded: readonly NotAdded[];
   readonly nextNotAddedId: number;
+  /** KB-305: the line added by hand whose qty editor opens - until the next change. */
+  readonly focusLineId: string | null;
 }
 
 type Action =
-  | { type: "add"; lines: readonly BillLine[]; flags: readonly ReviewFlag[]; transcript: string; resolves?: string }
+  | { type: "add"; lines: readonly BillLine[]; flags: readonly ReviewFlag[]; transcript: string; resolves?: string; focus?: boolean }
   | { type: "fail"; transcript: string }
   | { type: "retrying"; id: string }
   | { type: "retryFailed"; id: string; message: string }
@@ -76,7 +79,7 @@ type Action =
   | { type: "forget" }
   | { type: "acknowledge"; key: string };
 
-export const EMPTY_BILL: State = { rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1 };
+export const EMPTY_BILL: State = { rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null };
 
 const updateNotAdded = (state: State, id: string, change: Partial<NotAdded>): State => ({
   ...state,
@@ -105,6 +108,7 @@ export function billReducer(state: State, action: Action): State {
         utterances: [...state.utterances, { id: utteranceId, lineIds: rows.map((r) => r.id), flags: action.flags, transcript: action.transcript }],
         nextId: state.nextId + rows.length,
         notAdded: action.resolves === undefined ? state.notAdded : state.notAdded.filter((n) => n.id !== action.resolves),
+        focusLineId: action.focus ? rows[0]!.id : null,
       };
     }
     case "fail":
@@ -123,14 +127,14 @@ export function billReducer(state: State, action: Action): State {
       // KB-304 (owner): an acknowledgement lapses on any edit to its line.
       const scopes = acknowledgementScopes(action.row.id, action.row.utteranceId);
       const acknowledged = new Set([...state.acknowledged].filter((k) => !scopes.some((s) => k.startsWith(s))));
-      return { ...state, rows: state.rows.map((r) => (r.id === action.id ? action.row : r)), acknowledged };
+      return { ...state, rows: state.rows.map((r) => (r.id === action.id ? action.row : r)), acknowledged, focusLineId: null };
     }
     case "acknowledge":
       return { ...state, acknowledged: new Set([...state.acknowledged, action.key]) };
     case "remove": {
       const at = state.rows.findIndex((r) => r.id === action.id);
       if (at === -1) return state;
-      return { ...state, rows: state.rows.filter((r) => r.id !== action.id), removed: { row: state.rows[at]!, at } };
+      return { ...state, rows: state.rows.filter((r) => r.id !== action.id), removed: { row: state.rows[at]!, at }, focusLineId: null };
     }
     case "undo": {
       if (!state.removed) return state;
@@ -160,6 +164,11 @@ export interface BillLines {
   readonly removed: BillRow | null;
   /** `resolves`: the not-added entry a Retry is filling - ignored if it's gone. */
   add: (lines: readonly BillLine[], flags: readonly ReviewFlag[], transcript?: string, resolves?: string) => void;
+  /** KB-305: a line added by hand (source "manual"), its own entry - so
+   * already_on_bill / duplicate_line work against voice lines; its qty editor opens. */
+  addByHand: (item: ParsedItem, displayName: string) => void;
+  /** KB-305: the hand-added line whose qty editor is open, or null. */
+  readonly focusLineId: string | null;
   fail: (transcript: string) => void;
   retrying: (id: string) => void;
   retryFailed: (id: string, message: string) => void;
@@ -215,6 +224,12 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
   const remove = useCallback((id: string) => dispatch({ type: "remove", id }), []);
   const undo = useCallback(() => dispatch({ type: "undo" }), []);
   const acknowledge = useCallback((key: string) => dispatch({ type: "acknowledge", key }), []);
+  const addByHand = useCallback(
+    (item: ParsedItem, displayName: string) =>
+      // No transcript: none of the spoken-number checks apply to a typed line.
+      dispatch({ type: "add", lines: [{ item, displayName, source: "manual" }], flags: evaluateReviewFlags("", [item], catalog), transcript: "", focus: true }),
+    [catalog],
+  );
   const fail = useCallback((transcript: string) => dispatch({ type: "fail", transcript }), []);
   const retrying = useCallback((id: string) => dispatch({ type: "retrying", id }), []);
   const retryFailed = useCallback((id: string, message: string) => dispatch({ type: "retryFailed", id, message }), []);
@@ -225,12 +240,14 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
     flags,
     pending,
     notAdded: state.notAdded,
+    focusLineId: state.focusLineId,
     removed: state.removed?.row ?? null,
     add,
     edit,
     remove,
     undo,
     acknowledge,
+    addByHand,
     fail,
     retrying,
     retryFailed,
