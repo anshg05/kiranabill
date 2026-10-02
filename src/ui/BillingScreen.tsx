@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
-import { extractSpokenNumbers, parseUtterance } from "@/domain/grammar";
+import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import { displayRate, unitChoices } from "@/domain/billEdit";
 import { sumPaise } from "@/domain/money";
 import { buildVocabularyPrompt } from "@/domain/vocabulary";
 import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
 import { parseTranscript } from "@/data/voiceApi";
-import { resolveUtterance, type BillLine } from "@/data/voiceBilling";
+import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
-import { useBillLines, type EditField, type ShownFlag } from "./useBillLines";
-import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, VoiceUserError, type VoiceView } from "./useVoiceBilling";
+import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
+import { useOrderResolver } from "./useOrderResolver";
+import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -38,6 +39,28 @@ function devTryUtterances(shop: ParserCatalog): { transcript: string; lines: Bil
       const lines = items.map((item): BillLine => ({ item, displayName: (item.catalogId && shop.byId.get(item.catalogId)?.displayName) || item.spokenName, source: "fastpath" }));
       return [{ transcript, lines, flags: [...evaluateReviewFlags(transcript, items, shop.entries)] }];
     });
+}
+
+/** DEV ONLY (owner, KB-319): `?failparse=timeout|502|429|network` makes the
+ * FIRST parse of each transcript fail that way, so the "Not added" / Retry
+ * flow can be seen in a browser; the Retry then goes to the real /voice.
+ * `timeout` never answers, so the real 8 s client deadline fires. Removed
+ * from `npm run build` (VERIFY greps dist/ for "failparse"). */
+function devFailParseFetch(): typeof fetch | undefined {
+  if (!import.meta.env.DEV) return undefined;
+  const mode = new URLSearchParams(window.location.search).get("failparse");
+  if (!mode) return undefined;
+  const failedOnce = new Set<string>();
+  return async (input, init) => {
+    const meta = JSON.parse(String((init?.body as FormData).get("meta"))) as { transcript?: string };
+    const key = meta.transcript ?? "";
+    if (failedOnce.has(key)) return fetch(input, init);
+    failedOnce.add(key);
+    console.info(`[voice] dev ?failparse=${mode}: failing the first parse of`, key);
+    if (mode === "timeout") return new Promise<Response>(() => {});
+    if (mode === "network") throw new TypeError("Failed to fetch (dev ?failparse=network)");
+    return new Response(JSON.stringify({ error: `dev ?failparse=${mode}` }), { status: mode === "429" ? 429 : 502 });
+  };
 }
 
 export function BillingScreen() {
@@ -81,29 +104,16 @@ export function BillingScreen() {
   }, [bill.flags, bill.rows.length]);
 
   const accessToken = session?.access_token ?? null;
-  const onTranscript = useCallback(
-    async (transcript: string) => {
-      if (!parser || !accessToken) throw new VoiceUserError("Couldn't hear that — try again");
-      const resolved = await resolveUtterance(transcript, {
-        shop: parser,
-        parse: (text, catalogSlice) => parseTranscript(text, { accessToken, catalogSlice }),
-      });
-      if (import.meta.env.DEV) {
-        console.info("[voice] resolved", {
-          layer: resolved.layer,
-          layer1Ms: Number(resolved.timings.layer1Ms.toFixed(2)),
-          geminiMs: resolved.timings.layer2Ms === null ? null : Math.round(resolved.timings.layer2Ms),
-          lines: resolved.lines.map((l) => `${l.displayName} ${l.item.qty ?? "—"} ${l.item.unit} = ${l.item.total ?? "—"}`),
-          flags: resolved.flags.map((f) => `${f.severity} ${f.code}`),
-          numbersHeard: extractSpokenNumbers(transcript),
-        });
-      }
-      // KB-317 commit 5: nothing usable in the transcript - it stays on screen, with this under it.
-      if (resolved.lines.length === 0) throw new VoiceUserError(NO_ITEM_FOUND);
-      addToBill(resolved.lines, resolved.flags, transcript);
+  const [devFetch] = useState(devFailParseFetch);
+  const parse = useCallback(
+    (text: string, catalogSlice: Parameters<typeof parseTranscript>[1]["catalogSlice"]) => {
+      if (!accessToken) throw new Error("no live session"); // the mic is disabled without one
+      return parseTranscript(text, { accessToken, catalogSlice, fetchImpl: devFetch });
     },
-    [accessToken, addToBill, parser],
+    [accessToken, devFetch],
   );
+  // KB-319: transcript -> lines; a failed parse stays on the bill as "Not added".
+  const { onTranscript, retry } = useOrderResolver({ shop: parser, bill, parse });
 
   // Voice needs a LIVE session (offline-session mode has none - D38).
   const voice = useVoiceBilling({
@@ -130,6 +140,9 @@ export function BillingScreen() {
       flags={bill.flags}
       pending={bill.pending}
       onAcknowledge={bill.acknowledge}
+      notAdded={bill.notAdded}
+      onRetry={retry}
+      onDismiss={bill.dismiss}
     />
   );
 }
@@ -152,9 +165,55 @@ interface BillViewProps {
   flags?: readonly ShownFlag[];
   pending?: number;
   onAcknowledge?: (key: string) => void;
+  /** KB-319: heard but not on the bill yet - Retry (text only) or dismiss. */
+  notAdded?: readonly NotAdded[];
+  onRetry?: (id: string) => void;
+  onDismiss?: (id: string) => void;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
+const NONE_NOT_ADDED: readonly NotAdded[] = [];
+
+/**
+ * KB-319 (KI-57; owner): an utterance that was heard but isn't on the bill -
+ * shown like a HIGH flag (it blocks Bill Banao: nothing said may go unbilled
+ * unnoticed) until the shopkeeper taps Retry (the text only - no re-record)
+ * or ✕. Several can be pending; new recordings carry on.
+ */
+function NotAddedList({ entries, onRetry, onDismiss }: { entries: readonly NotAdded[]; onRetry?: (id: string) => void; onDismiss?: (id: string) => void }) {
+  if (entries.length === 0) return null;
+  return (
+    <ul aria-label="Not added">
+      {entries.map((n) => (
+        <li key={n.id} data-severity="HIGH" className="flex flex-wrap items-center gap-x-2 border-b border-line border-l-[3px] border-l-danger bg-surface px-4 py-1 text-[13px] text-danger">
+          <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+          <span className="sr-only">Must check: </span>
+          <span className="text-ink">Not added: “{n.transcript}”</span>
+          <span>{n.message}</span>
+          <span className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={`Retry “${n.transcript}”`}
+              disabled={n.retrying}
+              onClick={() => onRetry?.(n.id)}
+              className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger disabled:opacity-50"
+            >
+              {n.retrying ? "Reading…" : "Retry"}
+            </button>
+            <button
+              type="button"
+              aria-label={`Dismiss “${n.transcript}”`}
+              onClick={() => onDismiss?.(n.id)}
+              className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft"
+            >
+              <X size={18} strokeWidth={1.5} aria-hidden />
+            </button>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** "1 check pending", "3 checks pending". */
 function checksText(n: number): string {
@@ -423,6 +482,9 @@ export function BillView({
   flags = NO_FLAGS,
   pending = 0,
   onAcknowledge,
+  notAdded = NONE_NOT_ADDED,
+  onRetry,
+  onDismiss,
 }: BillViewProps) {
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
   const lineFlags = (id: string) => flags.filter((f) => f.lineId === id);
@@ -501,7 +563,7 @@ export function BillView({
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "end" });
-  }, [lines.length]);
+  }, [lines.length, notAdded.length]);
 
   return (
     <div className="h-dvh bg-paper text-ink text-[15px]">
@@ -592,6 +654,7 @@ export function BillView({
               ])}
             </tbody>
           </table>
+          <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
           <div ref={endRef} />
         </div>
 
@@ -636,7 +699,7 @@ export function BillView({
               Add item
             </button>
           </span>
-          {/* KB-304: unacknowledged HIGH flags - what Bill Banao will wait for (KB-307). */}
+          {/* KB-304: unacknowledged HIGH flags (+ KB-319: not-added utterances) - what Bill Banao will wait for (KB-307). */}
           {pending > 0 && (
             <p data-testid="checks-pending" className="col-span-2 text-center text-[13px] font-medium text-danger">
               {checksText(pending)}

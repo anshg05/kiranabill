@@ -1,6 +1,7 @@
 import type { ParseProvider, TokenUsage } from "@/voice/parseProvider";
 import type { ParsedItem, MatchStatus, PriceType } from "@/domain/grammar";
 import { PRICING_GRAMMAR_PROMPT } from "@/voice/pricingGrammarPrompt";
+import { ProviderError, withDeadline } from "@/voice/deadline";
 
 // gemini-2.5-flash-lite, confirmed live and current (docs/11-STACK-DECISIONS.md
 // SD-006 warned its retirement date and successor pricing needed real
@@ -15,8 +16,11 @@ import { PRICING_GRAMMAR_PROMPT } from "@/voice/pricingGrammarPrompt";
 const GEMINI_MODEL = "gemini-2.5-flash-lite";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const RETRY_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 500; // inferred, not doc-specified - flagged in the ticket handoff
+/** KB-319 (owner, D50): ONE attempt, cut at 6 s - measured normal 1.6-3.5 s,
+ * outliers 12.9 s / 20.4 s (KI-58). No automatic retry: three attempts plus
+ * the old 0.5 / 1 s sleeps (19.5 s) can't fit the client's 8 s, and the 5xx
+ * seen so far were quota (KI-50). The shopkeeper's Retry replaces them. */
+export const GEMINI_TIMEOUT_MS = 6_000;
 
 const RESPONSE_SCHEMA = {
   type: "array",
@@ -70,19 +74,9 @@ function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): Pa
   };
 }
 
-// KB-317 (12-PARKED.md KI-50): a 429 is a quota - on the free tier a DAILY one -
-// and won't clear in seconds, so it is not retried; only server errors are.
-function isRetryable(status: number): boolean {
-  return status >= 500;
-}
-
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** KB-317 diagnosis: called once per HTTP attempt. voice.mts passes a logger
- * under `netlify dev` only; production passes none. */
-export type GeminiAttemptLog = (a: { attempt: number; status: number | "network-error"; ms: number }) => void;
+/** KB-317 diagnosis: called once per HTTP attempt (KB-319: there is one).
+ * voice.mts passes a logger under `netlify dev` only; production passes none. */
+export type GeminiAttemptLog = (a: { attempt: number; status: number | "network-error" | "timeout"; ms: number }) => void;
 
 export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAttemptLog): ParseProvider {
   return {
@@ -107,24 +101,29 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
       };
 
       const start = performance.now();
-      let lastError: Error | null = null;
+      const log = (status: number | "network-error" | "timeout") => onAttempt?.({ attempt: 1, status, ms: Math.round(performance.now() - start) });
+      return withDeadline(
+        GEMINI_TIMEOUT_MS,
+        async (signal) => {
+          let response: Response;
+          try {
+            response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+              signal,
+            });
+          } catch (err) {
+            if (!signal.aborted) log("network-error");
+            throw err;
+          }
+          log(response.status);
 
-      for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
-        const attemptStart = performance.now();
-        let response: Response;
-        try {
-          response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-        } catch (err) {
-          onAttempt?.({ attempt: attempt + 1, status: "network-error", ms: Math.round(performance.now() - attemptStart) });
-          throw err;
-        }
-        onAttempt?.({ attempt: attempt + 1, status: response.status, ms: Math.round(performance.now() - attemptStart) });
-
-        if (response.ok) {
+          if (!response.ok) {
+            const bodyText = await response.text();
+            // KB-317 (KI-50): a 429 is a quota - on the free tier a DAILY one.
+            throw new ProviderError(response.status === 429 ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`);
+          }
           const latencyMs = performance.now() - start;
           const data = (await response.json()) as {
             candidates: { content: { parts: { text: string }[] } }[];
@@ -139,17 +138,12 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
             totalTokens: data.usageMetadata.totalTokenCount,
           };
           return { items, usage, latencyMs };
-        }
-
-        const bodyText = await response.text();
-        lastError = new Error(`Gemini parse failed: ${response.status} ${bodyText}`);
-        if (!isRetryable(response.status) || attempt === RETRY_ATTEMPTS - 1) {
-          throw lastError;
-        }
-        await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
-      }
-
-      throw lastError;
+        },
+        () => {
+          log("timeout");
+          return new ProviderError("timeout", `Gemini parse timed out after ${GEMINI_TIMEOUT_MS} ms`);
+        },
+      );
     },
   };
 }

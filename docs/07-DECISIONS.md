@@ -1390,12 +1390,22 @@ begins on the mic button would open the mic unintended. D45's other rules stand:
 once `MediaRecorder` has started, released when hidden / on leaving the screen / on sign-out, a recording in progress
 stopped and discarded when the app is hidden (owner confirmed), a mic opened after the tab went hidden closed at once.
 
+### D50 — Voice deadlines: Groq 8 s / Gemini 6 s on the server, 12 s / 8 s on the client; Gemini not auto-retried; a failed parse is kept, never lost 🟢
+
+**Owner decision, 2 Oct 2026, `KB-319`** (KI-57, KI-58). Netlify's synchronous function limit is **60 s, not configurable** (docs.netlify.com/build/functions/configuration, updated 17 Sep 2026); `netlify dev` doesn't enforce it — that's how a 39 s order happened locally. Each `/voice` call reaches ONE provider (the client sends audio → transcript, then text → items on a Layer 1 miss), so its budget is ~1 s of auth/rate limit + one provider deadline.
+1. **Server, per attempt** (`src/voice/deadline.ts` `withDeadline`; the request is aborted, a late answer never used): **Groq 8 s** (measured normal 0.8–2.6 s, outlier 18.7 s), **Gemini 6 s** (normal 1.6–3.5 s, outliers 12.9 / 20.4 s). A deadline → `/voice` **504**; a provider's own 429 → **503** "busy" (never 429 — that is the shop's own limit); anything else → 502.
+2. **Client, per `/voice` call** (`data/voiceApi.ts`): **transcribe 12 s, parse 8 s** — a few seconds over the server's, so the server's clean error normally arrives first; the client's is the backstop (network, cold start, auth).
+3. **Gemini is not retried automatically** (was 3 attempts, 0.5 / 1 s sleeps): 3 × 6 s + 1.5 s can't fit the 8 s client deadline, and the 5xx seen were quota (KI-50). Groq stays one attempt; a 429 fails fast with "Voice service busy — try again in a minute" (Hindi later, KI-59).
+4. **A failed parse (5xx, 429, timeout, network) is kept on the bill** as "Not added: “…” — Retry / ✕" until the shopkeeper retries or dismisses it; new recordings carry on, several may be pending, **each counts in "N checks pending"** (Bill Banao waits for 0 — nothing said goes unbilled unnoticed). The owner rejected "a new recording clears the Retry": it silently loses an order. Retry re-sends the **text only** (same transcript, same slice, no Groq, no re-record); a re-spoken order retried anyway is caught by `already_on_bill` / `duplicate_line`. 401 / 400 are not retryable. **One set of lines per utterance:** a late answer is discarded by the deadline, and the bill accepts a Retry's lines only while its entry is still listed.
+5. **No Retry cap:** every Retry is a human tap (disabled while in flight) and one `/voice` call against the per-shop 300/hour limit, which already bounds abuse.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 2 Oct 2026 | `geminiParseProvider.ts`: 3 attempts on a 5xx (0.5 / 1 s sleeps), no deadline | **One attempt, 6 s deadline; the shopkeeper's Retry** (D50) | 19.5 s of hidden retries can't fit an 8 s client deadline; the 5xx seen were quota. |
 | 30 Sep 2026 | D45 / `05-FRONTEND-SPEC.md` §10: first (cold) tap → listening ≤ 300 ms | **≤ 1 s** (D49); warm < 100 ms unchanged | Measured: cold 816 ms, 709 of it the browser opening the device. |
 | 29 Sep 2026 | D13 point 1: only a total spoken, product matched → qty 1 of the catalog's unit | **qty `null`, unit `""`** (D47) | Owner: never invent a number. |
 | 21 Aug 2026 | Antigravity as the single build tool (T1) | **Claude Code** (D28) | Antigravity quota exhausted mid-`KB-000`; the docs carried the handoff at zero cost. Recorded here 26 Sep 2026. |

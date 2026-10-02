@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { createGeminiParseProvider } from "./geminiParseProvider";
+import { createGeminiParseProvider, GEMINI_TIMEOUT_MS } from "./geminiParseProvider";
+import { ProviderError } from "./deadline";
 import type { CatalogEntry } from "@/domain/catalog";
 
 function makeCatalogEntry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
@@ -135,41 +136,49 @@ describe("geminiParseProvider", () => {
   // KB-317 (owner-approved plan; 12-PARKED.md KI-50): a 429 is a quota - on the
   // free tier a DAILY one - and won't clear in seconds. It used to be retried 3x
   // (0.5 + 1 + 2 s) before failing: ~3.7 s of waiting for a guaranteed error.
-  it("KB-317 diagnosis: onAttempt is called once per HTTP attempt with its status and ms - a 500 then a 200 is two calls", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "server error" })
-      .mockResolvedValueOnce({ ...mockGeminiSuccess([]), status: 200 });
-    vi.stubGlobal("fetch", fetchMock);
+  it("KB-317 diagnosis: onAttempt is called once, with its status and ms", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce({ ...mockGeminiSuccess([]), status: 200 }));
     const seen: { attempt: number; status: number | string; ms: number }[] = [];
     await createGeminiParseProvider("k", (a) => seen.push(a)).parse("x", { catalogSlice: [] });
-    expect(seen.map((a) => [a.attempt, a.status])).toEqual([[1, 500], [2, 200]]);
+    expect(seen.map((a) => [a.attempt, a.status])).toEqual([[1, 200]]);
     expect(seen.every((a) => a.ms >= 0)).toBe(true);
   });
 
-  it("does not retry a 429 (quota) - fails at once, one call", async () => {
+  it("KB-319: a 429 (quota) is 'busy' - fails at once, one call", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "quota exceeded" });
     vi.stubGlobal("fetch", fetchMock);
 
     const provider = createGeminiParseProvider("test-key");
-    await expect(provider.parse("chini", { catalogSlice: [makeCatalogEntry()] })).rejects.toThrow(/429.*quota exceeded/);
+    const err = await provider.parse("chini", { catalogSlice: [makeCatalogEntry()] }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ProviderError);
+    expect(err).toMatchObject({ kind: "busy", message: expect.stringMatching(/429.*quota exceeded/) });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("throws after exhausting all retries on a persistent 500", async () => {
-    vi.useFakeTimers();
+  // KB-319 (owner, D50): one attempt. Three 6 s attempts + 0.5/1 s sleeps
+  // (19.5 s) can't fit the 8 s client timeout; the shopkeeper's Retry replaces them.
+  it("KB-319: a 500 is NOT retried - one call, a 'failed' ProviderError", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => "server error" });
     vi.stubGlobal("fetch", fetchMock);
+    const err = await createGeminiParseProvider("test-key").parse("chini", { catalogSlice: [makeCatalogEntry()] }).catch((e: unknown) => e);
+    expect(err).toMatchObject({ kind: "failed", message: expect.stringMatching(/500.*server error/) });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 
-    const provider = createGeminiParseProvider("test-key");
-    const resultPromise = provider.parse("chini", { catalogSlice: [makeCatalogEntry()] });
-    const assertion = expect(resultPromise).rejects.toThrow(/500.*server error/);
-
-    await vi.advanceTimersByTimeAsync(500);
-    await vi.advanceTimersByTimeAsync(1000);
-
-    await assertion;
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+  it("KB-319: an attempt still unanswered at 6 s is a 'timeout' - its request is aborted, onAttempt says 'timeout'", async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    // A fetch that never answers and ignores its signal - the deadline must not depend on the abort.
+    vi.stubGlobal("fetch", vi.fn((_url: string, init: RequestInit) => ((signal = init.signal ?? undefined), new Promise(() => {}))));
+    const seen: (number | string)[] = [];
+    const result = createGeminiParseProvider("k", (a) => seen.push(a.status)).parse("chini", { catalogSlice: [] }).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(GEMINI_TIMEOUT_MS - 1);
+    expect(signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await result).toMatchObject({ kind: "timeout" });
+    expect(signal?.aborted).toBe(true);
+    expect(seen).toEqual(["timeout"]);
+    expect(GEMINI_TIMEOUT_MS).toBe(6_000);
   });
 
   it("does not retry a non-retryable 400 (Gemini's real auth-failure shape, not 401)", async () => {

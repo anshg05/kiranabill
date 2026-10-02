@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { createGroqTranscriptionProvider } from "./groqTranscriptionProvider";
+import { createGroqTranscriptionProvider, GROQ_TIMEOUT_MS } from "./groqTranscriptionProvider";
+import { ProviderError } from "./deadline";
 
 describe("groqTranscriptionProvider", () => {
   afterEach(() => {
@@ -210,5 +211,44 @@ describe("groqTranscriptionProvider", () => {
     await expect(provider.transcribe(new Blob(["audio"]), {})).rejects.toThrow(
       /401.*Invalid API Key/,
     );
+  });
+
+  describe("KB-319 (KI-58): fail fast", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("a Groq 429 is 'busy' - one call, never retried", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "rate limit reached" });
+      vi.stubGlobal("fetch", fetchMock);
+      const err = await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {}).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ProviderError);
+      expect(err).toMatchObject({ kind: "busy", message: expect.stringMatching(/429.*rate limit reached/) });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("another non-2xx is 'failed'", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => "boom" }));
+      expect(await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {}).catch((e: unknown) => e)).toMatchObject({ kind: "failed" });
+    });
+
+    it("unanswered at 8 s -> 'timeout', and the request is aborted (the 18.7 s outlier is cut)", async () => {
+      vi.useFakeTimers();
+      let signal: AbortSignal | undefined;
+      vi.stubGlobal("fetch", vi.fn((_url: string, init: RequestInit) => ((signal = init.signal ?? undefined), new Promise(() => {}))));
+      const result = createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {}).catch((e: unknown) => e);
+      await vi.advanceTimersByTimeAsync(GROQ_TIMEOUT_MS - 1);
+      expect(signal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await result).toMatchObject({ kind: "timeout" });
+      expect(signal?.aborted).toBe(true);
+      expect(GROQ_TIMEOUT_MS).toBe(8_000);
+    });
+
+    it("a normal answer inside the deadline is untouched", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("fetch", vi.fn(() => new Promise((r) => setTimeout(() => r({ ok: true, json: async () => ({ text: "do kilo chini" }) }), 2_600))));
+      const result = createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {});
+      await vi.advanceTimersByTimeAsync(2_600);
+      expect((await result).text).toBe("do kilo chini");
+    });
   });
 });

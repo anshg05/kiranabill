@@ -3,6 +3,7 @@ import { createGroqTranscriptionProvider } from "../../src/voice/groqTranscripti
 import { createGeminiParseProvider } from "../../src/voice/geminiParseProvider.js";
 import { resolveAuthedRequest } from "./_shared/auth.js";
 import { checkRateLimit } from "./_shared/rateLimit.js";
+import { ProviderError } from "../../src/voice/deadline.js";
 import type { CatalogEntry } from "../../src/domain/catalog.js";
 
 // docs/02-ARCHITECTURE.md section 5's "one HTTP round trip, not two": this
@@ -58,6 +59,15 @@ function sanitizeSlice(raw: unknown): SliceEntry[] | null {
 }
 
 const badRequest = (error: string) => new Response(JSON.stringify({ error }), { status: 400 });
+
+/** KB-319 (KI-58, D50): a provider deadline -> 504, the provider's own 429 ->
+ * 503 (never 429 - that is the shop's own limit), anything else -> 502. */
+function providerFailure(step: "Transcription" | "Parse", err: unknown, transcript?: string): Response {
+  const kind = err instanceof ProviderError ? err.kind : "failed";
+  const status = kind === "timeout" ? 504 : kind === "busy" ? 503 : 502;
+  const error = kind === "timeout" ? `${step} timed out` : kind === "busy" ? `${step} busy` : `${step} failed`;
+  return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, detail: (err as Error).message }), { status });
+}
 
 export default async (req: Request, _context: Context): Promise<Response> => {
   if (req.method !== "POST") {
@@ -140,10 +150,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     } catch (err) {
-      return new Response(
-        JSON.stringify({ transcript, error: "Parse failed", detail: (err as Error).message }),
-        { status: 502 },
-      );
+      return providerFailure("Parse", err, transcript);
     }
   }
   const audioBlob = audio as Blob;
@@ -157,13 +164,10 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       language: meta.language,
       vocabulary: meta.vocabulary,
     });
-    if (dev) console.info(`[voice-dev] groq: ok in ${Math.round(transcribeResult.latencyMs)} ms (one attempt, no retry)`);
+    if (dev) console.info(`[voice-dev] groq: ok in ${Math.round(transcribeResult.latencyMs)} ms (one attempt, no retry, 8 s deadline)`);
   } catch (err) {
     if (dev) console.info(`[voice-dev] groq: failed after ${Math.round(performance.now() - start)} ms - ${(err as Error).message.slice(0, 120)}`);
-    return new Response(
-      JSON.stringify({ error: "Transcription failed", detail: (err as Error).message }),
-      { status: 502 },
-    );
+    return providerFailure("Transcription", err);
   }
 
   if (!meta.parse) {
@@ -178,14 +182,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   try {
     parseResult = await gemini.parse(transcribeResult.text, { catalogSlice });
   } catch (err) {
-    return new Response(
-      JSON.stringify({
-        transcript: transcribeResult.text,
-        error: "Parse failed",
-        detail: (err as Error).message,
-      }),
-      { status: 502 },
-    );
+    return providerFailure("Parse", err, transcribeResult.text);
   }
 
   const latencyMs = performance.now() - start;

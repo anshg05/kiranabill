@@ -1,7 +1,12 @@
 import type { TranscriptionProvider } from "@/voice/transcriptionProvider";
+import { ProviderError, withDeadline } from "@/voice/deadline";
 
 const GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const GROQ_MODEL = "whisper-large-v3";
+
+/** KB-319 (owner, D50): one attempt, cut at 8 s - measured normal 0.8-2.6 s,
+ * one outlier 18.7 s (KI-58). Never retried: a 429 is a quota, not a blip. */
+export const GROQ_TIMEOUT_MS = 8_000;
 
 // Whisper's prompt window is ~224 tokens; 04-VOICE-PIPELINE.md section 2
 // caps the phrase-biasing vocabulary at 600 characters for this reason.
@@ -84,21 +89,28 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
       if (prompt) form.set("prompt", prompt);
 
       const start = performance.now();
-      const response = await fetch(GROQ_TRANSCRIPTION_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      });
-      const latencyMs = performance.now() - start;
+      return withDeadline(
+        GROQ_TIMEOUT_MS,
+        async (signal) => {
+          const response = await fetch(GROQ_TRANSCRIPTION_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: form,
+            signal,
+          });
+          const latencyMs = performance.now() - start;
 
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(`Groq transcription failed: ${response.status} ${body}`);
-      }
+          if (!response.ok) {
+            const body = await response.text();
+            throw new ProviderError(response.status === 429 ? "busy" : "failed", `Groq transcription failed: ${response.status} ${body}`);
+          }
 
-      const data = (await response.json()) as { text: string; segments?: { no_speech_prob: number }[] };
-      // verbose_json's text starts with a space; trimmed so /voice returns what it always did.
-      return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs };
+          const data = (await response.json()) as { text: string; segments?: { no_speech_prob: number }[] };
+          // verbose_json's text starts with a space; trimmed so /voice returns what it always did.
+          return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs };
+        },
+        () => new ProviderError("timeout", `Groq transcription timed out after ${GROQ_TIMEOUT_MS} ms`),
+      );
     },
   };
 }

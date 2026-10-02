@@ -119,6 +119,8 @@ describe("useVoiceBilling", () => {
     [401, "Session expired — sign out and sign in again"],
     [429, "Too many voice requests — wait a minute and try again"],
     [502, "Couldn't hear that — try again"],
+    [503, "Voice service busy — try again in a minute"], // KB-319: Groq 429 (owner)
+    [504, "Took too long — try again"], // KB-319: Groq's 8 s deadline (the client's 12 s gives the same kind - voiceApi.test.ts)
   ])("/voice %i -> failed with an inline message, no throw", async (status, message) => {
     reply(status, { error: "x" });
     const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));

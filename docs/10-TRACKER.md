@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 2 Oct 2026 (rev 67) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 2 Oct 2026 (rev 68) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-319` (voice parse: client timeout + Retry text only) — planning. `KB-304` done and live 2 Oct 2026; `KB-303` done and live 1 Oct 2026. Before that: **`KB-317` closed 1 Oct 2026** (all pushed and live: `45e34bc`…`e89c065`, migration `20260929090000` on the remote). **Next:** the owner adds billing for Gemini (KI-50); then billing UI tickets (`KB-304` flag UI — `duplicate_line` and the other flags are only in the console today; `KB-305`…), and `KB-318` (Gemini prompt KI-45/KI-47/KI-52, thinking config, KI-57 retry-the-text path, KI-58 timeouts + Groq fail-fast on 429) after billing. **Owner manual:** Docker Desktop won't start on this machine (1 Oct) — local Supabase and every `test:e2e` / real `/voice` check need it; npm 11.19.0 (NI-29); before live voice testing onboard a fresh Ready-catalog shop. **Parked, uncommitted:** dev-only per-attempt provider logging (git stash "KB-318 dev attempt logging") — touches `voice.mts`, so it needs its own D32 re-verification once Docker is back.
+**Working on:** `KB-319` (voice parse: deadlines + Retry text only) — built and verified, not pushed, awaiting the owner's browser check (`?failparse`). `KB-304` done and live 2 Oct 2026; `KB-303` done and live 1 Oct 2026. Before that: **`KB-317` closed 1 Oct 2026** (all pushed and live: `45e34bc`…`e89c065`, migration `20260929090000` on the remote). **Next:** the owner adds billing for Gemini (KI-50); then billing UI tickets (`KB-304` flag UI — `duplicate_line` and the other flags are only in the console today; `KB-305`…), and `KB-318` (Gemini prompt KI-45/KI-47/KI-52, thinking config, KI-57 retry-the-text path, KI-58 timeouts + Groq fail-fast on 429) after billing. **Owner manual:** Docker Desktop won't start on this machine (1 Oct) — local Supabase and every `test:e2e` / real `/voice` check need it; npm 11.19.0 (NI-29); before live voice testing onboard a fresh Ready-catalog shop. **Parked, uncommitted:** dev-only per-attempt provider logging (git stash "KB-318 dev attempt logging") — touches `voice.mts`, so it needs its own D32 re-verification once Docker is back.
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -41,7 +41,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 8. ~~**`KB-317`** — voice accuracy + speed~~ — **done 1 Oct 2026.**
 9. ~~**`KB-303`** — editable bill~~ — **done 1 Oct 2026.**
 10. ~~**`KB-304`** — flag display + "Theek hai"~~ — **done 2 Oct 2026.**
-11. **`KB-319`** — voice parse: client timeout + Retry text only (KI-57, KI-58; owner, 1 Oct 2026).
+11. **`KB-319`** — voice parse: client timeout + Retry text only (KI-57, KI-58; owner, 1 Oct 2026) — built 2 Oct, awaiting the owner's check.
 12. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) after billing (KI-50).
 
 **Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
@@ -280,6 +280,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 2 Oct 2026 | **`KB-319` built, not pushed — voice deadlines + Retry text only (D50).** Netlify's sync limit checked: 60 s, not configurable. Server deadlines Groq 8 s / Gemini 6 s (`withDeadline`, aborts; 504), provider 429 → 503 "Voice service busy"; Gemini's 5xx retries removed; client 12 s / 8 s. A failed parse stays on the bill as "Not added: “…” — Retry / ✕" (owner change: a new recording never clears it), each one a pending check; Retry = one text-only call, same slice; late answers can't add lines twice (tested with fake timers). Dev `?failparse=` (stripped from `dist/`). Closed KI-57, KI-58; new KI-60 (rate-limit wording). | Agent |
 | 2 Oct 2026 | **`KB-304` closed.** Owner browser check passed (desktop + 375 px): Chini HIGH ×2, Chakki Aata duplicate HIGH on the 2nd copy only, Besan REVIEW, Kuch Naya REVIEW + dot, "3 checks pending", total ₹342; acknowledge / edit-lapse / Undo-keeps-acknowledgement checked. LOW dot: 44×44 tap target confirmed. `KB-318` row added to `06` with the owner's verification item (one live "Heard: …" block from a real Gemini-path order). Pushed `4b688a0`. | Agent + Owner |
 | 1 Oct 2026 | **`KB-304` built, not pushed — flag display + "Theek hai".** HIGH: 3px DANGER edge, triangle icon + red sentence + "Theek hai" (acknowledged: muted, "✓ Theek hai"); MEDIUM: amber REVIEW badge, LOW: grey dot — both open their sentence on tap, with accessible names; bill-level flags (number_dropped / qty_dropped / number_misaligned) as a block under the utterance's last line with "Heard: …"; "N checks pending" beside the disabled Bill Banao; a polite live region announces new HIGH flags and each "Theek hai". An acknowledgement is keyed to its line and numbers: it lapses on any edit to the line, survives other lines' removal, and comes back with Undo. Tests first (13 red). KI-59 logged (shopkeeper screen in Hindi, before pilot); KB-319 added (KI-57 + KI-58). | Agent + Owner |
 | 1 Oct 2026 | **`KB-303` built (2 commits), not pushed.** `domain/billEdit.ts` (exact typed input incl. Devanagari digits and limits; recompute per price type; SG-09 per-kg rates, edited rates stored per kg/liter; `isEdited`; `billFlags` - untouched utterances keep their flags, edited/removed ones re-checked without transcript number checks, MEDIUM `already_on_bill` across utterances) and `ui/useBillLines.ts` + editable `BillView` (44 px values → inline `inputmode=decimal` inputs, compatible-unit picker, ✕ + 6 s Undo). Tests first both commits (64 + 12 red). Existing tests: none changed. SG-09 done, SG-11 logged. | Agent + Owner |

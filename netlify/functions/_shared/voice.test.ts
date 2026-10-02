@@ -19,6 +19,9 @@ vi.mock("../../../src/voice/geminiParseProvider.js", () => ({
 }));
 
 const handler = (await import("../voice.mts")).default;
+const { ProviderError } = await import("../../../src/voice/deadline.js");
+const GROQ_TIMEOUT_MS = 8_000; // groqTranscriptionProvider.ts (mocked above); its own test pins the value
+const GEMINI_TIMEOUT_MS = 6_000; // geminiParseProvider.ts, likewise
 
 function makeRequest(fields: Record<string, string | Blob> | null, method = "POST") {
   if (fields === null) return new Request("https://example.com/voice", { method });
@@ -147,6 +150,47 @@ describe("netlify/functions/voice.mts", () => {
     const body = await res.json();
     expect(body.transcript).toBe("chini");
     expect(body.detail).toContain("Gemini parse failed");
+  });
+
+  // KB-319 (KI-58, D50): a provider that times out or is over quota returns a
+  // clean error - never left for Netlify's 60 s kill.
+  describe("KB-319: timeouts and busy providers", () => {
+    const entry = { id: "27", displayName: "Chini" };
+    const audioOnly = () => makeRequest({ audio: new Blob(["x"]), meta: JSON.stringify({ parse: false }) });
+    const textOnly = () => makeRequest({ meta: JSON.stringify({ transcript: "do kilo chini", catalogSlice: [entry] }) });
+
+    it("every provider deadline fits well inside Netlify's 60 s synchronous limit", () => {
+      expect(GROQ_TIMEOUT_MS + 5_000).toBeLessThan(60_000);
+      expect(GEMINI_TIMEOUT_MS + 5_000).toBeLessThan(60_000);
+    });
+
+    it("Groq timed out -> 504 'Transcription timed out'", async () => {
+      transcribeMock.mockRejectedValue(new ProviderError("timeout", "Groq timed out after 8000 ms"));
+      const res = await handler(audioOnly(), {} as never);
+      expect(res.status).toBe(504);
+      expect((await res.json()).error).toBe("Transcription timed out");
+    });
+
+    it("Groq 429 -> 503 'Transcription busy' (not the shop's own 429)", async () => {
+      transcribeMock.mockRejectedValue(new ProviderError("busy", "Groq transcription failed: 429 rate limit"));
+      const res = await handler(audioOnly(), {} as never);
+      expect(res.status).toBe(503);
+      expect((await res.json()).error).toBe("Transcription busy");
+    });
+
+    it("text-only parse timed out -> 504, transcript kept in the body", async () => {
+      parseMock.mockRejectedValue(new ProviderError("timeout", "Gemini timed out after 6000 ms"));
+      const res = await handler(textOnly(), {} as never);
+      expect(res.status).toBe(504);
+      expect(await res.json()).toMatchObject({ transcript: "do kilo chini", error: "Parse timed out" });
+    });
+
+    it("text-only parse busy (Gemini 429) -> 503; a plain failure stays 502", async () => {
+      parseMock.mockRejectedValueOnce(new ProviderError("busy", "Gemini parse failed: 429"));
+      expect((await handler(textOnly(), {} as never)).status).toBe(503);
+      parseMock.mockRejectedValueOnce(new ProviderError("failed", "Gemini parse failed: 500"));
+      expect((await handler(textOnly(), {} as never)).status).toBe(502);
+    });
   });
 
   // KB-302 (owner, Q1): text-only parse on a Layer 1 miss - the transcript is
