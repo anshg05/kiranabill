@@ -90,6 +90,12 @@ where the detail lives; tick it off there and strike it here.
   choice): Layer 1 has nothing to match there and Gemini gets an empty catalog, so no live voice check means anything on it.
 - [ ] **`KI-59` — the shopkeeper's screen in Hindi / Hinglish** (flag sentences, input errors, status lines), wording
   reviewed by the owner. Not `bill_language` — that is the customer's receipt. `12-PARKED.md` §A. (Owner, 1 Oct 2026.)
+- [ ] **Pre-pilot privacy review — India's DPDP Act 2023** (owner, 3 Oct 2026, `KB-306`). Customer names and mobile numbers
+  on bills are personal data; the shop is the data fiduciary, KiranaBill processes on its behalf. Before the pilot, review
+  (with qualified advice — not settled by the agent): the notice a shop gives customers and the basis for keeping a number;
+  purpose (billing, later udhaar — never marketing); retention; a customer's erasure request vs **immutable finalised bills**
+  (hard rule 2); what reaches logs (`sync.ts` logs a whole bill on a permanent push failure — names and numbers included);
+  processor terms with Supabase / Netlify / Groq / Google (customer fields never go to `/voice`).
 - [ ] **Supabase plan** — the free tier pauses a project after ~1 week of no activity. Confirm the current
   plan terms and decide free vs paid before the pilot. (Owner, 27 Sep 2026; not yet checked against
   Supabase's current terms.)
