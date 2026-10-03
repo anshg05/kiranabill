@@ -1407,6 +1407,14 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 3. The bench's typing box gained a catalog-size toggle (481 / 10,101) so the realistic-catalog keystroke → paint is measured too; **that number is still to be recorded** (NI-28).
 4. Scale note: a 10,000-product index build takes ~1 s on this phone — a one-time cost at catalog load, fine for real shops (~500 products: 72.5 ms).
 
+### D52 — The customer on a bill: name ≤ 60 code points, mobile exactly 10 digits; the client and the CHECKs apply identical rules 🟢
+
+**Owner decisions, 3 Oct 2026, `KB-306`** (D6 stands: "Cash" by default, never blocks finalise, never asked).
+1. **Name:** trimmed, spaces collapsed, control characters dropped; empty or any "cash" → "Cash"; at most **60 code points**.
+2. **Mobile:** optional; typed with or without +91 / 91 / 0, spaces, hyphens, Devanagari digits; **stored as exactly 10 digits** starting 6–9 (the form a future udhaar matches on). Purpose: the receipt to the customer's WhatsApp (`KB-308`/`KB-309`) and later udhaar. 01-PRD's "no phone numbers" corrected.
+3. **Client ⇔ server parity:** `bills_customer_name_check` / `bills_customer_mobile_check` (migration `20261003090000`) are the same rules as `domain/customer.ts`. Postgres `char_length` counts code points and JS `.length` counts UTF-16 units (an emoji is 2), so the client counts code points — a mismatch would make a bill a permanent 23514 sync conflict. `data/customer.e2e.test.ts` pushes every tricky input (Devanagari, emoji, ZWJ sequences, exactly 60 / 61, every mobile prefix form) through the real `push_bill` and asserts client-accept ⇔ server-accept.
+4. **Minimal personal data (DPDP Act 2023):** no profiles, no customers list, no recent-customers suggestions; customer fields never go to `/voice`; a failed bill push logs only its `localId` and error code. The receipt (`KB-308`) prints the name only when it isn't "Cash", and **never the mobile**. Erasure vs immutable bills → the pre-pilot privacy review.
+
 ---
 
 ## Superseded

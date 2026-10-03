@@ -17,6 +17,8 @@ import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./u
 import { useOrderResolver } from "./useOrderResolver";
 import { AddItemSheet } from "./AddItemSheet";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import type { Customer } from "./useBillLines";
+import { CASH, formatMobile } from "@/domain/customer";
 
 // S3 (05-FRONTEND-SPEC.md §2) - KB-301 is the SHELL only: layout, the line
 // list, the pinned TOTAL, the action bar. Voice (KB-302), editing (KB-303),
@@ -149,6 +151,9 @@ export function BillingScreen() {
       usage={shopCatalog?.usageById}
       onAddByHand={bill.addByHand}
       focusLineId={bill.focusLineId}
+      customer={bill.customer}
+      onCustomerName={bill.setCustomerName}
+      onCustomerMobile={bill.setCustomerMobile}
     />
   );
 }
@@ -181,10 +186,15 @@ interface BillViewProps {
   onAddByHand?: (item: ParsedItem, displayName: string) => void;
   /** KB-305: the hand-added line whose qty editor opens on arrival. */
   focusLineId?: string | null;
+  /** KB-306: who the bill is for, and the editors' commits (message or null). */
+  customer?: Customer;
+  onCustomerName?: (text: string) => string | null;
+  onCustomerMobile?: (text: string) => string | null;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
 const NONE_NOT_ADDED: readonly NotAdded[] = [];
+const NO_CUSTOMER: Customer = { name: CASH, mobile: null };
 
 /**
  * KB-319 (KI-57; owner): an utterance that was heard but isn't on the bill -
@@ -329,6 +339,7 @@ function EditableValue({
   initial,
   onCommit,
   startOpen = false,
+  kind = "number",
 }: {
   label: string;
   fieldId: string;
@@ -337,6 +348,8 @@ function EditableValue({
   onCommit: (value: string) => string | null;
   /** KB-305: open (focused, value selected) when the line arrives. */
   startOpen?: boolean;
+  /** KB-306: the keyboard - numbers (default), text (a name) or a phone number. */
+  kind?: "number" | "text" | "tel";
 }) {
   const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
   const [error, setError] = useState<string | null>(null);
@@ -369,7 +382,11 @@ function EditableValue({
         id={fieldId}
         name={fieldId}
         aria-label={label}
-        inputMode="decimal"
+        type={kind === "tel" ? "tel" : "text"}
+        inputMode={kind === "number" ? "decimal" : kind}
+        autoCapitalize={kind === "text" ? "words" : undefined}
+        // Never the browser's saved values - for a phone field that would be the shopkeeper's own number.
+        autoComplete="off"
         enterKeyHint="done"
         autoFocus
         value={draft}
@@ -391,7 +408,7 @@ function EditableValue({
             setError(null);
           } else commit();
         }}
-        className="h-11 w-24 rounded-[6px] border border-line bg-surface px-2 text-right tabular-nums"
+        className={`h-11 rounded-[6px] border border-line bg-surface px-2 tabular-nums ${kind === "number" ? "w-24 text-right" : "w-44"}`}
       />
       {error && (
         <span role="alert" className="text-[13px] text-danger">
@@ -534,6 +551,9 @@ export function BillView({
   usage,
   onAddByHand,
   focusLineId = null,
+  customer = NO_CUSTOMER,
+  onCustomerName,
+  onCustomerMobile,
 }: BillViewProps) {
   // KB-305: the add-item panel, and what its search starts with.
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
@@ -647,10 +667,25 @@ export function BillView({
           </details>
         </header>
 
-        {/* Customer defaults to Cash and never blocks (hard rule 6). KB-306 makes it editable. */}
-        <div className="flex items-center gap-3 border-b border-line px-4 py-2">
+        {/* KB-306 (D6): the customer defaults to Cash, is editable any time and
+            never blocks or asks (hard rule 6). Mobile is optional, 10 digits. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-1">
           <span className={label}>Customer</span>
-          <span>Cash</span>
+          {onCustomerName ? (
+            <EditableValue kind="text" label="Customer name" fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
+          ) : (
+            <span>{customer.name}</span>
+          )}
+          {onCustomerMobile && (
+            <EditableValue
+              kind="tel"
+              label="Customer mobile"
+              fieldId="customer-mobile"
+              text={customer.mobile ? formatMobile(customer.mobile) : "+ Mobile"}
+              initial={customer.mobile ?? ""}
+              onCommit={onCustomerMobile}
+            />
+          )}
         </div>
 
         <div className="relative min-h-0 flex-1">

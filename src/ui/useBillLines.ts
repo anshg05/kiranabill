@@ -15,6 +15,7 @@ import {
 } from "@/domain/billEdit";
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import type { ParsedItem } from "@/domain/grammar";
+import { CASH, parseCustomerName, parseIndianMobile } from "@/domain/customer";
 import type { BillLine } from "@/data/voiceBilling";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
@@ -65,6 +66,14 @@ interface State {
   readonly nextNotAddedId: number;
   /** KB-305: the line added by hand whose qty editor opens - until the next change. */
   readonly focusLineId: string | null;
+  /** KB-306 (D6, D52): who the bill is for - "Cash" by default, mobile optional
+   * (10 digits). Only valid values reach here; it never touches the lines. */
+  readonly customer: Customer;
+}
+
+export interface Customer {
+  readonly name: string;
+  readonly mobile: string | null;
 }
 
 type Action =
@@ -73,13 +82,14 @@ type Action =
   | { type: "retrying"; id: string }
   | { type: "retryFailed"; id: string; message: string }
   | { type: "dismiss"; id: string }
+  | { type: "customer"; customer: Partial<Customer> }
   | { type: "replace"; id: string; row: BillRow }
   | { type: "remove"; id: string }
   | { type: "undo" }
   | { type: "forget" }
   | { type: "acknowledge"; key: string };
 
-export const EMPTY_BILL: State = { rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null };
+export const EMPTY_BILL: State = { rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null } };
 
 const updateNotAdded = (state: State, id: string, change: Partial<NotAdded>): State => ({
   ...state,
@@ -123,6 +133,8 @@ export function billReducer(state: State, action: Action): State {
       return updateNotAdded(state, action.id, { retrying: false, message: action.message });
     case "dismiss":
       return { ...state, notAdded: state.notAdded.filter((n) => n.id !== action.id) };
+    case "customer":
+      return { ...state, customer: { ...state.customer, ...action.customer } };
     case "replace": {
       // KB-304 (owner): an acknowledgement lapses on any edit to its line.
       const scopes = acknowledgementScopes(action.row.id, action.row.utteranceId);
@@ -169,6 +181,10 @@ export interface BillLines {
   addByHand: (item: ParsedItem, displayName: string) => void;
   /** KB-305: the hand-added line whose qty editor is open, or null. */
   readonly focusLineId: string | null;
+  readonly customer: Customer;
+  /** KB-306: commit a typed name / mobile; returns the message to show, or null when stored. */
+  setCustomerName: (text: string) => string | null;
+  setCustomerMobile: (text: string) => string | null;
   fail: (transcript: string) => void;
   retrying: (id: string) => void;
   retryFailed: (id: string, message: string) => void;
@@ -231,6 +247,18 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
     [catalog],
   );
   const fail = useCallback((transcript: string) => dispatch({ type: "fail", transcript }), []);
+  const setCustomerName = useCallback((text: string) => {
+    const name = parseCustomerName(text);
+    if (!name.ok) return name.error;
+    dispatch({ type: "customer", customer: { name: name.value } });
+    return null;
+  }, []);
+  const setCustomerMobile = useCallback((text: string) => {
+    const mobile = parseIndianMobile(text);
+    if (!mobile.ok) return mobile.error;
+    dispatch({ type: "customer", customer: { mobile: mobile.value } });
+    return null;
+  }, []);
   const retrying = useCallback((id: string) => dispatch({ type: "retrying", id }), []);
   const retryFailed = useCallback((id: string, message: string) => dispatch({ type: "retryFailed", id, message }), []);
   const dismiss = useCallback((id: string) => dispatch({ type: "dismiss", id }), []);
@@ -241,6 +269,9 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
     pending,
     notAdded: state.notAdded,
     focusLineId: state.focusLineId,
+    customer: state.customer,
+    setCustomerName,
+    setCustomerMobile,
     removed: state.removed?.row ?? null,
     add,
     edit,

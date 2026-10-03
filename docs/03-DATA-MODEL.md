@@ -190,8 +190,8 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `local_id` | `uuid` NOT NULL | Client-generated **idempotency key** |
 | `receipt_number` | `text` NOT NULL | From the device's reserved block |
 | `receipt_number_source` | `text` NOT NULL | `'block'` \| `'fallback'` (default `'block'`). Which allocation path produced the number — a permanent label, never a trigger for renumbering (`07-DECISIONS.md` D24). Pushed since `KB-110b`. |
-| `customer_name` | `text` | Defaults to `'Cash'`. **Never blocks finalise.** |
-| `customer_mobile` | `text` NULL | Optional. Stored for future udhaar. |
+| `customer_name` | `text` | Defaults to `'Cash'`. **Never blocks finalise.** `CHECK (char_length(customer_name) BETWEEN 1 AND 60)` — code points (`KB-306`, D52). |
+| `customer_mobile` | `text` NULL | Optional. **Exactly 10 digits**, no +91: `CHECK (customer_mobile IS NULL OR customer_mobile ~ '^[6-9][0-9]{9}$')` (`KB-306`, D52). For the receipt's WhatsApp target and future udhaar. |
 | `subtotal_paise` | `bigint` NOT NULL | |
 | `total_paise` | `bigint` NOT NULL | |
 | `status` | `text` | `'draft'` \| `'final'` \| `'cancelled'` |

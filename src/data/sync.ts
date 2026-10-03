@@ -186,10 +186,10 @@ export async function pushBills(client: SupabaseClient, localDb: KiranaBillDB): 
     if (error || typeof data !== "string") {
       if (isPermanentError(error)) {
         await localDb.bills.update(bill.localId, { syncStatus: "conflict" as SyncStatus });
-        console.warn(
-          `[sync] bills: permanent failure for localId=${bill.localId}: ${error?.code} ${error?.message}`,
-          { localBill: bill, localItems: items },
-        );
+        // KB-306 (owner): only which bill and the error code - never the bill, its
+        // items or Postgres' message/details (a CHECK failure echoes the row:
+        // customer names and numbers are personal data, DPDP Act 2023).
+        console.warn(`[sync] bills: permanent failure for localId=${bill.localId}: ${error?.code ?? "no code"}`);
       } else {
         anyTransientFailure = true;
       }

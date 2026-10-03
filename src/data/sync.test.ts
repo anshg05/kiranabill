@@ -246,6 +246,47 @@ describe("sync.ts", () => {
       expect(bill?.syncStatus).toBe("conflict");
     });
 
+    // KB-306 (owner): customers' names and numbers are personal data (DPDP Act 2023) -
+    // a failed push logs only which bill and why, never the bill itself.
+    it("KB-306: a permanent bill failure logs only the localId and the error code - no name, no mobile, no bill", async () => {
+      await localDb.bills.add({
+        localId: "bill-pii",
+        shopId: "shop-1",
+        status: "final",
+        syncStatus: "pending",
+        receiptNumber: "KB-0001",
+        receiptNumberSource: "block",
+        customerName: "Ramesh Kumar",
+        customerMobile: "9876543210",
+        subtotalPaise: 1000,
+        totalPaise: 1000,
+        schemaVersion: 1,
+        deviceId: "device-1",
+        createdAt: "2026-09-20T10:00:00.000Z",
+        finalizedAt: "2026-09-20T10:00:00.000Z",
+        syncedAt: null,
+      });
+      const client = makeMockClient({
+        "rpc:push_bill": () => ({
+          data: null,
+          error: { code: "23514", message: 'new row for relation "bills" violates check constraint "bills_customer_mobile_check"', details: "Failing row contains (Ramesh Kumar, 9876543210)" },
+        }),
+      });
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        await pushBills(client, localDb);
+        const logged = JSON.stringify(warn.mock.calls);
+        expect(logged).toContain("bill-pii");
+        expect(logged).toContain("23514");
+        expect(logged).not.toContain("Ramesh");
+        expect(logged).not.toContain("9876543210");
+        expect(logged).not.toContain("Failing row");
+      } finally {
+        warn.mockRestore();
+      }
+      expect((await localDb.bills.get("bill-pii"))?.syncStatus).toBe("conflict");
+    });
+
     it("a transient error (no Postgres error code - a network-layer failure) leaves the row pending for retry", async () => {
       await localDb.bills.add({
         localId: "bill-1",

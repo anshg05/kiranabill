@@ -102,7 +102,7 @@ adoption friction.
 | Deferred | Why |
 |---|---|
 | **Udhaar / credit** | Loudest market pain and in every competitor — but it does not test the differentiator, which is speed. Schema stays ledger-ready. Revisit immediately post-MVP. |
-| Customer database | Bills carry an optional free-text customer name. No profiles, no phone numbers. |
+| Customer database | Bills carry an optional free-text customer name. No profiles, ~~no phone numbers~~. **Corrected 3 Oct 2026 (owner, `KB-306`), per `07-DECISIONS.md` D6 / D52:** a bill may carry an optional customer mobile, stored on that bill only — for sending the receipt to the customer's WhatsApp (`KB-308`/`KB-309`) and, later, udhaar. Still no profiles, no customers list, no recent-customers suggestions. |
 | Inventory / stock | Different product |
 | GST | Pilot shop doesn't need it. Adding it later is additive, not structural. |
 | Thermal printing | Hardware dependency, small audience initially |
