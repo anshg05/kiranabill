@@ -228,9 +228,13 @@ describe("useVoiceBilling", () => {
   it("the browser going offline disables the mic; coming back re-enables it", async () => {
     const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt" }));
     expect(result.current.view.disabledReason).toBeNull();
-    act(() => window.dispatchEvent(new Event("offline")));
+    act(() => {
+      window.dispatchEvent(new Event("offline"));
+    });
     expect(result.current.view.disabledReason).toBe(OFFLINE_REASON);
-    act(() => window.dispatchEvent(new Event("online")));
+    act(() => {
+      window.dispatchEvent(new Event("online"));
+    });
     expect(result.current.view.disabledReason).toBeNull();
   });
 });

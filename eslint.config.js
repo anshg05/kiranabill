@@ -45,16 +45,6 @@ export default [
     },
   },
   {
-    // SG-10's existing findings outside KB-307's files (owner: list, don't fix
-    // here) - 10 findings, docs/12-PARKED.md KI-61. Fixed by the next ticket
-    // that touches each file; this list may only shrink.
-    files: ["src/ui/DevEmailSignIn.tsx", "src/ui/billEditing.test.tsx", "src/ui/useVoiceBilling.test.ts", "src/ui/useVoiceCapture.test.ts"],
-    rules: {
-      "@typescript-eslint/no-floating-promises": "off",
-      "@typescript-eslint/no-misused-promises": "off",
-    },
-  },
-  {
     files: ["src/domain/**/*.ts"],
     rules: {
       "no-restricted-imports": [

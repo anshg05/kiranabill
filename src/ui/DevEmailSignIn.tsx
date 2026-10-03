@@ -36,7 +36,7 @@ export function DevEmailSignIn() {
   };
 
   return (
-    <form onSubmit={run("signIn")} className="flex w-full max-w-sm flex-col gap-2 rounded-[6px] border border-line p-4">
+    <form onSubmit={(e) => void run("signIn")(e)} className="flex w-full max-w-sm flex-col gap-2 rounded-[6px] border border-line p-4">
       <p className="text-[13px] font-medium text-ink-soft">Dev sign-in (local Supabase only)</p>
       <input
         type="email"

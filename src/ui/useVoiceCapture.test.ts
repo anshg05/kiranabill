@@ -168,9 +168,13 @@ describe("warm mic (D45) - keep the stream 60 s, then release it", () => {
     const { result } = renderHook(() => useVoiceCapture());
     await record(result);
 
-    act(() => vi.advanceTimersByTime(WARM_MIC_MS - 1));
+    act(() => {
+      vi.advanceTimersByTime(WARM_MIC_MS - 1);
+    });
     expect(env.streams[0]!.track.stop).not.toHaveBeenCalled();
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(env.streams[0]!.track.stop).toHaveBeenCalledTimes(1);
     expect(WARM_MIC_MS).toBe(60_000);
   });
@@ -180,7 +184,9 @@ describe("warm mic (D45) - keep the stream 60 s, then release it", () => {
     const env = install();
     const { result } = renderHook(() => useVoiceCapture());
     await record(result);
-    act(() => vi.advanceTimersByTime(WARM_MIC_MS));
+    act(() => {
+      vi.advanceTimersByTime(WARM_MIC_MS);
+    });
 
     await act(() => result.current.start());
     expect(env.gum).toHaveBeenCalledTimes(2);
@@ -192,17 +198,23 @@ describe("warm mic (D45) - keep the stream 60 s, then release it", () => {
     const env = install();
     const { result } = renderHook(() => useVoiceCapture());
     await record(result);
-    act(() => vi.advanceTimersByTime(30_000));
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
 
     await act(() => result.current.start()); // warm
-    act(() => vi.advanceTimersByTime(WARM_MIC_MS)); // past the first recording's deadline, still speaking
+    act(() => {
+      vi.advanceTimersByTime(WARM_MIC_MS); // past the first recording's deadline, still speaking
+    });
     expect(result.current.phase).toBe("listening");
     expect(env.streams[0]!.track.stop).not.toHaveBeenCalled();
 
     await act(async () => {
       await result.current.stop();
     });
-    act(() => vi.advanceTimersByTime(WARM_MIC_MS));
+    act(() => {
+      vi.advanceTimersByTime(WARM_MIC_MS);
+    });
     expect(env.streams[0]!.track.stop).toHaveBeenCalledTimes(1);
   });
 

@@ -191,7 +191,9 @@ describe("KB-303 - removing a line, with one-level undo", () => {
     render(<Harness transcripts={["2 kilo chini"]} />);
     act(() => table().getByRole("button", { name: "Remove Chini" }).click());
     expect(screen.getByRole("status")).toBeTruthy();
-    act(() => vi.advanceTimersByTime(UNDO_MS));
+    act(() => {
+      vi.advanceTimersByTime(UNDO_MS);
+    });
     expect(screen.queryByRole("status")).toBeNull();
     expect(UNDO_MS).toBe(6_000);
   });
