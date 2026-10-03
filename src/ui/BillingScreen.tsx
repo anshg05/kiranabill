@@ -13,6 +13,8 @@ import { parseTranscript } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
+import { Receipt } from "./Receipt";
+import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
 import { useOrderResolver } from "./useOrderResolver";
@@ -232,7 +234,7 @@ interface BillViewProps {
   onFinalise?: () => void;
   saving?: boolean;
   /** Set once the bill is saved: the screen turns read-only, with New bill. */
-  saved?: { readonly receiptNumber: string } | null;
+  saved?: { readonly receiptNumber: string; readonly receipt?: ReceiptModel | null } | null;
   saveError?: string | null;
   onNewBill?: () => void;
 }
@@ -814,6 +816,9 @@ export function BillView({
 
         {/* KB-306 (D6): the customer defaults to Cash, is editable any time and
             never blocks or asks (hard rule 6). Mobile is optional, 10 digits. */}
+        {/* KB-308: with the receipt shown, the customer row goes - the receipt
+            prints the name, and the mobile is never on screen (D52). */}
+        {!saved?.receipt && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-1">
           <span className={label}>Customer</span>
           {onCustomerName && !readOnly ? (
@@ -833,9 +838,17 @@ export function BillView({
             />
           )}
         </div>
+        )}
 
         <div className="relative min-h-0 flex-1">
         <div ref={itemsRef} className="h-full overflow-y-auto">
+          {/* KB-308: after Bill Banao, the receipt of the bill as stored (KB-309 shares it). */}
+          {saved?.receipt ? (
+            <div className="px-4 py-4">
+              <Receipt receipt={saved.receipt} />
+            </div>
+          ) : (
+          <>
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label="Bill items" className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
@@ -898,6 +911,8 @@ export function BillView({
               ])}
             </tbody>
           </table>
+          </>
+          )}
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
           <div ref={endRef} />
         </div>

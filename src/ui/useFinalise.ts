@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import type { KiranaBillDB } from "@/data/db";
 import { finaliseBill, SAVE_FAILED, type FinaliseResult } from "@/data/finalise";
+import { loadReceipt } from "@/data/receipt";
+import type { Receipt } from "@/domain/receipt";
 import type { BillDraft } from "./useBillLines";
 
 // KB-307 commit 2: Bill Banao's save, for the screen. One save at a time (a
@@ -18,9 +20,15 @@ export interface UseFinaliseOptions {
   onSaved?: (result: FinaliseResult) => void;
 }
 
+/** KB-308: the saved bill's receipt, read back from the device (null if that read failed - the bill is still saved). */
+export interface SavedBill {
+  readonly receiptNumber: string;
+  readonly receipt: Receipt | null;
+}
+
 export interface Finaliser {
   phase: FinalisePhase;
-  saved: { receiptNumber: string } | null;
+  saved: SavedBill | null;
   error: string | null;
   finalise: (draft: BillDraft) => Promise<void>;
   /** Back to idle - "New bill". */
@@ -29,7 +37,7 @@ export interface Finaliser {
 
 export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseOptions): Finaliser {
   const [phase, setPhase] = useState<FinalisePhase>("idle");
-  const [saved, setSaved] = useState<{ receiptNumber: string } | null>(null);
+  const [saved, setSaved] = useState<SavedBill | null>(null);
   const busy = useRef(false);
 
   const finalise = useCallback(
@@ -39,7 +47,13 @@ export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseO
       setPhase("saving");
       try {
         const result = await finaliseBill(localDb, { ...draft, shopId, deviceId });
-        setSaved({ receiptNumber: result.receiptNumber });
+        // KB-308: the receipt from the bill as stored. A failed read never
+        // turns a saved bill into "failed" - the status line still shows it.
+        const receipt = await loadReceipt(localDb, draft.localId).catch((err: unknown) => {
+          console.warn("[receipt] read failed:", err instanceof Error ? err.message : err);
+          return null;
+        });
+        setSaved({ receiptNumber: result.receiptNumber, receipt });
         setPhase("saved");
         onSaved?.(result);
       } catch (err) {
