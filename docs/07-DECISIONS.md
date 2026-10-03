@@ -1442,6 +1442,7 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 2. Pushing to GitHub after each verified step continues (D34). **The agent never puts `[deploy]` in a commit message unless the owner explicitly approves that release** — and never writes the marker into a message by accident (messages about this rule say "the deploy marker").
 3. Testing on real devices: a draft deploy (`netlify deploy` without `--prod`, 0 credits). Never `--prod` without the owner's approval.
 4. Netlify's docs don't say whether a skipped build costs credits — the owner verifies in the dashboard after the first push under this rule (Deploys shows Skipped/Canceled; credit usage unchanged).
+5. **Every migration stays compatible with the app version currently deployed** (owner, 3 Oct 2026). `db push` goes live on the remote at once; code reaches production only at a `[deploy]` release — so for days the live app runs against the new schema. Additive changes only until the matching release (new nullable/defaulted columns, new tables, new functions); never rename/drop a column, tighten a constraint or change a function signature the deployed code still uses — split it across two releases (expand, deploy, then contract). Each migration's plan states which deployed version it was checked against.
 
 ### D56 — Learning at finalise: after the commit, its own transaction, idempotent, every alias event tagged with its layer 🟢
 

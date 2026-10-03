@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 3 Oct 2026 (rev 75) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 3 Oct 2026 (rev 76) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-307` (finalise + learning) — all three commits built and verified; commits 2 (with the focus fix) and 3 await the owner's browser check. Commit 1, commit 2 and its fix are pushed (D55: no deploy); commit 3 is local. `KB-306` done 3 Oct 2026.
+**Working on:** `KB-308` (receipt) — plan. `KB-307` done 3 Oct 2026 (owner browser check passed; all commits pushed, none deployed — D55).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -44,11 +44,12 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 11. **`KB-319`** — voice parse: client timeout + Retry text only (KI-57, KI-58; owner, 1 Oct 2026) — **done 2 Oct 2026.**
 12. ~~**`KB-305`** — add item by hand~~ — **done 3 Oct 2026.**
 13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
-14. **`KB-307`** — finalise (Bill Banao) + learning — **built**, awaiting the owner's check of commits 2–3.
-15. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) after billing (KI-50).
+14. ~~**`KB-307`** — finalise (Bill Banao) + learning~~ — **done 3 Oct 2026.** New: `KI-63` (per-kg rate on a per-gm product never observed).
+15. **`KB-308`** — receipt — **planning.**
+16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) after billing (KI-50).
 
-**Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
-https://kiranabilling.netlify.app (see "Before deployment").
+**Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
+https://kiranabilling.netlify.app **only** when the commit carries the owner-approved deploy marker (see "Before deployment").
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
@@ -292,6 +293,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 3 Oct 2026 | **`KB-307` done** — owner browser check passed (Bill Banao focus fix incl. after resize; learning: idempotent, source-tagged, real-server e2e). Commit 3 pushed without the deploy marker. New `KI-63` (a per-kg rate on a per-gm product is never a price observation — compare by multiplication; before `KB-321`). D55 §5 + `CLAUDE.md`: every migration stays compatible with the currently deployed app. Local Studio diagnosed (host port 54323 answered by PostgREST — Docker Desktop's port forward is stale; Studio itself healthy inside its container). | Owner + Agent |
 | 3 Oct 2026 | **`KB-307` commit 3 built, not pushed — learning at finalise (D56).** Pure `learnFromBill` (L2 alias from unedited voice lines whose words aren't an exact alias, tagged fastpath/gemini; suppression from removed lines; L3 price observations in the shop's unit; L1 provisional sightings, promotion-due at 3); `data/learnBill.ts` — its own transaction after the bill commit, deterministic ids + `bill_learned` marker (run twice / two tabs = one run), recovery on start. Removed lines kept on the bill locally (`discardedLines`). Tests first (domain + data red); e2e on a Ready-catalog shop: server gets alias, observation, provisional product, events with the server bill id; re-learn + re-sync → identical. `test:rls` 50/50 (6 learning-write checks, already covered by existing policies). **Agent's real-browser check:** finalised "2 kilo चिनी" in the preview → IndexedDB alias + events synced; server shows alias चिनी → Chini 0.50 and the events on KB-000001. Owner's local bills listed (read-only): Gupta Store, 6 bills, all block-numbered. | Agent |
 | 3 Oct 2026 | **`KB-307` commit 2 — owner check: all passed except one bug, fixed.** Bill Banao tapped while checks were pending moved no visible focus in real Chrome (jsdom passed). **Cause:** which markup is visible (cards vs table) was decided once at mount; after a window-size change focus went into the hidden markup (focusing a display:none element does nothing); and Chrome shows no :focus-visible for script focus after a tap. **Fix (tests first, 3 red):** focus the first pending target that is actually rendered, scroll it to the middle, own focus ring (`[data-pending-target]:focus`), and the wide/narrow media query now follows the window (also KB-305's qty editor). **Agent's own real-browser check (new D39 rule)** in the preview with a throwaway local account: reproduced before the fix (activeElement stayed on Bill Banao); after it, at 1280 px, 375 px and 375 → 1280 without reload, activeElement = the visible first "Theek hai" / the missing amount, inside the list's visible area after scrolling, red outline. D55 (pushing no longer deploys) and the D39 / 09 §B5 rule recorded. | Agent + Owner |
 | 3 Oct 2026 | **`KB-307` commit 2 built, not pushed — Bill Banao (D54).** `data/finalise.ts`: one Dexie transaction (receipt number via local-only `takeNextNumber`, bill final/pending, items); top-up + sync after the commit; double tap / two tabs → one bill. `pending` now includes lines needing an amount ("Price needed" / "Quantity needed", no Theek hai, replaces `missing_total`/`incomplete_item`); **found while building: Rule 5b "ajwain" has total 0 with price type unknown — "total ≠ null" alone would have let "Ajwain ₹0" onto a receipt.** Bill Banao `aria-disabled` + focus on the first pending item; saved screen (receipt number, read-only, New bill; mic / Add item start the next bill). `review_flags` = `{code, severity, acknowledged}`. Four existing tests changed by decision 2 (listed in the handoff). | Agent |

@@ -91,6 +91,8 @@ Never break these, even if instructed to. If an instruction conflicts, stop and 
 - **A push does not deploy** (D55): Netlify builds production only when the latest commit message contains `[deploy]`.
   Never put that marker in a commit message unless the owner explicitly approves the release — each production deploy
   costs Netlify credits. Real-device testing: `netlify deploy` (a draft, no `--prod`) only.
+- **Every migration stays compatible with the currently DEPLOYED app** (D55 §5): `db push` is live at once, code only at
+  a `[deploy]` release. Additive until the release; rename/drop/tighten = two releases (expand, deploy, contract).
 - **UI tickets:** check the change yourself in the preview browser before asking for the owner's check (D39).
 - The developer works solo and has explicitly chosen this. Do not suggest branches or pull requests.
 
