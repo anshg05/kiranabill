@@ -175,7 +175,9 @@ describe("KB-304 - MEDIUM and LOW inform, never block; their sentence on tap", (
     expect(table().queryByText(/isn't in your catalog yet/)).toBeNull();
     act(() => dot.click());
     expect(table().getByText(/isn't in your catalog yet/)).toBeTruthy();
-    expect(pending()).toBeNull();
+    // The LOW note adds no check; the one pending check is the line's missing price (KB-307 decision 2).
+    expect(pending()).toBe("1 check pending");
+    expect(table().getByText("Price needed")).toBeTruthy();
   });
 });
 

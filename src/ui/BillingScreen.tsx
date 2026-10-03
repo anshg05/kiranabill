@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
+import { Check, Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
 import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import { customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
+import { amountNeeded } from "@/domain/finalBill";
 import { sumPaise } from "@/domain/money";
 import { buildVocabularyPrompt } from "@/domain/vocabulary";
 import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
@@ -15,6 +16,10 @@ import { useShop } from "@/providers/ShopProvider";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
 import { useOrderResolver } from "./useOrderResolver";
+import { useFinalise } from "./useFinalise";
+import { supabase } from "@/data/supabaseClient";
+import { topUpReceiptBlock } from "@/data/receiptNumbers";
+import { syncNow } from "@/data/sync";
 import { AddItemSheet } from "./AddItemSheet";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import type { Customer } from "./useBillLines";
@@ -69,7 +74,7 @@ function devFailParseFetch(): typeof fetch | undefined {
 
 export function BillingScreen() {
   const { signOut, session } = useAuth();
-  const { shop, localDb } = useShop();
+  const { shop, localDb, deviceId } = useShop();
   // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
   // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
   const [shopCatalog, setShopCatalog] = useState<ShopCatalog | null>(null);
@@ -126,6 +131,23 @@ export function BillingScreen() {
     onTranscript,
     notReadyReason: parser ? null : "Loading your catalog…",
   });
+  // KB-307: Bill Banao - one atomic local write; after it commits, top the
+  // receipt block up and start a sync (D38's loop would anyway). Neither is
+  // awaited: the bill is already saved, and neither can fail it.
+  const onSaved = useCallback(() => {
+    if (!localDb || !shop || !deviceId) return;
+    void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
+    void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err));
+  }, [deviceId, localDb, shop]);
+  const finaliser = useFinalise({ localDb, shopId: shop?.id ?? null, deviceId, onSaved });
+  const { finalise, clear: clearSaved } = finaliser;
+  const { reset: resetBill, draft } = bill;
+  const onFinalise = useCallback(() => void finalise(draft), [draft, finalise]);
+  const onNewBill = useCallback(() => {
+    resetBill();
+    clearSaved();
+  }, [clearSaved, resetBill]);
+
   const onSignOut = () => {
     voice.releaseMic(); // the warm mic goes off before anything else (D45)
     void signOut();
@@ -154,6 +176,11 @@ export function BillingScreen() {
       customer={bill.customer}
       onCustomerName={bill.setCustomerName}
       onCustomerMobile={bill.setCustomerMobile}
+      onFinalise={onFinalise}
+      saving={finaliser.phase === "saving"}
+      saved={finaliser.saved}
+      saveError={finaliser.error}
+      onNewBill={onNewBill}
     />
   );
 }
@@ -190,6 +217,13 @@ interface BillViewProps {
   customer?: Customer;
   onCustomerName?: (text: string) => string | null;
   onCustomerMobile?: (text: string) => string | null;
+  /** KB-307: Bill Banao - offered only with >=1 line and pending = 0. */
+  onFinalise?: () => void;
+  saving?: boolean;
+  /** Set once the bill is saved: the screen turns read-only, with New bill. */
+  saved?: { readonly receiptNumber: string } | null;
+  saveError?: string | null;
+  onNewBill?: () => void;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -215,6 +249,7 @@ function NotAddedList({ entries, onRetry, onDismiss }: { entries: readonly NotAd
           <span className="ml-auto flex items-center gap-1">
             <button
               type="button"
+              data-pending-target
               aria-label={`Retry “${n.transcript}”`}
               disabled={n.retrying}
               onClick={() => onRetry?.(n.id)}
@@ -243,6 +278,20 @@ function checksText(n: number): string {
 }
 
 /**
+ * KB-307 (owner, decision 2): a line with no amount can't be on a receipt.
+ * Shown like a HIGH flag but with no "Theek hai" - only a value clears it.
+ */
+function AmountNeeded({ need }: { need: "price" | "quantity" }) {
+  return (
+    <div data-severity="HIGH" className="flex items-center gap-x-2 py-1 text-[13px] text-danger">
+      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+      <span className="sr-only">Must check: </span>
+      <span>{need === "price" ? "Price needed" : "Quantity needed"}</span>
+    </div>
+  );
+}
+
+/**
  * KB-304: one HIGH flag - 05 §2: a red inline sentence and a "Theek hai"
  * acknowledge button (13-DESIGN §6b: 1px DANGER border, transparent). Never
  * colour alone (05 §9): a triangle icon and, for screen readers, "Must check".
@@ -259,6 +308,7 @@ function HighFlag({ flag, name, onAcknowledge }: { flag: ShownFlag; name: string
       ) : (
         <button
           type="button"
+          data-pending-target
           aria-label={`Theek hai — ${name ? `${name}: ` : ""}${flag.message}`}
           onClick={() => onAcknowledge(flag)}
           className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger"
@@ -340,6 +390,7 @@ function EditableValue({
   onCommit,
   startOpen = false,
   kind = "number",
+  pendingTarget = false,
 }: {
   label: string;
   fieldId: string;
@@ -350,6 +401,8 @@ function EditableValue({
   startOpen?: boolean;
   /** KB-306: the keyboard - numbers (default), text (a name) or a phone number. */
   kind?: "number" | "text" | "tel";
+  /** KB-307: where a Bill Banao tap sends focus when this value is what's missing. */
+  pendingTarget?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
   const [error, setError] = useState<string | null>(null);
@@ -358,6 +411,7 @@ function EditableValue({
       <button
         type="button"
         aria-label={label}
+        data-pending-target={pendingTarget || undefined}
         onClick={() => {
           setDraft(initial);
           setError(null);
@@ -554,7 +608,14 @@ export function BillView({
   customer = NO_CUSTOMER,
   onCustomerName,
   onCustomerMobile,
+  onFinalise,
+  saving = false,
+  saved = null,
+  saveError = null,
+  onNewBill,
 }: BillViewProps) {
+  // KB-307: once saved, the bill is immutable - shown read-only until New bill.
+  const readOnly = saved !== null;
   // KB-305: the add-item panel, and what its search starts with.
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
   const canAdd = catalog !== null && onAddByHand !== undefined;
@@ -586,7 +647,14 @@ export function BillView({
   };
   const flagsBlock = (id: string, name: string) => {
     const own = lineFlags(id);
-    return own.length > 0 ? <FlagList flags={own} name={name} onAcknowledge={acknowledge} /> : null;
+    const need = needOf(id);
+    if (own.length === 0 && !need) return null;
+    return (
+      <>
+        {need && <AmountNeeded need={need} />}
+        {own.length > 0 && <FlagList flags={own} name={name} onAcknowledge={acknowledge} />}
+      </>
+    );
   };
   const billLevelBlock = (id: string) => {
     const after = billLevelAfter(id);
@@ -600,7 +668,12 @@ export function BillView({
   };
   // 05 §2: a line with an unacknowledged HIGH flag gets a 3px DANGER left
   // border; once acknowledged, a quiet LINE one.
+  const needOf = (id: string) => {
+    const row = lines.find((l) => l.id === id);
+    return row && !readOnly ? amountNeeded(row.item) : null;
+  };
   const edge = (id: string) => {
+    if (needOf(id)) return "border-l-[3px] border-l-danger";
     const high = hasHigh(id);
     if (high.length === 0) return "";
     return high.some((f) => !f.acknowledged) ? "border-l-[3px] border-l-danger" : "border-l-[3px] border-l-line";
@@ -609,7 +682,10 @@ export function BillView({
   // KB-303: the editable pieces of a line. `view` keeps field ids unique -
   // the card list and the table are both in the DOM (CSS picks one).
   type View = "card" | "table";
-  const qtyOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+  const qtyOf = (view: View, id: string, line: BillLine["item"], name: string) =>
+    readOnly ? (
+      <span>{formatQty(line.qty)}</span>
+    ) : (
     <EditableValue
       label={`${name} quantity`}
       fieldId={`${view}-${id}-qty`}
@@ -617,26 +693,64 @@ export function BillView({
       initial={line.qty === null ? "" : String(line.qty)}
       onCommit={(v) => onEdit(id, "qty", v)}
       startOpen={id === focusLineId && (view === "table") === wide}
+      pendingTarget={amountNeeded(line) === "quantity"}
     />
-  );
-  const unitOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+    );
+  const unitOf = (view: View, id: string, line: BillLine["item"], name: string) =>
+    readOnly ? (
+      <span>{line.unit || "—"}</span>
+    ) : (
     <UnitPicker label={`${name} unit`} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
   );
-  const rateOf = (view: View, id: string, line: BillLine["item"], name: string) => (
+  const rateOf = (view: View, id: string, line: BillLine["item"], name: string) =>
+    readOnly ? (
+      <span>{formatRate(line)}</span>
+    ) : (
     <EditableValue label={`${name} rate`} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
   );
   // The amount is editable only where no rate exists (owner, decision 1).
   const amountOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    line.rate === null ? (
-      <EditableValue label={`${name} amount`} fieldId={`${view}-${id}-amount`} text={formatAmount(line.total)} initial={paiseText(line.total || null)} onCommit={(v) => onEdit(id, "amount", v)} />
+    line.rate === null && !readOnly ? (
+      <EditableValue
+        label={`${name} amount`}
+        fieldId={`${view}-${id}-amount`}
+        text={formatAmount(line.total)}
+        initial={paiseText(line.total || null)}
+        onCommit={(v) => onEdit(id, "amount", v)}
+        pendingTarget={amountNeeded(line) === "price"}
+      />
     ) : (
       formatAmount(line.total)
     );
-  const removeOf = (id: string, name: string) => (
+  const removeOf = (id: string, name: string) =>
+    readOnly ? null : (
     <button type="button" aria-label={`Remove ${name}`} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
       <X size={18} strokeWidth={1.5} aria-hidden />
     </button>
   );
+
+  // KB-307 (owner): a Bill Banao tap while checks are pending goes to the
+  // first one, in bill order - a HIGH flag's "Theek hai", a missing amount or
+  // quantity, then a not-added utterance's Retry - in the markup that's visible.
+  const cardsRef = useRef<HTMLUListElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const notAddedRef = useRef<HTMLDivElement>(null);
+  const canFinalise = onFinalise !== undefined && !readOnly && !saving && lines.length > 0 && pending === 0;
+  const focusFirstPending = () => {
+    const view = wide ? tableRef.current : cardsRef.current;
+    const target = view?.querySelector<HTMLElement>("[data-pending-target]") ?? notAddedRef.current?.querySelector<HTMLElement>("[data-pending-target]");
+    target?.focus();
+    setAnnouncement(`${checksText(pending)}.`);
+  };
+  const tapBillBanao = () => {
+    if (canFinalise) onFinalise?.();
+    else if (pending > 0) focusFirstPending();
+  };
+  // Owner (decision 4): on the saved screen the mic and Add item start the next bill.
+  const nextBillThen = (then?: () => void) => () => {
+    onNewBill?.();
+    then?.();
+  };
 
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
@@ -671,12 +785,13 @@ export function BillView({
             never blocks or asks (hard rule 6). Mobile is optional, 10 digits. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-1">
           <span className={label}>Customer</span>
-          {onCustomerName ? (
+          {onCustomerName && !readOnly ? (
             <EditableValue kind="text" label="Customer name" fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
           ) : (
             <span>{customer.name}</span>
           )}
-          {onCustomerMobile && (
+          {readOnly && customer.mobile && <span className="tabular-nums">{formatMobile(customer.mobile)}</span>}
+          {onCustomerMobile && !readOnly && (
             <EditableValue
               kind="tel"
               label="Customer mobile"
@@ -691,7 +806,7 @@ export function BillView({
         <div className="relative min-h-0 flex-1">
         <div className="h-full overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
-          <ul aria-label="Bill items" className="md:hidden">
+          <ul ref={cardsRef} aria-label="Bill items" className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
               <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
@@ -712,7 +827,7 @@ export function BillView({
           </ul>
 
           {/* md and up: a table (05 §2). */}
-          <table className="hidden w-full border-collapse md:table">
+          <table ref={tableRef} className="hidden w-full border-collapse md:table">
             <thead>
               <tr className={`border-b border-line text-left ${label}`}>
                 <th className="px-4 py-2 font-medium">Item</th>
@@ -735,7 +850,7 @@ export function BillView({
                   <td className="px-4 text-right font-semibold tabular-nums">{amountOf("table", id, line, displayName)}</td>
                   <td className="px-1">{removeOf(id, displayName)}</td>
                 </tr>,
-                lineFlags(id).length > 0 && (
+                (lineFlags(id).length > 0 || needOf(id)) && (
                   <tr key={`${id}-flags`} className="border-b border-line bg-surface">
                     <td colSpan={6} className={`px-4 ${edge(id)}`}>
                       {flagsBlock(id, displayName)}
@@ -752,7 +867,9 @@ export function BillView({
               ])}
             </tbody>
           </table>
-          <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
+          <div ref={notAddedRef}>
+            <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
+          </div>
           <div ref={endRef} />
         </div>
         {addItem && canAdd && (
@@ -785,7 +902,14 @@ export function BillView({
 
         {/* KB-303: one-level undo for a removed line (owner) - never a confirm
             dialog, which would be a question mid-bill (hard rule 6). */}
-        {removed && onUndo && (
+        {saved && (
+          <div role="status" aria-label="Bill saved" className="flex items-center gap-2 border-t border-line bg-surface px-4 py-2 font-medium text-ok">
+            <Check size={18} strokeWidth={1.5} aria-hidden />
+            Bill {saved.receiptNumber} saved
+          </div>
+        )}
+
+        {removed && onUndo && !readOnly && (
           <div role="status" className="flex items-center justify-between border-t border-line px-4 text-[13px]">
             <span>{removed.displayName} removed</span>
             <button type="button" onClick={onUndo} className="min-h-11 px-3 font-medium text-indigo">
@@ -806,33 +930,45 @@ export function BillView({
               Banao until KB-307. The reason is a tooltip only (owner, 27 Sep
               2026) - a disabled button fires no hover events, so the title sits
               on a wrapper. */}
-          <MicButton voice={voice} onMicTap={onMicTap} onMicPointerDown={onMicPointerDown} />
+          <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
           <span title={canAdd ? undefined : "Loading your catalog…"}>
             <button
               type="button"
               disabled={!canAdd}
-              onClick={() => setAddItem({ query: "" })}
+              onClick={readOnly ? nextBillThen(() => setAddItem({ query: "" })) : () => setAddItem({ query: "" })}
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink disabled:opacity-50"
             >
               <Plus size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
               Add item
             </button>
           </span>
-          {/* KB-304: unacknowledged HIGH flags (+ KB-319: not-added utterances) - what Bill Banao will wait for (KB-307). */}
-          {pending > 0 && (
+          {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
+          {pending > 0 && !readOnly && (
             <p data-testid="checks-pending" className="col-span-2 text-center text-[13px] font-medium text-danger">
               {checksText(pending)}
             </p>
           )}
-          <span title="Finalising isn't available yet" className="col-span-2">
+          {saveError && (
+            <p role="alert" className="col-span-2 text-center text-[13px] font-medium text-danger">
+              {saveError}
+            </p>
+          )}
+          {readOnly ? (
+            <button type="button" onClick={onNewBill} className="col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface">
+              New bill
+            </button>
+          ) : (
+            // KB-307: aria-disabled, not disabled - a tap while checks are pending
+            // must still land, to take the shopkeeper to the first one.
             <button
               type="button"
-              disabled
-              className="min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface disabled:opacity-50"
+              aria-disabled={!canFinalise}
+              onClick={tapBillBanao}
+              className={`col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface ${canFinalise ? "" : "opacity-50"}`}
             >
               Bill Banao
             </button>
-          </span>
+          )}
         </div>
       </div>
     </div>

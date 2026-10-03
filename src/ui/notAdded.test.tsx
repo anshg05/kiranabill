@@ -203,7 +203,7 @@ describe("KB-319 - Retry re-sends the text only", () => {
     expect(retry!.meta.catalogSlice.length).toBeGreaterThan(0);
     expect(get().bill.rows.map((r) => [r.displayName, r.item.qty])).toEqual([["kuch naya", 2]]);
     expect(notAddedList()).toBeNull();
-    expect(pending()).toBeNull();
+    expect(pending()).toBe("1 check pending"); // the entry is gone; "kuch naya" has no price yet (KB-307 decision 2)
   });
 
   it("while a Retry is in flight its button is disabled ('Reading…') - no second call", async () => {

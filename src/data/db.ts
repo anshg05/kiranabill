@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
+import type { StoredReviewFlag } from "@/domain/finalBill";
 
 // KB-109: the local IndexedDB layer. Three genuinely different roles
 // hide under "mirror the server tables" (docs/03-DATA-MODEL.md section 6):
@@ -74,7 +75,10 @@ export interface LocalBillItem {
   totalPaise: number;
   priceType: "rate" | "total" | "default" | "unknown";
   source: "voice" | "fastpath" | "manual";
-  reviewFlags: string[];
+  /** KB-307 (owner): each flag the line carried at finalise, with its severity
+   * and whether the shopkeeper said "Theek hai" - so "saw and confirmed"
+   * survives finalise. bill_items.review_flags (jsonb). */
+  reviewFlags: StoredReviewFlag[];
   wasEdited: boolean;
 }
 

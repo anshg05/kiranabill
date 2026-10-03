@@ -129,10 +129,10 @@ describe("BillView", () => {
     expect(screen.queryByText("तूर दाल")).toBeNull();
   });
 
-  it("Bill Banao stays disabled until KB-307; Add item is disabled while there is no shop catalog to search (KB-305)", () => {
+  it("without a finalise handler Bill Banao is not enabled (KB-307: aria-disabled, so a tap still lands); Add item is disabled while there is no shop catalog (KB-305)", () => {
     renderBill(parsed("VC023"));
     expect((screen.getByRole("button", { name: /Add item/ }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Bill Banao" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Bill Banao" }).getAttribute("aria-disabled")).toBe("true");
   });
 });
 

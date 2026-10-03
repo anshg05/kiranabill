@@ -219,7 +219,7 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `total_paise` | `bigint` NOT NULL | |
 | `price_type` | `text` | `'rate'` \| `'total'` \| `'default'` \| `'unknown'` |
 | `source` | `text` | `'voice'` \| `'fastpath'` \| `'manual'` — measures fast-path coverage |
-| `review_flags` | `jsonb` | Array of reason codes |
+| `review_flags` | `jsonb` | `[{code, severity, acknowledged}]` — each flag the line carried at finalise, and whether the shopkeeper said "Theek hai" (`KB-307`, D54). A bill-level flag is stored on its anchor line. |
 | `was_edited` | `boolean` | True if the user changed it after parsing — **the learning signal** |
 
 ### `receipt_number_blocks`

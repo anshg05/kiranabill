@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 3 Oct 2026 (rev 73) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 3 Oct 2026 (rev 74) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-307` (finalise) — commit 1 (integrity: KI-38, KI-41, SG-10) built and verified, not pushed; awaiting the owner's `npx supabase db push` of `20261003100000` (remote checked read-only: 1 shop, 0 shop products, 0 bills, 0 learning rows). Then commits 2 (finalise + sync) and 3 (learning). `KB-306` done and live 3 Oct 2026. `KB-305` done and live 3 Oct 2026. `KB-319` done and live 2 Oct 2026. `KB-304` done and live 2 Oct 2026; `KB-303` done and live 1 Oct 2026. Before that: **`KB-317` closed 1 Oct 2026** (all pushed and live: `45e34bc`…`e89c065`, migration `20260929090000` on the remote). **Next:** the owner adds billing for Gemini (KI-50); then billing UI tickets (`KB-304` flag UI — `duplicate_line` and the other flags are only in the console today; `KB-305`…), and `KB-318` (Gemini prompt KI-45/KI-47/KI-52, thinking config, KI-57 retry-the-text path, KI-58 timeouts + Groq fail-fast on 429) after billing. **Owner manual:** Docker Desktop won't start on this machine (1 Oct) — local Supabase and every `test:e2e` / real `/voice` check need it; npm 11.19.0 (NI-29); before live voice testing onboard a fresh Ready-catalog shop. **Parked, uncommitted:** dev-only per-attempt provider logging (git stash "KB-318 dev attempt logging") — touches `voice.mts`, so it needs its own D32 re-verification once Docker is back.
+**Working on:** `KB-307` (finalise) — commit 2 (finalise + sync, D54) built and verified, not pushed, awaiting the owner's browser check. Commit 1 (integrity, D53) done and live; then commit 3 (learning). `KB-306` done and live 3 Oct 2026.
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -44,7 +44,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 11. **`KB-319`** — voice parse: client timeout + Retry text only (KI-57, KI-58; owner, 1 Oct 2026) — **done 2 Oct 2026.**
 12. ~~**`KB-305`** — add item by hand~~ — **done 3 Oct 2026.**
 13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
-14. **`KB-307`** — finalise (Bill Banao) + learning — **in progress** (commit 1 of 3 built).
+14. **`KB-307`** — finalise (Bill Banao) + learning — **in progress** (commit 1 live, commit 2 built).
 15. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) after billing (KI-50).
 
 **Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026 — **every push to `main` now auto-deploys** to
@@ -289,6 +289,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 3 Oct 2026 | **`KB-307` commit 2 built, not pushed — Bill Banao (D54).** `data/finalise.ts`: one Dexie transaction (receipt number via local-only `takeNextNumber`, bill final/pending, items); top-up + sync after the commit; double tap / two tabs → one bill. `pending` now includes lines needing an amount ("Price needed" / "Quantity needed", no Theek hai, replaces `missing_total`/`incomplete_item`); **found while building: Rule 5b "ajwain" has total 0 with price type unknown — "total ≠ null" alone would have let "Ajwain ₹0" onto a receipt.** Bill Banao `aria-disabled` + focus on the first pending item; saved screen (receipt number, read-only, New bill; mic / Add item start the next bill). `review_flags` = `{code, severity, acknowledged}`. Four existing tests changed by decision 2 (listed in the handoff). | Agent |
 | 3 Oct 2026 | **`KB-307` commit 1 pushed** (migration `20261003100000` on both sides, owner `db push`). **KI-61 closed** before commit 2 (owner): the 10 lint findings fixed, per-file exclusions removed. `npm audit --omit=dev`: 0 vulnerabilities. | Agent + Owner |
 | 3 Oct 2026 | **`KB-307` commit 1 built, not pushed — integrity (D53).** KI-38: composite FKs on five cross-table references + `copy_base_catalog` revoked from PUBLIC/anon (anon used to run it without error). KI-41: `bills_totals` trigger — a final/cancelled bill needs ≥1 item and items summing to subtotal = total; `KB422` permanent. SG-10: `@typescript-eslint/eslint-plugin` 8.70.0, three rules on data/ui/netlify; 10 existing findings → KI-61. Red first: `test:rls` 30/44 → 44/44, e2e 4 failed → 29/29. `npm audit` 18 pre-existing (KI-62). New 06 rows `KB-320`–`KB-323` (owner). `KB-306` closed: browser check passed, migration on both sides. | Agent + Owner |
 | 3 Oct 2026 | **`KB-306` built, not pushed — customer name + mobile (D52).** Customer row: "Cash" (selected on open, typing replaces) and "+ Mobile"; editable any time, never touches lines/flags/pending. `domain/customer.ts`: name ≤ 60 code points (control chars dropped, "cash" → Cash); mobile 10 digits from +91 / 91 / 0 / Devanagari forms. Migration `20261003090000`: matching CHECKs; parity e2e through the real `push_bill` (all tricky inputs: client ⇔ server). Red first without the migration (server accepted "12345" and ""). Local only: the red run's 40 bills (shop "KB-306 e2e") deleted so the migration could apply. `sync.ts` logs only `localId` + code on a failed bill push. PRD line 105 corrected (D6). | Agent |

@@ -181,7 +181,9 @@ describe("KB-305 - a custom item (owner: qty '—' AND unit '—')", () => {
     expect(document.activeElement).toBe(qty);
     expect(qty.value).toBe("");
     expect((cards().getByRole("combobox", { name: "kuch naya unit" }) as HTMLSelectElement).value).toBe("");
-    expect(screen.getAllByRole("button", { name: "REVIEW — kuch naya" }).length).toBeGreaterThan(0);
+    // KB-307 decision 2: "Price needed" (blocking, no Theek hai) replaces the MEDIUM incomplete_item REVIEW.
+    expect(cards().getByText("Price needed")).toBeTruthy();
+    expect(screen.queryAllByRole("button", { name: "REVIEW — kuch naya" })).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "Note — kuch naya" }).length).toBeGreaterThan(0);
 
     commit("kuch naya quantity", "2"); // no unit yet - KB-303's own rule
@@ -193,7 +195,7 @@ describe("KB-305 - a custom item (owner: qty '—' AND unit '—')", () => {
     act(() => cards().getByRole("button", { name: "kuch naya rate" }).click());
     commit("kuch naya rate", "60");
     expect(api.current!.rows[0]!.item).toMatchObject({ qty: 2, unit: "kg", rate: 6000, total: 12000 });
-    expect(screen.queryAllByRole("button", { name: "REVIEW — kuch naya" })).toHaveLength(0); // incomplete_item cleared
+    expect(screen.queryAllByText("Price needed")).toHaveLength(0); // filled: the check clears
     expect(screen.getAllByRole("button", { name: "Note — kuch naya" }).length).toBeGreaterThan(0); // still not in the catalog
   });
 

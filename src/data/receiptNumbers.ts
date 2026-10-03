@@ -100,13 +100,54 @@ interface AllocatedReceiptNumber {
   source: "block" | "fallback";
 }
 
+/** This device's block with numbers left (D38: never another install's). */
+async function activeBlockOf(localDb: KiranaBillDB, shopId: string, deviceId: string) {
+  // KB-315 (D38): only a block THIS device reserved. Another install's block
+  // (e.g. from before an IndexedDB wipe) may have numbers that install already
+  // used offline and never pushed - consuming it could reissue them.
+  const blocks = await localDb.receiptNumberBlocks.where("shopId").equals(shopId).sortBy("blockStart");
+  return blocks.find((b) => b.deviceId === deviceId && b.nextNumber <= b.blockEnd);
+}
+
 /**
- * Consumes the next number from the shop's active local block. If no
- * block has numbers remaining, falls back to a device-scoped, ever-
- * incrementing local counter (never a server round-trip - this is
- * exactly the offline-exhaustion path). Never blocks billing (hard rule
- * 5/6) - a background reservation is fired, not awaited, when remaining
- * numbers drop below the threshold.
+ * KB-307: takes the next number from this device's active block, or the D23
+ * fallback counter when there is none (the offline-exhaustion path). LOCAL
+ * tables only (receiptNumberBlocks, syncState, shops) - so it can run inside
+ * finalise's Dexie transaction, and a failed finalise rolls the number back
+ * with everything else. No network, nothing fired: topping the block up is
+ * the caller's job after the commit (topUpReceiptBlock).
+ */
+export async function takeNextNumber(localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<AllocatedReceiptNumber> {
+  const shop = await localDb.shops.get(shopId);
+  const prefix = shop?.receiptPrefix ?? "KB";
+  const activeBlock = await activeBlockOf(localDb, shopId, deviceId);
+  if (!activeBlock) {
+    return { receiptNumber: await allocateFallbackNumber(localDb, deviceId, prefix), source: "fallback" };
+  }
+  const number = activeBlock.nextNumber;
+  await localDb.receiptNumberBlocks.update(activeBlock.id, { nextNumber: number + 1, syncStatus: "pending" });
+  return { receiptNumber: formatBlockNumber(prefix, number), source: "block" };
+}
+
+/** Fewer than RESERVE_THRESHOLD numbers left in this device's block, or no block at all. */
+export async function blockNeedsTopUp(localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<boolean> {
+  const activeBlock = await activeBlockOf(localDb, shopId, deviceId);
+  return !activeBlock || activeBlock.blockEnd - activeBlock.nextNumber + 1 < RESERVE_THRESHOLD;
+}
+
+/** KB-307: after a bill is committed - reserve the next block if this one is
+ * running low and we're online. Never awaited by finalising; a failure only
+ * means the next bill may use a fallback number (never blocks billing). */
+export async function topUpReceiptBlock(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<void> {
+  if (navigator.onLine && (await blockNeedsTopUp(localDb, shopId, deviceId))) {
+    await reserveBlock(client, localDb, shopId, deviceId);
+  }
+}
+
+/**
+ * takeNextNumber + a background top-up - for callers outside a transaction
+ * (receipt-number tests, e2e). Finalise uses takeNextNumber inside its
+ * transaction and tops up after the commit instead.
  */
 export async function consumeNextNumber(
   client: SupabaseClient,
@@ -114,34 +155,10 @@ export async function consumeNextNumber(
   shopId: string,
   deviceId: string,
 ): Promise<AllocatedReceiptNumber> {
-  const shop = await localDb.shops.get(shopId);
-  const prefix = shop?.receiptPrefix ?? "KB";
-
-  // KB-315 (D38): only a block THIS device reserved. Another install's block
-  // (e.g. from before an IndexedDB wipe) may have numbers that install already
-  // used offline and never pushed - consuming it could reissue them.
-  const blocks = await localDb.receiptNumberBlocks.where("shopId").equals(shopId).sortBy("blockStart");
-  const activeBlock = blocks.find((b) => b.deviceId === deviceId && b.nextNumber <= b.blockEnd);
-
-  if (!activeBlock) {
-    return { receiptNumber: await allocateFallbackNumber(localDb, deviceId, prefix), source: "fallback" };
-  }
-
-  const number = activeBlock.nextNumber;
-  const newNextNumber = number + 1;
-  await localDb.receiptNumberBlocks.update(activeBlock.id, {
-    nextNumber: newNextNumber,
-    syncStatus: "pending",
-  });
-
-  const remaining = activeBlock.blockEnd - newNextNumber + 1;
-  if (remaining < RESERVE_THRESHOLD && navigator.onLine) {
-    // Fire-and-forget: reserving proactively must never block finalising
-    // this bill.
-    void reserveBlock(client, localDb, shopId, deviceId);
-  }
-
-  return { receiptNumber: formatBlockNumber(prefix, number), source: "block" };
+  const taken = await takeNextNumber(localDb, shopId, deviceId);
+  // Fire-and-forget: reserving proactively must never block this bill.
+  if (taken.source === "block") void topUpReceiptBlock(client, localDb, shopId, deviceId);
+  return taken;
 }
 
 /**

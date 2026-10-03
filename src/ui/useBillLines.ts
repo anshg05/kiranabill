@@ -16,6 +16,7 @@ import {
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import type { ParsedItem } from "@/domain/grammar";
 import { CASH, parseCustomerName, parseIndianMobile } from "@/domain/customer";
+import { amountNeeded, visibleFlags, type FinalFlag, type FinalLine } from "@/domain/finalBill";
 import type { BillLine } from "@/data/voiceBilling";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
@@ -53,6 +54,11 @@ export const PARSE_FAILED = "Couldn't read the items";
 export const UNDO_MS = 6_000;
 
 interface State {
+  /** KB-307: the bill's identity from the moment it starts - bills.local_id
+   * (a UUID, D37) and created_at. Finalising twice under one localId writes
+   * one bill (data/finalise.ts). */
+  readonly localId: string;
+  readonly startedAt: string;
   readonly rows: readonly BillRow[];
   readonly utterances: readonly UtteranceRecord[];
   readonly nextId: number;
@@ -71,6 +77,14 @@ interface State {
   readonly customer: Customer;
 }
 
+export interface BillDraft {
+  readonly localId: string;
+  readonly startedAt: string;
+  readonly customer: Customer;
+  readonly lines: readonly FinalLine[];
+  readonly flags: readonly FinalFlag[];
+}
+
 export interface Customer {
   readonly name: string;
   readonly mobile: string | null;
@@ -83,13 +97,19 @@ type Action =
   | { type: "retryFailed"; id: string; message: string }
   | { type: "dismiss"; id: string }
   | { type: "customer"; customer: Partial<Customer> }
+  | { type: "reset" }
   | { type: "replace"; id: string; row: BillRow }
   | { type: "remove"; id: string }
   | { type: "undo" }
   | { type: "forget" }
   | { type: "acknowledge"; key: string };
 
-export const EMPTY_BILL: State = { rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null } };
+export const EMPTY_BILL: State = { localId: "", startedAt: "", rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null } };
+
+/** KB-307: a fresh, empty bill - "New bill" after finalising, and the first bill. */
+export function newBill(): State {
+  return { ...EMPTY_BILL, localId: crypto.randomUUID(), startedAt: new Date().toISOString() };
+}
 
 const updateNotAdded = (state: State, id: string, change: Partial<NotAdded>): State => ({
   ...state,
@@ -135,6 +155,8 @@ export function billReducer(state: State, action: Action): State {
       return { ...state, notAdded: state.notAdded.filter((n) => n.id !== action.id) };
     case "customer":
       return { ...state, customer: { ...state.customer, ...action.customer } };
+    case "reset":
+      return newBill();
     case "replace": {
       // KB-304 (owner): an acknowledgement lapses on any edit to its line.
       const scopes = acknowledgementScopes(action.row.id, action.row.utteranceId);
@@ -167,9 +189,16 @@ export interface ShownFlag extends PlacedFlag {
 export interface BillLines {
   readonly rows: readonly BillRow[];
   readonly flags: readonly ShownFlag[];
-  /** Unacknowledged HIGH flags plus not-added utterances - "N checks pending";
-   * Bill Banao waits for 0 (canFinalize's rule, KB-307). */
+  /** Unacknowledged HIGH flags, lines that need an amount ("Price needed" -
+   * KB-307 decision 2) and not-added utterances - "N checks pending". Bill
+   * Banao waits for 0. */
   readonly pending: number;
+  /** KB-307: this bill's id and start time; reset() starts the next bill. */
+  readonly localId: string;
+  readonly startedAt: string;
+  reset: () => void;
+  /** KB-307: everything data/finalise.ts needs, as the screen holds it now. */
+  readonly draft: BillDraft;
   /** KB-319: heard, not on the bill yet - Retry or dismiss. */
   readonly notAdded: readonly NotAdded[];
   /** The line "Undo" would bring back, while it can. */
@@ -197,11 +226,22 @@ export interface BillLines {
 }
 
 export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
-  const [state, dispatch] = useReducer(billReducer, EMPTY_BILL);
+  const [state, dispatch] = useReducer(billReducer, undefined, newBill);
 
   const placed = useMemo(() => billFlags(state.rows, state.utterances, catalog), [state.rows, state.utterances, catalog]);
-  const flags = useMemo(() => placed.map((f) => ({ ...f, acknowledged: state.acknowledged.has(f.key) })), [placed, state.acknowledged]);
-  const pending = useMemo(() => pendingChecks(placed, state.acknowledged) + state.notAdded.length, [placed, state.acknowledged, state.notAdded]);
+  // KB-307: on a line that needs an amount, "Price needed" replaces
+  // missing_total / incomplete_item - one line is never two checks, and a
+  // "Theek hai" can never pass an unpriced line.
+  const visible = useMemo(() => visibleFlags(placed, state.rows), [placed, state.rows]);
+  const flags = useMemo(() => visible.map((f) => ({ ...f, acknowledged: state.acknowledged.has(f.key) })), [visible, state.acknowledged]);
+  const pending = useMemo(
+    () => pendingChecks(visible, state.acknowledged) + state.rows.filter((r) => amountNeeded(r.item) !== null).length + state.notAdded.length,
+    [visible, state.acknowledged, state.rows, state.notAdded],
+  );
+  const draft = useMemo(
+    () => ({ localId: state.localId, startedAt: state.startedAt, customer: state.customer, lines: state.rows, flags }),
+    [state.localId, state.startedAt, state.customer, state.rows, flags],
+  );
 
   // One level of undo, for UNDO_MS.
   useEffect(() => {
@@ -262,11 +302,16 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
   const retrying = useCallback((id: string) => dispatch({ type: "retrying", id }), []);
   const retryFailed = useCallback((id: string, message: string) => dispatch({ type: "retryFailed", id, message }), []);
   const dismiss = useCallback((id: string) => dispatch({ type: "dismiss", id }), []);
+  const reset = useCallback(() => dispatch({ type: "reset" }), []);
 
   return {
     rows: state.rows,
     flags,
     pending,
+    localId: state.localId,
+    startedAt: state.startedAt,
+    reset,
+    draft,
     notAdded: state.notAdded,
     focusLineId: state.focusLineId,
     customer: state.customer,
