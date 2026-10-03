@@ -1,6 +1,6 @@
 # 20 — Continuity: Handing Off This Chat's Role
 
-**Last updated:** 26 Sep 2026 · **Status:** Active
+**Last updated:** 3 Oct 2026 · **Status:** Active
 **Purpose:** let a new Claude conversation, on a new account, pick up the role this chat has played — without duplicating the project's actual documentation, which already lives durably in the repo and would only drift out of sync if copied here.
 
 **The framing worth holding onto:** this is the same problem `09-WORKING-AGREEMENT.md §A0` already solved for Claude Code — a fresh session with no memory needs to become useful fast, without re-deriving decisions that are already settled. That pattern is being reused here, for a human-facing reviewer session instead of a code-writing one.
@@ -37,34 +37,58 @@ Across this project, this chat has functioned as **the senior technical reviewer
 
 ## 3. Current state — read these two things first
 
-Before anything else, the new session should read, in full:
+1. **`docs/10-TRACKER.md`** — "Right now" (phase, current ticket, next ticket), the build log and the retrospectives.
+2. **`docs/12-PARKED.md`** — every open issue (KI), idea (SG), deferred feature and not-yet-investigated item (NI), each with a trigger.
 
-1. **`docs/10-TRACKER.md`** — the single most important file. "Right now," the full ticket board, and the Phase 1 and Phase 2 retrospectives (every real bug found, cross-referenced). This is the project's actual memory of what's happened.
-2. **`docs/12-PARKED.md`** — every open question, known issue, and deferred idea, each with a stated trigger for when to revisit it.
-
-**As of this document's writing:** Phase 0 and Phase 1 are fully closed. Phase 2 (the voice pipeline — transcription, parsing, the `/voice` gateway, the number-safety gate, and the learning engine's data layer) is closed. **Phase 3 (the actual billing UI) is next**, starting at `KB-301`.
-
-Two cross-phase dependencies matter enough to restate here, because they're easy to miss if Phase 3 is read as a standalone list:
-
-- **`KB-307` (Finalise) is not a fresh ticket — it's where `KB-209`'s already-deferred learning-engine hook finally gets built.** `learning.ts`'s decision logic has existed and been tested since Phase 0; nothing has ever called it. `KB-307` is that call site.
-- **`KB-312` (Settings) is `S7` — the screen `KB-210`'s entire Developer Mode data layer has been waiting for.** The read functions and the reset action are built and tested; only the screen that calls them doesn't exist yet.
-
-Both of these are already stated in `docs/06-FEATURE-TICKETS.md`'s corrected Phase 3 table — this is just flagging them as the two most consequential connections, so they aren't read as ordinary new work.
+This file deliberately states no ticket numbers or dates beyond this line — they go stale; the tracker doesn't.
+(As of 3 Oct 2026: Phase 3, billing UI; `KB-307` done, `KB-308` receipt in progress.)
 
 ---
 
-## 4. Live threads worth knowing about walking into Phase 3
+## 4. The working loop, the standing rules, and the tool quirks
 
-These aren't blockers — they're context that changes how a specific upcoming ticket should be approached. All are already logged properly in `07-DECISIONS.md`/`12-PARKED.md`; listed here only because they're about to become directly relevant.
+### 4a. The loop (every ticket)
 
-| # | What | Relevant to |
-|---|---|---|
-| `NI-27` | `resetLearning()` is deliberately local-only — a reset doesn't propagate to the remote database yet, and the result carries a structural `remoteDeletionNotPerformed: true` field for exactly this reason. | `KB-312`'s actual reset button **must** surface this warning to the user, not present a bare "reset complete." |
-| `KI-27` | Groq's real per-hour Whisper cost was never obtained (their pricing page was unreachable at the time) — the cost model is real but incomplete. Its stated close condition is real pilot usage data, whichever comes first. | Not a Phase 3 blocker. Worth remembering once the pilot actually starts producing real spend numbers. |
-| `KI-23` | The 10,000-product lookup perf test (now `src/domain/catalogIndex.perf.test.ts`) flaked for weeks. **Closed 26 Sep 2026 by `KB-005e`** (`07-DECISIONS.md` D35): the 16 ms budget is steady-state (10 warm-up rounds, cold first lookup not asserted) and the test runs alone after the parallel suite — `npm test` 5/5 after the change. | **Reopen on any isolated failure** (`npx vitest run --project perf`). A failure under deliberate heavy load is recorded in `12-PARKED.md` KI-23 but does not reopen it. Don't tune the warm-up count to make it pass. The budget is still only proven on a laptop — `NI-28`. **Standing rule (26 Sep 2026):** if `npm test` fails ONLY on the perf test and `npx vitest run --project perf` then passes, record it in KI-23 and continue the ticket. Only an isolated failure stops work. |
-| Git worktree bug | Claude Code has, at least once, launched a session into an isolated worktree instead of the real checkout, breaking the single-branch rule and requiring a manual merge to recover. | Worth a quick `git worktree list` check at the start of any session that feels like it might be starting oddly. |
+**PLAN → STOP → owner approves → tests first (shown red) → build → VERIFY (real output pasted, never summarised) →
+DOCUMENT → the agent's own real-browser check → the owner's browser check → commit → push.**
+Formats: `18-AGENT-CONTRACT.md` §3; Definition of Done: `09-WORKING-AGREEMENT.md` Part C. The agent commits locally after
+each verified step; it pushes only after the owner's check passes.
 
----
+### 4b. Standing rules a reviewer should enforce
+
+The twelve hard rules are in `CLAUDE.md` / `18-AGENT-CONTRACT.md` §6. On top of them:
+
+- **D33** — money, number-safety, RLS, sync and migration work uses the most capable model.
+- **D39** — every UI ticket: the agent checks it in a real browser (preview, throwaway local account) **before** asking for the
+  owner's check; tests use real finalised data, not mocks, where the ticket touches it.
+- **D55** — **a push does not deploy.** Netlify builds production only when the latest commit message contains `[deploy]`, and
+  that marker is used **only with the owner's explicit approval of a release** (each deploy costs credits). Device testing =
+  `netlify deploy` (draft); **never `--prod` without approval.**
+- **D55 §5** — every migration stays compatible with the app version **currently deployed** (`db push` is live at once; code only
+  at a release): additive until the release; rename / drop / tighten = expand, deploy, contract.
+- **Migrations reach the remote only through the owner:** the agent writes and tests the migration locally (`test:e2e`,
+  `test:rls`), the owner runs `npx supabase db push --dry-run`, then `db push`. The agent never runs `db push`, and never
+  points dev at the remote. Immutability triggers are never bypassed on the remote.
+- **Scratch files** (edit scripts, dumps, screenshots) live in the agent's scratchpad, never in the repo; **`.env.local` is never
+  committed, printed or shared** (it holds keys and the throwaway test account). The agent checks the staged file list before
+  every commit.
+- **Dependencies** — justified against `09-WORKING-AGREEMENT.md` §B6, exact version pinned, an `11-STACK-DECISIONS.md` entry,
+  lockfile diff only adds lines (NI-29), `npm audit --omit=dev` stays 0.
+
+### 4c. Before deployment
+
+The checklist lives in `10-TRACKER.md` "Before deployment" — read it before approving any `[deploy]` release or the pilot.
+
+### 4d. Tool quirks (Claude Code desktop)
+
+- **A permission prompt that times out** stops the agent mid-step; it does not mean failure. Reply "continue" and it resumes.
+- **Usage limits** can end a session mid-ticket. Nothing is lost that was committed or written to `docs/`; the next session
+  starts from `CLAUDE.md` → `10-TRACKER.md`. Uncommitted work shows in `git status` — ask the agent to report it first.
+- **Long conversations get compacted** (summarised). Decisions survive only if they reached `docs/` — that's why each ticket ends
+  with DOCUMENT.
+- `git push` from PowerShell can fail on credentials; the agent pushes from its Bash tool instead.
+- Preview-pane screenshots can time out; the agent then proves UI state with in-page measurements (focus, sizes, overflow).
+- Single branch only: check `git worktree list` if a session seems to start in an odd checkout.
 
 ## 5. The interaction pattern to maintain
 
@@ -146,7 +170,7 @@ For the exact steps to create a Project, set custom instructions, or upload file
 
 ## 8. What this document deliberately does not include
 
-- The full decision history (26+ entries) — `07-DECISIONS.md`
+- The full decision history (56+ entries) — `07-DECISIONS.md`
 - The full ticket-by-ticket build log — `10-TRACKER.md`
 - The full list of open issues and ideas — `12-PARKED.md`
 - The actual engineering rules (hard rules, session flow, stop conditions) — `18-AGENT-CONTRACT.md` and `CLAUDE.md`

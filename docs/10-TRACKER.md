@@ -74,15 +74,15 @@ where the detail lives; tick it off there and strike it here.
 
 - [x] ~~**`M-13`** — connect the real Netlify site and set the 4 env vars~~ — **done 27 Sep 2026 (owner):**
   https://kiranabilling.netlify.app, the four env vars set with the **remote** Supabase URL and publishable key,
-  Supabase Auth Site URL + redirect URL set. **Every push to `main` now auto-deploys.** `NI-29` to be checked
+  Supabase Auth Site URL + redirect URL set. ~~Every push to `main` now auto-deploys~~ — superseded by D55 (3 Oct 2026). `NI-29` to be checked
   against the first Netlify build log. `17-MANUAL-TASKS.md` M-13.
 - [x] ~~**`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`~~ — **done 27 Sep 2026,
   `KB-316`** (D40): a type error in `netlify/functions` now fails `npm run build`, i.e. the Netlify deploy.
 - [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`).
   `12-PARKED.md` §A.
-- [ ] **`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.
-  `12-PARKED.md` §A.
-- [ ] **`KI-38`** (part) — revoke `anon` EXECUTE on `copy_base_catalog`. `12-PARKED.md` §A, KI-38's notes.
+- [x] ~~**`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.~~ — **done 3 Oct 2026,
+  `KB-307`** (D53: `bills_enforce_totals` trigger, KB422).
+- [x] ~~**`KI-38`** (part) — revoke `anon` EXECUTE on `copy_base_catalog`.~~ — **done 3 Oct 2026, `KB-307`** (D53).
 - [ ] **`KI-50` — Gemini on a paid tier.** The key is on Google's free tier (`limit: 20` requests, exhausted in one day of
   testing, 28 Sep 2026); every Layer 2 parse then fails. Owner: enable billing on the project behind `GEMINI_API_KEY` (and
   check Groq's quota for its key). `12-PARKED.md` §A.
