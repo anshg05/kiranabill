@@ -63,7 +63,10 @@ export function DevTypeaheadBench() {
   const [query, setQuery] = useState("");
   const [typedAt, setTypedAt] = useState<number | null>(null);
   const [paints, setPaints] = useState<number[]>([]);
-  const found = useMemo(() => searchCatalog(catalogs.big, query), [catalogs.big, query]);
+  // Owner (2 Oct 2026): measure keystroke -> paint on a realistic catalog too, not only 10k.
+  const [size, setSize] = useState<"small" | "big">("small");
+  const typingCatalog = size === "small" ? catalogs.small : catalogs.big;
+  const found = useMemo(() => searchCatalog(typingCatalog, query), [typingCatalog, query]);
 
   // Keystroke -> results painted: from the input event to the next frame after this render.
   useEffect(() => {
@@ -95,8 +98,25 @@ export function DevTypeaheadBench() {
           {"\n"}budget: 16 ms per keystroke (05 §10)
         </pre>
       )}
+      <div className="flex gap-2" role="group" aria-label="Typing catalog">
+        {(["small", "big"] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={size === s}
+            onClick={() => {
+              setSize(s);
+              setPaints([]);
+              setTypedAt(null);
+            }}
+            className={`min-h-11 rounded-[6px] border px-3 ${size === s ? "border-indigo bg-indigo text-surface" : "border-line bg-surface"}`}
+          >
+            {(s === "small" ? catalogs.small : catalogs.big).entries.length} products
+          </button>
+        ))}
+      </div>
       <label className="block text-[13px] text-ink-soft" htmlFor="bench-type">
-        Type here (10,000-product catalog) - keystroke → results painted:
+        Type here ({typingCatalog.entries.length} products) - keystroke → results painted:
       </label>
       <input
         id="bench-type"
@@ -109,7 +129,7 @@ export function DevTypeaheadBench() {
         }}
         className="h-11 w-full rounded-[6px] border border-line bg-surface px-3"
       />
-      {paint && <p className="text-[13px] tabular-nums">{row("keystroke → paint", paint)}</p>}
+      {paint && <p className="text-[13px] tabular-nums">{row(`keystroke → paint (${typingCatalog.entries.length} products)`, paint)}</p>}
       <ul className="text-[13px]">
         {found.map((r) => (
           <li key={r.entry.id}>{r.entry.displayName}</li>

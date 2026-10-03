@@ -280,7 +280,7 @@ wearing a receipt's clothes.
 
 | Action | Budget |
 |---|---|
-| Keystroke → search results | < 16 ms (60 fps) |
+| Keystroke → search results | **Lookup ≤ 16 ms; keystroke → visible results ≤ 50 ms median** on a realistic catalog (`07-DECISIONS.md` D51, superseding the single < 16 ms; real phone 3 Oct 2026: lookup p95 0.50 ms at 481 products, 11.2 ms at 10,101) |
 | Tap mic → listening | **Cold (first) tap ≤ 1 s; warm taps (within 60 s of the last) < 100 ms** — never shown before recording has actually started (`07-DECISIONS.md` D49, superseding D45's 300 ms cold budget; measured 30 Sep 2026 with the warm mic: warm 52–61 ms, cold 816 ms = getUserMedia 709 + recorder 106) |
 | Stop → transcript shown | < 1.5 s |
 | Fast-path item on screen | < 300 ms after transcript |

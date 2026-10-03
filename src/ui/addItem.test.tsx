@@ -197,6 +197,28 @@ describe("KB-305 - a custom item (owner: qty '—' AND unit '—')", () => {
     expect(screen.getAllByRole("button", { name: "Note — kuch naya" }).length).toBeGreaterThan(0); // still not in the catalog
   });
 
+  // Owner's check (2 Oct 2026): "Enter a quantity like 2 or 0.5" showed while the field was empty.
+  it("no message on open; leaving the untouched editor (e.g. for the unit picker) closes it quietly", () => {
+    render(<Harness />);
+    open();
+    type("kuch naya");
+    act(() => within(panel()!).getByRole("button", { name: "+ Add “kuch naya” as a new product" }).click());
+    expect(cards().queryByRole("alert")).toBeNull();
+    fireEvent.blur(cards().getByRole("textbox", { name: "kuch naya quantity" }));
+    expect(cards().queryByRole("alert")).toBeNull();
+    expect(cards().queryByRole("textbox", { name: "kuch naya quantity" })).toBeNull();
+    expect(cards().getByRole("button", { name: "kuch naya quantity" }).textContent).toBe("—");
+  });
+
+  it("an explicit Enter on the empty field still explains itself", () => {
+    render(<Harness />);
+    open();
+    type("kuch naya");
+    act(() => within(panel()!).getByRole("button", { name: "+ Add “kuch naya” as a new product" }).click());
+    commit("kuch naya quantity", "");
+    expect(cards().getByRole("alert").textContent).toBe("Enter a quantity like 2 or 0.5");
+  });
+
   it("it is only a bill line - the catalog is untouched", () => {
     const shop = prepareParserCatalog([...SEED_PARSER_CATALOG.entries]);
     render(<Harness shop={shop} />);

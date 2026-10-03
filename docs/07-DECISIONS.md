@@ -1399,12 +1399,21 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 4. **A failed parse (5xx, 429, timeout, network) is kept on the bill** as "Not added: “…” — Retry / ✕" until the shopkeeper retries or dismisses it; new recordings carry on, several may be pending, **each counts in "N checks pending"** (Bill Banao waits for 0 — nothing said goes unbilled unnoticed). The owner rejected "a new recording clears the Retry": it silently loses an order. Retry re-sends the **text only** (same transcript, same slice, no Groq, no re-record); a re-spoken order retried anyway is caught by `already_on_bill` / `duplicate_line`. 401 / 400 are not retryable. **One set of lines per utterance:** a late answer is discarded by the deadline, and the bill accepts a Retry's lines only while its entry is still listed.
 5. **No Retry cap:** every Retry is a human tap (disabled while in flight) and one `/voice` call against the per-shop 300/hour limit, which already bounds abuse.
 
+### D51 — The type-ahead budget is two numbers: lookup ≤ 16 ms, keystroke → visible results ≤ 50 ms median (supersedes 05 §10's single 16 ms) 🟢
+
+**Owner decision, 3 Oct 2026, `KB-305`**, on the first real-phone measurement (NI-28; Android 10, Chrome 152, the dev-only `/__dev/typeahead` bench): index build 481 products 72.5 ms · 10,101 products 1012.6 ms (one-time); lookup 481: median 0.30 · p95 0.50 · max 3.80 ms (n=510); lookup 10,101: median 5.80 · p95 11.20 · max 16.00 ms (n=510); keystroke → paint (10,101 catalog): median ~24–25 ms · p95 42–136 ms · max 136.4 ms (n=19–46).
+1. **Lookup (`searchCatalog`) ≤ 16 ms per keystroke** — met on the phone even at 10,000 products (p95 11.2 ms, max 16.0).
+2. **Keystroke → visible results ≤ 50 ms median on a realistic catalog.** One 60 Hz frame alone is ~16 ms, so "keystroke → paint < 16 ms" was never achievable — the old single figure conflated the lookup with the frame.
+3. The bench's typing box gained a catalog-size toggle (481 / 10,101) so the realistic-catalog keystroke → paint is measured too; **that number is still to be recorded** (NI-28).
+4. Scale note: a 10,000-product index build takes ~1 s on this phone — a one-time cost at catalog load, fine for real shops (~500 products: 72.5 ms).
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 3 Oct 2026 | 05 §10: keystroke → search results < 16 ms | **Lookup ≤ 16 ms; keystroke → visible results ≤ 50 ms median** (D51) | A 60 Hz frame is ~16 ms by itself; measured on a real phone. |
 | 2 Oct 2026 | `geminiParseProvider.ts`: 3 attempts on a 5xx (0.5 / 1 s sleeps), no deadline | **One attempt, 6 s deadline; the shopkeeper's Retry** (D50) | 19.5 s of hidden retries can't fit an 8 s client deadline; the 5xx seen were quota. |
 | 30 Sep 2026 | D45 / `05-FRONTEND-SPEC.md` §10: first (cold) tap → listening ≤ 300 ms | **≤ 1 s** (D49); warm < 100 ms unchanged | Measured: cold 816 ms, 709 of it the browser opening the device. |
 | 29 Sep 2026 | D13 point 1: only a total spoken, product matched → qty 1 of the catalog's unit | **qty `null`, unit `""`** (D47) | Owner: never invent a number. |

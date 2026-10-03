@@ -383,7 +383,14 @@ function EditableValue({
         }}
         // Owner: typing replaces the value; a small correction is one keystroke.
         onFocus={(e) => e.currentTarget.select()}
-        onBlur={commit}
+        // Leaving an untouched editor (e.g. for the unit picker beside it) just
+        // closes it - only a changed value, or an explicit Enter, commits (KB-305).
+        onBlur={() => {
+          if (draft === initial) {
+            setDraft(null);
+            setError(null);
+          } else commit();
+        }}
         className="h-11 w-24 rounded-[6px] border border-line bg-surface px-2 text-right tabular-nums"
       />
       {error && (
