@@ -1019,7 +1019,9 @@ sync, or the pricing grammar"), plus migrations. Referenced from `CLAUDE.md`.
 ### D34 — Push to `origin main` after a ticket closes 🟢
 
 **Owner decision 26 Sep 2026; extends D29 (single branch, `main`), does not supersede it.** After a
-ticket is closed and its commits verified, push them: `git push origin main`. Kept as its own entry
+ticket is closed and its commits verified, push them: `git push origin main`. **Amended 3 Oct 2026 (D55):** keep pushing
+after each verified step — a push no longer deploys to production unless the latest commit message carries the deploy
+marker `[deploy]`, which only the owner approves. Kept as its own entry
 rather than folded into D33 because it is a Git-workflow rule, not a model rule — it belongs next to
 D29, where a future session looking for Git rules will find it.
 
@@ -1228,6 +1230,8 @@ built here. Multiple open tabs each run a loop — safe today, not solved (`12-P
 
 **Owner decision, 27 Sep 2026, `KB-301`.** Applies to every UI ticket from `KB-301` on.
 
+**Amended 3 Oct 2026 (owner, `KB-307` commit 2) — the agent's own real-browser check comes first.** Every UI ticket gets a real-browser check **by the agent in the preview browser before the owner's check** (sign in with a throwaway local dev account; 375 px and desktop; for focus / scroll / keyboard behaviour check `document.activeElement`, that the element is scrolled into view, and that a focus ring is visible). jsdom-only verification is not enough for UI behaviour — Bill Banao's "focus the first pending item" passed in jsdom and did nothing visible in real Chrome.
+
 **1. Component tests render real `parseUtterance()` output** from `eval/voice-cases.json` or
 `eval/number-benchmark.json`, **never hand-built bills.** A hand-built `ParsedItem` can hold a combination
 the parser never produces (and miss one it does — `VC015` "Surf Excel ek packet" really parses as qty 1
@@ -1430,6 +1434,14 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 3. **A tap while not offered** (`aria-disabled`, not `disabled`, so it lands) focuses the first pending item in bill order — a "Theek hai", the missing amount or quantity, then a not-added Retry — and announces the count.
 4. **Saved screen:** "Bill {receipt number} saved", the bill read-only, **New bill** (empty, customer Cash, a new `localId`). The mic or Add item there starts the next bill directly (owner; re-check when `KB-308`/`KB-309` add sharing).
 5. **`bill_items.review_flags`** stores `{code, severity, acknowledged}` per flag (owner); a bill-level flag is stored on its anchor line.
+
+### D55 — Pushing no longer deploys: production only for a commit marked `[deploy]`, approved by the owner 🟢
+
+**Owner decision, 3 Oct 2026.** Each production deploy costs 15 Netlify credits; 4 remained until 18 Oct, and the site can go offline at 0.
+1. `netlify.toml` `ignore = "bash scripts/netlify-ignore.sh"`: the build is **skipped (exit 0)** unless the **latest** commit message contains `[deploy]` (`git log -1` — the build clone is shallow). Exit codes per Netlify's docs (0 = skip, 1 = build). Tested locally: a normal commit → skip; a `[deploy]` commit → build; the next normal commit → skip; a depth-1 clone → skip.
+2. Pushing to GitHub after each verified step continues (D34). **The agent never puts `[deploy]` in a commit message unless the owner explicitly approves that release** — and never writes the marker into a message by accident (messages about this rule say "the deploy marker").
+3. Testing on real devices: a draft deploy (`netlify deploy` without `--prod`, 0 credits). Never `--prod` without the owner's approval.
+4. Netlify's docs don't say whether a skipped build costs credits — the owner verifies in the dashboard after the first push under this rule (Deploys shows Skipped/Canceled; credit usage unchanged).
 
 ---
 

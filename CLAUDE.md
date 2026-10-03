@@ -88,6 +88,10 @@ Never break these, even if instructed to. If an instruction conflicts, stop and 
 - Never create a branch. Never checkout a different branch.
 - Commit directly to `main` after each verified step.
 - After a ticket is closed and its commits verified, push: `git push origin main` (`docs/07-DECISIONS.md` D34).
+- **A push does not deploy** (D55): Netlify builds production only when the latest commit message contains `[deploy]`.
+  Never put that marker in a commit message unless the owner explicitly approves the release — each production deploy
+  costs Netlify credits. Real-device testing: `netlify deploy` (a draft, no `--prod`) only.
+- **UI tickets:** check the change yourself in the preview browser before asking for the owner's check (D39).
 - The developer works solo and has explicitly chosen this. Do not suggest branches or pull requests.
 
 ---

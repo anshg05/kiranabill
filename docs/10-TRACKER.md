@@ -93,6 +93,9 @@ where the detail lives; tick it off there and strike it here.
   choice): Layer 1 has nothing to match there and Gemini gets an empty catalog, so no live voice check means anything on it.
 - [ ] **`KI-59` — the shopkeeper's screen in Hindi / Hinglish** (flag sentences, input errors, status lines), wording
   reviewed by the owner. Not `bill_language` — that is the customer's receipt. `12-PARKED.md` §A. (Owner, 1 Oct 2026.)
+- [ ] **Netlify credits (D55):** production deploys only for an owner-approved commit marked `[deploy]`; check the remaining credits
+  and the plan before the pilot (15 credits per deploy; 4 left until 18 Oct 2026). After the first push under D55, the owner confirms
+  in Netlify that the build shows Skipped/Canceled and credit usage didn't change.
 - [ ] **Pre-pilot privacy review — India's DPDP Act 2023** (owner, 3 Oct 2026, `KB-306`). Customer names and mobile numbers
   on bills are personal data; the shop is the data fiduciary, KiranaBill processes on its behalf. Before the pilot, review
   (with qualified advice — not settled by the agent): the notice a shop gives customers and the basis for keeping a number;

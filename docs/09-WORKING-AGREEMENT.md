@@ -250,7 +250,7 @@ own full diff (`git show`, or GitHub's commit view) after each commit.
 | Performance budgets | Vitest, `*.perf.test.ts`, project `perf` | Run by `npm test` **alone, after** every other file — never in the parallel pool. Steady state only (warm-up, cold call not asserted). `07-DECISIONS.md` D35. |
 | RLS policies | SQL negative tests | **Mandatory.** Two shops, zero cross-visibility, every table. |
 | Voice pipeline | Eval suite + number benchmark | Re-run on every change to parsing or prompts |
-| UI | Vitest + `@testing-library/react` (jsdom), then the owner in a real browser | Component tests render **real `parseUtterance()` output** from the eval fixtures, never hand-built bills; **no UI ticket closes before the owner's real-browser check** at 375px and desktop, screenshots reviewed (`07-DECISIONS.md` D39). No E2E in MVP — solo projects abandon Playwright by month three. |
+| UI | Vitest + `@testing-library/react` (jsdom), then the owner in a real browser | Component tests render **real `parseUtterance()` output** from the eval fixtures, never hand-built bills; **the agent checks every UI ticket in the preview browser first** (throwaway local dev account; 375px and desktop; focus, scroll, visible focus ring — jsdom is not enough for UI behaviour, owner 3 Oct 2026), and **no UI ticket closes before the owner's real-browser check** at 375px and desktop, screenshots reviewed (`07-DECISIONS.md` D39). No E2E in MVP — solo projects abandon Playwright by month three. |
 
 **Write the failing test first** for every bug. KB-005 (the pricing grammar) is the first application
 of this rule.
