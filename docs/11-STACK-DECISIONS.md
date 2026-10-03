@@ -410,6 +410,18 @@ Latin-ext): the browser downloads only the subsets it renders. Zero JavaScript. 
 **Exit cost: near zero** — the files are static; worst case, vendor them into `src/assets/fonts/` and keep the
 same `@font-face` rules. IBM Plex Mono is not added yet: the receipt (`KB-308`) is its only user.
 
+## SD-028 — Type-aware lint: **`@typescript-eslint/eslint-plugin` 8.70.0** (dev only) · 3 Oct 2026
+
+SG-10, owner decision in the `KB-307` plan (D53). Three rules — `no-floating-promises`, `no-misused-promises`, `await-thenable` — on `src/data`, `src/ui`, `netlify/`, where an un-awaited promise is a bill write that silently never happened. The same project and version as the `@typescript-eslint/parser` already installed (`KB-316`).
+
+| Rejected | Why |
+|---|---|
+| The `typescript-eslint` meta-package | Bundles a second copy of the parser we already have |
+| 8.71.0 (npm's default, published the same day) | Bumps the existing parser family too — not what was approved, and a same-day release |
+| Our own 30 lines (09 §B6 rule 1) | Floating-promise detection needs the type checker — not 30 lines |
+
+MIT, actively released, dev-only (0 bytes in the bundle). Cost: `npm run lint` ~5 s → ~29 s (type information). **Exit cost: near zero** — delete the config block.
+
 ## How to add to this document
 
 Every new dependency, service, or platform gets an entry: what was chosen, what was rejected, why,

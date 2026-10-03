@@ -514,6 +514,138 @@ async function main(): Promise<void> {
       await client.query("set local role anon");
       await callPushBill(pushBill({ local_id: randomUUID() }), pushItems);
     });
+
+    // --- KB-307 / KI-38: every cross-table reference stays inside its own shop ---
+    // Each table's insert RLS checks only the row's own shop_id, and a plain FK
+    // check runs as the table owner (it ignores RLS) - so before the composite
+    // FKs, a shop-B member could point a shop-B row at a shop-A row.
+
+    const crossShop: Array<[string, string, unknown[]]> = [
+      [
+        "learning_events.bill_id -> a shop-A bill",
+        `insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, $2, 'smuggled', gen_random_uuid(), 'test-device')`,
+        [shopB, billA],
+      ],
+      [
+        "bill_items.shop_product_id -> a shop-A product",
+        `insert into bill_items (bill_id, shop_id, line_no, shop_product_id, display_name, total_paise, price_type, source) values ($1, $2, 50, $3, 'smuggled', 100, 'total', 'manual')`,
+        [billB, shopB, shopProductA],
+      ],
+      [
+        "learned_aliases.shop_product_id -> a shop-A product",
+        `insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'smuggled', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`,
+        [shopB, shopProductA],
+      ],
+      [
+        "price_observations.shop_product_id -> a shop-A product",
+        `insert into price_observations (shop_id, shop_product_id, observed_price_paise, local_id, device_id) values ($1, $2, 100, gen_random_uuid(), 'test-device')`,
+        [shopB, shopProductA],
+      ],
+      [
+        "provisional_products.promoted_shop_product_id -> a shop-A product",
+        `insert into provisional_products (shop_id, spoken_name, promoted_shop_product_id, local_id, device_id) values ($1, 'smuggled', $2, gen_random_uuid(), 'test-device')`,
+        [shopB, shopProductA],
+      ],
+    ];
+    for (const [what, sql, params] of crossShop) {
+      await checkRejects(client, `cross-shop integrity (KI-38): owner B cannot insert ${what} (composite FK)`, "23503", async () => {
+        await asUser(client, ownerB);
+        await client.query(sql, params);
+      });
+    }
+
+    await check(client, "cross-shop integrity (KI-38) sanity: the same five references inside shop B are accepted (null stays allowed)", async () => {
+      await asUser(client, ownerB);
+      await client.query(`insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, $2, 'ok', gen_random_uuid(), 'test-device')`, [shopB, billB]);
+      await client.query(`insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, null, 'ok', gen_random_uuid(), 'test-device')`, [shopB]);
+      await client.query(`insert into bill_items (bill_id, shop_id, line_no, shop_product_id, display_name, total_paise, price_type, source) values ($1, $2, 51, $3, 'ok', 100, 'total', 'manual')`, [billB, shopB, shopProductB]);
+      await client.query(`insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'ok', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);
+      await client.query(`insert into price_observations (shop_id, shop_product_id, observed_price_paise, local_id, device_id) values ($1, $2, 100, gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);
+      await client.query(`insert into provisional_products (shop_id, spoken_name, promoted_shop_product_id, local_id, device_id) values ($1, 'ok', $2, gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);
+      return "all accepted";
+    });
+
+    await checkRejects(client, "KI-38 hygiene: the anon role cannot execute copy_base_catalog at all", "42501", async () => {
+      await client.query("set local role anon");
+      try {
+        await client.query(`select copy_base_catalog($1, 'test-device')`, [shopA]);
+      } catch (err) {
+        // RLS inside the function would ALSO be 42501 - only "permission denied for function" proves the revoke.
+        const e = err as PgError;
+        if (!/permission denied for function/.test(e.message)) {
+          const wrapped = new Error(`expected "permission denied for function", got: ${e.message}`) as PgError;
+          wrapped.code = "not-the-revoke";
+          throw wrapped;
+        }
+        throw err;
+      }
+    });
+
+    // --- KB-307 / KI-41: a final or cancelled bill must add up, and have lines ---
+    // Enforced on the TABLE (a trigger on entering final/cancelled), so it holds
+    // for push_bill and for a direct insert/update alike - the client's
+    // arithmetic is never trusted. subtotal = total until discounts / tax exist.
+
+    const lines = (...totals: number[]) =>
+      totals.map((t, i) => ({ line_no: i + 1, shop_product_id: null, display_name: `Line ${i + 1}`, spoken_name: null, qty: 1, unit: "piece", rate_paise: t, rate_unit: "piece", total_paise: t, price_type: "rate", source: "manual", review_flags: [], was_edited: false }));
+    const freshBill = (overrides: Record<string, unknown>) => pushBill({ local_id: randomUUID(), receipt_number: `RLS-KI41-${randomUUID().slice(0, 8)}`, ...overrides });
+
+    await checkRejects(client, "KI-41: push_bill rejects a final bill with ZERO items", "KB422", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(freshBill({ subtotal_paise: 0, total_paise: 0 }), []);
+    });
+    await checkRejects(client, "KI-41: push_bill rejects item totals that don't sum to subtotal (500 + 600 vs 1000)", "KB422", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(freshBill({ subtotal_paise: 1000, total_paise: 1000 }), lines(500, 600));
+    });
+    await checkRejects(client, "KI-41: push_bill rejects subtotal != total (no discounts or tax exist yet)", "KB422", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(freshBill({ subtotal_paise: 1100, total_paise: 1000 }), lines(500, 600));
+    });
+    await checkRejects(client, "KI-41: push_bill rejects a CANCELLED bill whose items don't add up", "KB422", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(freshBill({ status: "cancelled", subtotal_paise: 1000, total_paise: 1000 }), lines(500, 600));
+    });
+    await checkRejects(client, "KI-41: push_bill rejects a CANCELLED bill with zero items", "KB422", async () => {
+      await asUser(client, ownerA);
+      await callPushBill(freshBill({ status: "cancelled", subtotal_paise: 0, total_paise: 0 }), []);
+    });
+    await check(client, "KI-41 sanity: a bill that adds up is accepted, final and cancelled (500 + 600 = 1100)", async () => {
+      await asUser(client, ownerA);
+      const f = await callPushBill(freshBill({ subtotal_paise: 1100, total_paise: 1100 }), lines(500, 600));
+      const c = await callPushBill(freshBill({ status: "cancelled", subtotal_paise: 1100, total_paise: 1100 }), lines(500, 600));
+      const res = await client.query(`select status from bills where id = any($1::uuid[]) order by status`, [[f, c]]);
+      const statuses = res.rows.map((r) => r.status).join(",");
+      if (statuses !== "cancelled,final") throw new Error(`got ${statuses}`);
+      return "final and cancelled both stored";
+    });
+
+    await checkRejects(client, "KI-41 (bypassing push_bill): a direct draft -> final whose items don't add up is rejected", "KB422", async () => {
+      await asUser(client, ownerA);
+      const id = randomUUID();
+      await client.query(
+        `insert into bills (id, shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id) values ($1, $2, gen_random_uuid(), 'A-DIRECT-1', 1000, 1000, 'draft', 1, 'test-device')`,
+        [id, shopA],
+      );
+      await client.query(`insert into bill_items (bill_id, shop_id, line_no, display_name, total_paise, price_type, source) values ($1, $2, 1, 'x', 400, 'total', 'manual')`, [id, shopA]);
+      await client.query(`update bills set status = 'final', finalized_at = now() where id = $1`, [id]);
+    });
+    await checkRejects(client, "KI-41 (bypassing push_bill): a bill INSERTED directly as final (no items) is rejected", "KB422", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into bills (shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id) values ($1, gen_random_uuid(), 'A-DIRECT-2', 0, 0, 'final', 1, 'test-device')`,
+        [shopA],
+      );
+    });
+    await checkRejects(client, "KI-41 (bypassing push_bill): a direct draft -> cancelled with no items is rejected", "KB422", async () => {
+      await asUser(client, ownerA);
+      const id = randomUUID();
+      await client.query(
+        `insert into bills (id, shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id) values ($1, $2, gen_random_uuid(), 'A-DIRECT-3', 0, 0, 'draft', 1, 'test-device')`,
+        [id, shopA],
+      );
+      await client.query(`update bills set status = 'cancelled' where id = $1`, [id]);
+    });
   } finally {
     await client.query("rollback");
     await client.end();

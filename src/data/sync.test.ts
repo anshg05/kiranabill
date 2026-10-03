@@ -705,7 +705,8 @@ describe("sync.ts - KB-110b push_bill path", () => {
   });
 
   // Every row of D37's classification table, through the real pushBills().
-  const PERMANENT = ["42501", "P0001", "23505", "23503", "23502", "23514", "22P02", "KB400", "KB409"];
+  // KB422 (KB-307, KI-41): a final/cancelled bill with no items or totals that do not add up.
+  const PERMANENT = ["42501", "P0001", "23505", "23503", "23502", "23514", "22P02", "KB400", "KB409", "KB422"];
   const TRANSIENT = ["40P01", "40001", "57014", "08006", "53300", "55P03", "PGRST202", "XX999"];
 
   for (const code of PERMANENT) {

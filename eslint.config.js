@@ -4,9 +4,15 @@
 // KB-316 (docs/12-PARKED.md KI-36): every TypeScript file is linted - src/,
 // netlify/, eval/, scripts/, vite.config.ts - with five of ESLint's own core
 // correctness rules (owner decision: no new dependency, no style rules; they
-// rarely fire, and never as noise). A TypeScript-aware rule set is SG-10.
+// rarely fire, and never as noise).
+//
+// KB-307 (SG-10; owner, 3 Oct 2026): three TYPE-AWARE rules where async code
+// can lose a bill - src/data, src/ui and netlify/. An un-awaited promise in
+// finalise or sync is a write that silently never happened. Only these three;
+// no style rules (docs/09-WORKING-AGREEMENT.md B6, 11-STACK-DECISIONS.md).
 
 import tsParser from "@typescript-eslint/parser";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
@@ -24,6 +30,28 @@ export default [
       "no-dupe-keys": "error",
       "no-dupe-else-if": "error",
       "no-self-assign": "error",
+    },
+  },
+  {
+    files: ["src/data/**/*.{ts,tsx}", "src/ui/**/*.{ts,tsx}", "netlify/**/*.{ts,mts}"],
+    plugins: { "@typescript-eslint": tsPlugin },
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+    },
+  },
+  {
+    // SG-10's existing findings outside KB-307's files (owner: list, don't fix
+    // here) - 10 findings, docs/12-PARKED.md KI-61. Fixed by the next ticket
+    // that touches each file; this list may only shrink.
+    files: ["src/ui/DevEmailSignIn.tsx", "src/ui/billEditing.test.tsx", "src/ui/useVoiceBilling.test.ts", "src/ui/useVoiceCapture.test.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-misused-promises": "off",
     },
   },
   {

@@ -28,14 +28,15 @@ const MAX_BACKOFF_MS = 5 * 60_000;
  * violations (23xxx: 23505 unique, 23503 FK, 23502 not-null, 23514 check),
  * data exceptions (22xxx: 22P02 bad uuid/number, ...), and push_bill's own
  * KB400 (a draft was pushed - a client bug) / KB409 (the server already has
- * different content for this bill).
+ * different content for this bill) / KB422 (KB-307, KI-41: a final or
+ * cancelled bill with no items, or totals that don't add up).
  *
  * Everything else is TRANSIENT, including codes this list has never seen:
  * a retrying bill is recoverable, a false `conflict` is not (docs/07-
  * DECISIONS.md D37). Unknown codes are logged so they can be classified.
  * No code at all = a network-layer failure = transient.
  */
-const PERMANENT_CODES = new Set(["42501", "P0001", "KB400", "KB409"]);
+const PERMANENT_CODES = new Set(["42501", "P0001", "KB400", "KB409", "KB422"]);
 const KNOWN_TRANSIENT_PREFIXES = ["08", "40", "53", "57"];
 
 export function isPermanentError(error: PostgrestError | null): boolean {
