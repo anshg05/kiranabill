@@ -25,6 +25,14 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
+      // KB-308 (hard rule 9): no raw HTML anywhere - React text is escaped,
+      // these three are not. Reading outerHTML (test messages) stays allowed.
+      "no-restricted-syntax": [
+        "error",
+        { selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']", message: "Hard rule 9: no raw HTML - render text with React." },
+        { selector: "AssignmentExpression > MemberExpression.left[property.name=/^(innerHTML|outerHTML)$/]", message: "Hard rule 9: no raw HTML - render text with React." },
+        { selector: "CallExpression[callee.property.name='insertAdjacentHTML']", message: "Hard rule 9: no raw HTML - render text with React." },
+      ],
       "no-debugger": "error",
       "no-unreachable": "error",
       "no-dupe-keys": "error",

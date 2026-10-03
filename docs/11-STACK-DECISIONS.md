@@ -422,6 +422,20 @@ SG-10, owner decision in the `KB-307` plan (D53). Three rules — `no-floating-p
 
 MIT, actively released, dev-only (0 bytes in the bundle). Cost: `npm run lint` ~5 s → ~29 s (type information). **Exit cost: near zero** — delete the config block.
 
+## SD-029 — Receipt font: **`@fontsource/ibm-plex-mono` 5.3.0** (runtime, CSS + font files only) · 3 Oct 2026
+
+The receipt's face (`13-DESIGN.md` §4), owner decision in the `KB-308` plan (Q2 A). Exact version pinned; Latin subset only,
+weights 400 and 600 (`latin-400.css`, `latin-600.css` from `src/index.css`). Plex Mono has **no Devanagari** — the stack is
+`"IBM Plex Mono", "Mukta", monospace`, so Hindi labels and names render in Mukta. Same reasoning as SD-027: self-hosted
+from our origin (offline, `KB-401` precache), zero JavaScript, OFL-1.1, published by the same project as Mukta's package.
+Cost: JS unchanged; CSS +0.48 kB; 2 woff2 files (14.7 + 15.6 kB) fetched only when a receipt is drawn (woff fallbacks also
+emitted, never fetched by a modern browser). Lockfile: +10 lines, 0 removed (NI-29); `npm audit --omit=dev` 0.
+
+| Rejected | Why |
+|---|---|
+| Vendoring the woff2 files into `src/assets/fonts` | No updates, and a licence file to carry by hand — same work as the package, less maintained |
+| All subsets (Cyrillic, Vietnamese, Latin-ext) | Never rendered on a kirana receipt |
+
 ## How to add to this document
 
 Every new dependency, service, or platform gets an entry: what was chosen, what was rejected, why,

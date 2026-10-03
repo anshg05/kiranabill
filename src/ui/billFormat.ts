@@ -1,6 +1,5 @@
 import type { ParsedItem } from "@/domain/grammar";
-import { unitScale } from "@/domain/grammar";
-import { displayRate } from "@/domain/billEdit";
+import { shownRate } from "@/domain/billEdit";
 import { formatRupees, type Paise } from "@/domain/money";
 
 // KB-301: how a bill line's numbers are SHOWN. No arithmetic here - every
@@ -28,11 +27,9 @@ export function formatQty(qty: number | null): string {
  * hiding a mismatch.
  */
 export function formatRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">): string {
-  const shown = displayRate(item);
+  const shown = shownRate(item);
   if (shown === null) return UNKNOWN;
-  const plain = formatRupees(shown.paise);
-  if (item.rateUnit === null || !item.unit) return plain;
-  return unitScale(item.unit, shown.unit) === 0 ? plain : `${plain}/${shown.unit}`;
+  return shown.unit === null ? formatRupees(shown.paise) : `${formatRupees(shown.paise)}/${shown.unit}`;
 }
 
 /** A paise value as the rupee text an input starts from ("45", "12.50"). */

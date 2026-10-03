@@ -106,6 +106,20 @@ export function displayRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">
   return { paise: shown === unit ? item.rate : item.rate * 1000, unit: shown };
 }
 
+/**
+ * The rate as SHOWN (SG-09): displayRate's value, and its unit only when a
+ * real conversion sits between the rate and the line (D36) - null means
+ * "show it plain". Same unit, or interchangeable count units (unitScale 0),
+ * is plain; an incompatible pair keeps its unit rather than hide a mismatch.
+ * Shared by the screen (formatRate) and the receipt (KB-308).
+ */
+export function shownRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">): { paise: Paise; unit: string | null } | null {
+  const shown = displayRate(item);
+  if (shown === null) return null;
+  if (item.rateUnit === null || !item.unit) return { paise: shown.paise, unit: null };
+  return { paise: shown.paise, unit: unitScale(item.unit, shown.unit) === 0 ? null : shown.unit };
+}
+
 /** A rate line's total from its own qty, unit and rate; any other line keeps its total. */
 function withDerivedTotal(item: ParsedItem): ParsedItem | null {
   if (item.rate === null || item.rateUnit === null) return item;
