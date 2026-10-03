@@ -20,6 +20,7 @@ import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
 import { topUpReceiptBlock } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
+import { learnPendingBills } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import type { Customer } from "./useBillLines";
@@ -134,11 +135,21 @@ export function BillingScreen() {
   // KB-307: Bill Banao - one atomic local write; after it commits, top the
   // receipt block up and start a sync (D38's loop would anyway). Neither is
   // awaited: the bill is already saved, and neither can fail it.
+  // KB-307 commit 3: then learning (08 §8: after the receipt, its own
+  // transaction, never able to fail the bill), then the sync - so the bill and
+  // its learning rows push in one cycle.
   const onSaved = useCallback(() => {
     if (!localDb || !shop || !deviceId) return;
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
-    void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err));
+    void learnPendingBills(localDb, shop.id)
+      .catch((err: unknown) => console.warn("[learning] failed (the bill is saved; retried on next start):", err))
+      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
   }, [deviceId, localDb, shop]);
+  // Recovery (owner): a final bill whose learning was interrupted is learned on start.
+  useEffect(() => {
+    if (!localDb || !shop) return;
+    void learnPendingBills(localDb, shop.id).catch((err: unknown) => console.warn("[learning] recovery failed:", err));
+  }, [localDb, shop]);
   const finaliser = useFinalise({ localDb, shopId: shop?.id ?? null, deviceId, onSaved });
   const { finalise, clear: clearSaved } = finaliser;
   const { reset: resetBill, draft } = bill;

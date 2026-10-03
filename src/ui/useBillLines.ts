@@ -17,6 +17,7 @@ import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import type { ParsedItem } from "@/domain/grammar";
 import { CASH, parseCustomerName, parseIndianMobile } from "@/domain/customer";
 import { amountNeeded, visibleFlags, type FinalFlag, type FinalLine } from "@/domain/finalBill";
+import type { LearnDiscarded } from "@/domain/learning";
 import type { BillLine } from "@/data/voiceBilling";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
@@ -75,6 +76,9 @@ interface State {
   /** KB-306 (D6, D52): who the bill is for - "Cash" by default, mobile optional
    * (10 digits). Only valid values reach here; it never touches the lines. */
   readonly customer: Customer;
+  /** KB-307 commit 3: lines removed and not brought back - learning's
+   * "deleted a line" signal (08 §2), kept on the saved bill locally. */
+  readonly discarded: readonly BillRow[];
 }
 
 export interface BillDraft {
@@ -83,6 +87,7 @@ export interface BillDraft {
   readonly customer: Customer;
   readonly lines: readonly FinalLine[];
   readonly flags: readonly FinalFlag[];
+  readonly discarded: readonly LearnDiscarded[];
 }
 
 export interface Customer {
@@ -104,7 +109,7 @@ type Action =
   | { type: "forget" }
   | { type: "acknowledge"; key: string };
 
-export const EMPTY_BILL: State = { localId: "", startedAt: "", rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null } };
+export const EMPTY_BILL: State = { localId: "", startedAt: "", rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null }, discarded: [] };
 
 /** KB-307: a fresh, empty bill - "New bill" after finalising, and the first bill. */
 export function newBill(): State {
@@ -168,13 +173,20 @@ export function billReducer(state: State, action: Action): State {
     case "remove": {
       const at = state.rows.findIndex((r) => r.id === action.id);
       if (at === -1) return state;
-      return { ...state, rows: state.rows.filter((r) => r.id !== action.id), removed: { row: state.rows[at]!, at }, focusLineId: null };
+      return {
+        ...state,
+        rows: state.rows.filter((r) => r.id !== action.id),
+        removed: { row: state.rows[at]!, at },
+        focusLineId: null,
+        discarded: [...state.discarded, state.rows[at]!],
+      };
     }
     case "undo": {
       if (!state.removed) return state;
       const rows = [...state.rows];
       rows.splice(Math.min(state.removed.at, rows.length), 0, state.removed.row);
-      return { ...state, rows, removed: null };
+      const back = state.removed.row.id;
+      return { ...state, rows, removed: null, discarded: state.discarded.filter((r) => r.id !== back) };
     }
     case "forget":
       return state.removed ? { ...state, removed: null } : state;
@@ -239,8 +251,15 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
     [visible, state.acknowledged, state.rows, state.notAdded],
   );
   const draft = useMemo(
-    () => ({ localId: state.localId, startedAt: state.startedAt, customer: state.customer, lines: state.rows, flags }),
-    [state.localId, state.startedAt, state.customer, state.rows, flags],
+    () => ({
+      localId: state.localId,
+      startedAt: state.startedAt,
+      customer: state.customer,
+      lines: state.rows,
+      flags,
+      discarded: state.discarded.map((r) => ({ spokenName: r.item.spokenName || null, shopProductId: r.item.catalogId, source: r.source })),
+    }),
+    [state.localId, state.startedAt, state.customer, state.rows, flags, state.discarded],
   );
 
   // One level of undo, for UNDO_MS.

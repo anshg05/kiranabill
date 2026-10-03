@@ -64,6 +64,8 @@ function Harness({ pre = [], api, onMicTap = () => {} }: Props) {
       onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
+      removed={bill.removed}
+      onUndo={bill.undo}
       flags={bill.flags}
       pending={bill.pending}
       onAcknowledge={bill.acknowledge}
@@ -218,6 +220,18 @@ describe("KB-307 - finalise and the saved screen", () => {
     await waitFor(() => screen.getByRole("button", { name: "New bill" }));
     expect(await db.bills.count()).toBe(1);
     expect((await db.receiptNumberBlocks.toArray())[0]!.nextNumber).toBe(2);
+  });
+
+  it("KB-307 commit 3: a removed voice line is kept on the saved bill (for learning); one brought back by Undo is not", async () => {
+    const api: MutableRefObject<BillLines | null> = { current: null };
+    render(<Harness api={api} pre={[spoken("2 kilo चिनी"), spoken("1 kilo besan"), spoken("1 kilo maida")]} />);
+    act(() => screen.getAllByRole("button", { name: "Remove Chini" })[0]!.click());
+    act(() => screen.getAllByRole("button", { name: "Remove Maida" })[0]!.click());
+    act(() => screen.getByRole("button", { name: "Undo" }).click()); // Maida comes back
+    const localId = api.current!.localId;
+    await tapBillBanao();
+    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
+    expect((await db.bills.get(localId))?.discardedLines).toEqual([{ spokenName: "चिनी", shopProductId: "27", source: "fastpath" }]);
   });
 
   it("a save that fails: the message, the bill stays as it was and editable, nothing written", async () => {

@@ -1443,6 +1443,15 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 3. Testing on real devices: a draft deploy (`netlify deploy` without `--prod`, 0 credits). Never `--prod` without the owner's approval.
 4. Netlify's docs don't say whether a skipped build costs credits — the owner verifies in the dashboard after the first push under this rule (Deploys shows Skipped/Canceled; credit usage unchanged).
 
+### D56 — Learning at finalise: after the commit, its own transaction, idempotent, every alias event tagged with its layer 🟢
+
+**Owner decisions, 3 Oct 2026, `KB-307` commit 3** (plan decisions 1 and 6, and the source-tagging / deterministic-id additions).
+1. **When:** after the bill commit, in its own Dexie transaction (`data/learnBill.ts`), from the **committed** bill — a learning failure never touches the bill (08 §8, safety rule 7). Then the sync, so the bill and its learning rows push in one cycle. **Recovery:** on start (and after every save) `learnPendingBills` learns each final bill without a marker. Drafts never teach (hard rule 8).
+2. **Idempotent:** append-only rows (events, price observations) get ids derived from bill `localId` + line + kind; one-per-key rows (learned alias, provisional product) from shop + key (`domain/ids.ts`, synchronous so it can run inside the transaction); and a `bill_learned` marker event is written in the same transaction. A bill with a marker is skipped — recovery or two tabs (KI-39) change nothing (tested: run twice → identical state; two concurrent runs → one run's state; e2e: re-learn + re-sync → identical server rows).
+3. **What each line teaches** (`learnFromBill`, pure): an **unedited** fastpath / Gemini line matched to a product whose words aren't already an exact alias → alias confirmation (L2); edited lines and **hand-added lines never teach an alias**; a **removed** voice line (kept on the bill locally as `discardedLines`, never pushed) whose words are a learned alias → suppression; a rate differing from the shop's price **in the shop's own unit** → price observation (L3; a rate in another unit is skipped rather than converted with a division); a line with no product → provisional sighting (L1; its rate is the price, a total-only line gives none; the 3rd sighting is a `product_promotion_due` event — creating the product is `KB-320`).
+4. **Every alias event records its source layer** (`fastpath` / `gemini` / `manual`) — the input for `KB-323`'s rule that Gemini-sourced confirmations need a higher threshold.
+5. **Known limits, recorded:** a retired alias is kept at its last confidence (≤ 0.3), not deleted (deletes don't sync — NI-27); a provisional product stores only its latest suggested price, so its "modal price" has that one point; L4 / L5 are `KB-322` / `KB-321`. Event payloads carry no customer data.
+
 ---
 
 ## Superseded

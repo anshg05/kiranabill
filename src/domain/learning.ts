@@ -26,6 +26,7 @@
  */
 
 import type { Paise } from "./money.js";
+import type { CatalogEntry } from "./catalog.js";
 
 // ---------------------------------------------------------------------------
 // State
@@ -88,13 +89,16 @@ export interface ProductSighting {
   readonly spokenName: string;
   readonly displayName: string;
   readonly unit: string;
-  readonly pricePaise: Paise;
+  /** KB-307: null when the line had no per-unit price (a total-only line) -
+   * a sighting still counts, but no price is made up for it. */
+  readonly pricePaise: Paise | null;
 }
 
 export interface PromotedCatalogEntry {
   readonly displayName: string;
   readonly unit: string;
-  readonly pricePaise: Paise;
+  /** null when no sighting carried a price. */
+  readonly pricePaise: Paise | null;
 }
 
 export interface ProductPromotionResult {
@@ -107,7 +111,8 @@ export interface ProductPromotionResult {
 /** First-observed price wins ties (docs/07-DECISIONS.md D13-style disclosed
  * tie-break, approved as-is for KB-008). Legacy just overwrites with the
  * latest observation; the doc's "modal observed price" is new design. */
-function modalPrice(observations: readonly Paise[]): Paise {
+function modalPrice(observations: readonly Paise[]): Paise | null {
+  if (observations.length === 0) return null;
   const counts = new Map<Paise, number>();
   for (const price of observations) {
     counts.set(price, (counts.get(price) ?? 0) + 1);
@@ -120,6 +125,11 @@ function modalPrice(observations: readonly Paise[]): Paise {
     }
   }
   return best!.price;
+}
+
+/** numeric(3,2) on the server: 0.7 + 0.2 must be 0.9, not 0.8999999999999999. */
+function twoDecimals(x: number): number {
+  return Number(x.toFixed(2));
 }
 
 function promoteProvisional(state: LearningState, key: string, product: ProvisionalProduct): ProductPromotionResult {
@@ -145,7 +155,7 @@ export function recordProductSighting(state: LearningState, sighting: ProductSig
     displayName: sighting.displayName,
     unit: sighting.unit,
     seenCount: (existing?.seenCount ?? 0) + 1,
-    priceObservations: existing ? [...existing.priceObservations, sighting.pricePaise] : [sighting.pricePaise],
+    priceObservations: [...(existing?.priceObservations ?? []), ...(sighting.pricePaise === null ? [] : [sighting.pricePaise])],
   };
 
   if (product.seenCount >= AUTOMATIC_PROMOTION_SIGHTINGS) {
@@ -203,7 +213,7 @@ export function recordAliasConfirmation(state: LearningState, correction: AliasC
   const key = normalizeKey(correction.spokenName);
   const existing = state.learnedAliases[key];
   const confidence = existing
-    ? Math.min(existing.confidence + ALIAS_CONFIRMATION_INCREMENT, 1)
+    ? twoDecimals(Math.min(existing.confidence + ALIAS_CONFIRMATION_INCREMENT, 1))
     : ALIAS_INITIAL_CONFIDENCE;
   const alias: LearnedAlias = {
     aliasKey: key,
@@ -229,7 +239,7 @@ export function suppressAlias(state: LearningState, spokenName: string): Learnin
     return state;
   }
 
-  const confidence = existing.confidence - ALIAS_SUPPRESSION_DECREMENT;
+  const confidence = twoDecimals(existing.confidence - ALIAS_SUPPRESSION_DECREMENT);
   if (confidence <= ALIAS_RETIREMENT_THRESHOLD) {
     return { ...state, learnedAliases: withoutKey(state.learnedAliases, key) };
   }
@@ -349,4 +359,167 @@ export function ignorePriceSuggestion(state: LearningState, catalogId: string, n
       [catalogId]: { ...existing, ignoredUntilMs: nowMs + PRICE_SUGGESTION_IGNORE_MS },
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// KB-307 commit 3 - what one finalised bill teaches (08 §2-§5; hard rule 8:
+// only finalised bills teach). Pure: data/learnBill.ts reads the committed
+// bill from Dexie, calls this, and writes the rows - after the receipt, in its
+// own transaction (08 §8), keyed so a re-run changes nothing.
+// ---------------------------------------------------------------------------
+
+/** The layer a line came from - recorded on every alias event (owner): a
+ * Gemini guess (KI-47, KI-52) must not become trusted as easily as a Layer 1
+ * match (KB-323 sets the thresholds). */
+export type SourceLayer = "fastpath" | "gemini" | "manual";
+
+const LAYER: Record<LearnLine["source"], SourceLayer> = { fastpath: "fastpath", voice: "gemini", manual: "manual" };
+
+/** A finalised bill line, as stored (bill_items). */
+export interface LearnLine {
+  readonly lineNo: number;
+  readonly shopProductId: string | null;
+  readonly spokenName: string | null;
+  readonly displayName: string;
+  readonly unit: string | null;
+  readonly ratePaise: Paise | null;
+  readonly rateUnit: string | null;
+  readonly source: "fastpath" | "voice" | "manual";
+  readonly wasEdited: boolean;
+}
+
+/** A voice line the shopkeeper removed before finalising (08 §2: "deleted a line entirely"). */
+export interface LearnDiscarded {
+  readonly spokenName: string | null;
+  readonly shopProductId: string | null;
+  readonly source: LearnLine["source"];
+}
+
+export type LearningDecision =
+  | {
+      readonly kind: "alias_confirmed";
+      readonly lineNo: number;
+      readonly alias: string;
+      readonly shopProductId: string;
+      readonly sourceLayer: SourceLayer;
+      readonly confidenceBefore: number | null;
+      readonly confidenceAfter: number;
+      readonly hitCount: number;
+      readonly promoted: boolean;
+    }
+  | {
+      readonly kind: "alias_suppressed";
+      readonly index: number;
+      readonly alias: string;
+      readonly shopProductId: string;
+      readonly sourceLayer: SourceLayer;
+      readonly confidenceBefore: number;
+      readonly confidenceAfter: number;
+      readonly retired: boolean;
+    }
+  | { readonly kind: "price_observed"; readonly lineNo: number; readonly shopProductId: string; readonly observedPricePaise: Paise; readonly shopPricePaise: Paise }
+  | {
+      readonly kind: "product_sighted";
+      readonly lineNo: number;
+      readonly spokenName: string;
+      readonly unit: string | null;
+      readonly pricePaise: Paise | null;
+      readonly seenCount: number;
+      /** True exactly when this sighting reaches the automatic threshold (3). */
+      readonly promotionDue: boolean;
+    };
+
+const isExactAlias = (spoken: string, entry: CatalogEntry) =>
+  [entry.displayName, ...entry.aliases].some((a) => normalizeKey(a) === normalizeKey(spoken));
+
+/**
+ * One bill's lessons, in bill order:
+ *  - L2: an UNEDITED fastpath/Gemini line matched to a product, whose words
+ *    aren't already an exact alias of it, confirms that alias (owner,
+ *    decision 6). Edited lines and hand-added lines never teach an alias
+ *    (owner, decision 4) - an edit isn't an acceptance, a typed fragment
+ *    isn't speech. A removed voice line whose words are a LEARNED alias
+ *    suppresses it (08 §4, safety rule 5).
+ *  - L3: any matched line whose rate, in the shop's own unit, differs from
+ *    the shop's price is observed (never applied - safety rule 3). A rate in
+ *    another unit (SG-09) is skipped rather than converted with a division.
+ *  - L1: a line with no product is a provisional sighting; its rate is the
+ *    observed price, a total-only line gives none. Reaching 3 sightings is
+ *    "promotion due" - creating the shop_product is KB-320.
+ */
+export function learnFromBill(
+  state: LearningState,
+  bill: { readonly lines: readonly LearnLine[]; readonly discarded: readonly LearnDiscarded[] },
+  catalog: readonly CatalogEntry[],
+  nowMs: number,
+): { state: LearningState; decisions: LearningDecision[] } {
+  const byId = new Map(catalog.map((e) => [e.id, e]));
+  const decisions: LearningDecision[] = [];
+  let next = state;
+
+  for (const line of bill.lines) {
+    const entry = line.shopProductId ? byId.get(line.shopProductId) : undefined;
+    const spoken = line.spokenName?.trim() ?? "";
+
+    if (line.shopProductId === null) {
+      const name = spoken || line.displayName;
+      const before = next.provisionalProducts[normalizeKey(name)]?.seenCount ?? 0;
+      const result = recordProductSighting(next, { spokenName: name, displayName: line.displayName, unit: line.unit ?? "", pricePaise: line.ratePaise });
+      next = result.state;
+      decisions.push({
+        kind: "product_sighted",
+        lineNo: line.lineNo,
+        spokenName: name,
+        unit: line.unit,
+        pricePaise: line.ratePaise,
+        seenCount: before + 1,
+        promotionDue: before + 1 === AUTOMATIC_PROMOTION_SIGHTINGS,
+      });
+      continue;
+    }
+    if (!entry) continue; // a product no longer in this shop's catalog - nothing to compare against
+
+    if (line.source !== "manual" && !line.wasEdited && spoken && !isExactAlias(spoken, entry)) {
+      const before = next.learnedAliases[normalizeKey(spoken)];
+      const result = recordAliasConfirmation(next, { spokenName: spoken, catalogId: entry.id });
+      next = result.state;
+      const after = next.learnedAliases[normalizeKey(spoken)]!;
+      decisions.push({
+        kind: "alias_confirmed",
+        lineNo: line.lineNo,
+        alias: spoken,
+        shopProductId: entry.id,
+        sourceLayer: LAYER[line.source],
+        confidenceBefore: before?.confidence ?? null,
+        confidenceAfter: after.confidence,
+        hitCount: after.hitCount,
+        promoted: result.promoted,
+      });
+    }
+
+    if (line.ratePaise !== null && line.rateUnit === entry.unit && line.ratePaise !== entry.suggestedPricePaise) {
+      next = recordPriceObservation(next, entry.id, entry.suggestedPricePaise, line.ratePaise, nowMs).state;
+      decisions.push({ kind: "price_observed", lineNo: line.lineNo, shopProductId: entry.id, observedPricePaise: line.ratePaise, shopPricePaise: entry.suggestedPricePaise });
+    }
+  }
+
+  bill.discarded.forEach((removed, index) => {
+    const spoken = removed.spokenName?.trim() ?? "";
+    const learned = spoken ? next.learnedAliases[normalizeKey(spoken)] : undefined;
+    if (!learned || removed.source === "manual") return;
+    next = suppressAlias(next, spoken);
+    const after = next.learnedAliases[normalizeKey(spoken)];
+    decisions.push({
+      kind: "alias_suppressed",
+      index,
+      alias: spoken,
+      shopProductId: learned.catalogId,
+      sourceLayer: LAYER[removed.source],
+      confidenceBefore: learned.confidence,
+      confidenceAfter: after?.confidence ?? twoDecimals(learned.confidence - ALIAS_SUPPRESSION_DECREMENT),
+      retired: after === undefined,
+    });
+  });
+
+  return { state: next, decisions };
 }

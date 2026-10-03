@@ -581,6 +581,45 @@ async function main(): Promise<void> {
       }
     });
 
+    // --- KB-307 commit 3: every learning write stays inside the writer's own shop ---
+    // learnBill.ts writes these four tables locally and sync pushes them
+    // (insert for the append-only two, upsert for aliases / provisional products).
+
+    const learningWrites: Array<[string, string, unknown[]]> = [
+      ["learned_aliases", `insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'smuggled', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`, [shopB, shopProductB]],
+      ["provisional_products", `insert into provisional_products (shop_id, spoken_name, seen_count, local_id, device_id) values ($1, 'smuggled', 1, gen_random_uuid(), 'test-device')`, [shopB]],
+      ["price_observations", `insert into price_observations (shop_id, shop_product_id, observed_price_paise, local_id, device_id) values ($1, $2, 100, gen_random_uuid(), 'test-device')`, [shopB, shopProductB]],
+      ["learning_events", `insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, $2, 'smuggled', gen_random_uuid(), 'test-device')`, [shopB, billB]],
+    ];
+    for (const [table, sql, params] of learningWrites) {
+      await checkRejects(client, `learning write isolation (KB-307): owner A cannot insert a ${table} row into shop B`, "42501", async () => {
+        await asUser(client, ownerA);
+        await client.query(sql, params);
+      });
+    }
+
+    await check(client, "learning write isolation (KB-307): owner A's UPDATE of shop B's learned alias / provisional product affects zero rows", async () => {
+      await asUser(client, ownerB);
+      await client.query(`insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'b-alias', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);
+      await client.query(`insert into provisional_products (shop_id, spoken_name, seen_count, local_id, device_id) values ($1, 'b-new', 1, gen_random_uuid(), 'test-device')`, [shopB]);
+      await asUser(client, ownerA);
+      const a1 = await client.query(`update learned_aliases set confidence = 1 where shop_id = $1`, [shopB]);
+      const a2 = await client.query(`update provisional_products set seen_count = 99 where shop_id = $1`, [shopB]);
+      if (a1.rowCount !== 0 || a2.rowCount !== 0) throw new Error(`expected 0 rows, got ${a1.rowCount} / ${a2.rowCount}`);
+      return "0 rows affected - shop B's learning rows are invisible to shop A";
+    });
+
+    await checkRejects(client, "learning append-only (03 §5): owner B cannot UPDATE their own learning_events (no update policy)", "42501", async () => {
+      await asUser(client, ownerB);
+      const res = await client.query(`update learning_events set event_type = 'tampered' where shop_id = $1`, [shopB]);
+      // An UPDATE with no policy filters to zero rows rather than raising - make that a failure of this check.
+      if (res.rowCount === 0) {
+        const e = new Error("update matched 0 rows (no update policy - rows invisible to UPDATE)") as PgError;
+        e.code = "42501";
+        throw e;
+      }
+    });
+
     // --- KB-307 / KI-41: a final or cancelled bill must add up, and have lines ---
     // Enforced on the TABLE (a trigger on entering final/cancelled), so it holds
     // for push_bill and for a direct insert/update alike - the client's

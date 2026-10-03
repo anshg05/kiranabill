@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import { buildFinalBill, type FinalFlag, type FinalLine } from "@/domain/finalBill";
+import type { LearnDiscarded } from "@/domain/learning";
 import type { KiranaBillDB, LocalBill, LocalBillItem } from "./db";
 import { takeNextNumber } from "./receiptNumbers";
 
@@ -27,6 +28,8 @@ export interface FinaliseInput {
   readonly customer: { readonly name: string; readonly mobile: string | null };
   readonly lines: readonly FinalLine[];
   readonly flags: readonly FinalFlag[];
+  /** Lines removed before finalising - kept on the bill locally for learning (KB-307 commit 3). */
+  readonly discarded?: readonly LearnDiscarded[];
   /** Injected in tests; the clock otherwise. */
   readonly now?: Date;
 }
@@ -71,6 +74,7 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
         createdAt: input.startedAt,
         finalizedAt,
         syncedAt: null,
+        discardedLines: [...(input.discarded ?? [])],
       };
       await localDb.bills.add(bill);
       await localDb.billItems.bulkAdd(

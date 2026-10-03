@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { StoredReviewFlag } from "@/domain/finalBill";
+import type { LearnDiscarded } from "@/domain/learning";
 
 // KB-109: the local IndexedDB layer. Three genuinely different roles
 // hide under "mirror the server tables" (docs/03-DATA-MODEL.md section 6):
@@ -56,6 +57,9 @@ export interface LocalBill {
   createdAt: string;
   finalizedAt: string | null;
   syncedAt: string | null;
+  /** KB-307 (local only - never pushed): voice lines removed before finalising,
+   * for learning's alias suppression (08 §2). No customer data. */
+  discardedLines?: LearnDiscarded[];
 }
 
 export interface LocalBillItem {
