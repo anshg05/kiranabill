@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Check, Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
@@ -227,6 +227,19 @@ interface BillViewProps {
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
+
+/** Whether a CSS media query matches - and keeps matching as the window changes. */
+function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      if (typeof window.matchMedia !== "function") return () => {};
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
+  );
+}
 const NONE_NOT_ADDED: readonly NotAdded[] = [];
 const NO_CUSTOMER: Customer = { name: CASH, mobile: null };
 
@@ -621,7 +634,9 @@ export function BillView({
   const canAdd = catalog !== null && onAddByHand !== undefined;
   // Both markups are in the DOM (CSS picks one); a new line's qty editor opens
   // only in the visible one, so exactly one input takes focus.
-  const [wide] = useState(() => typeof window.matchMedia === "function" && window.matchMedia("(min-width: 48rem)").matches);
+  // KB-307 fix: follows the window - decided once at mount, it went stale when
+  // the window was resized (owner's real-Chrome check).
+  const wide = useMediaQuery("(min-width: 48rem)");
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
   const lineFlags = (id: string) => flags.filter((f) => f.lineId === id);
   const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
@@ -732,14 +747,19 @@ export function BillView({
   // KB-307 (owner): a Bill Banao tap while checks are pending goes to the
   // first one, in bill order - a HIGH flag's "Theek hai", a missing amount or
   // quantity, then a not-added utterance's Retry - in the markup that's visible.
-  const cardsRef = useRef<HTMLUListElement>(null);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const notAddedRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
   const canFinalise = onFinalise !== undefined && !readOnly && !saving && lines.length > 0 && pending === 0;
+  // The target is the first one actually RENDERED (it has layout boxes): the
+  // card list and the table are both in the DOM and CSS hides one - focusing an
+  // element inside the hidden one does nothing (the owner's real-Chrome bug).
+  // Scrolled to the middle of the screen; the ring comes from index.css
+  // ([data-pending-target]:focus) because Chrome shows no :focus-visible for
+  // focus moved by a script after a tap. (jsdom has no layout: first target.)
   const focusFirstPending = () => {
-    const view = wide ? tableRef.current : cardsRef.current;
-    const target = view?.querySelector<HTMLElement>("[data-pending-target]") ?? notAddedRef.current?.querySelector<HTMLElement>("[data-pending-target]");
-    target?.focus();
+    const targets = [...(itemsRef.current?.querySelectorAll<HTMLElement>("[data-pending-target]") ?? [])];
+    const target = targets.find((el) => el.getClientRects().length > 0) ?? targets[0];
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView?.({ block: "center" });
     setAnnouncement(`${checksText(pending)}.`);
   };
   const tapBillBanao = () => {
@@ -804,9 +824,9 @@ export function BillView({
         </div>
 
         <div className="relative min-h-0 flex-1">
-        <div className="h-full overflow-y-auto">
+        <div ref={itemsRef} className="h-full overflow-y-auto">
           {/* Mobile first: one card per line (05 §2). */}
-          <ul ref={cardsRef} aria-label="Bill items" className="md:hidden">
+          <ul aria-label="Bill items" className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
               <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
@@ -827,7 +847,7 @@ export function BillView({
           </ul>
 
           {/* md and up: a table (05 §2). */}
-          <table ref={tableRef} className="hidden w-full border-collapse md:table">
+          <table className="hidden w-full border-collapse md:table">
             <thead>
               <tr className={`border-b border-line text-left ${label}`}>
                 <th className="px-4 py-2 font-medium">Item</th>
@@ -867,9 +887,7 @@ export function BillView({
               ])}
             </tbody>
           </table>
-          <div ref={notAddedRef}>
-            <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
-          </div>
+          <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
           <div ref={endRef} />
         </div>
         {addItem && canAdd && (

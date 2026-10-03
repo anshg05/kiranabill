@@ -38,3 +38,12 @@
   --font-sans: "Mukta", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 }
+
+/* KB-307 fix (owner's real-Chrome check): a Bill Banao tap moves focus to the
+   first pending check. Chrome shows no :focus-visible ring for focus moved by a
+   script after a mouse tap, so pending targets carry their own - never colour
+   alone: the target is also scrolled to the middle and announced. */
+[data-pending-target]:focus {
+  outline: 3px solid var(--color-danger);
+  outline-offset: 2px;
+}
