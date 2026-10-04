@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 4 Oct 2026 (rev 79) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 4 Oct 2026 (rev 80) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-308` (receipt) — commit 4 (legacy layout, D57) + the `bill_language` default migration built, local; awaiting the owner's check at 375 px and desktop, and the owner's `db push` of `20261004090000` (after `--dry-run`). `KB-307` done 3 Oct 2026.
+**Working on:** `KB-309` (share: image, PDF, WhatsApp) — plan. `KB-308` done 4 Oct 2026 (owner check passed; migration `20261004090000` on both sides).
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -46,7 +46,8 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 12. ~~**`KB-305`** — add item by hand~~ — **done 3 Oct 2026.**
 13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
 14. ~~**`KB-307`** — finalise (Bill Banao) + learning~~ — **done 3 Oct 2026.** New: `KI-63` (per-kg rate on a per-gm product never observed).
-15. **`KB-308`** — receipt — **built**, awaiting the owner's check.
+15. ~~**`KB-308`** — receipt~~ — **done 4 Oct 2026** (D57). New: `KI-65`.
+15a. **`KB-309`** — share (image, PDF, WhatsApp) — **planning.**
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -299,6 +300,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 4 Oct 2026 | **`KB-308` done** — owner browser check of commit 4 passed (375 px + desktop, en and hi). Owner pushed migration `20261004090000` after `--dry-run`; `migration list --linked` shows it on both sides. New `KI-65` (LOW): a Studio / SQL edit to a shop never reaches the device unless it sets `updated_at = now()` — D57 and 03 corrected. VERIFY: `npm test` at default workers crashed (worker out of memory — the machine had ~1.1 GB free commit); with `--maxWorkers=2` 1098/1098. All local commits pushed, no deploy marker. | Owner + Agent |
 | 4 Oct 2026 | **`KB-308` commit 4 + migration, not pushed (D57).** The receipt takes the legacy parchi's layout (visible header row, "Bill No.", "Customer:", ₹ on amounts, rate "—", one-line thanks for both), English by default: migration `20261004090000` sets `shops.bill_language` default `'en'` (column default only; applied locally — 112 existing local shops kept `'hi'`; e2e red → green). Tests first (domain + UI red for the right reason); plants (header row screen-reader-only, "Customer:" removed) fail the right tests. **Agent's browser check:** en / hi / both at 320 / 375 / 384 / 1280 px — no sideways overflow, long Hindi name wraps in its column, real fallback bills (en, both) wrap only after hyphens and copy whole, mobile nowhere; hi at 320 px needed no qty wrap (item 83 / qty 53 / rate 60 / amt 58 px). KB-401 row: precache only Plex latin + latin-ext. | Agent + Owner |
 | 4 Oct 2026 | **`KB-308` commit 3 — owner review fixes, not pushed.** ₹ was in no imported Plex face (latin-ext, not Latin): Plex now imported split by `unicode-range` (`400.css`/`600.css`), SD-029 corrected; a receipt fetches latin + latin-ext woff2 (4 files ≈ 58 kB). The "Bill … saved" status breaks the number only after hyphens (shared `ReceiptNumberText`). KI-64 closed (ordering check, no wall clock). Planted regressions (Cash printed, `<wbr>` removed, qty "0", customer row shown) each fail the right test. Docs: 05 §6 + implementation notes, M-21, SD-027, NI-37 (catalog names in every language), KI-05 → before the pilot (Before deployment), KB-318 waits on KI-50, live production = `6e29cf2`. | Agent + Owner |
 | 3 Oct 2026 | **`KB-308` built, not pushed — the receipt.** Commit 1: `buildReceipt` (en/hi/both, one string table), raw-HTML lint rule (0 existing uses), IBM Plex Mono 400/600 Latin (SD-029; lockfile +10/−0; audit 0; JS unchanged, CSS +0.48 kB, 2 woff2 ≈ 30 kB on demand). Commit 2: `loadReceipt` + `Receipt.tsx` on the saved screen. Tests first (both red), real finalised bills incl. a real fallback-numbered one; mobile absent from the serialised page (mutation-checked). **Agent's browser check:** 320/343/375/384/1280 px — no sideways overflow; receipt 288/311/343/352/384 px; long Hindi name wraps inside its column; a real fallback bill wraps only after a hyphen and copies whole; `<b>` in a customer name shows as text; Plex loaded. New: NI-35 (GST), NI-36 (no address), KI-64 (flaky test, fix awaiting approval). 20-CONTINUITY refreshed and pushed. | Agent |

@@ -1470,7 +1470,7 @@ was built and checked; it amends that mockup, the Q3 strings and two display rul
    prints the thanks on one line (`धन्यवाद!  Thank You!`). Hindi strings added: "बिल नं.", "ग्राहक:". All labels in
    the one table in `domain/receipt.ts`, which stays the one source `KB-309` draws from.
 4. **English by default:** `shops.bill_language` defaults to `'en'` for new shops (migration `20261004090000`; was
-   `'hi'`). Existing shops keep their value. Hindi and both stay as options; switching is in Studio until `KB-312`'s
+   `'hi'`). Existing shops keep their value. Hindi and both stay as options; switching is in Studio — **the edit must also set `updated_at = now()`** (KI-65: a device ignores a server-side shop edit that doesn't bump it) — until `KB-312`'s
    setting. Compatible with the deployed app (D55 §5): the default applies only when a shop is created, `createShop`
    never sends `bill_language`, and the deployed build (`6e29cf2`) draws no receipt.
 5. **Unchanged:** unknown qty "—" (D47), SG-09 rate units, the fallback number breaking only after hyphens and copying

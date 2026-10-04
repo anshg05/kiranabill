@@ -122,7 +122,7 @@ shop-scoped and protected by RLS.
 | `address` | `text` | |
 | `logo_url` | `text` | Supabase Storage |
 | `catalog_mode` | `text` | `'base_imported'` \| `'custom_only'` — chosen at onboarding |
-| `bill_language` | `text` | `'en'` \| `'hi'` \| `'both'` — default **`'en'`** for new shops (D57, migration `20261004090000`; was `'hi'` — existing shops kept their value). The customer's receipt language (`KB-308`); set in Studio until `KB-312` |
+| `bill_language` | `text` | `'en'` \| `'hi'` \| `'both'` — default **`'en'`** for new shops (D57, migration `20261004090000`; was `'hi'` — existing shops kept their value). The customer's receipt language (`KB-308`); set in Studio until `KB-312` — **with `updated_at = now()`** in the same update, or devices never pull it (KI-65) |
 | `receipt_prefix` | `text` | e.g. `KB` |
 | `created_at`, `updated_at` | `timestamptz` | |
 
