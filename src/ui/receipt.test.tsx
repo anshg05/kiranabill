@@ -214,4 +214,18 @@ describe("KB-308 - the receipt on the saved screen", () => {
     for (const form of [MOBILE, "91234 56789", "91234-56789", "+91"]) expect(page).not.toContain(form);
     expect(await db.bills.toCollection().first()).toMatchObject({ customerMobile: MOBILE }); // stored - just never shown
   });
+
+  it("the 'Bill … saved' status breaks a REAL fallback number only after hyphens (a hyphen + digit is no break point for a browser)", async () => {
+    await db.shops.put(shopRow()); // no block -> the D23 fallback number
+    render(<Harness transcript="2 kilo chini" />);
+    await act(async () => {
+      screen.getByRole("button", { name: "Bill Banao" }).click();
+    });
+    const status = await waitFor(() => screen.getByRole("status", { name: "Bill saved" }));
+    const number = `KB-${deviceId}-1`;
+    expect(status.textContent).toBe(`Bill ${number} saved`);
+    const wbrs = status.querySelectorAll("wbr");
+    expect(wbrs).toHaveLength(number.split("-").length - 1);
+    for (const wbr of wbrs) expect(wbr.previousSibling?.textContent?.endsWith("-")).toBe(true);
+  });
 });

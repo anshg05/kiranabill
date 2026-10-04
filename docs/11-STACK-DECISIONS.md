@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 27 Sep 2026 (rev 10)
+**Last updated:** 4 Oct 2026 (rev 11)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -408,7 +408,7 @@ Latin-ext): the browser downloads only the subsets it renders. Zero JavaScript. 
 | M-21 as written (manual download into the repo) | TTF from Google Fonts: larger, not subsetted, and a manual step for something npm pins and versions |
 
 **Exit cost: near zero** — the files are static; worst case, vendor them into `src/assets/fonts/` and keep the
-same `@font-face` rules. IBM Plex Mono is not added yet: the receipt (`KB-308`) is its only user.
+same `@font-face` rules. IBM Plex Mono, the receipt's face, followed the same route in `KB-308` (SD-029).
 
 ## SD-028 — Type-aware lint: **`@typescript-eslint/eslint-plugin` 8.70.0** (dev only) · 3 Oct 2026
 
@@ -422,19 +422,31 @@ SG-10, owner decision in the `KB-307` plan (D53). Three rules — `no-floating-p
 
 MIT, actively released, dev-only (0 bytes in the bundle). Cost: `npm run lint` ~5 s → ~29 s (type information). **Exit cost: near zero** — delete the config block.
 
-## SD-029 — Receipt font: **`@fontsource/ibm-plex-mono` 5.3.0** (runtime, CSS + font files only) · 3 Oct 2026
+## SD-029 — Receipt font: **`@fontsource/ibm-plex-mono` 5.3.0** (runtime, CSS + font files only) · 3 Oct 2026, corrected 4 Oct 2026
 
-The receipt's face (`13-DESIGN.md` §4), owner decision in the `KB-308` plan (Q2 A). Exact version pinned; Latin subset only,
-weights 400 and 600 (`latin-400.css`, `latin-600.css` from `src/index.css`). Plex Mono has **no Devanagari** — the stack is
-`"IBM Plex Mono", "Mukta", monospace`, so Hindi labels and names render in Mukta. Same reasoning as SD-027: self-hosted
-from our origin (offline, `KB-401` precache), zero JavaScript, OFL-1.1, published by the same project as Mukta's package.
-Cost: JS unchanged; CSS +0.48 kB; 2 woff2 files (14.7 + 15.6 kB) fetched only when a receipt is drawn (woff fallbacks also
-emitted, never fetched by a modern browser). Lockfile: +10 lines, 0 removed (NI-29); `npm audit --omit=dev` 0.
+The receipt's face (`13-DESIGN.md` §4), owner decision in the `KB-308` plan (Q2 A). Exact version pinned; weights
+400 and 600, imported as `400.css` / `600.css` from `src/index.css` — **split by `unicode-range`, like Mukta.**
+Plex Mono has **no Devanagari** — the stack is `"IBM Plex Mono", "Mukta", monospace`, so Hindi labels and names
+render in Mukta. Same reasoning as SD-027: self-hosted from our origin (offline, `KB-401` precache), zero
+JavaScript, OFL-1.1.
+
+**Correction (owner, 4 Oct 2026):** commit 1 imported the Latin subset only (`latin-400.css`/`latin-600.css`) and
+called latin-ext "never rendered on a kirana receipt". **False — ₹ (U+20B9) is in latin-ext, not Latin**, and is
+on every receipt: every ₹ fell back to Mukta beside Plex digits. Fixed in `KB-308` commit 3 (test:
+`src/ui/receiptFont.test.ts` — an imported Plex face for each weight must cover U+20B9).
+
+**Cost:** JS unchanged. CSS 20.66 kB before KB-308 → 25.21 kB (5 subsets × 2 weights of `@font-face` rules).
+`dist/` gets 20 Plex files (latin, latin-ext, cyrillic, cyrillic-ext, vietnamese; woff2 + woff). **A receipt
+fetches 4:** latin 400/600 (14.7 + 15.6 kB) and latin-ext 400/600 (13.4 + 14.3 kB) woff2 — ≈ 58 kB, once, only when
+a receipt is drawn. Cyrillic / Vietnamese files and the woff fallbacks are emitted but never fetched (no glyph in
+their range is rendered; a modern browser takes woff2). Lockfile: +10 lines, 0 removed (NI-29); `npm audit
+--omit=dev` 0.
 
 | Rejected | Why |
 |---|---|
 | Vendoring the woff2 files into `src/assets/fonts` | No updates, and a licence file to carry by hand — same work as the package, less maintained |
-| All subsets (Cyrillic, Vietnamese, Latin-ext) | Never rendered on a kirana receipt |
+| Latin subset only (commit 1) | No ₹ — see the correction above |
+| Hand-picking latin + latin-ext CSS per weight | Saves only unused files in `dist/` (never fetched); the per-weight files are fontsource's supported, Mukta-consistent import |
 
 ## How to add to this document
 

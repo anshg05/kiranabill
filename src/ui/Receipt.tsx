@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import type { Receipt as ReceiptModel } from "@/domain/receipt";
+import { numberChunks, type Receipt as ReceiptModel } from "@/domain/receipt";
 
 // KB-308: the kirana parchi (05 §6). Every value is a React text node - never
 // raw HTML (hard rule 9; lint bans it). Sized for a 58 mm thermal roll: at most
@@ -9,6 +9,19 @@ import type { Receipt as ReceiptModel } from "@/domain/receipt";
 // takes the rest and wraps - a long name, Hindi included, stays inside it.
 
 const rule = "my-2 border-t border-dashed border-ink-soft";
+
+/** Q1 A: a receipt number that may break only after a hyphen - a browser won't
+ * break "-1234", so a fallback number needs explicit points - and copies as
+ * one string (<wbr> adds no characters). The receipt and the saved status. */
+export function ReceiptNumberText({ value }: { value: string }) {
+  const chunks = numberChunks(value);
+  return chunks.map((chunk, i) => (
+    <Fragment key={i}>
+      {chunk}
+      {i < chunks.length - 1 && <wbr />}
+    </Fragment>
+  ));
+}
 
 export function Receipt({ receipt }: { receipt: ReceiptModel }) {
   // Q4 (owner): a logo only when it loads - offline or broken, it's left out.
@@ -28,12 +41,7 @@ export function Receipt({ receipt }: { receipt: ReceiptModel }) {
       <p>{r.billLabel}</p>
       {/* Q1 A: on its own line; breaks only after a hyphen; one selectable string. */}
       <p data-testid="receipt-number" className="select-all font-semibold">
-        {r.numberChunks.map((chunk, i) => (
-          <Fragment key={i}>
-            {chunk}
-            {i < r.numberChunks.length - 1 && <wbr />}
-          </Fragment>
-        ))}
+        <ReceiptNumberText value={r.receiptNumber} />
       </p>
       <p className="tabular-nums">{r.dateTime}</p>
       {r.customer && <p className="[overflow-wrap:anywhere]">{r.customer}</p>}

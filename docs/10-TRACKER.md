@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 3 Oct 2026 (rev 77) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 4 Oct 2026 (rev 78) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,8 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-308` (receipt) — built (2 local commits), agent's browser check done; awaiting the owner's check. `KB-307` done 3 Oct 2026.
+**Working on:** `KB-308` (receipt) — owner review fixes built (commit 3, local); awaiting the owner's check at 375 px and desktop. `KB-307` done 3 Oct 2026.
+**Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
 (its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
@@ -46,15 +47,15 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
 14. ~~**`KB-307`** — finalise (Bill Banao) + learning~~ — **done 3 Oct 2026.** New: `KI-63` (per-kg rate on a per-gm product never observed).
 15. **`KB-308`** — receipt — **built**, awaiting the owner's check.
-16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) after billing (KI-50).
+16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
-**Outstanding owner tasks:** upgrade local npm to 11.19.0 (`npm install -g npm@11.19.0`) to match Netlify — `12-PARKED.md` NI-29. `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
+**Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
 https://kiranabilling.netlify.app **only** when the commit carries the owner-approved deploy marker (see "Before deployment").
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (27 Sep, `KB-302`):** 515 tests in 33 files — Vitest project `unit` (514 tests, 32 files,
-parallel) then `perf` (1 test, run alone, D35); `test:e2e` 15 in 2 files. Number benchmark 129/129; coverage probe 145/154 = 94.2%. The perf test is `KI-23`-closed; reopens only on an isolated failure.
+**Test state (4 Oct 2026, `KB-308` commit 3):** `npm test` 1098 tests in 52 files (Vitest `unit` in parallel, then `perf` alone, D35);
+`test:e2e` 34 in 7 files; `test:rls` 50/50. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
 `eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
 **Eval harness:** `npm run eval` reports 0/0/0/25 — `eval/run-eval.ts` was never connected to
@@ -103,6 +104,8 @@ where the detail lives; tick it off there and strike it here.
   purpose (billing, later udhaar — never marketing); retention; a customer's erasure request vs **immutable finalised bills**
   (hard rule 2); what reaches logs (~~`sync.ts` logs a whole bill on a permanent push failure~~ — fixed in `KB-306`: only `localId` + error code);
   processor terms with Supabase / Netlify / Groq / Google (customer fields never go to `/voice`).
+- [ ] **`KI-05` — an eval baseline before the pilot** (owner, 4 Oct 2026). The release gate needs it; `npm run eval` still reports
+  0 / 0 / 0 / 25 — `eval/run-eval.ts` was never connected to `parseUtterance()`. `12-PARKED.md` §A.
 - [ ] **GST: simple bill vs tax invoice (NI-35)** — the receipt is a kirana parchi, not a GST tax invoice. If any pilot shop is
   GST-registered, the owner confirms with the shops / an accountant whether a tax-invoice format (GSTIN etc.) is needed — before the
   pilot. (Owner, 3 Oct 2026, `KB-308`.)
@@ -119,7 +122,7 @@ where the detail lives; tick it off there and strike it here.
 | **0** | Build `domain/` + eval harness, new codebase | ✅ Done — domain tickets complete; `KB-001` closed 26 Sep 2026 |
 | 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ✅ Core chain done (`KB-101`–`KB-111`; `KB-107b`'s upload widget parked, no urgency) — see the retrospective below |
 | 2 | Voice pipeline: catalog index, layers 1–4, learning | 🟦 Everything buildable without a UI is done — `KB-204`–`KB-208`, `KB-210`'s data layer, see the Phase 2 retrospective below. `KB-209`'s finalize hook and `KB-210`'s actual screen correctly wait on Phase 3's real finalize action and Settings screen |
-| 3 | Billing UI, receipt, history, catalog screen | ⬜ Not started — first ticket pending the owner's decision on `KI-29`–`KI-32` |
+| 3 | Billing UI, receipt, history, catalog screen | 🟦 **In progress** — `KB-301`–`KB-307`, `KB-315`–`KB-317`, `KB-319` done; `KB-308` (receipt) in review; see "Right now" |
 | 4 | Pilot hardening, PWA, 20-bill validation run | ⬜ Not started |
 | — | Capacitor Android wrapper | ⬜ After Phase 4 |
 
@@ -296,6 +299,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 4 Oct 2026 | **`KB-308` commit 3 — owner review fixes, not pushed.** ₹ was in no imported Plex face (latin-ext, not Latin): Plex now imported split by `unicode-range` (`400.css`/`600.css`), SD-029 corrected; a receipt fetches latin + latin-ext woff2 (4 files ≈ 58 kB). The "Bill … saved" status breaks the number only after hyphens (shared `ReceiptNumberText`). KI-64 closed (ordering check, no wall clock). Planted regressions (Cash printed, `<wbr>` removed, qty "0", customer row shown) each fail the right test. Docs: 05 §6 + implementation notes, M-21, SD-027, NI-37 (catalog names in every language), KI-05 → before the pilot (Before deployment), KB-318 waits on KI-50, live production = `6e29cf2`. | Agent + Owner |
 | 3 Oct 2026 | **`KB-308` built, not pushed — the receipt.** Commit 1: `buildReceipt` (en/hi/both, one string table), raw-HTML lint rule (0 existing uses), IBM Plex Mono 400/600 Latin (SD-029; lockfile +10/−0; audit 0; JS unchanged, CSS +0.48 kB, 2 woff2 ≈ 30 kB on demand). Commit 2: `loadReceipt` + `Receipt.tsx` on the saved screen. Tests first (both red), real finalised bills incl. a real fallback-numbered one; mobile absent from the serialised page (mutation-checked). **Agent's browser check:** 320/343/375/384/1280 px — no sideways overflow; receipt 288/311/343/352/384 px; long Hindi name wraps inside its column; a real fallback bill wraps only after a hyphen and copies whole; `<b>` in a customer name shows as text; Plex loaded. New: NI-35 (GST), NI-36 (no address), KI-64 (flaky test, fix awaiting approval). 20-CONTINUITY refreshed and pushed. | Agent |
 | 3 Oct 2026 | **`KB-307` done** — owner browser check passed (Bill Banao focus fix incl. after resize; learning: idempotent, source-tagged, real-server e2e). Commit 3 pushed without the deploy marker. New `KI-63` (a per-kg rate on a per-gm product is never a price observation — compare by multiplication; before `KB-321`). D55 §5 + `CLAUDE.md`: every migration stays compatible with the currently deployed app. Local Studio diagnosed (host port 54323 answered by PostgREST — Docker Desktop's port forward is stale; Studio itself healthy inside its container). | Owner + Agent |
 | 3 Oct 2026 | **`KB-307` commit 3 built, not pushed — learning at finalise (D56).** Pure `learnFromBill` (L2 alias from unedited voice lines whose words aren't an exact alias, tagged fastpath/gemini; suppression from removed lines; L3 price observations in the shop's unit; L1 provisional sightings, promotion-due at 3); `data/learnBill.ts` — its own transaction after the bill commit, deterministic ids + `bill_learned` marker (run twice / two tabs = one run), recovery on start. Removed lines kept on the bill locally (`discardedLines`). Tests first (domain + data red); e2e on a Ready-catalog shop: server gets alias, observation, provisional product, events with the server bill id; re-learn + re-sync → identical. `test:rls` 50/50 (6 learning-write checks, already covered by existing policies). **Agent's real-browser check:** finalised "2 kilo चिनी" in the preview → IndexedDB alias + events synced; server shows alias चिनी → Chini 0.50 and the events on KB-000001. Owner's local bills listed (read-only): Gupta Store, 6 bills, all block-numbered. | Agent |
@@ -396,8 +400,8 @@ Recorded once measurement begins. **Empty is honest; do not fill with estimates.
 |---|---|---|---|
 | Eval: pass / warn / fail / skip | 0 / 10 / 3 / 12 | 0 / 0 / 0 / 25 (`npm run eval`, 26 Sep 2026) — `eval/run-eval.ts` was never connected to `parseUtterance()` after `KB-005`; wiring it is its own future ticket (`KI-05`) | 25 / 0 / 0 / 0 |
 | `KB-000` toolchain | — | ✅ test, tsc, build all clean | — |
-| Test suite (`npm test`) | — | 371 tests (`unit` 370 + `perf` 1), all passing after `KB-315`, 27 Sep 2026. Plus `npm run test:e2e` 15/15 (8 sync + 7 bootstrap) and `npm run test:rls` 28/28 (real local stack). | all passing |
-| Number-accuracy benchmark | not measured | **110/110 correct / 0 bail / 0 wrong** (`npm run bench:numbers`, 26 Sep 2026, post-`KB-005f` — 10 cross-unit cases added, all 10 WRONG on the unfixed code; was 100/0/0 of 100) | ≥ 95% correct, wrong ≈ 0% |
+| Test suite (`npm test`) | — | **1098 tests in 52 files** (`unit` + `perf`), all passing, 4 Oct 2026 (`KB-308`). Plus `npm run test:e2e` 34/34 (7 files) and `npm run test:rls` 50/50 (real local stack). | all passing |
+| Number-accuracy benchmark | not measured | **129/129 correct / 0 bail / 0 wrong** (`npm run bench:numbers`, 4 Oct 2026) | ≥ 95% correct, wrong = 0 |
 | Fast-path coverage | not measured | **93.3%** (126/135, `npm run coverage:probe`, 26 Sep 2026 — the 10 new cross-unit cases are all hits; was 92.8%, 116/125) | ≥ 60% |
 | Median turns-to-bill | not measured | — | 1 |
 | Median seconds-to-bill | ~4 s (estimated) | — | < 2 s fast path |

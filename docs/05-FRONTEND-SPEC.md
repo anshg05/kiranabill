@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 30 Sep 2026 (rev 6) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 4 Oct 2026 (rev 7) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -222,7 +222,7 @@ wearing a receipt's clothes.
    ─────────────────────
    Bill: KB-000142
    15-08-2026  6:56 PM
-   Cash
+   Ramesh            ← only when not "Cash"
    ─────────────────────
    Chini      2kg  ₹45   90
    Parle-G     3   ₹10   30
@@ -234,11 +234,38 @@ wearing a receipt's clothes.
 ```
 
 - Narrow, thermal-friendly proportions
-- Language follows `bill_language` (en / hi / both) — the setting must actually work; it is currently
-  saved and never read
-- **Every interpolated value is HTML-escaped.** `display_name`, shop name, customer name are all
-  user-controlled and end up in `innerHTML`.
-- Share: Image · PDF · WhatsApp
+- **Customer:** the name prints only when it isn't "Cash"; the **mobile is never printed** — it is only the
+  WhatsApp target (D52).
+- **Language follows `bill_language`** (en / hi / both) — read on every receipt; labels and units come from one
+  table in `src/domain/receipt.ts`. **Item names print as in the shop's catalog** in every language (there is no
+  Hindi product-name field — `12-PARKED.md` NI-37).
+- **Every value is React text, never HTML** (hard rule 9). Shop name, item names and the customer name are
+  user-controlled; they are rendered as text nodes, and ESLint bans `dangerouslySetInnerHTML`, assigning
+  `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
+- **A total-only line** (D47): qty `—`, rate blank, the spoken amount — "Chawal" above.
+- Share: Image · PDF · WhatsApp (`KB-309`)
+
+### Implementation notes — receipt (`KB-308`, 3–4 Oct 2026)
+
+- **Code:** `src/domain/receipt.ts` (`buildReceipt` → plain text pieces, the en/hi/both string table,
+  `numberChunks`), `src/data/receipt.ts` (`loadReceipt` — the saved bill, its items and the shop from IndexedDB
+  only, so it draws offline), `src/ui/Receipt.tsx` (draws it; `ReceiptNumberText`). Shown on the saved screen
+  after Bill Banao, in place of the bill; the customer row is hidden there. `KB-309` draws the same pieces to
+  share them.
+- **Width:** at most 384 px (a 58 mm print head), otherwise 100% inside the 16 px gutters — 288 px at a 320 px
+  phone, 343 px at 375. Type `clamp(12px, 3.75vw, 14px)`. Qty, rate and amount never wrap; the item column takes
+  the rest and wraps, a long Hindi name inside it. A semantic table (column headers for screen readers only, TOTAL
+  as a row header).
+- **Receipt number:** on its own line, `<wbr>` after every hyphen (a browser won't break before a digit), one
+  `select-all` string — the long D23 fallback number wraps cleanly and copies exactly. The "Bill … saved" status
+  line uses the same component.
+- **Rate:** the screen's rule (SG-09 — a per-gm price shows per kg; a unit only across a real conversion), shared
+  as `shownRate` in `domain/billEdit.ts`. Amounts without ₹, TOTAL with it.
+- **Fonts:** IBM Plex Mono 400/600, self-hosted and split by `unicode-range` (`11-STACK-DECISIONS.md` SD-029) —
+  a receipt fetches Plex's Latin and latin-ext (₹) files; Hindi falls back to Mukta.
+- **Logo:** printed only when `logo_url` is set and the image loads — offline or broken, it is left out with no
+  broken-image icon. Caching it locally is `KB-107b`'s job.
+- **Not printed:** the address (NI-36); GST tax-invoice fields — this is a simple bill (NI-35).
 
 ---
 

@@ -1,6 +1,6 @@
 # 17 — Manual Tasks
 
-**Last updated:** 27 Sep 2026 · **Status:** Active
+**Last updated:** 4 Oct 2026 · **Status:** Active
 
 Everything only **you** can do. The agent cannot create accounts, click consent screens, hold
 credit cards, or paste secrets into dashboards.
@@ -107,7 +107,7 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 | # | Task | Cost |
 |---|---|---|
 | M-20 | Add **Chrome DevTools MCP** in Claude Code (optional) | Free |
-| M-21 | ~~Download **Mukta** and **IBM Plex Mono** from Google Fonts, self-host~~ — **Mukta done 27 Sep 2026 (`KB-301`) via `@fontsource/mukta`, no manual step** (`11-STACK-DECISIONS.md` SD-027). IBM Plex Mono: same route at `KB-308` (the receipt), no manual step expected. | Free |
+| M-21 | ~~Download **Mukta** and **IBM Plex Mono** from Google Fonts, self-host~~ — **Mukta done 27 Sep 2026 (`KB-301`) via `@fontsource/mukta`, no manual step** (`11-STACK-DECISIONS.md` SD-027). **IBM Plex Mono done 3 Oct 2026 (`KB-308`)** via `@fontsource/ibm-plex-mono`, no manual step (SD-029). | Free |
 | M-22 | Create the app icon and PWA splash images | Free |
 
 ---

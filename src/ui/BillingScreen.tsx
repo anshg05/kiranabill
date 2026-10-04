@@ -13,7 +13,7 @@ import { parseTranscript } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
-import { Receipt } from "./Receipt";
+import { Receipt, ReceiptNumberText } from "./Receipt";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
@@ -949,7 +949,9 @@ export function BillView({
         {saved && (
           <div role="status" aria-label="Bill saved" className="flex items-center gap-2 border-t border-line bg-surface px-4 py-2 font-medium text-ok">
             <Check size={18} strokeWidth={1.5} aria-hidden />
-            Bill {saved.receiptNumber} saved
+            <span>
+              Bill <ReceiptNumberText value={saved.receiptNumber} /> saved
+            </span>
           </div>
         )}
 

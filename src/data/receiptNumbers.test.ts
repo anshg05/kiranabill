@@ -4,7 +4,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB } from "./db";
 import { reserveBlock, consumeNextNumber } from "./receiptNumbers";
 
-type Handler = (op: string, payload: unknown, filters: Record<string, unknown>) => { data: unknown; error: unknown };
+type Result = { data: unknown; error: unknown };
+// A handler may return a promise - to hold a "network" call open (KI-64).
+type Handler = (op: string, payload: unknown, filters: Record<string, unknown>) => Result | Promise<Result>;
 
 function makeMockClient(handlers: Record<string, Handler>): SupabaseClient {
   const from = (table: string) => {
@@ -223,12 +225,17 @@ describe("receiptNumbers.ts", () => {
         syncStatus: "synced",
       });
 
+      // KI-64: the reservation's first network call is held open until
+      // release() - an ordering check, no wall clock and no single-tick wait.
       let reserveCalled = false;
       let reserveResolved = false;
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
       const client = makeMockClient({
-        receipt_number_blocks: (op) => {
+        receipt_number_blocks: async (op) => {
           if (op === "select") {
             reserveCalled = true;
+            await gate;
             return { data: [{ block_end: 50 }], error: null };
           }
           if (op === "insert") {
@@ -239,19 +246,15 @@ describe("receiptNumbers.ts", () => {
         },
       });
 
-      const start = performance.now();
       const result = await consumeNextNumber(client, localDb, "shop-1", "device-1");
-      const elapsedMs = performance.now() - start;
-
-      // The consume call itself resolves without waiting for the
-      // fire-and-forget reservation network round-trip.
       expect(result.source).toBe("block");
-      expect(elapsedMs).toBeLessThan(50);
 
-      // Give the fire-and-forget promise a microtask/tick to run.
-      await new Promise((r) => setTimeout(r, 0));
-      expect(reserveCalled).toBe(true);
-      expect(reserveResolved).toBe(true);
+      // consumeNextNumber has resolved while the reservation is still pending.
+      await vi.waitFor(() => expect(reserveCalled).toBe(true));
+      expect(reserveResolved).toBe(false);
+
+      release();
+      await vi.waitFor(() => expect(reserveResolved).toBe(true));
 
       const newBlock = await localDb.receiptNumberBlocks.get("block-2");
       expect(newBlock?.blockStart).toBe(51);

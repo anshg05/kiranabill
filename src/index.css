@@ -8,10 +8,12 @@
 @import "@fontsource/mukta/500.css";
 @import "@fontsource/mukta/600.css";
 @import "@fontsource/mukta/700.css";
-/* KB-308 (SD-029): the receipt face, Latin only, 400 + 600. It has no
+/* KB-308 (SD-029): the receipt face, 400 + 600, split by unicode-range like
+ * Mukta - the browser fetches only the subsets a receipt renders: Latin, and
+ * latin-ext for ₹ (U+20B9, not in the Latin subset). Plex Mono has no
  * Devanagari - --font-mono falls back to Mukta for Hindi glyphs. */
-@import "@fontsource/ibm-plex-mono/latin-400.css";
-@import "@fontsource/ibm-plex-mono/latin-600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/600.css";
 
 /*
  * KiranaBill design tokens — from docs/13-DESIGN.md §8.
@@ -38,7 +40,7 @@
   --color-muted: #9A9689;
 
   /* Fonts. Mukta is --font-sans, i.e. the DEFAULT, not opt-in (KI-19).
-   * IBM Plex Mono is not loaded yet - KB-308 (the receipt) self-hosts it. */
+   * IBM Plex Mono is the receipt's face (KB-308, imported above); Mukta covers its Devanagari. */
   --font-sans: "Mukta", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "Mukta", monospace;
 }
