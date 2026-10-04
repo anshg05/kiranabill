@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 27 Sep 2026 (rev 7) · **Status:** Final for MVP
+**Last updated:** 4 Oct 2026 (rev 8) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -122,7 +122,7 @@ shop-scoped and protected by RLS.
 | `address` | `text` | |
 | `logo_url` | `text` | Supabase Storage |
 | `catalog_mode` | `text` | `'base_imported'` \| `'custom_only'` — chosen at onboarding |
-| `bill_language` | `text` | `'en'` \| `'hi'` \| `'both'` — default `'hi'` |
+| `bill_language` | `text` | `'en'` \| `'hi'` \| `'both'` — default **`'en'`** for new shops (D57, migration `20261004090000`; was `'hi'` — existing shops kept their value). The customer's receipt language (`KB-308`); set in Studio until `KB-312` |
 | `receipt_prefix` | `text` | e.g. `KB` |
 | `created_at`, `updated_at` | `timestamptz` | |
 
