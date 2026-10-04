@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Check, Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
+import { Check, FileText, Loader2, Menu, MessageCircle, Mic, Plus, Share2, Square, TriangleAlert, X } from "lucide-react";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
 import { parseUtterance } from "@/domain/grammar";
@@ -14,6 +14,8 @@ import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { useShop } from "@/providers/ShopProvider";
 import { Receipt, ReceiptNumberText } from "./Receipt";
+import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
+import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
@@ -153,6 +155,7 @@ export function BillingScreen() {
     void learnPendingBills(localDb, shop.id).catch((err: unknown) => console.warn("[learning] recovery failed:", err));
   }, [localDb, shop]);
   const finaliser = useFinalise({ localDb, shopId: shop?.id ?? null, deviceId, onSaved });
+  const share = useReceiptShare({ localDb, saved: finaliser.saved, render: renderReceiptFiles });
   const { finalise, clear: clearSaved } = finaliser;
   const { reset: resetBill, draft } = bill;
   const onFinalise = useCallback(() => void finalise(draft), [draft, finalise]);
@@ -194,7 +197,30 @@ export function BillingScreen() {
       saved={finaliser.saved}
       saveError={finaliser.error}
       onNewBill={onNewBill}
+      share={share}
     />
+  );
+}
+
+/** KB-309: under the saved receipt. Image and PDF wait for their files (rendered
+ * when the receipt is shown); WhatsApp is always there. */
+function ShareBar({ share }: { share: ReceiptShare }) {
+  const btn = "flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink aria-disabled:opacity-50";
+  return (
+    <div className="mx-auto mt-3 grid w-full max-w-[384px] grid-cols-2 gap-2">
+      <button type="button" aria-disabled={!share.ready} onClick={share.shareImage} className={btn}>
+        <Share2 size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
+        Share image
+      </button>
+      <button type="button" aria-disabled={!share.ready} onClick={share.sharePdf} className={btn}>
+        <FileText size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
+        PDF
+      </button>
+      <button type="button" onClick={() => void share.whatsApp()} className={`${btn} col-span-2`}>
+        <MessageCircle size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
+        WhatsApp
+      </button>
+    </div>
   );
 }
 
@@ -237,6 +263,8 @@ interface BillViewProps {
   saved?: { readonly receiptNumber: string; readonly receipt?: ReceiptModel | null } | null;
   saveError?: string | null;
   onNewBill?: () => void;
+  /** KB-309: share the saved receipt (image, PDF, WhatsApp). */
+  share?: ReceiptShare | null;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -639,6 +667,7 @@ export function BillView({
   saved = null,
   saveError = null,
   onNewBill,
+  share = null,
 }: BillViewProps) {
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
   const readOnly = saved !== null;
@@ -846,6 +875,7 @@ export function BillView({
           {saved?.receipt ? (
             <div className="px-4 py-4">
               <Receipt receipt={saved.receipt} />
+              {share && <ShareBar share={share} />}
             </div>
           ) : (
           <>

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 4 Oct 2026 (rev 33) · Supersedes rev 32
+**Last updated:** 4 Oct 2026 (rev 34) · Supersedes rev 33
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1475,6 +1475,25 @@ was built and checked; it amends that mockup, the Q3 strings and two display rul
    never sends `bill_language`, and the deployed build (`6e29cf2`) draws no receipt.
 5. **Unchanged:** unknown qty "—" (D47), SG-09 rate units, the fallback number breaking only after hyphens and copying
    whole (Q1 A), the customer's mobile nowhere in the page.
+
+### D58 — Sharing the receipt: a 2x PNG, our own one-page PDF, and WhatsApp text to the stored mobile 🟢
+
+**Owner decisions, 4 Oct 2026, `KB-309` plan (Q1–Q5 and four additions).**
+1. **One source:** everything is drawn from `domain/receipt.ts` — the image via `domain/receiptLayout.ts` (pure drawing
+   steps), the message via `domain/receiptText.ts`. No HTML is generated anywhere (hard rule 9).
+2. **Image:** PNG at 2x — 768 px wide (Q4). **PDF:** our own ~40-line one-image PDF, no dependency (Q1 A) — page 58 mm
+   wide (164.41 pt), height in proportion, the receipt's JPEG scaled to fill it. Not text-selectable (accepted).
+3. **WhatsApp (Q2 A):** both buttons — WhatsApp sends the text receipt to `wa.me/91<mobile>`; Share image goes through
+   the share sheet. WhatsApp's web link can't attach a file to a pre-selected chat, so one-tap "image to this customer"
+   isn't possible. Text: the approved format plus the shop phone line (Q5); bill_language labels; names as typed.
+4. **The mobile (Q3):** never shown. Read from the **stored** bill at tap time — never the draft or the receipt model;
+   the "mobile nowhere in the page" test stands.
+5. **Real-phone rules (owner additions):** render the PNG and PDF when the receipt is shown, so the tap shares a ready
+   File (`navigator.share` needs the tap's activation); load every font face/weight with the receipt's actual strings
+   before drawing (a canvas doesn't trigger unicode-range subsets); `canShare({ files })` picks share vs download; a
+   cancelled share sheet (AbortError) does nothing.
+6. **Privacy:** a share sends the customer's name and items to WhatsApp (Meta) or another app, at the shopkeeper's tap —
+   added to the pre-pilot privacy review.
 
 ---
 

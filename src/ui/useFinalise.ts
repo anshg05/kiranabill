@@ -22,6 +22,8 @@ export interface UseFinaliseOptions {
 
 /** KB-308: the saved bill's receipt, read back from the device (null if that read failed - the bill is still saved). */
 export interface SavedBill {
+  /** KB-309: the stored bill's id - share reads its mobile from it at tap time. */
+  readonly localId: string;
   readonly receiptNumber: string;
   readonly receipt: Receipt | null;
 }
@@ -53,7 +55,7 @@ export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseO
           console.warn("[receipt] read failed:", err instanceof Error ? err.message : err);
           return null;
         });
-        setSaved({ receiptNumber: result.receiptNumber, receipt });
+        setSaved({ localId: draft.localId, receiptNumber: result.receiptNumber, receipt });
         setPhase("saved");
         onSaved?.(result);
       } catch (err) {

@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 4 Oct 2026 (rev 8) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 4 Oct 2026 (rev 9) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -251,7 +251,26 @@ TOTAL                             ₹142.50    ← larger, bold
   `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
 - **A total-only line** (D47): qty `—`, rate `—`, the spoken amount. Amounts always carry ₹ in exact paise
   (`formatRupees` — ₹22.50 prints ₹22.50, never rounded).
-- Share: Image · PDF · WhatsApp (`KB-309`)
+- Share: Image · PDF · WhatsApp (`KB-309`, D58) — three buttons under the saved receipt: **Share image**,
+  **PDF**, **WhatsApp**.
+
+### Implementation notes — share (`KB-309`, 4 Oct 2026)
+
+- **One source:** `domain/receipt.ts` → `domain/receiptLayout.ts` (the D57 layout as drawing steps, pure, the text
+  measurer injected) → `ui/receiptImage.ts` draws them on a canvas with `fillText` (no HTML): a **PNG at 2x, 768 px
+  wide**, and the same pixels as a JPEG inside our own **one-page PDF** (`ui/onePagePdf.ts`, no dependency) **58 mm
+  wide** (164.41 pt), its height in proportion. A typical bill (5 lines): PNG ≈ 80–105 kB, PDF ≈ 75–100 kB.
+- **Rendered when the receipt is shown**, not on the tap: `navigator.share()` needs the tap's activation, and
+  awaiting fonts / canvas / `toBlob` first can lose it on Android. The buttons are enabled when the files are ready.
+- **Fonts:** before drawing, every Plex and Mukta face/weight is loaded with the receipt's ACTUAL strings
+  (`document.fonts.load(font, text)`) — a canvas doesn't trigger unicode-range subsets on its own.
+- **Share image / PDF:** `navigator.canShare({ files })` → the share sheet; otherwise (most desktops) the file
+  downloads. A cancelled share sheet (AbortError) does nothing.
+- **WhatsApp:** `wa.me/91<mobile>?text=…` with the text receipt (`domain/receiptText.ts` — bill_language labels, the
+  shop phone, exact paise). The mobile is read from the **stored** bill at tap time, never from the draft or the
+  receipt model, and is **never in the page** (the link is opened, not rendered). No mobile → `wa.me/?text=…` and
+  the shopkeeper picks the chat. WhatsApp can't attach a file to a pre-selected chat from the web — hence two
+  buttons. Product names go as typed (a `*` may bold text in WhatsApp — accepted).
 
 ### Implementation notes — receipt (`KB-308`, 3–4 Oct 2026)
 
