@@ -117,7 +117,7 @@ describe("AuthProvider / useAuth", () => {
     await waitFor(() => expect(result.current.user).toBeNull());
   });
 
-  it("signInWithGoogle calls signInWithOAuth with the google provider", async () => {
+  it("signInWithGoogle calls signInWithOAuth with the google provider, returning to THIS origin (KB-309: draft deploys)", async () => {
     const mock = makeMockClient(null);
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider client={mock.client}>{children}</AuthProvider>,
@@ -128,7 +128,8 @@ describe("AuthProvider / useAuth", () => {
       await result.current.signInWithGoogle();
     });
 
-    expect(mock.signInWithOAuth).toHaveBeenCalledWith({ provider: "google" });
+    // Without redirectTo, Supabase returns to the Site URL - the live site - from a draft deploy too.
+    expect(mock.signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
   });
 
   it("signInWithGoogle throws if the client reports an error", async () => {

@@ -3,7 +3,7 @@ import { parseUtterance } from "./grammar";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { buildFinalBill, type FinalLine } from "./finalBill";
 import { buildReceipt, type ReceiptBill, type ReceiptShop } from "./receipt";
-import { receiptText, waLink } from "./receiptText";
+import { receiptText, smsLink, smsText, waLink } from "./receiptText";
 
 // KB-309 (owner, 4 Oct 2026, Q2/Q5): the WhatsApp text, from the same
 // buildReceipt - bill_language labels, the shop phone when there is one,
@@ -80,5 +80,47 @@ describe("waLink - wa.me with the bill's stored mobile", () => {
     expect(waLink("hi", null)).toBe("https://wa.me/?text=hi");
     expect(waLink("hi", "12345")).toBe("https://wa.me/?text=hi");
     expect(waLink("hi", "1234567890")).toBe("https://wa.me/?text=hi"); // D52: starts 6-9
+  });
+});
+
+describe("smsText - the SMS (owner, KB-309 commit 3): plain text, Rs. not the rupee sign", () => {
+  it("en: no WhatsApp *bold*, Rs. for amounts, the shop phone; GSM-7-friendly (plain ASCII for ASCII names)", () => {
+    const r = receipt();
+    const text = smsText(r);
+    expect(text).toBe(
+      [
+        "SHARMA KIRANA",
+        "98765 43210",
+        `Bill No. KB-000142 - ${r.dateTime}`,
+        "Customer: Ramesh",
+        "Chini - 2 kg x Rs.45 = Rs.90",
+        "Chini - 500 gm x Rs.45/kg = Rs.22.50",
+        "Chini - Rs.30",
+        "TOTAL Rs.142.50",
+        "Thank You!",
+      ].join("\n"),
+    );
+    // The rupee sign, the middle dot, the em dash, "×" and "*" would each force a Unicode SMS (more parts).
+    expect(text).toMatch(/^[\x20-\x7E\n]*$/);
+  });
+
+  it("hi: the bill_language labels (Devanagari makes it a Unicode SMS anyway - 05 §6)", () => {
+    const text = smsText(receipt({}, { billLanguage: "hi" }));
+    for (const v of ["बिल नं. KB-000142", "ग्राहक: Ramesh", "Chini - 2 किलो x Rs.45 = Rs.90", "कुल Rs.142.50", "धन्यवाद!"]) expect(text, v).toContain(v);
+    expect(text).not.toContain("₹");
+  });
+
+  it("the mobile is never in the text", () => {
+    expect(smsText(receipt({ customerMobile: "9123456789" } as Partial<ReceiptBill>))).not.toContain("9123456789");
+  });
+});
+
+describe("smsLink - sms:<10 digits>?body=, only for a valid D52 mobile", () => {
+  it("a valid mobile -> the Android form, body URI-encoded", () => {
+    expect(smsLink("TOTAL Rs.90\nThank You!", "9123456789")).toBe(`sms:9123456789?body=${encodeURIComponent("TOTAL Rs.90\nThank You!")}`);
+  });
+
+  it("anything that isn't 10 digits starting 6-9 -> no link", () => {
+    for (const bad of ["", "12345", "1234567890", "91234567890", "+919123456789", "9123 456789"]) expect(smsLink("x", bad), bad).toBeNull();
   });
 });

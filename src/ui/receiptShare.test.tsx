@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { useEffect } from "react";
 import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
-import { receiptText, waLink } from "@/domain/receiptText";
+import { receiptText, smsText, waLink } from "@/domain/receiptText";
 import type { Receipt } from "@/domain/receipt";
 import { KiranaBillDB } from "@/data/db";
 import { BillView } from "./BillingScreen";
@@ -13,12 +13,13 @@ import { useBillLines } from "./useBillLines";
 import { useFinalise } from "./useFinalise";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
-// KB-309 (owner, 4 Oct 2026): sharing from the saved screen, with a REAL
-// finalised bill (D39). The PNG and PDF are rendered when the receipt is shown,
-// so a tap shares a ready File (navigator.share needs the tap's activation);
-// canShare picks share vs download; a cancelled share sheet does nothing;
-// WhatsApp reads the mobile from the STORED bill at tap time; the mobile is
-// never in the page.
+// KB-309 commit 3 (owner, 4 Oct 2026 - the legacy behaviour, D58): four buttons
+// under the saved receipt, with a REAL finalised bill (D39). Image and PDF always
+// DOWNLOAD. WhatsApp shares the PNG through the share sheet when files can be
+// shared (inside the tap - the files are rendered when the receipt is shown),
+// otherwise opens wa.me with the text and the STORED bill's mobile. SMS opens a
+// sheet pre-filled from the STORED bill; Send only for a valid D52 number. The
+// mobile is never in the page (only as the SMS field's value while it's open).
 
 const shopId = "11111111-1111-4111-8111-111111111111";
 const deviceId = "22222222-2222-4222-8222-222222222222";
@@ -84,94 +85,170 @@ async function saveBill(mobile: string | null = MOBILE) {
     screen.getByRole("button", { name: "Bill Banao" }).click();
   });
   await waitFor(() => screen.getByRole("article", { name: "Receipt" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Share image" }).getAttribute("aria-disabled")).toBe("false"));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Image" }).getAttribute("aria-disabled")).toBe("false"));
 }
 
-describe("KB-309 - share from the saved screen", () => {
-  it("the PNG and PDF are rendered once, when the receipt is shown - from the stored receipt", async () => {
+/** Anchor clicks (downloads, sms:) - captured, never navigated. */
+function captureAnchors() {
+  URL.createObjectURL = vi.fn(() => "blob:receipt");
+  URL.revokeObjectURL = vi.fn();
+  const clicked: HTMLAnchorElement[] = [];
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+    clicked.push(this);
+  });
+  return clicked;
+}
+
+const button = (name: string) => screen.getByRole("button", { name });
+const field = () => screen.getByRole("textbox", { name: "Mobile for SMS" }) as HTMLInputElement;
+
+async function openSms() {
+  await act(async () => {
+    fireEvent.click(button("SMS"));
+  });
+  await waitFor(() => expect(field()).toBeTruthy());
+}
+
+describe("KB-309 - four buttons on the saved screen (D58, the legacy behaviour)", () => {
+  it("Image, PDF, WhatsApp, SMS; the PNG and PDF rendered once, when the receipt is shown", async () => {
     await saveBill();
     expect(renderFiles).toHaveBeenCalledTimes(1);
     expect((renderFiles.mock.calls[0]![0] as Receipt).receiptNumber).toBe("KB-000001");
-    for (const name of ["Share image", "PDF", "WhatsApp"]) expect(screen.getByRole("button", { name })).toBeTruthy();
+    for (const name of ["Image", "PDF", "WhatsApp", "SMS"]) expect(button(name)).toBeTruthy();
   });
 
-  it("Share image: navigator.share is called IN the tap with a ready PNG File - no rendering awaited", async () => {
+  it("Image always DOWNLOADS the PNG - no share sheet, even where files can be shared", async () => {
+    const clicked = captureAnchors();
     await saveBill();
-    fireEvent.click(screen.getByRole("button", { name: "Share image" }));
-    // Synchronously, before any await: the call that needs the tap's activation.
-    expect(share).toHaveBeenCalledTimes(1);
-    const file = (share.mock.calls[0]![0] as { files: File[] }).files[0]!;
-    expect([file.name, file.type]).toEqual(["KB-000001.png", "image/png"]);
-    expect(renderFiles).toHaveBeenCalledTimes(1); // not re-rendered on tap
-  });
-
-  it("PDF: shares the PDF File the same way", async () => {
-    await saveBill();
-    fireEvent.click(screen.getByRole("button", { name: "PDF" }));
-    const file = (share.mock.calls[0]![0] as { files: File[] }).files[0]!;
-    expect([file.name, file.type]).toEqual(["KB-000001.pdf", "application/pdf"]);
-  });
-
-  it("canShare false (most desktops): the file downloads instead; no share call", async () => {
-    canShare.mockReturnValue(false);
-    URL.createObjectURL = vi.fn(() => "blob:receipt");
-    URL.revokeObjectURL = vi.fn();
-    const clicked: HTMLAnchorElement[] = [];
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      clicked.push(this);
-    });
-    await saveBill();
-    fireEvent.click(screen.getByRole("button", { name: "Share image" }));
+    fireEvent.click(button("Image"));
     expect(share).not.toHaveBeenCalled();
     expect(clicked.map((a) => [a.download, a.href])).toEqual([["KB-000001.png", "blob:receipt"]]);
   });
 
-  it("a cancelled share sheet (AbortError) does nothing - no download, no message, no warning", async () => {
+  it("PDF always DOWNLOADS the PDF - no share sheet", async () => {
+    const clicked = captureAnchors();
+    await saveBill();
+    fireEvent.click(button("PDF"));
+    expect(share).not.toHaveBeenCalled();
+    expect(clicked.map((a) => a.download)).toEqual(["KB-000001.pdf"]);
+  });
+});
+
+describe("KB-309 - WhatsApp sends the image", () => {
+  it("canShare: navigator.share is called IN the tap with the ready PNG - nothing awaited, not re-rendered", async () => {
+    await saveBill();
+    fireEvent.click(button("WhatsApp"));
+    expect(share).toHaveBeenCalledTimes(1); // synchronously, before any await
+    const file = (share.mock.calls[0]![0] as { files: File[] }).files[0]!;
+    expect([file.name, file.type]).toEqual(["KB-000001.png", "image/png"]);
+    expect(renderFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it("a cancelled share sheet (AbortError) does nothing - no wa.me, no download, no message, no warning", async () => {
     share.mockImplementation(() => Promise.reject(new DOMException("cancelled", "AbortError"))); // created at the call, as a real share sheet does
-    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    const clicked = captureAnchors();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await saveBill();
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Share image" }));
+      fireEvent.click(button("WhatsApp"));
     });
-    expect(anchorClick).not.toHaveBeenCalled();
-    expect(warn).not.toHaveBeenCalled();
+    expect([open.mock.calls.length, clicked.length, warn.mock.calls.length]).toEqual([0, 0, 0]);
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("WhatsApp: wa.me with the mobile read from the STORED bill at tap time (not the draft); the receipt text", async () => {
+  it("no file sharing: wa.me with the text and the mobile read from the STORED bill at tap time", async () => {
+    canShare.mockReturnValue(false);
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     await saveBill();
-    // Prove the source: change the stored bill's mobile after saving.
     const stored = (await db.bills.toCollection().first())!;
-    await db.bills.update(stored.localId, { customerMobile: "9988776655" });
+    await db.bills.update(stored.localId, { customerMobile: "9988776655" }); // prove the source
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "WhatsApp" }));
+      fireEvent.click(button("WhatsApp"));
     });
     await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
     const receipt = renderFiles.mock.calls[0]![0] as Receipt;
     expect(open.mock.calls[0]).toEqual([waLink(receiptText(receipt), "9988776655"), "_blank", "noopener"]);
+    expect(share).not.toHaveBeenCalled();
   });
 
-  it("WhatsApp with no mobile on the bill: wa.me without a number", async () => {
+  it("no file sharing and no mobile on the bill: wa.me without a number", async () => {
+    canShare.mockReturnValue(false);
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
     await saveBill(null);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "WhatsApp" }));
+      fireEvent.click(button("WhatsApp"));
     });
     await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
     expect(String(open.mock.calls[0]![0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
   });
+});
 
-  it("the mobile appears nowhere in the page - before and after the share taps", async () => {
+describe("KB-309 - SMS", () => {
+  it("the field is pre-filled from the STORED bill's mobile when the sheet opens; the preview is the SMS text", async () => {
+    await saveBill();
+    const stored = (await db.bills.toCollection().first())!;
+    await db.bills.update(stored.localId, { customerMobile: "9988776655" }); // read when the sheet opens, not before
+    await openSms();
+    await waitFor(() => expect(field().value).toBe("9988776655"));
+    const receipt = renderFiles.mock.calls[0]![0] as Receipt;
+    expect(screen.getByTestId("sms-preview").textContent).toBe(smsText(receipt));
+    expect(button("Send").getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("no mobile on the bill: the field starts empty and Send is disabled", async () => {
+    await saveBill(null);
+    await openSms();
+    expect(field().value).toBe("");
+    expect(button("Send").getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("an invalid number: Send stays disabled, the D52 message shows, a tap sends nothing", async () => {
+    const clicked = captureAnchors();
+    await saveBill(null);
+    await openSms();
+    for (const bad of ["12345", "1234567890", "+44 7911 123456"]) {
+      fireEvent.change(field(), { target: { value: bad } });
+      expect(button("Send").getAttribute("aria-disabled"), bad).toBe("true");
+      fireEvent.click(button("Send"));
+    }
+    expect(screen.getByRole("alert").textContent).toBe("Only Indian mobile numbers (+91)");
+    expect(clicked).toHaveLength(0);
+  });
+
+  it("a typed number is normalised (D52) and Send opens sms:<10 digits>?body=; the bill is never changed", async () => {
+    const clicked = captureAnchors();
+    await saveBill(null);
+    await openSms();
+    fireEvent.change(field(), { target: { value: "+91 98765-43210" } });
+    expect(button("Send").getAttribute("aria-disabled")).toBe("false");
+    fireEvent.click(button("Send"));
+    const receipt = renderFiles.mock.calls[0]![0] as Receipt;
+    expect(clicked.map((a) => a.href)).toEqual([`sms:9876543210?body=${encodeURIComponent(smsText(receipt))}`]);
+    expect((await db.bills.toCollection().first())!.customerMobile).toBeNull(); // never stored
+  });
+});
+
+describe("KB-309 - the mobile in the page", () => {
+  const forms = [MOBILE, "91234 56789", "919123456789"];
+
+  it("nowhere with the SMS sheet closed - before and after the WhatsApp tap", async () => {
+    canShare.mockReturnValue(false);
     vi.spyOn(window, "open").mockImplementation(() => null);
     await saveBill();
-    const forms = [MOBILE, "91234 56789", "919123456789"];
     for (const f of forms) expect(document.documentElement.outerHTML).not.toContain(f);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "WhatsApp" }));
-      fireEvent.click(screen.getByRole("button", { name: "Share image" }));
+      fireEvent.click(button("WhatsApp"));
     });
     for (const f of forms) expect(document.documentElement.outerHTML).not.toContain(f);
+  });
+
+  it("with the SMS sheet open: only as the field's value", async () => {
+    await saveBill();
+    await openSms();
+    await waitFor(() => expect(field().value).toBe(MOBILE));
+    const page = document.documentElement.cloneNode(true) as HTMLElement;
+    page.querySelector('input[aria-label="Mobile for SMS"]')!.removeAttribute("value");
+    for (const f of forms) expect(page.outerHTML).not.toContain(f);
   });
 });

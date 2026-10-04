@@ -86,7 +86,8 @@ export function AuthProvider({ children, client = supabase, deviceDb: injectedDe
     deviceDb,
     loading,
     signInWithGoogle: async () => {
-      const { error } = await client.auth.signInWithOAuth({ provider: "google" });
+      // KB-309: back to THIS origin (a draft deploy, localhost), not the Site URL (the live site).
+      const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
       if (error) throw error;
     },
     signOut: async () => {

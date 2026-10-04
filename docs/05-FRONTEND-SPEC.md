@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 4 Oct 2026 (rev 9) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 4 Oct 2026 (rev 10) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -251,51 +251,29 @@ TOTAL                             ₹142.50    ← larger, bold
   `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
 - **A total-only line** (D47): qty `—`, rate `—`, the spoken amount. Amounts always carry ₹ in exact paise
   (`formatRupees` — ₹22.50 prints ₹22.50, never rounded).
-- Share: Image · PDF · WhatsApp (`KB-309`, D58) — three buttons under the saved receipt: **Share image**,
-  **PDF**, **WhatsApp**.
+- Share (`KB-309`, D58 — the legacy behaviour): four buttons under the saved receipt — **Image**, **PDF**,
+  **WhatsApp**, **SMS**.
 
 ### Implementation notes — share (`KB-309`, 4 Oct 2026)
 
 - **One source:** `domain/receipt.ts` → `domain/receiptLayout.ts` (the D57 layout as drawing steps, pure, the text
   measurer injected) → `ui/receiptImage.ts` draws them on a canvas with `fillText` (no HTML): a **PNG at 2x, 768 px
   wide**, and the same pixels as a JPEG inside our own **one-page PDF** (`ui/onePagePdf.ts`, no dependency) **58 mm
-  wide** (164.41 pt), its height in proportion. A typical bill (5 lines): PNG ≈ 80–105 kB, PDF ≈ 75–100 kB.
-- **Rendered when the receipt is shown**, not on the tap: `navigator.share()` needs the tap's activation, and
-  awaiting fonts / canvas / `toBlob` first can lose it on Android. The buttons are enabled when the files are ready.
-- **Fonts:** before drawing, every Plex and Mukta face/weight is loaded with the receipt's ACTUAL strings
-  (`document.fonts.load(font, text)`) — a canvas doesn't trigger unicode-range subsets on its own.
-- **Share image / PDF:** `navigator.canShare({ files })` → the share sheet; otherwise (most desktops) the file
-  downloads. A cancelled share sheet (AbortError) does nothing.
-- **WhatsApp:** `wa.me/91<mobile>?text=…` with the text receipt (`domain/receiptText.ts` — bill_language labels, the
-  shop phone, exact paise). The mobile is read from the **stored** bill at tap time, never from the draft or the
-  receipt model, and is **never in the page** (the link is opened, not rendered). No mobile → `wa.me/?text=…` and
-  the shopkeeper picks the chat. WhatsApp can't attach a file to a pre-selected chat from the web — hence two
-  buttons. Product names go as typed (a `*` may bold text in WhatsApp — accepted).
-
-### Implementation notes — receipt (`KB-308`, 3–4 Oct 2026)
-
-- **Code:** `src/domain/receipt.ts` (`buildReceipt` → plain text pieces, the en/hi/both string table,
-  `numberChunks`), `src/data/receipt.ts` (`loadReceipt` — the saved bill, its items and the shop from IndexedDB
-  only, so it draws offline), `src/ui/Receipt.tsx` (draws it; `ReceiptNumberText`). Shown on the saved screen
-  after Bill Banao, in place of the bill; the customer row is hidden there. `KB-309` draws the same pieces to
-  share them.
-- **Layout (D57):** the legacy parchi — shop name centred, larger, bold; phone and `date | time` small and muted;
-  dashed section rules; a visible bold header row with a darker rule under it and a light rule under each item;
-  Qty left, Rate and Amt right, Amt bold; TOTAL larger and bold; a 1 px border, no shadow (13 §7).
-- **Width:** at most 384 px (a 58 mm print head), otherwise 100% inside the 16 px gutters — 288 px at a 320 px
-  phone, 343 px at 375. Type `clamp(12px, 3.75vw, 14px)`. Qty, rate and amount never wrap; the item column takes
-  the rest and wraps, a long Hindi name inside it (measured: no sideways overflow at 320 / 375 / 384 / 1280 px in
-  en, hi and both). A semantic table: `<th scope="col">` headers, TOTAL as a row header.
-- **Receipt number:** on the "Bill No." line, `<wbr>` after every hyphen (a browser won't break before a digit), one
-  `select-all` string — the long D23 fallback number wraps cleanly and copies exactly. The "Bill … saved" status
-  line uses the same component.
-- **Rate:** the screen's rule (SG-09 — a per-gm price shows per kg; a unit only across a real conversion), shared
-  as `shownRate` in `domain/billEdit.ts`. Amounts without ₹, TOTAL with it.
-- **Fonts:** IBM Plex Mono 400/600, self-hosted and split by `unicode-range` (`11-STACK-DECISIONS.md` SD-029) —
-  a receipt fetches Plex's Latin and latin-ext (₹) files; Hindi falls back to Mukta.
-- **Logo:** printed only when `logo_url` is set and the image loads — offline or broken, it is left out with no
-  broken-image icon. Caching it locally is `KB-107b`'s job.
-- **Not printed:** the address (NI-36); GST tax-invoice fields — this is a simple bill (NI-35).
+  wide** (164.41 pt). A typical bill: PNG ≈ 80–105 kB, PDF ≈ 75–100 kB. Rendered **when the receipt is shown**, every
+  Plex / Mukta face loaded first with the receipt's actual strings.
+- **Image** and **PDF** always **download** (`KB-000142.png` / `.pdf`) — desktop and phone, no share sheet.
+- **WhatsApp** sends the **image**: the share sheet when `navigator.canShare({ files })` (called inside the tap — the
+  file is already rendered; Android needs the tap's activation); the shopkeeper picks WhatsApp and the chat. Cancelled
+  (AbortError) → nothing. No file sharing → `wa.me/91<mobile>?text=…` with the text receipt (`domain/receiptText.ts`),
+  the stored bill's mobile; none → `wa.me/?text=…`.
+- **SMS** opens a sheet: a mobile field pre-filled from the **stored** bill's mobile (read when the sheet opens), else
+  empty; D52 rules (`parseIndianMobile` — +91 / 0 / spaces / Devanagari digits accepted), the D52 message under the
+  field, **Send disabled until valid**; a preview of the exact text. Send opens `sms:<10 digits>?body=…`. The number is
+  never stored. **Text only** — a web page can't attach an image to an SMS. The SMS text uses the bill_language labels
+  as plain text with `Rs.` (not ₹) and `-` / `x`: ₹, `·`, `—` and `×` force a Unicode SMS (70 characters a part
+  instead of 160). **A hi / both SMS is Unicode anyway** (Devanagari labels), so it takes more parts.
+- **The mobile** is never shown on the receipt or the saved screen; read from the stored bill at tap / sheet-open time;
+  with the SMS sheet open it appears only as the field's value.
 
 ---
 
