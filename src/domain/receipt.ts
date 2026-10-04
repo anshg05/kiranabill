@@ -8,6 +8,9 @@ import { formatRupees, type Paise } from "./money.js";
 
 export type BillLanguage = "en" | "hi" | "both";
 
+/** An unknown qty or rate on the receipt (D47, D57). */
+export const UNKNOWN_CELL = "—";
+
 /** Owner-approved strings (D57, 4 Oct 2026) - one table, easy to change. */
 export const RECEIPT_TEXT = {
   en: { billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
@@ -103,9 +106,9 @@ export function buildReceipt(bill: ReceiptBill, items: readonly ReceiptItem[], s
     return {
       name: item.displayName,
       // D47: a spoken total has no qty - "—", never a number nobody said.
-      qty: item.qty === null ? "—" : item.unit ? `${item.qty} ${unitText(item.unit)}` : String(item.qty),
+      qty: item.qty === null ? UNKNOWN_CELL : item.unit ? `${item.qty} ${unitText(item.unit)}` : String(item.qty),
       // D57: an unknown rate is "—", like an unknown qty.
-      rate: rate === null ? "—" : rate.unit === null ? formatRupees(rate.paise) : `${formatRupees(rate.paise)}/${unitText(rate.unit)}`,
+      rate: rate === null ? UNKNOWN_CELL : rate.unit === null ? formatRupees(rate.paise) : `${formatRupees(rate.paise)}/${unitText(rate.unit)}`,
       // Exact paise with ₹ (D57) - ₹22.50 stays ₹22.50.
       amount: formatRupees(item.totalPaise),
     };
