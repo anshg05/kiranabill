@@ -151,7 +151,7 @@ nothing renumbered.
 
 | ID | Ticket | Detail |
 |---|---|---|
-| **KB-401** | PWA manifest + install **+ offline app load** | Installable. Icons, splash, standalone display. **Also a service worker that precaches the app shell (HTML, JS, CSS, self-hosted fonts), so the app opens with no network** — the manifest alone doesn't do that. Amended 27 Sep 2026 (owner), `12-PARKED.md` `KI-40`. |
+| **KB-401** | PWA manifest + install **+ offline app load** | Installable. Icons, splash, standalone display. **Also a service worker that precaches the app shell (HTML, JS, CSS, self-hosted fonts), so the app opens with no network** — the manifest alone doesn't do that. Amended 27 Sep 2026 (owner), `12-PARKED.md` `KI-40`. **Fonts (owner, 4 Oct 2026, `KB-308`):** precache only the IBM Plex Mono subsets a receipt actually fetches — latin and latin-ext, 400 and 600 woff2 (4 files) — not all 20 Plex files in `dist/` (Cyrillic / Vietnamese subsets and woff fallbacks are never fetched; SD-029). |
 | **KB-402** | Performance pass | Every budget in `05-FRONTEND-SPEC.md` §10 met on a budget Android |
 | **KB-403** | Supabase PITR | Enabled before real shop data enters |
 | **KB-404** | Product metrics | Turns-to-bill and seconds-to-bill recorded per bill |
