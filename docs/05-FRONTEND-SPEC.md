@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 4 Oct 2026 (rev 7) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 4 Oct 2026 (rev 8) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -215,34 +215,42 @@ Pilloo prints A4 with HSN/SAC columns, CGST/SGST/IGST tables, "Net 30 days from 
 Customer Signature / Authorized Signatory blocks — for ₹150 of rice. That is an accounting artifact
 wearing a receipt's clothes.
 
+Layout: the legacy parchi's (D57), en shown — the default for new shops; hi / both are options.
+
 ```
-        [logo]
-      SHARMA KIRANA
-      98765 43210
-   ─────────────────────
-   Bill: KB-000142
-   15-08-2026  6:56 PM
-   Ramesh            ← only when not "Cash"
-   ─────────────────────
-   Chini      2kg  ₹45   90
-   Parle-G     3   ₹10   30
-   Chawal     5kg         30
-   ─────────────────────
-   TOTAL              ₹150
-   ─────────────────────
-      Dhanyawaad!
+              SHARMA KIRANA                  ← larger, bold (logo above, if set)
+               98765 43210                   ← small, muted
+          04-10-2026 | 4:33 PM               ← small, muted
+- - - - - - - - - - - - - - - - - - - - - -
+Bill No. KB-000142
+Customer: Ramesh                             ← only when not "Cash"; never the mobile
+- - - - - - - - - - - - - - - - - - - - - -
+Item          Qty        Rate        Amt     ← visible header row, bold
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chini         2 kg        ₹45        ₹90     ← Amt bold, exact paise
+───────────────────────────────────────────
+Chini         500 gm   ₹45/kg     ₹22.50
+───────────────────────────────────────────
+Chini         —            —         ₹30     ← total only (D47)
+───────────────────────────────────────────
+- - - - - - - - - - - - - - - - - - - - - -
+TOTAL                             ₹142.50    ← larger, bold
+- - - - - - - - - - - - - - - - - - - - - -
+               Thank You!
 ```
 
 - Narrow, thermal-friendly proportions
-- **Customer:** the name prints only when it isn't "Cash"; the **mobile is never printed** — it is only the
-  WhatsApp target (D52).
-- **Language follows `bill_language`** (en / hi / both) — read on every receipt; labels and units come from one
-  table in `src/domain/receipt.ts`. **Item names print as in the shop's catalog** in every language (there is no
+- **Customer:** "Customer: <name>" prints only when the name isn't "Cash"; the **mobile is never printed** — it
+  is only the WhatsApp target (D52).
+- **Language follows `bill_language`** (en / hi / both; **new shops default to `en`**, D57) — read on every receipt;
+  every label (header row, Bill No., Customer, TOTAL, thanks) and the units come from one table in
+  `src/domain/receipt.ts`. "both" prints "Hindi / English" labels and the thanks on one line. **Item names print as in the shop's catalog** in every language (there is no
   Hindi product-name field — `12-PARKED.md` NI-37).
 - **Every value is React text, never HTML** (hard rule 9). Shop name, item names and the customer name are
   user-controlled; they are rendered as text nodes, and ESLint bans `dangerouslySetInnerHTML`, assigning
   `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
-- **A total-only line** (D47): qty `—`, rate blank, the spoken amount — "Chawal" above.
+- **A total-only line** (D47): qty `—`, rate `—`, the spoken amount. Amounts always carry ₹ in exact paise
+  (`formatRupees` — ₹22.50 prints ₹22.50, never rounded).
 - Share: Image · PDF · WhatsApp (`KB-309`)
 
 ### Implementation notes — receipt (`KB-308`, 3–4 Oct 2026)
@@ -252,11 +260,14 @@ wearing a receipt's clothes.
   only, so it draws offline), `src/ui/Receipt.tsx` (draws it; `ReceiptNumberText`). Shown on the saved screen
   after Bill Banao, in place of the bill; the customer row is hidden there. `KB-309` draws the same pieces to
   share them.
+- **Layout (D57):** the legacy parchi — shop name centred, larger, bold; phone and `date | time` small and muted;
+  dashed section rules; a visible bold header row with a darker rule under it and a light rule under each item;
+  Qty left, Rate and Amt right, Amt bold; TOTAL larger and bold; a 1 px border, no shadow (13 §7).
 - **Width:** at most 384 px (a 58 mm print head), otherwise 100% inside the 16 px gutters — 288 px at a 320 px
   phone, 343 px at 375. Type `clamp(12px, 3.75vw, 14px)`. Qty, rate and amount never wrap; the item column takes
-  the rest and wraps, a long Hindi name inside it. A semantic table (column headers for screen readers only, TOTAL
-  as a row header).
-- **Receipt number:** on its own line, `<wbr>` after every hyphen (a browser won't break before a digit), one
+  the rest and wraps, a long Hindi name inside it (measured: no sideways overflow at 320 / 375 / 384 / 1280 px in
+  en, hi and both). A semantic table: `<th scope="col">` headers, TOTAL as a row header.
+- **Receipt number:** on the "Bill No." line, `<wbr>` after every hyphen (a browser won't break before a digit), one
   `select-all` string — the long D23 fallback number wraps cleanly and copies exactly. The "Bill … saved" status
   line uses the same component.
 - **Rate:** the screen's rule (SG-09 — a per-gm price shows per kg; a unit only across a real conversion), shared

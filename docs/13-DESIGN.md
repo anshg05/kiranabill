@@ -1,6 +1,6 @@
 # 13 — Design
 
-**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 4 Oct 2026 (rev 5) · **Status:** Final for MVP · Validated against mockups
 
 ---
 
@@ -89,7 +89,7 @@ pairs are the single most visibly amateur thing an Indian app can do.
 |---|---|---|
 | UI, all text | **Mukta** | Designed for Devanagari **and** Latin by the same designer, so they share proportions. Free, Google Fonts. Renders "बोलने के लिए दबाएं" and "Bill Banao" as one voice. |
 | Numerals | **Mukta, tabular figures** (`font-variant-numeric: tabular-nums`) | Columns align. A misplaced digit becomes visible instead of hiding in ragged text. |
-| Receipt | **IBM Plex Mono** | The parchi should look printed. Monospace does that with no decoration. |
+| Receipt | **IBM Plex Mono** | The parchi should look printed. Monospace does that with no decoration. Layout: the legacy parchi (`07-DECISIONS.md` D57, `05-FRONTEND-SPEC.md` §6). |
 
 *(Alternative if Mukta reads too light at small sizes: **Hind**, same designer, same Devanagari-first
 logic, slightly sturdier.)*

@@ -29,17 +29,17 @@ function items(...transcripts: string[]) {
 }
 
 describe("buildReceipt - what the parchi shows", () => {
-  it("header: shop name, phone as 5+5 digits, bill number, date and time in device time", () => {
+  it("header: shop name, phone as 5+5 digits, Bill No., date | time in device time (D57: legacy's separator)", () => {
     const { items: its, totalPaise } = items("2 kilo chini");
     const r = buildReceipt({ ...bill, totalPaise }, its, shop);
     expect(r.shopName).toBe("Sharma Kirana");
     expect(r.shopPhone).toBe("98765 43210");
-    expect(r.billLabel).toBe("Bill:");
+    expect(r.billNoLabel).toBe("Bill No.");
     expect(r.receiptNumber).toBe("KB-000142");
     const d = new Date(bill.finalizedAt!);
     const h = d.getHours() % 12 || 12;
     const pad = (n: number) => String(n).padStart(2, "0");
-    expect(r.dateTime).toBe(`${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${h}:${pad(d.getMinutes())} ${d.getHours() < 12 ? "AM" : "PM"}`);
+    expect(r.dateTime).toBe(`${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} | ${h}:${pad(d.getMinutes())} ${d.getHours() < 12 ? "AM" : "PM"}`);
   });
 
   it("a phone that isn't 10 digits prints as stored; no phone -> null", () => {
@@ -52,27 +52,28 @@ describe("buildReceipt - what the parchi shows", () => {
     const { items: its } = items("2 kilo chini");
     expect(buildReceipt(bill, its, shop).customer).toBeNull();
     expect(buildReceipt({ ...bill, customerName: "Ramesh" }, its, shop).customer).toBe("Ramesh");
+    expect(buildReceipt(bill, its, shop).customerLabel).toBe("Customer:");
     // ReceiptBill has no mobile field: a stored bill passed in whole carries it, the receipt never reads it.
     const withMobile = { ...bill, customerName: "Ramesh", customerMobile: "9123456789" };
     expect(JSON.stringify(buildReceipt(withMobile, its, shop))).not.toContain("9123456789");
   });
 
-  it("rows: name, qty + unit, rate (SG-09, per kg), amount without ₹; total with ₹", () => {
+  it("rows: name, qty + unit, rate (SG-09, per kg), amount with ₹ in exact paise (D57 - never toFixed(0))", () => {
     const { items: its, totalPaise } = items("2 kilo chini", "500 gram chini", "250 gram chini");
     const r = buildReceipt({ ...bill, totalPaise }, its, shop);
     expect(r.rows).toEqual([
-      { name: "Chini", qty: "2 kg", rate: "₹45", amount: "90" },
-      { name: "Chini", qty: "500 gm", rate: "₹45/kg", amount: "22.50" },
-      { name: "Chini", qty: "250 gm", rate: "₹45/kg", amount: "11.25" },
+      { name: "Chini", qty: "2 kg", rate: "₹45", amount: "₹90" },
+      { name: "Chini", qty: "500 gm", rate: "₹45/kg", amount: "₹22.50" },
+      { name: "Chini", qty: "250 gm", rate: "₹45/kg", amount: "₹11.25" },
     ]);
     expect(r.totalLabel).toBe("TOTAL");
     expect(r.total).toBe("₹123.75");
   });
 
-  it("a spoken total only (D47): qty '—', rate blank, the spoken amount", () => {
+  it("a spoken total only (D47): qty '—', rate '—' (D57), the spoken amount", () => {
     const { items: its } = items("chini 30 rupay");
     expect(its[0]).toMatchObject({ qty: null, ratePaise: null, totalPaise: 3000 });
-    expect(buildReceipt(bill, its, shop).rows).toEqual([{ name: "Chini", qty: "—", rate: "", amount: "30" }]);
+    expect(buildReceipt(bill, its, shop).rows).toEqual([{ name: "Chini", qty: "—", rate: "—", amount: "₹30" }]);
   });
 
   it("a hostile name stays a plain string - escaping is the renderer's job (React text), never string HTML", () => {
@@ -86,23 +87,24 @@ describe("buildReceipt - what the parchi shows", () => {
 describe("bill_language - the CUSTOMER's receipt (not KI-59's screen language)", () => {
   it("one table of strings, en / hi / both", () => {
     expect(RECEIPT_TEXT).toEqual({
-      en: { bill: "Bill:", total: "TOTAL", thanks: "Thank you!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amount" },
-      hi: { bill: "बिल:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
+      en: { billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
+      hi: { billNo: "बिल नं.", customer: "ग्राहक:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
     });
   });
 
   it("hi: labels and units in Hindi; product names as the shop has them; digits 0-9", () => {
     const { items: its, totalPaise } = items("2 kilo chini", "500 gram chini");
     const r = buildReceipt({ ...bill, totalPaise }, its, { ...shop, billLanguage: "hi" });
-    expect([r.billLabel, r.totalLabel, r.thanks]).toEqual(["बिल:", "कुल", ["धन्यवाद!"]]);
+    expect([r.billNoLabel, r.customerLabel, r.totalLabel, r.thanks]).toEqual(["बिल नं.", "ग्राहक:", "कुल", "धन्यवाद!"]);
     expect(r.rows.map((x) => [x.name, x.qty, x.rate])).toEqual([["Chini", "2 किलो", "₹45"], ["Chini", "500 ग्राम", "₹45/किलो"]]);
     expect(r.headers).toEqual({ item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" });
   });
 
-  it("both: Hindi / English labels, Hindi units, the thanks on two lines", () => {
+  it("both: Hindi / English labels, Hindi units, the thanks on ONE line (D57)", () => {
     const { items: its } = items("2 kilo chini");
     const r = buildReceipt(bill, its, { ...shop, billLanguage: "both" });
-    expect([r.billLabel, r.totalLabel, r.thanks]).toEqual(["बिल / Bill:", "कुल / TOTAL", ["धन्यवाद!", "Thank you!"]]);
+    expect([r.billNoLabel, r.customerLabel, r.totalLabel, r.thanks]).toEqual(["बिल नं. / Bill No.", "ग्राहक / Customer:", "कुल / TOTAL", "धन्यवाद!  Thank You!"]);
+    expect(r.headers.amount).toBe("रकम / Amt");
     expect(r.rows[0]!.qty).toBe("2 किलो");
     expect(r.headers.item).toBe("सामान / Item");
   });

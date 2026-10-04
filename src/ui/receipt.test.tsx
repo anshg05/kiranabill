@@ -83,15 +83,19 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     expect(r.getByText("Sharma Kirana")).toBeTruthy();
     expect(r.getByText("98765 43210")).toBeTruthy();
     expect(r.getByTestId("receipt-number").textContent).toBe("KB-000001");
+    expect(r.getByTestId("receipt-bill-no").textContent).toBe("Bill No. KB-000001"); // D57: one "Bill No." line
+    expect(r.queryByTestId("receipt-customer")).toBeNull(); // Cash: no customer line
     expect(receiptEl().textContent).not.toContain("Cash");
 
     const table = r.getByRole("table");
-    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Item", "Qty", "Rate", "Amount"]);
+    // D57: a VISIBLE header row - not screen-reader-only any more.
+    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Item", "Qty", "Rate", "Amt"]);
+    expect(table.querySelector("thead")!.className).not.toContain("sr-only");
     const rows = within(table).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell").map((c) => c.textContent));
     expect(rows).toEqual([
-      ["Chini", "2 kg", "₹45", "90"],
-      ["Chini", "500 gm", "₹45/kg", "22.50"],
-      ["Chini", "—", "", "30"], // D47: spoken total only
+      ["Chini", "2 kg", "₹45", "₹90"],
+      ["Chini", "500 gm", "₹45/kg", "₹22.50"],
+      ["Chini", "—", "—", "₹30"], // D47: spoken total only; D57: rate "—"
       ["₹142.50"], // the TOTAL row: its label is a row header
     ]);
     expect(within(table).getByRole("rowheader").textContent).toBe("TOTAL");
@@ -118,14 +122,15 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     expect(r.getByText("Chini")).toBeTruthy();
     expect(r.getByRole("rowheader").textContent).toBe("कुल");
     expect(r.getByText("धन्यवाद!")).toBeTruthy();
+    expect(r.getByTestId("receipt-bill-no").textContent).toBe("बिल नं. KB-000001");
     cleanup();
 
     await db.shops.update(shopId, { billLanguage: "both" });
     await drawSaved(spokenLines("2 kilo chini"));
     const b = within(receiptEl());
     expect(b.getByRole("rowheader").textContent).toBe("कुल / TOTAL");
-    expect(b.getByText("धन्यवाद!")).toBeTruthy();
-    expect(b.getByText("Thank you!")).toBeTruthy();
+    expect(receiptEl().querySelector("footer")!.textContent).toBe("धन्यवाद!  Thank You!"); // D57: one line (exact - getByText collapses the gap)
+    expect(b.getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["सामान / Item", "मात्रा / Qty", "दर / Rate", "रकम / Amt"]);
   });
 
   it("hard rule 9: hostile shop / product / customer names are text - no element is created from them", async () => {
@@ -135,7 +140,8 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     await drawSaved([customLine(evil)], { name: evil, mobile: null });
     const el = receiptEl();
     expect(el.querySelectorAll("img, script")).toHaveLength(0);
-    expect(within(el).getAllByText(evil)).toHaveLength(3); // shop name, item, customer - as literal text
+    expect(within(el).getAllByText(evil)).toHaveLength(2); // shop name, item - as literal text
+    expect(within(el).getByTestId("receipt-customer").textContent).toBe(`Customer: ${evil}`); // D57: "Customer: <name>"
   });
 
   it("logo (Q4): shown when set; removed when it fails to load - no broken-image icon; none when unset", async () => {
@@ -206,7 +212,7 @@ describe("KB-308 - the receipt on the saved screen", () => {
     });
     const receipt = await waitFor(() => receiptEl());
     expect(within(receipt).getByTestId("receipt-number").textContent).toBe("KB-000001");
-    expect(within(receipt).getByText("Ramesh")).toBeTruthy();
+    expect(within(receipt).getByTestId("receipt-customer").textContent).toBe("Customer: Ramesh"); // D57
     expect(screen.getByRole("status", { name: "Bill saved" })).toBeTruthy();
 
     // Text, attributes, aria-labels, data-*: the whole serialised page, raw and formatted.

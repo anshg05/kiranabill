@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 30 Sep 2026 (rev 32) · Supersedes rev 31
+**Last updated:** 4 Oct 2026 (rev 33) · Supersedes rev 32
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1452,6 +1452,29 @@ stopped and discarded when the app is hidden (owner confirmed), a mic opened aft
 3. **What each line teaches** (`learnFromBill`, pure): an **unedited** fastpath / Gemini line matched to a product whose words aren't already an exact alias → alias confirmation (L2); edited lines and **hand-added lines never teach an alias**; a **removed** voice line (kept on the bill locally as `discardedLines`, never pushed) whose words are a learned alias → suppression; a rate differing from the shop's price **in the shop's own unit** → price observation (L3; a rate in another unit is skipped rather than converted with a division); a line with no product → provisional sighting (L1; its rate is the price, a total-only line gives none; the 3rd sighting is a `product_promotion_due` event — creating the product is `KB-320`).
 4. **Every alias event records its source layer** (`fastpath` / `gemini` / `manual`) — the input for `KB-323`'s rule that Gemini-sourced confirmations need a higher threshold.
 5. **Known limits, recorded:** a retired alias is kept at its last confidence (≤ 0.3), not deleted (deletes don't sync — NI-27); a provisional product stores only its latest suggested price, so its "modal price" has that one point; L4 / L5 are `KB-322` / `KB-321`. Event payloads carry no customer data.
+
+### D57 — The receipt takes the legacy parchi's layout, and new shops print in English 🟢
+
+**Owner decisions, 4 Oct 2026, `KB-308` commit 4** — a design change after the receipt (05 §6 as approved 3 Oct)
+was built and checked; it amends that mockup, the Q3 strings and two display rules.
+1. **Layout from `legacy/billing-ui.js` `buildBillHTML` — the layout only, never its code:** shop name centred, larger,
+   bold; phone and `date | time` (05's date format, legacy's " | ") as small muted lines; a "Bill No." line (new); then
+   "Customer: <name>" only when it isn't Cash, never the mobile (D52); dashed rules between sections; a **visible**
+   header row (Item / Qty / Rate / Amt) with a darker rule under it and a light rule under each item; Qty left, Rate
+   and Amt right, Amt bold with ₹; TOTAL larger and bold; a thank-you footer.
+2. **Not taken from legacy:** `toFixed(0)` (amounts stay exact paise via `formatRupees` — ₹22.50 prints ₹22.50);
+   raw HTML strings (React text, hard rule 9); the 📞 emoji (13 §7); a drop shadow (13 §7 — a 1 px border instead);
+   the 520 px width (max 384 px, 100% narrower, no sideways scroll at 320 px).
+3. **Changed from the 3 Oct receipt:** an unknown rate prints "—" (was blank); amounts carry ₹; the header row is
+   visible (was screen-reader-only); "Bill:" → "Bill No."; "Amount" → "Amt"; "Thank you!" → "Thank You!"; "both"
+   prints the thanks on one line (`धन्यवाद!  Thank You!`). Hindi strings added: "बिल नं.", "ग्राहक:". All labels in
+   the one table in `domain/receipt.ts`, which stays the one source `KB-309` draws from.
+4. **English by default:** `shops.bill_language` defaults to `'en'` for new shops (migration `20261004090000`; was
+   `'hi'`). Existing shops keep their value. Hindi and both stay as options; switching is in Studio until `KB-312`'s
+   setting. Compatible with the deployed app (D55 §5): the default applies only when a shop is created, `createShop`
+   never sends `bill_language`, and the deployed build (`6e29cf2`) draws no receipt.
+5. **Unchanged:** unknown qty "—" (D47), SG-09 rate units, the fallback number breaking only after hyphens and copying
+   whole (Q1 A), the customer's mobile nowhere in the page.
 
 ---
 
