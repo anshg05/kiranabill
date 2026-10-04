@@ -57,6 +57,7 @@ https://kiranabilling.netlify.app **only** when the commit carries the owner-app
 verified step (D29, `CLAUDE.md`).
 **Test state (4 Oct 2026, `KB-308` commit 3):** `npm test` 1098 tests in 52 files (Vitest `unit` in parallel, then `perf` alone, D35);
 `test:e2e` 34 in 7 files; `test:rls` 50/50. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
+**`npm test` workers (owner, 4 Oct 2026):** until the owner fixes the machine's memory (~1.1 GB free commit; the default 11 workers run out of heap), VERIFY runs `npm test -- --maxWorkers=2` and says so. **The default run must pass before any `[deploy]` release** (also in "Before deployment").
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
 `eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
 **Eval harness:** `npm run eval` reports 0/0/0/25 — `eval/run-eval.ts` was never connected to
@@ -105,6 +106,8 @@ where the detail lives; tick it off there and strike it here.
   purpose (billing, later udhaar — never marketing); retention; a customer's erasure request vs **immutable finalised bills**
   (hard rule 2); what reaches logs (~~`sync.ts` logs a whole bill on a permanent push failure~~ — fixed in `KB-306`: only `localId` + error code);
   processor terms with Supabase / Netlify / Groq / Google (customer fields never go to `/voice`).
+- [ ] **`npm test` passes at its DEFAULT workers** (owner, 4 Oct 2026) — VERIFY uses `--maxWorkers=2` while the dev machine is short of
+  memory; a release needs the default run green.
 - [ ] **`KI-05` — an eval baseline before the pilot** (owner, 4 Oct 2026). The release gate needs it; `npm run eval` still reports
   0 / 0 / 0 / 25 — `eval/run-eval.ts` was never connected to `parseUtterance()`. `12-PARKED.md` §A.
 - [ ] **GST: simple bill vs tax invoice (NI-35)** — the receipt is a kirana parchi, not a GST tax invoice. If any pilot shop is

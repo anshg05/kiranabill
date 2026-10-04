@@ -16,3 +16,6 @@ eval/real-audio/
 # netlify dev's Edge Functions bootstrap lockfile - generated locally even
 # though this project has zero edge functions
 deno.lock
+
+# Supabase Studio's saved local SQL snippets - the owner's scratch queries, never committed.
+supabase/snippets/
