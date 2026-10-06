@@ -1500,10 +1500,15 @@ only, never its code).
    labels in hi / both make it Unicode anyway).
 5. **The mobile:** never shown on the receipt or the saved screen. Read from the stored bill at tap / sheet-open time —
    never the draft or the receipt model. With the SMS sheet open it appears only as the field's value.
-6. **Phone testing (owner):** Google sign-in passes `redirectTo: <this origin>/`, so a draft deploy (or localhost)
-   returns to itself, not to the Site URL (the live site). Supabase Redirect URLs need
-   `https://**--kiranabilling.netlify.app/**` for Netlify drafts (Supabase docs, "Redirect URLs": `**` matches any
-   characters).
+6. **Phone testing (owner):** Google sign-in passes `redirectTo: <this origin>/` (the trailing `/` matters: proven
+   locally, the bare origin doesn't match a `/**` pattern and falls back to the Site URL), so a draft deploy (or
+   localhost) returns to itself, not to the Site URL (the live site). Supabase Redirect URL for Netlify drafts:
+   **`https://*--kiranabilling.netlify.app/**`** (single `*`, owner, 6 Oct 2026). **Never the `**--` form** from
+   Supabase's docs example: `**` also matches `/` and `.`, and with the implicit flow (tokens in the URL fragment)
+   GoTrue then accepts `https://evil.example/x--kiranabilling.netlify.app/` and hands the session to that site —
+   proven on the local stack (the verify link redirected there with `access_token` / `refresh_token`); the single-`*`
+   pattern sends the same request to the Site URL and keeps a real draft URL. Pre-pilot: exact URLs, see 10-TRACKER
+   "Before deployment".
 7. **Privacy:** sharing sends the customer's name and items to WhatsApp (Meta), an SMS or another app, at the
    shopkeeper's tap — in the pre-pilot privacy review.
 
