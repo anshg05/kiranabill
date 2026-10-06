@@ -9,6 +9,8 @@ export class ProviderError extends Error {
   constructor(
     readonly kind: "timeout" | "busy" | "failed",
     message: string,
+    /** D59: the provider's HTTP status, when it answered - for the log line. */
+    readonly status?: number,
   ) {
     super(message);
     this.name = "ProviderError";

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 4 Oct 2026 (rev 34) · Supersedes rev 33
+**Last updated:** 7 Oct 2026 (rev 35) · Supersedes rev 34
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1511,6 +1511,21 @@ only, never its code).
    "Before deployment".
 7. **Privacy:** sharing sends the customer's name and items to WhatsApp (Meta), an SMS or another app, at the
    shopkeeper's tap — in the pre-pilot privacy review.
+
+### D59 — Gemini under load (adds to D50): a 503 overload is "busy", automatic retry stays off, failures are logged in production 🟢
+
+**Owner decision, 7 Oct 2026, KI-66.** D50 §3 turned off Gemini's automatic retry when the 5xx seen were quota (KI-50).
+**The first non-quota Gemini 5xx seen** (draft deploy, 7 Oct 2026) was a **503 overload** — `"This model is currently
+experiencing high demand"`, `UNAVAILABLE` — transient and external. The app kept the utterance with Retry, as D50 §4
+designed.
+1. **A Gemini 503 is `busy`**, like a 429 → `/voice` answers 503 "Parse busy" (was 502 "Parse failed"). Still retryable
+   on the client; the on-screen message is unchanged.
+2. **Automatic retry stays off for now** (owner): revisit with production numbers (how often, how long an overload lasts).
+   Paid-tier requests are prioritised under load (Google forum staff), so KI-50 billing is the first lever.
+3. **One production log line per provider failure** in `/voice` — step, kind, our status, the provider's HTTP status if
+   any, duration. **Never** the transcript, the provider's body or a URL (customer data and keys stay out of logs).
+4. **The Gemini key goes in the `x-goog-api-key` header**, not `?key=` in the URL — an error or log that carries the URL
+   can never carry the key.
 
 ---
 

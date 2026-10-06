@@ -102,7 +102,7 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
 
           if (!response.ok) {
             const body = await response.text();
-            throw new ProviderError(response.status === 429 ? "busy" : "failed", `Groq transcription failed: ${response.status} ${body}`);
+            throw new ProviderError(response.status === 429 ? "busy" : "failed", `Groq transcription failed: ${response.status} ${body}`, response.status);
           }
 
           const data = (await response.json()) as { text: string; segments?: { no_speech_prob: number }[] };

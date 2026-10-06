@@ -193,6 +193,36 @@ describe("netlify/functions/voice.mts", () => {
     });
   });
 
+  describe("D59 (KI-66): one production log line per provider failure", () => {
+    const textOnly = () => makeRequest({ meta: JSON.stringify({ transcript: "do kilo chini", catalogSlice: [] }) });
+
+    it("a Gemini 503 overload -> /voice 503 'Parse busy'; one warn line: step, kind, our status, provider status, ms", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      parseMock.mockRejectedValueOnce(new ProviderError("busy", 'Gemini parse failed: 503 {"message":"high demand"} https://x?key=k', 503));
+      const res = await handler(textOnly(), {} as never);
+      expect(res.status).toBe(503);
+      expect(await res.json()).toMatchObject({ error: "Parse busy" });
+      expect(warn).toHaveBeenCalledTimes(1);
+      const line = warn.mock.calls[0]!.map(String).join(" ");
+      expect(line).toMatch(/^\[voice\] Parse failure kind=busy status=503 provider=503 ms=\d+$/);
+    });
+
+    it("the line never carries the transcript, the provider's body or a URL", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      parseMock.mockRejectedValueOnce(new ProviderError("failed", 'Gemini parse failed: 500 {"secret":"body"} https://generativelanguage.googleapis.com/x', 500));
+      await handler(textOnly(), {} as never);
+      const line = warn.mock.calls.map((c) => c.map(String).join(" ")).join("\n");
+      for (const leak of ["do kilo chini", "secret", "body", "https", "googleapis"]) expect(line).not.toContain(leak);
+    });
+
+    it("a failure with no provider status (timeout, a thrown TypeError) logs provider=-", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      parseMock.mockRejectedValueOnce(new TypeError("Cannot read properties of undefined"));
+      await handler(textOnly(), {} as never);
+      expect(String(warn.mock.calls[0]![0])).toMatch(/^\[voice\] Parse failure kind=failed status=502 provider=- ms=\d+$/);
+    });
+  });
+
   // KB-302 (owner, Q1): text-only parse on a Layer 1 miss - the transcript is
   // re-sent, never the audio. Guardrails so /voice can't become a free Gemini
   // proxy: transcript <= 600 chars, slice <= 30 entries with capped fields,

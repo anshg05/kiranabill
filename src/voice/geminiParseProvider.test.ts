@@ -77,7 +77,10 @@ describe("geminiParseProvider", () => {
     const call = fetchMock.mock.calls[0]!;
     const [url, init] = call;
     expect(url).toContain("gemini-2.5-flash-lite:generateContent");
-    expect(url).toContain("key=real-key");
+    // D59: the key travels in a header - a URL that reaches an error or a log never carries it.
+    expect(url).not.toContain("real-key");
+    expect(url).not.toContain("key=");
+    expect(init.headers).toMatchObject({ "x-goog-api-key": "real-key" });
 
     const body = JSON.parse(init.body as string);
     expect(body.systemInstruction.parts[0].text).toContain("RULE 1");
@@ -157,6 +160,21 @@ describe("geminiParseProvider", () => {
 
   // KB-319 (owner, D50): one attempt. Three 6 s attempts + 0.5/1 s sleeps
   // (19.5 s) can't fit the 8 s client timeout; the shopkeeper's Retry replaces them.
+  it("D59 (KI-66): a 503 overload is 'busy' like a 429 - one call, the provider's status kept", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => '{"error":{"code":503,"status":"UNAVAILABLE"}}' });
+    vi.stubGlobal("fetch", fetchMock);
+    const err = await createGeminiParseProvider("test-key").parse("chini", { catalogSlice: [makeCatalogEntry()] }).catch((e: unknown) => e);
+    expect(err).toMatchObject({ kind: "busy", status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("D59: a failure's message never contains the key", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 400, text: async () => "API key not valid" }));
+    const err = (await createGeminiParseProvider("secret-key-123").parse("chini", { catalogSlice: [makeCatalogEntry()] }).catch((e: unknown) => e)) as Error;
+    expect(err).toMatchObject({ kind: "failed", status: 400 });
+    expect(err.message).not.toContain("secret-key-123");
+  });
+
   it("KB-319: a 500 is NOT retried - one call, a 'failed' ProviderError", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => "server error" });
     vi.stubGlobal("fetch", fetchMock);

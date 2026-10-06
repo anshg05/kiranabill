@@ -62,9 +62,12 @@ const badRequest = (error: string) => new Response(JSON.stringify({ error }), { 
 
 /** KB-319 (KI-58, D50): a provider deadline -> 504, the provider's own 429 ->
  * 503 (never 429 - that is the shop's own limit), anything else -> 502. */
-function providerFailure(step: "Transcription" | "Parse", err: unknown, transcript?: string): Response {
+function providerFailure(step: "Transcription" | "Parse", err: unknown, startedAt: number, transcript?: string): Response {
   const kind = err instanceof ProviderError ? err.kind : "failed";
   const status = kind === "timeout" ? 504 : kind === "busy" ? 503 : 502;
+  // D59 (KI-66): one production line - never the transcript, the provider's body or a URL.
+  const provider = err instanceof ProviderError && err.status !== undefined ? err.status : "-";
+  console.warn(`[voice] ${step} failure kind=${kind} status=${status} provider=${provider} ms=${Math.round(performance.now() - startedAt)}`);
   const error = kind === "timeout" ? `${step} timed out` : kind === "busy" ? `${step} busy` : `${step} failed`;
   return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, detail: (err as Error).message }), { status });
 }
@@ -150,7 +153,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     } catch (err) {
-      return providerFailure("Parse", err, transcript);
+      return providerFailure("Parse", err, start, transcript);
     }
   }
   const audioBlob = audio as Blob;
@@ -167,7 +170,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     if (dev) console.info(`[voice-dev] groq: ok in ${Math.round(transcribeResult.latencyMs)} ms (one attempt, no retry, 8 s deadline)`);
   } catch (err) {
     if (dev) console.info(`[voice-dev] groq: failed after ${Math.round(performance.now() - start)} ms - ${(err as Error).message.slice(0, 120)}`);
-    return providerFailure("Transcription", err);
+    return providerFailure("Transcription", err, start);
   }
 
   if (!meta.parse) {
@@ -182,7 +185,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   try {
     parseResult = await gemini.parse(transcribeResult.text, { catalogSlice });
   } catch (err) {
-    return providerFailure("Parse", err, transcribeResult.text);
+    return providerFailure("Parse", err, start, transcribeResult.text);
   }
 
   const latencyMs = performance.now() - start;

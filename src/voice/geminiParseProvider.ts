@@ -107,9 +107,10 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
         async (signal) => {
           let response: Response;
           try {
-            response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+            // D59: the key in a header, never in the URL an error or log may carry.
+            response = await fetch(GEMINI_URL, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
               body: JSON.stringify(body),
               signal,
             });
@@ -122,7 +123,9 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
           if (!response.ok) {
             const bodyText = await response.text();
             // KB-317 (KI-50): a 429 is a quota - on the free tier a DAILY one.
-            throw new ProviderError(response.status === 429 ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`);
+            // D59 (KI-66): a 503 is Google overloaded - transient, also "busy".
+            const busy = response.status === 429 || response.status === 503;
+            throw new ProviderError(busy ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status);
           }
           const latencyMs = performance.now() - start;
           const data = (await response.json()) as {
