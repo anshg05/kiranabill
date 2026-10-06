@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 4 Oct 2026 (rev 82) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 7 Oct 2026 (rev 83) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-309` (share) — commit 3 (the legacy behaviour: Image / PDF download, WhatsApp sends the image, SMS sheet; Google sign-in returns to its own origin) built, local; awaiting the owner's desktop check, then a draft deploy for the phone check. `KB-308` done 4 Oct 2026.
+**Working on:** KI-66 (Layer 2 parse fails on the draft — HIGH, blocks the next release) — diagnosis. `KB-309` done 7 Oct 2026.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -47,7 +47,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
 14. ~~**`KB-307`** — finalise (Bill Banao) + learning~~ — **done 3 Oct 2026.** New: `KI-63` (per-kg rate on a per-gm product never observed).
 15. ~~**`KB-308`** — receipt~~ — **done 4 Oct 2026** (D57). New: `KI-65`.
-15a. **`KB-309`** — share (image, PDF, WhatsApp) — **built**, awaiting the owner's check.
+15a. ~~**`KB-309`** — share~~ — **done 7 Oct 2026** (D58). New: KI-66.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -115,6 +115,7 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **GST: simple bill vs tax invoice (NI-35)** — the receipt is a kirana parchi, not a GST tax invoice. If any pilot shop is
   GST-registered, the owner confirms with the shops / an accountant whether a tax-invoice format (GSTIN etc.) is needed — before the
   pilot. (Owner, 3 Oct 2026, `KB-308`.)
+- [ ] **KI-66 — Layer 2 parse failing on the draft** (owner, 7 Oct 2026): fixed and re-checked on a draft before any `[deploy]` release.
 - [ ] **Auth redirect hardening — pre-pilot security review** (owner, 6 Oct 2026; D58 §6). (1) Replace the wildcard
   Redirect URLs in the cloud project with **exact** URLs (the live site; a draft URL only while it's being tested).
   (2) Remove `http://localhost:5173/**` from the cloud project. (3) Consider `flowType: 'pkce'` in `createClient` — a
@@ -310,6 +311,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 7 Oct 2026 | **`KB-309` done** — owner phone check on draft `6ac540a91ac0d6d9be5449ab` (Android 10, Chrome) passed: sign-in returned to the draft; receipt KB-000051 (hi) and the PNG correct; Image / PDF download; WhatsApp sends the image; SMS opens Messages. Long name and fallback number not checked on the phone (accepted — desktop). New **KI-66** (HIGH): every Layer 2 parse on the draft ended "Couldn't read the items", Retry too; transcription works. | Owner + Agent |
 | 6 Oct 2026 | **Redirect-URL pattern proven on the local stack (owner's security finding).** `https://**--kiranabilling.netlify.app/**` (Supabase's docs example) in `additional_redirect_urls`: an email sign-in link asked for `https://evil.example/x--kiranabilling.netlify.app/` kept it, and following the link redirected there with `access_token` / `refresh_token` in the fragment. `https://*--kiranabilling.netlify.app/**`: the evil URL fell back to the Site URL; `https://6ac12d4728fc2d000864718d--kiranabilling.netlify.app/` was kept; the same origin without the trailing `/` fell back (so `redirectTo` keeps its `/`). config.toml reverted, diff empty. The owner set the single-`*` pattern in the cloud dashboard; D58 corrected; Before-deployment: exact URLs, drop `localhost:5173/**` from the cloud project, consider PKCE. KB-309 owner desktop check passed (commit 3). | Owner + Agent |
 | 4 Oct 2026 | **`KB-309` commit 3, not pushed — the owner's desktop check asked for the legacy behaviour (D58 updated in place).** Four buttons: Image and PDF always download; WhatsApp shares the PNG via the share sheet (inside the tap; AbortError → nothing), wa.me with the text only without file sharing; SMS sheet pre-filled from the stored bill's mobile, D52 validation, Send disabled until valid, `sms:<10>?body=`, never stored; SMS text plain with `Rs.`. Google sign-in passes `redirectTo: origin/` (draft deploys return to themselves; Supabase Redirect URL `https://*--kiranabilling.netlify.app/**` — single `*`, see 6 Oct). Tests first; plants (Image opens a share sheet, SMS field empty with a stored mobile, sms: link from an invalid number) fail the right tests. Agent's browser check: desktop / 375 px, en and hi; local Google button → `authorize?…redirect_to=http://localhost:8888/`; local email sign-in (new throwaway account, generated in the page) → sign out → sign in → billing; the new shop defaulted to `en` (D57). | Agent |
 | 4 Oct 2026 | **`KB-309` built, not pushed (D58).** Commit 1: `receiptLayout` (the D57 layout as pure drawing steps, measurer injected) + `receiptText` / `waLink`. Commit 2: canvas PNG 2x (768 px) + our own one-page 58 mm PDF + Share image / PDF / WhatsApp on the saved screen; files rendered when the receipt is shown; canShare → share or download; AbortError does nothing; WhatsApp reads the mobile from the stored bill at tap time. Tests first (empty stubs → assertion red); plants (mobile in the text, a value past the width, the number broken mid-chunk, share awaited) fail the right tests. **Agent's browser check** (cold load: no Plex / Mukta-Devanagari face loaded before): real fallback bill en — PNG 768×786 (90 kB), PDF 83 kB, page 164.41×168.26 pt; ₹ = digit width on the canvas; hi and both images correct; PyMuPDF opens a `jpegPdf` file without repair (58.0 mm). Share buttons at 320 px: no overflow; mobile nowhere. `.gitignore`: `supabase/snippets/`. VERIFY: `npm test -- --maxWorkers=2` 1125/1125, and the default-worker run also passed this time (3.3 GB free commit). | Agent |
