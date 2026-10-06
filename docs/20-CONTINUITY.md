@@ -89,6 +89,11 @@ The checklist lives in `10-TRACKER.md` "Before deployment" — read it before ap
 - `git push` from PowerShell can fail on credentials; the agent pushes from its Bash tool instead.
 - Preview-pane screenshots can time out; the agent then proves UI state with in-page measurements (focus, sizes, overflow).
 - Single branch only: check `git worktree list` if a session seems to start in an odd checkout.
+- **Never `netlify link` this folder** — a linked `netlify dev` injects Netlify's variables (proven 7 Oct 2026: the
+  function got a non-key value for `GEMINI_API_KEY`). Draft deploys use `--site kiranabilling` instead; the procedure is
+  in `19-MACHINE-SETUP.md` §8.
+- **A broken `netlify/functions` edit crashes `netlify dev`** and can leave an orphan Vite on port 5173; the next start
+  then waits on the wrong port. Stop the orphan (a `node … vite` from this repo) before restarting.
 
 ## 5. The interaction pattern to maintain
 

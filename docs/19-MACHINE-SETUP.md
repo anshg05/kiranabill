@@ -1,6 +1,6 @@
 # 19 — Machine Setup
 
-**Last updated:** 27 Sep 2026 · **Status:** Active
+**Last updated:** 7 Oct 2026 · **Status:** Active
 **Purpose:** get a new machine to the exact state the old one was in, with nothing skipped and nothing guessed. Written from what this project's actual setup involved, including the real problems hit along the way — not a generic checklist.
 
 **Do these in order.** Each section assumes the previous one is done.
@@ -235,6 +235,32 @@ npx netlify dev
 This emulates the real Netlify Functions runtime locally — no production Netlify site connection needed for this (that's `17-MANUAL-TASKS.md` M-13 — done 27 Sep 2026, and not required for local development).
 
 **One real gotcha already found:** Netlify's function bundler scans every file directly inside `netlify/functions/` as a candidate function. Test files must live in `netlify/functions/_shared/`, not the top-level `netlify/functions/` directory, or the dev server crashes trying to treat a test file as an endpoint. This is already correctly structured in the repo — just don't add a new top-level test file there without checking this first.
+
+### Never `netlify link` this folder (owner, 7 Oct 2026)
+
+A **linked** folder changes local dev: `netlify dev` then injects the Netlify project's variables. Proven 7 Oct 2026: while
+linked, the `voice` function received a 414-character JWT-shaped value (`eyJ…`) as `GEMINI_API_KEY` instead of
+`.env.local`'s key — Gemini answered **400 "API key not valid"** — and the startup log didn't list `GEMINI_API_KEY` at all.
+(`VITE_SUPABASE_*` still came from `.env.local` that time, but a linked dev server is one variable away from pointing
+localhost at the LIVE Supabase project — Vite gives process variables priority over `.env.local`.) After
+`npx netlify unlink`, the log lists `GEMINI_API_KEY` under ".env.local file env vars" and the function gets the real key.
+If `.netlify/state.json` ever holds a `siteId`, run `npx netlify unlink` before `netlify dev`.
+
+### Draft deploys for real-device testing (D55: never `--prod`, never the deploy marker)
+
+1. `git status` clean; deploy only committed code.
+2. **Build with the production `VITE_` values, not `.env.local`'s** — read them with
+   `npx netlify env:list --site kiranabilling --context production --scope builds --json` (the CLI must be logged in:
+   `npx netlify login`). Pass only `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` into `npm run build` as process
+   variables; never print any other value; delete any temporary file that held values.
+3. Prove `dist/` contains `urcenodcxtzwjrulwvgf` and no `localhost:54321`, `localhost:8888` or `http://127.0.0.1`
+   (one `127.0.0.1` inside supabase-js's trusted-host list is expected — the live bundle has it too).
+4. `npx netlify deploy --site kiranabilling --dir dist --no-build --message "<why>"` — `--site` / `-s` takes a project
+   name or ID (`netlify deploy --help`); **no link needed, no `--prod`**. The draft URL is
+   `https://<deploy-id>--kiranabilling.netlify.app`.
+5. Rebuild `dist/` locally (`npm run build`) afterwards so it no longer holds production values.
+6. Google sign-in returns to the draft only because the Supabase Redirect URL `https://*--kiranabilling.netlify.app/**`
+   exists (single `*` — D58 §6).
 
 ---
 
