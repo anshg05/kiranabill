@@ -1572,6 +1572,12 @@ in-memory IndexedDB could not show it.
    item rows on every History open, growing with the shop's history; the search row is read once, small, and indexed by
    date. Cost: one more write per bill and a schema version — accepted.
 7. **Bills pulled from the server later (`KB-324`) need their rows too**, in the same transaction.
+8. **Phone measurement and budgets** (owner, 7 Oct 2026; Android 10, Chrome 152; 40,000 bills, 9,000 in 90 days;
+   `/__dev/history`). Budgets on the phone at 40,000 bills: **open ≤ 300 ms** (measured 234 / 72 / 62 ms); **90-day load
+   ≤ 2 s**, in the background (1,624 / 1,187 / 1,145 ms); **older load ≤ 6 s**, with "Loading older bills…" (4,540 /
+   3,825 ms); **keystroke ≤ 50 ms** (D51) — over 9,000 median 4.8 · p95 6.9 · max 14.7 ms, over 40,000 median 14.1 ·
+   p95 16.4 · max 17.3 ms. Laptop over the LAN: 35 / 11 / 10 · 278 / 230 / 229 · 1,072 / 1,031 ms · 0.8 / 1.3 / 2.8 ·
+   5.0 / 6.2 / 7.0 ms. All within budget; 05 §10.
 
 ---
 

@@ -341,3 +341,7 @@ TOTAL                             ₹142.50    ← larger, bold
 | LLM-path item on screen | < 4 s after transcript |
 | Finalise → receipt shown | < 500 ms (local write, sync is background) |
 | App cold start | < 2 s |
+| History (S5) at 40,000 bills — **open** (newest 200) | **≤ 300 ms** on the phone (D61; owner, 7 Oct 2026). Measured 7 Oct 2026, `/__dev/history`: phone (Android 10, Chrome 152) 234 / 72 / 62 ms; laptop over the LAN 35 / 11 / 10 ms |
+| History — **90-day search load** (≈ 9,000 bills; background) | **≤ 2 s** on the phone. Phone 1,624 / 1,187 / 1,145 ms; laptop 278 / 230 / 229 ms |
+| History — **"Search older bills"** (all 40,000) | **≤ 6 s** on the phone, with "Loading older bills…" shown meanwhile. Phone 4,540 / 3,825 ms; laptop 1,072 / 1,031 ms |
+| History — **keystroke → results** | **≤ 50 ms** (D51). Over 9,000: phone median 4.8 · p95 6.9 · max 14.7 ms (laptop 0.8 / 1.3 / 2.8). Over 40,000: phone median 14.1 · p95 16.4 · max 17.3 ms (laptop 5.0 / 6.2 / 7.0) |
