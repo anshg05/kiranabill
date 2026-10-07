@@ -19,6 +19,18 @@ const NAMES = ["Chini", "Besan", "Toor Daal", "Parle-G", "Basmati Chawal Premium
 const QUERIES = ["r", "ra", "ram", "ramesh", "ramesh 4/10", "chini", "112.50", "4/10", "142", "basmati chawal", "xyzq"];
 const DAY = 86_400_000;
 
+/** A v4 UUID from crypto.getRandomValues: the phone opens this page over plain
+ * http://<laptop-ip>:5173 - not a secure context, so Chrome hides
+ * crypto.randomUUID there (HTTPS / localhost only). Bench only - the app runs
+ * on HTTPS. */
+export function benchId(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6]! & 0x0f) | 0x40;
+  b[8] = (b[8]! & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 async function seed(db: KiranaBillDB): Promise<void> {
   const now = Date.now();
   for (let start = 0; start < N; start += 5_000) {
@@ -26,7 +38,7 @@ async function seed(db: KiranaBillDB): Promise<void> {
     const items: LocalBillItem[] = [];
     for (let i = start; i < Math.min(N, start + 5_000); i++) {
       const at = new Date(now - (i / PER_DAY) * DAY).toISOString();
-      const localId = crypto.randomUUID();
+      const localId = benchId();
       bills.push({ localId, shopId: SHOP, status: "final", syncStatus: "synced", receiptNumber: `KB-${String(N - i).padStart(6, "0")}`, receiptNumberSource: "block", customerName: i % 7 ? "Cash" : `Ramesh ${i % 50}`, customerMobile: null, subtotalPaise: 0, totalPaise: 9000 + (i % 400) * 25, schemaVersion: 1, deviceId: "bench", createdAt: at, finalizedAt: at, syncedAt: at });
       for (let l = 1; l <= 5; l++) items.push({ billLocalId: localId, shopId: SHOP, lineNo: l, shopProductId: null, displayName: NAMES[(i + l) % NAMES.length]!, spokenName: null, qty: 1, unit: "kg", ratePaise: 100, rateUnit: "kg", totalPaise: 100, priceType: "rate", source: "fastpath", reviewFlags: [], wasEdited: false });
     }

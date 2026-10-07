@@ -18,6 +18,17 @@
         "dev"
       ],
       "port": 8888
+    },
+    {
+      "name": "dev-lan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--host"
+      ],
+      "port": 5173
     }
   ]
 }
