@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 4 Oct 2026 (rev 10) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 7 Oct 2026 (rev 11) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -204,6 +204,24 @@ Search by customer name, amount, date, or item — all client-side against the l
 works offline. Grouped by date. Tap opens S6.
 
 Each row shows a sync chip when not yet synced. Never alarming; just informational.
+
+### Implementation notes — History (`KB-310`, 7 Oct 2026; D60)
+
+- **Opens from the ≡ menu**, over the bill in progress (which stays as it is); Back / Android back closes S6, then
+  S5, back to billing (`ui/useBackEntry.ts`, shared with the Add item panel).
+- **This phone's bills only** — bills are pushed, never pulled (`KB-324`). Empty: "No bills on this phone yet." /
+  "History shows the bills saved on this phone."
+- **Load (D60):** opens on the newest 200 rows from the date index (no items); the last 90 days load in the background
+  for search ("Searching the last 90 days"); **Search older bills** (under any search until everything is loaded, so
+  an older `dd-mm` never ends at "No bills found.") loads every bill — "Loading older bills…". With no search, the list
+  is the newest rows; **Show more** adds 200 (and loads everything past the newest 200).
+- **Search** (`domain/billSearch.ts`): every word must match the customer name, the receipt's sequence number ("142" →
+  `KB-000142`, "14" doesn't), the exact total in paise ("112.50", "112.5"), a date `dd-mm` / `dd-mm-yyyy` with `-` `/`
+  or `.` and single digits ("4/10"), or an item name; Devanagari digits read as 0–9. **Never the customer's mobile.**
+- **Row:** receipt number, time, the name unless Cash, the total, "Not synced" while pending. Grouped Today /
+  Yesterday / `dd-mm-yyyy`. No item count (owner: no schema change).
+- **S6 bill detail:** the read-only receipt (`Receipt.tsx`) and the four share buttons (`ShareBar.tsx`, D58). Cancel
+  and reissue is `KB-325` (parked).
 
 ---
 

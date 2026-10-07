@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { CatalogEntry } from "@/domain/catalog";
 import { searchCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import { displayRate } from "@/domain/billEdit";
 import { formatRupees, type Paise } from "@/domain/money";
 import { formatAmount } from "./billFormat";
+import { useBackEntry } from "./useBackEntry";
 
 // KB-305 (05 S3a; owner, 2 Oct 2026): add an item by hand. A NON-modal panel
 // over the item list - TOTAL, the mic and Bill Banao stay visible and usable
@@ -44,37 +45,8 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
   const [query, setQuery] = useState(initialQuery);
   const results = useMemo(() => searchCatalog(catalog, query, usage), [catalog, query, usage]);
 
-  // Android back: a history entry while open; popstate closes. A normal close
-  // takes the entry back off, so the next back isn't swallowed. StrictMode
-  // (dev) mounts, unmounts and re-mounts at once: the entry is pushed once, and
-  // the unmount's back() is deferred so the re-mount can cancel it.
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  const entry = useRef<{ token: string; pendingBack: ReturnType<typeof setTimeout> | null } | null>(null);
-  useEffect(() => {
-    if (!entry.current) {
-      entry.current = { token: crypto.randomUUID(), pendingBack: null };
-      // Re-opened before the last close's back() ran: take over its entry, never stack a second.
-      const current = window.history.state as Record<string, unknown> | null;
-      if (typeof current?.[HISTORY_KEY] === "string") window.history.replaceState({ [HISTORY_KEY]: entry.current.token }, "");
-      else window.history.pushState({ [HISTORY_KEY]: entry.current.token }, "");
-    }
-    const mine = entry.current;
-    if (mine.pendingBack) clearTimeout(mine.pendingBack);
-    mine.pendingBack = null;
-    const onOurEntry = () => (window.history.state as Record<string, unknown> | null)?.[HISTORY_KEY] === mine.token;
-    let closedByBack = false;
-    const onPop = () => {
-      if (onOurEntry()) return; // came forward onto it again - nothing to close
-      closedByBack = true;
-      onCloseRef.current();
-    };
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      if (!closedByBack) mine.pendingBack = setTimeout(() => onOurEntry() && window.history.back(), 0);
-    };
-  }, []);
+  // Android back closes the panel, never the app (KB-305).
+  useBackEntry(HISTORY_KEY, onClose);
 
   const typed = query.trim();
   return (

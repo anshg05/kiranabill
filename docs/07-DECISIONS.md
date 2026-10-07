@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 7 Oct 2026 (rev 35) · Supersedes rev 34
+**Last updated:** 7 Oct 2026 (rev 36) · Supersedes rev 35
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1526,6 +1526,25 @@ designed.
    any, duration. **Never** the transcript, the provider's body or a URL (customer data and keys stay out of logs).
 4. **The Gemini key goes in the `x-goog-api-key` header**, not `?key=` in the URL — an error or log that carries the URL
    can never carry the key.
+
+### D60 — History loads in windows: the newest 200 to open, 90 days to search, everything on demand 🟢
+
+**Owner decision, 7 Oct 2026, `KB-310`**, after measuring on real IndexedDB (desktop Chrome): at 40,000 bills × 5
+items (a busy shop: ~100 bills/day, ~36,000/year) loading every bill with its items took ~4.4 s (reading the items by
+`anyOf` 4.1 s; a full item-table scan 1.6 s; the newest 200 bills by the date index 3 ms), and a per-keystroke filter
+that rebuilt each bill's text took 32–87 ms. A phone is several times slower.
+1. **Open:** the newest 200 rows from the `createdAt` index, without items — no Dexie schema change, no item count on
+   the row.
+2. **Search scope:** the last 90 days (≈ 9,000 bills for a busy shop) load in the background after opening; the list and
+   search stay usable meanwhile; "Searching the last 90 days" while that's the scope.
+3. **Search older bills:** loads every bill on demand (full-table item scan), offered under every search until loaded —
+   also when the recent search finds nothing, so an older `dd-mm` date never just says "no bills".
+4. **Search text built once per bill** at load (`toSearchEntry`); the query compiled once per keystroke
+   (`compileQuery`). Measured (Node): 40,000 bills 1.3–2.7 ms a keystroke, 9,000 bills 0.3–0.6 ms.
+5. **200 results, then "Show more".** With no search, the list is the newest rows (the 90-day window is for search
+   only — a shop whose bills are all older still sees them).
+6. **No budget yet** (owner): the phone numbers come from the dev-only `/__dev/history` bench at the next draft-deploy
+   check (`npm run dev -- --host`, the phone opens `http://<laptop-ip>:5173/__dev/history`), as D51 was measured.
 
 ---
 
