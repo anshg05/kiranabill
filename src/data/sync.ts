@@ -417,12 +417,19 @@ function shopProductsCursorKey(shopId: string): string {
   return `shopProducts:${shopId}`;
 }
 
+// KB-311: updated_at is the server's now() - the time the writing transaction
+// STARTED, not when it committed. A slow transaction from another device can
+// commit after this device's cursor already passed its updated_at; "> cursor"
+// alone would skip that row forever. So every pull re-reads the last minute
+// before the cursor (bulkPut by id makes the re-read rows harmless).
+export const SHOP_PRODUCTS_PULL_OVERLAP_MS = 60_000;
+
 export async function pullShopProducts(client: SupabaseClient, localDb: KiranaBillDB, shopId: string): Promise<void> {
   const state = await localDb.syncState.get(shopProductsCursorKey(shopId));
   const cursor = state?.lastSyncedAt ?? null;
 
   let query = client.from("shop_products").select("*").eq("shop_id", shopId);
-  if (cursor) query = query.gt("updated_at", cursor);
+  if (cursor) query = query.gt("updated_at", new Date(new Date(cursor).getTime() - SHOP_PRODUCTS_PULL_OVERLAP_MS).toISOString());
   const { data, error } = await query;
   if (error || !data) {
     console.warn(`[sync] shopProducts pull failed: ${error?.message}`);

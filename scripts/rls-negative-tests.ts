@@ -300,6 +300,30 @@ async function main(): Promise<void> {
       }
     );
 
+    // KB-311 (Catalog screen): price edits are UPDATEs from the client.
+    await check(client, "write isolation: shop A's price UPDATE on shop B's shop_products row affects zero rows", async () => {
+      const res = await client.query(`update shop_products set price_paise = 1 where id = $1`, [shopProductB]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows affected, got ${res.rowCount}`);
+      return "0 rows affected, as expected";
+    });
+
+    await checkRejects(
+      client,
+      "write isolation: shop A cannot move its own shop_products row into shop B (UPDATE shop_id)",
+      "42501",
+      async () => {
+        await client.query(`update shop_products set shop_id = $1 where id = $2`, [shopB, shopProductA]);
+      }
+    );
+
+    await asSuperuser(client);
+    await check(client, "write isolation sanity: shop B's product price is unchanged (5000)", async () => {
+      const res = await client.query(`select price_paise from shop_products where id = $1`, [shopProductB]);
+      if (Number(res.rows[0]?.price_paise) !== 5000) throw new Error(`expected 5000, got ${res.rows[0]?.price_paise}`);
+      return "5000, as expected";
+    });
+    await asUser(client, ownerA);
+
     await checkRejects(client, "write isolation: shop A cannot INSERT a bills row into shop B", "42501", async () => {
       await client.query(
         `insert into bills (id, shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id)

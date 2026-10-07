@@ -887,6 +887,21 @@ describe("sync.ts - KB-315", () => {
     expect(await localDb.syncState.get("shopProducts")).toBeUndefined();
   });
 
+  it("KB-311: the shop_products pull re-reads the last minute before its cursor (a late commit is never skipped)", async () => {
+    const seen: Array<Record<string, unknown>> = [];
+    const client = makeMockClient({
+      shop_products: (_op, _payload, filters) => {
+        seen.push({ ...filters });
+        return { data: seen.length === 1 ? [{ id: "p-1", shop_id: "shop-1", updated_at: "2026-10-08T10:00:00.000Z", aliases: [] }] : [], error: null };
+      },
+    });
+    await pullShopProducts(client, localDb, "shop-1");
+    await pullShopProducts(client, localDb, "shop-1");
+    expect(seen[1]).toEqual({ shop_id: "shop-1", updated_at__gt: "2026-10-08T09:59:00.000Z" });
+    // The cursor itself never moves backwards.
+    expect((await localDb.syncState.get("shopProducts:shop-1"))?.lastSyncedAt).toBe("2026-10-08T10:00:00.000Z");
+  });
+
   it("receipt blocks are pulled for THIS device only", async () => {
     let filters: Record<string, unknown> = {};
     const client = makeMockClient({
