@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { KiranaBillDB, type LocalBill, type LocalBillItem } from "@/data/db";
+import { billSearchRowOf, KiranaBillDB, type LocalBill, type LocalBillItem } from "@/data/db";
 import { loadRecentRows, loadSearchIndex } from "@/data/history";
-import { compileQuery, type SearchEntry } from "@/domain/billSearch";
+import { compileQuery, type BillSearchRow } from "@/domain/billSearch";
 
 // DEV ONLY (KB-310, owner): History's load and search times on REAL IndexedDB -
 // the laptop, and a REAL phone like D51's type-ahead bench: open
@@ -44,6 +44,8 @@ async function seed(db: KiranaBillDB): Promise<void> {
     }
     await db.bills.bulkPut(bills);
     await db.billItems.bulkAdd(items);
+    // D61: each final bill's search row, as finaliseBill writes it (each bill's 5 items are consecutive).
+    await db.billSearch.bulkPut(bills.map((b, k) => billSearchRowOf(b, items.slice(k * 5, k * 5 + 5))));
   }
 }
 
@@ -60,7 +62,7 @@ async function time<T>(fn: () => Promise<T>, runs: number): Promise<{ ms: number
   return { ms, value };
 }
 
-function keystrokes(entries: SearchEntry[]): string {
+function keystrokes(entries: BillSearchRow[]): string {
   for (const q of QUERIES) entries.filter(compileQuery(q)); // warm-up (D35)
   const ms: number[] = [];
   for (let round = 0; round < 7; round++) {

@@ -52,26 +52,40 @@ describe("loadRecentRows - what History opens with", () => {
 
     const rows = await loadRecentRows(db, shopA, 2);
     expect(rows.map((r) => r.localId)).toEqual([a3, a2]);
-    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "KB-000002", customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending", items: [] });
+    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "KB-000002", customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending" });
     expect((await loadRecentRows(db, shopA, 200)).map((r) => r.localId)).toEqual([a3, a2, a1]);
     expect(JSON.stringify(rows)).not.toContain("9123456789");
   });
 });
 
-describe("loadSearchIndex - recent window or everything, with items", () => {
-  it("since a date: only bills from then on, with their items; null: every bill of the shop", async () => {
+describe("loadRecentRows - 'Show more' reads the next page from the same index (owner, option A)", () => {
+  it("205 bills: a limit of 200 gives 200; a limit of 400 gives all 205, newest first", async () => {
+    const at = (i: number) => new Date(Date.parse("2026-10-07T12:00:00.000Z") - i * 60_000).toISOString();
+    await db.bills.bulkPut(Array.from({ length: 205 }, (_, i) => ({
+      localId: crypto.randomUUID(), shopId: shopA, status: "final" as const, syncStatus: "synced" as const, receiptNumber: `KB-${String(i + 1).padStart(6, "0")}`, receiptNumberSource: "block" as const,
+      customerName: "Cash", customerMobile: null, subtotalPaise: 9000, totalPaise: 9000, schemaVersion: 1, deviceId, createdAt: at(i), finalizedAt: at(i), syncedAt: at(i),
+    })));
+    expect(await loadRecentRows(db, shopA, 200)).toHaveLength(200);
+    const all = await loadRecentRows(db, shopA, 400);
+    expect(all).toHaveLength(205);
+    expect([all[0]!.receiptNumber, all[204]!.receiptNumber]).toEqual(["KB-000001", "KB-000205"]);
+  });
+});
+
+describe("loadSearchIndex - the billSearch rows (D61): a recent window or everything", () => {
+  it("since a date: only bills from then on, their item names in the search text; null: every bill of the shop", async () => {
     const old = await save(shopA, "2 kilo chini", "2026-06-01T10:00:00.000Z");
     const recent = await save(shopA, "2 kilo chini aur 1 kilo besan", "2026-10-06T10:00:00.000Z");
     await save(shopB, "1 kilo besan", "2026-10-06T11:00:00.000Z");
 
     const window = await loadSearchIndex(db, shopA, "2026-07-09T00:00:00.000Z");
-    expect(window.map((e) => e.bill.localId)).toEqual([recent]);
-    expect(window[0]!.bill.items.map((i) => i.displayName)).toEqual(["Chini", "Besan"]);
+    expect(window.map((r) => r.localId)).toEqual([recent]);
+    expect(window[0]!.text.split("\n").slice(1)).toEqual(["chini", "chini", "besan", "besan"]);
     expect(window.filter(compileQuery("besan")).length).toBe(1);
 
     const all = await loadSearchIndex(db, shopA, null);
-    expect(all.map((e) => e.bill.localId)).toEqual([recent, old]);
-    expect(all.filter(compileQuery("01-06")).map((e) => e.bill.localId)).toEqual([old]);
+    expect(all.map((r) => r.localId)).toEqual([recent, old]);
+    expect(all.filter(compileQuery("01-06")).map((r) => r.localId)).toEqual([old]);
   });
 
   it("no bills -> empty", async () => {

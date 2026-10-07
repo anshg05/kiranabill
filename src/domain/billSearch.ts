@@ -44,51 +44,66 @@ function sequenceNumber(receiptNumber: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-/** A bill ready to search: its lowercased text and numbers, built ONCE when the list loads. */
-export interface SearchEntry<B extends SearchableBill = SearchableBill> {
-  readonly bill: B;
-  /** Customer name and every item's display / spoken name, lowercased, one per line. */
-  readonly text: string;
-  readonly receipt: string;
+/**
+ * D61: a bill's search row, stored in its own device-only table (billSearch),
+ * written in the same transaction as the bill. Never the customer's mobile.
+ */
+export interface BillSearchRow {
+  readonly localId: string;
+  readonly shopId: string;
+  /** When it was finalised (ISO) - the [shopId+finalizedAt] index. */
+  readonly finalizedAt: string;
+  readonly totalPaise: Paise;
+  /** KB-000142 -> 142; null for a fallback number. */
   readonly sequence: number | null;
-  readonly day: number;
-  readonly month: number;
-  readonly year: number;
+  /** "04-10-2026", device time when written. */
+  readonly dateKey: string;
+  /** As printed - shown on the result row. */
+  readonly receiptNumber: string;
+  readonly customerName: string;
+  /** Customer name, then every item's display and spoken names - lowercased, one per line. */
+  readonly text: string;
 }
 
-export function toSearchEntry<B extends SearchableBill>(bill: B): SearchEntry<B> {
-  const d = new Date(bill.at);
+export function toBillSearchRow(bill: SearchableBill & { readonly localId: string; readonly shopId: string }): BillSearchRow {
   const names = bill.items.flatMap((i) => (i.spokenName ? [i.displayName, i.spokenName] : [i.displayName]));
   return {
-    bill,
-    text: [bill.customerName, ...names].join("\n").toLowerCase(),
-    receipt: bill.receiptNumber.toLowerCase(),
+    localId: bill.localId,
+    shopId: bill.shopId,
+    finalizedAt: bill.at,
+    totalPaise: bill.totalPaise,
     sequence: sequenceNumber(bill.receiptNumber),
-    day: d.getDate(),
-    month: d.getMonth() + 1,
-    year: d.getFullYear(),
+    dateKey: billDateKey(bill.at),
+    receiptNumber: bill.receiptNumber,
+    customerName: bill.customerName,
+    text: [bill.customerName, ...names].join("\n").toLowerCase(),
   };
 }
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
 /** One search word, parsed once per keystroke. */
-function compileWord(word: string): (e: SearchEntry) => boolean {
+function compileWord(word: string): (r: BillSearchRow) => boolean {
   const sequence = /^\d+$/.test(word) ? Number(word) : null;
   const paise = amountPaise(word);
   const date = dateParts(word);
-  return (e) =>
-    e.text.includes(word) ||
-    e.receipt === word ||
-    (sequence !== null && e.sequence === sequence) ||
-    (paise !== null && paise === e.bill.totalPaise) ||
-    (date !== null && e.day === date[0] && e.month === date[1] && (date[2] === null || e.year === date[2]));
+  // A date compares as text against the stored "dd-mm-yyyy" key.
+  const dayMonth = date ? `${pad(date[0])}-${pad(date[1])}` : null;
+  const full = date && date[2] !== null ? `${dayMonth}-${date[2]}` : null;
+  return (r) =>
+    r.text.includes(word) ||
+    (sequence !== null && r.sequence === sequence) ||
+    (paise !== null && paise === r.totalPaise) ||
+    (dayMonth !== null && (full !== null ? r.dateKey === full : r.dateKey.startsWith(dayMonth))) ||
+    r.receiptNumber.toLowerCase() === word;
 }
 
-/** The query parsed ONCE; the returned test runs per entry. Every word must match something. */
-export function compileQuery(query: string): (e: SearchEntry) => boolean {
+/** The query parsed ONCE; the returned test runs per row. Every word must match something. */
+export function compileQuery(query: string): (r: BillSearchRow) => boolean {
   const words = normalizeDigits(query).toLowerCase().split(/\s+/).filter(Boolean).map(compileWord);
-  return (e) => words.every((w) => w(e));
+  return (r) => words.every((w) => w(r));
 }
 
 export function matchBill(query: string, bill: SearchableBill): boolean {
-  return compileQuery(query)(toSearchEntry(bill));
+  return compileQuery(query)(toBillSearchRow({ ...bill, localId: "", shopId: "" }));
 }

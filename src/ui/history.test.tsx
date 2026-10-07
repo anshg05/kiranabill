@@ -9,6 +9,16 @@ import { KiranaBillDB, type LocalBill } from "@/data/db";
 import { finaliseBill } from "@/data/finalise";
 import { BillView } from "./BillingScreen";
 import { HistoryScreen } from "./HistoryScreen";
+import { loadRecentRows } from "@/data/history";
+
+// "Show more" (owner, option A): the next page is requested from the loader -
+// a spy around the REAL loadRecentRows. Waiting for the 201st row to render
+// hangs under fake-indexeddb + jsdom (KI-67); the page itself is proven by the
+// data test (205 bills, limit 400 -> 205) and in a real browser (200 -> 250).
+vi.mock("@/data/history", async (original) => {
+  const actual = await original<typeof import("@/data/history")>();
+  return { ...actual, loadRecentRows: vi.fn(actual.loadRecentRows) };
+});
 import type { RenderReceiptFiles } from "./useReceiptShare";
 
 // KB-310 (owner, 7 Oct 2026): S5 History and S6 bill detail, with REAL
@@ -126,21 +136,23 @@ describe("KB-310 - S5 History", () => {
     expect(screen.getByRole("button", { name: "Search older bills" })).toBeTruthy();
   });
 
-  it("200 rows, then 'Show more'", async () => {
+  it("200 rows and 'Show more'; a click asks the loader for the next page (limit 400)", async () => {
     const at = (i: number) => new Date(Date.now() - i * 60_000).toISOString();
     const rows: LocalBill[] = Array.from({ length: 205 }, (_, i) => ({
       localId: crypto.randomUUID(), shopId, status: "final", syncStatus: "synced", receiptNumber: `KB-${String(i + 1).padStart(6, "0")}`, receiptNumberSource: "block",
       customerName: "Cash", customerMobile: null, subtotalPaise: 9000, totalPaise: 9000, schemaVersion: 1, deviceId, createdAt: at(i), finalizedAt: at(i), syncedAt: at(i),
     }));
     await db.bills.bulkPut(rows);
+    vi.mocked(loadRecentRows).mockClear();
     await open();
     await waitFor(() => expect(rowTexts()).toHaveLength(200));
-    fireEvent.click(await screen.findByRole("button", { name: "Show more" }));
-    await waitFor(() => expect(rowTexts()).toHaveLength(205));
-    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
-  }, 20_000); // 205 rendered rows on fake-indexeddb + jsdom
+    expect(vi.mocked(loadRecentRows).mock.calls.map((c) => c[2])).toEqual([200]);
+    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+    await waitFor(() => expect(vi.mocked(loadRecentRows).mock.calls.map((c) => c[2])).toEqual([200, 400]));
+    expect(vi.mocked(loadRecentRows).mock.calls[1]!.slice(0, 2)).toEqual([db, shopId]);
+  }, 20_000);
 
-  it("bills all older than 90 days: the list still shows them (the 90-day window is for search only), and Show more reaches the rest", async () => {
+  it("bills all older than 90 days: the list still shows them once the (empty) 90-day window has loaded; 'Show more' is offered", async () => {
     const at = (i: number) => new Date(Date.now() - (100 + i / 1000) * DAY).toISOString();
     const rows: LocalBill[] = Array.from({ length: 250 }, (_, i) => ({
       localId: crypto.randomUUID(), shopId, status: "final", syncStatus: "synced", receiptNumber: `KB-${String(i + 1).padStart(6, "0")}`, receiptNumberSource: "block",
@@ -151,9 +163,8 @@ describe("KB-310 - S5 History", () => {
     await waitFor(() => expect(rowTexts()).toHaveLength(200));
     await new Promise((r) => setTimeout(r, 300)); // the (empty) 90-day window has loaded by now
     expect(rowTexts()).toHaveLength(200);
-    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
-    await waitFor(() => expect(rowTexts()).toHaveLength(250));
-  }, 20_000); // 250 rendered rows on fake-indexeddb + jsdom
+    expect(screen.getByRole("button", { name: "Show more" })).toBeTruthy();
+  }, 20_000);
 });
 
 describe("KB-310 - S6 bill detail", () => {

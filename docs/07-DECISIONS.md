@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 7 Oct 2026 (rev 36) · Supersedes rev 35
+**Last updated:** 7 Oct 2026 (rev 37) · Supersedes rev 36
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1545,6 +1545,33 @@ that rebuilt each bill's text took 32–87 ms. A phone is several times slower.
    only — a shop whose bills are all older still sees them).
 6. **No budget yet** (owner): the phone numbers come from the dev-only `/__dev/history` bench at the next draft-deploy
    check (`npm run dev -- --host`, the phone opens `http://<laptop-ip>:5173/__dev/history`), as D51 was measured.
+
+### D61 — History search rows live in a device-only table, written with the bill (replaces D60's item loads) 🟢
+
+**Owner decision, 7 Oct 2026, `KB-310` commit 3** (option C, with a separate table). Measured on real Chrome
+IndexedDB at 40,000 bills × 5 items: D60's 90-day load read items with `billItems.where("billLocalId").anyOf(ids)` —
+**~22–26 ms per id** (10 ids 223 ms, 100 ids 2.6 s), so 9,000 ids ≈ 4 minutes; it never finished. The unit tests'
+in-memory IndexedDB could not show it.
+1. **`billSearch`** (Dexie v4): one row per final bill — `localId` (key), `shopId`, `finalizedAt` (index
+   `[shopId+finalizedAt]`), `totalPaise`, the receipt sequence, the date key, the receipt number and customer name (for
+   display), and lowercased `text` (customer name, every item's display and spoken names). **Never the mobile.** The
+   receipt number is matched exactly and by its sequence — kept OUT of the substring text, so "14" never matches
+   `KB-000142` (owner). `matchBill`'s rules unchanged.
+2. **Written in `finaliseBill`'s transaction** — a final bill always has its row; if it can't be written, nothing is. The
+   bill itself is untouched (hard rule 2). **Device-only:** `sync.ts` names every table it pushes and never this one
+   (tested with a DBCore recorder: a push reads `bills`, never `billSearch`). It lives in the per-user database, kept or
+   lost exactly like the bills — sign-out deletes nothing (D38).
+3. **Upgrade:** v4 backfills every existing final bill (one item scan grouped by bill) — tested from a real old-version
+   database.
+4. **Loads:** the 90-day window is ONE range query on `[shopId+finalizedAt]`; "Search older bills" is all of the shop's
+   rows; items are read only when a bill's detail opens. Guarded by a test that fails on any `billItems` / `bills` access,
+   `get` / `getMany`, or cursor (`anyOf`) during a search load.
+5. **Measured after** (desktop Chrome, `/__dev/history` over the LAN): newest 200 25–30 ms; 90-day load (9,000) ~245 ms;
+   keystroke over 9,000 median 2.4 ms; all 40,000 ~1.1–1.2 s; keystroke over 40,000 median 11.4 ms.
+6. **Not A or B:** per-bill `equals` queries (A, 1.4–2.8 s) and a full item scan (B, 2.5 s) both still read 45,000–200,000
+   item rows on every History open, growing with the shop's history; the search row is read once, small, and indexed by
+   date. Cost: one more write per bill and a schema version — accepted.
+7. **Bills pulled from the server later (`KB-324`) need their rows too**, in the same transaction.
 
 ---
 

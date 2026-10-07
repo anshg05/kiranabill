@@ -3,7 +3,7 @@ import { parseUtterance } from "./grammar";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { buildFinalBill, type FinalLine } from "./finalBill";
 import { customItem, editAmount } from "./billEdit";
-import { billDateKey, compileQuery, matchBill, toSearchEntry, type SearchableBill } from "./billSearch";
+import { billDateKey, compileQuery, matchBill, toBillSearchRow, type SearchableBill } from "./billSearch";
 
 // KB-310 (owner, 7 Oct 2026): history search, all on the device. Every word
 // must match something: customer name, receipt number (its sequence number),
@@ -105,18 +105,29 @@ describe("billDateKey - the date group, in device time", () => {
   });
 });
 
-describe("compileQuery + toSearchEntry - built once, used per keystroke (owner: build each bill's search text once at load)", () => {
-  it("a compiled query gives the same answers as matchBill, over many entries", () => {
+describe("toBillSearchRow + compileQuery - the stored search row (D61), the same rules", () => {
+  it("a compiled query on the stored row gives the same answers as matchBill", () => {
     const bills = [bill(), bill({ customerName: "Suresh", receiptNumber: "KB-000143" }), bill({ customerName: "Cash", transcripts: ["2 kilo chini"] })];
-    const entries = bills.map(toSearchEntry);
-    for (const q of ["", "ramesh", "143", "90", "4/10", "chini", "ramesh chini", "atta"]) {
+    const rows = bills.map((b, i) => toBillSearchRow({ ...b, localId: `b${i}`, shopId: "s" }));
+    for (const q of ["", "ramesh", "143", "14", "kb-000143", "90", "112.5", "4/10", "4.10.26", "५/१०", "chini", "ramesh chini", "atta"]) {
       const match = compileQuery(q);
-      expect(entries.map(match), q).toEqual(bills.map((b) => matchBill(q, b)));
+      expect(rows.map(match), q).toEqual(bills.map((b) => matchBill(q, b)));
     }
   });
 
-  it("the entry keeps the bill it was built from", () => {
-    const b = bill();
-    expect(toSearchEntry(b).bill).toBe(b);
+  it("the row: ids, the total in paise, the sequence, the date key, display fields, lowercased text - never the mobile", () => {
+    const b = { ...bill({ customerName: "Ramesh Kumar", custom: "बासमती चावल" }), customerMobile: "9123456789" } as SearchableBill;
+    const row = toBillSearchRow({ ...b, localId: "L1", shopId: "S1" });
+    expect(row).toMatchObject({ localId: "L1", shopId: "S1", finalizedAt: b.at, totalPaise: b.totalPaise, sequence: 142, dateKey: "04-10-2026", receiptNumber: "KB-000142", customerName: "Ramesh Kumar" });
+    expect(row.text.split("\n")).toEqual(["ramesh kumar", "chini", "chini", "chini", "chini", "बासमती चावल", "बासमती चावल"]);
+    expect(JSON.stringify(row)).not.toContain("9123456789");
+  });
+
+  it("a fallback number has no sequence; it matches only as the whole number", () => {
+    const n = "KB-6f1c2a9e-3b4d-4e5f-8a7b-0c1d2e3f4a5b-3";
+    const row = toBillSearchRow({ ...bill({ receiptNumber: n }), localId: "L", shopId: "S" });
+    expect(row.sequence).toBeNull();
+    expect(compileQuery(n.toLowerCase())(row)).toBe(true);
+    expect(compileQuery("3")(row)).toBe(false);
   });
 });

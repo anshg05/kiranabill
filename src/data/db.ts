@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { StoredReviewFlag } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
+import { toBillSearchRow, type BillSearchRow } from "@/domain/billSearch";
 
 // KB-109: the local IndexedDB layer. Three genuinely different roles
 // hide under "mirror the server tables" (docs/03-DATA-MODEL.md section 6):
@@ -224,6 +225,8 @@ export class KiranaBillDB extends Dexie {
   shops!: EntityTable<LocalShop, "id">;
   syncState!: EntityTable<LocalSyncState, "tableName">;
   meta!: EntityTable<LocalMeta, "key">;
+  /** D61: device-only search rows - never synced. */
+  billSearch!: EntityTable<BillSearchRow, "localId">;
 
   constructor(name: string) {
     super(name);
@@ -279,7 +282,39 @@ export class KiranaBillDB extends Dexie {
 
     // KB-315: per-user key/value meta (activeShopId). Additive - no upgrade needed.
     this.version(3).stores({ meta: "&key" });
+
+    // D61 (KB-310): each final bill's search row, device-only (never synced),
+    // written in finaliseBill's transaction. The upgrade backfills every
+    // existing final bill: one scan of the items, grouped by bill.
+    this.version(4)
+      .stores({ billSearch: "&localId, [shopId+finalizedAt]" })
+      .upgrade(async (tx) => {
+        const finals = (await tx.table("bills").toArray()) as LocalBill[];
+        const wanted = new Map(finals.filter((b) => b.status === "final").map((b) => [b.localId, b]));
+        if (wanted.size === 0) return;
+        const byBill = new Map<string, LocalBillItem[]>();
+        await tx.table("billItems").each((i: LocalBillItem) => {
+          if (!wanted.has(i.billLocalId)) return;
+          const list = byBill.get(i.billLocalId) ?? [];
+          list.push(i);
+          byBill.set(i.billLocalId, list);
+        });
+        await tx.table("billSearch").bulkPut([...wanted.values()].map((b) => billSearchRowOf(b, byBill.get(b.localId) ?? [])));
+      });
   }
+}
+
+/** D61: the search row of a final bill and its items (finalise and the v4 backfill). */
+export function billSearchRowOf(bill: LocalBill, items: readonly LocalBillItem[]): BillSearchRow {
+  return toBillSearchRow({
+    localId: bill.localId,
+    shopId: bill.shopId,
+    receiptNumber: bill.receiptNumber,
+    customerName: bill.customerName,
+    totalPaise: bill.totalPaise,
+    at: bill.finalizedAt ?? bill.createdAt,
+    items: [...items].sort((a, b) => a.lineNo - b.lineNo).map((i) => ({ displayName: i.displayName, spokenName: i.spokenName })),
+  });
 }
 
 const FALLBACK_RECEIPT_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;

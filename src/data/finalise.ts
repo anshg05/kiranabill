@@ -1,7 +1,7 @@
 import Dexie from "dexie";
 import { buildFinalBill, type FinalFlag, type FinalLine } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
-import type { KiranaBillDB, LocalBill, LocalBillItem } from "./db";
+import { billSearchRowOf, type KiranaBillDB, type LocalBill, type LocalBillItem } from "./db";
 import { takeNextNumber } from "./receiptNumbers";
 
 // KB-307 commit 2 (owner, 3 Oct 2026; 16-APP-FLOW.md §4): Bill Banao is ONE
@@ -53,7 +53,7 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
   const finalizedAt = (input.now ?? new Date()).toISOString();
 
   const run = () =>
-    localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.receiptNumberBlocks, localDb.syncState, localDb.shops], async () => {
+    localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.billSearch, localDb.receiptNumberBlocks, localDb.syncState, localDb.shops], async () => {
       const existing = await localDb.bills.get(input.localId);
       if (existing) return { receiptNumber: existing.receiptNumber, source: existing.receiptNumberSource, alreadySaved: true };
 
@@ -77,8 +77,7 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
         discardedLines: [...(input.discarded ?? [])],
       };
       await localDb.bills.add(bill);
-      await localDb.billItems.bulkAdd(
-        built.items.map((item): LocalBillItem => ({
+      const items = built.items.map((item): LocalBillItem => ({
           billLocalId: input.localId,
           shopId: input.shopId,
           lineNo: item.lineNo,
@@ -94,8 +93,11 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
           source: item.source,
           reviewFlags: [...item.reviewFlags],
           wasEdited: item.wasEdited,
-        })),
-      );
+        }));
+      await localDb.billItems.bulkAdd(items);
+      // D61: the bill's device-only search row, in the same transaction - a
+      // final bill always has one; if it can't be written, nothing is.
+      await localDb.billSearch.add(billSearchRowOf(bill, items));
       return { receiptNumber: receipt.receiptNumber, source: receipt.source, alreadySaved: false };
     });
 

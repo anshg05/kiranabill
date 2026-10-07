@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { KiranaBillDB } from "@/data/db";
 import { loadRecentRows, loadSearchIndex, type HistoryRow } from "@/data/history";
+import type { SyncStatus } from "@/data/db";
 import { loadReceipt } from "@/data/receipt";
-import { billDateKey, compileQuery, toSearchEntry, type SearchEntry } from "@/domain/billSearch";
+import { billDateKey, compileQuery, type BillSearchRow } from "@/domain/billSearch";
 import { formatRupees } from "@/domain/money";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { Receipt, ReceiptNumberText } from "./Receipt";
@@ -11,12 +12,13 @@ import { ShareBar } from "./ShareBar";
 import { useBackEntry } from "./useBackEntry";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
-// KB-310 (owner's load design, 7 Oct 2026): S5 History and S6 bill detail,
-// this phone's bills only (KB-324 pulls from the server later).
-// - Opens on the newest 200 rows (the date index, no items).
-// - The last 90 days load in the background; search covers them and says so.
-// - "Search older bills" loads every bill on demand - offered under any
-//   recent search, so an older date never ends at "no bills".
+// KB-310 (D60, D61): S5 History and S6 bill detail, this phone's bills only
+// (KB-324 pulls from the server later).
+// - The list: the newest 200 bills from the date index; "Show more" reads the
+//   next 200 from the same index.
+// - Search: the last 90 days' billSearch rows (one range query, D61); "Search
+//   older bills" loads all of them, offered under any recent search so an older
+//   date never ends at "no bills". Items are read only when a bill opens.
 // - 200 results, then "Show more". Never the customer's mobile.
 
 const PAGE = 200;
@@ -45,23 +47,32 @@ interface HistoryScreenProps {
 export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScreenProps) {
   useBackEntry("kbHistory", onClose);
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
-  const [recent, setRecent] = useState<SearchEntry<HistoryRow>[] | null>(null);
-  const [all, setAll] = useState<SearchEntry<HistoryRow>[] | null>(null);
+  const [recent, setRecent] = useState<BillSearchRow[] | null>(null);
+  const [all, setAll] = useState<BillSearchRow[] | null>(null);
   const [loadingAll, setLoadingAll] = useState(false);
   const [query, setQuery] = useState("");
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [syncOf, setSyncOf] = useState<ReadonlyMap<string, SyncStatus>>(new Map());
 
+  // The list: the newest `shown` bills from the createdAt index (no items).
   useEffect(() => {
     let live = true;
-    void (async () => {
-      const first = await loadRecentRows(localDb, shopId, PAGE);
-      if (!live) return;
-      setRows(first);
-      const since = new Date(Date.now() - RECENT_DAYS * DAY_MS).toISOString();
-      const window = await loadSearchIndex(localDb, shopId, since);
-      if (live) setRecent(window);
-    })().catch((err: unknown) => console.warn("[history] load failed:", err instanceof Error ? err.message : err));
+    loadRecentRows(localDb, shopId, shown)
+      .then((r) => live && setRows(r))
+      .catch((err: unknown) => console.warn("[history] load failed:", err instanceof Error ? err.message : err));
+    return () => {
+      live = false;
+    };
+  }, [localDb, shopId, shown]);
+
+  // Search: the last 90 days' billSearch rows (D61 - one range query), in the background.
+  useEffect(() => {
+    let live = true;
+    const since = new Date(Date.now() - RECENT_DAYS * DAY_MS).toISOString();
+    loadSearchIndex(localDb, shopId, since)
+      .then((r) => live && setRecent(r))
+      .catch((err: unknown) => console.warn("[history] search load failed:", err instanceof Error ? err.message : err));
     return () => {
       live = false;
     };
@@ -75,18 +86,28 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
       .finally(() => setLoadingAll(false));
   };
 
-  // No query: the newest rows, or every bill once loaded - the 90-day window is
-  // for SEARCH only (a shop whose bills are all older must still see them).
-  // A query: everything if loaded, else the 90 days, else the newest rows (no items yet).
   const typed = query.trim();
-  const rowEntries = useMemo(() => (rows ?? []).map(toSearchEntry), [rows]);
-  const results = useMemo(
-    () => (typed ? (all ?? recent ?? rowEntries).filter(compileQuery(typed)) : (all ?? rowEntries)),
-    [all, recent, rowEntries, typed],
-  );
-  // The newest rows stop at PAGE: there may be more bills, only loading everything shows them.
-  const mayHaveMore = !typed && !all && rows !== null && rows.length >= PAGE;
-  const visible = results.slice(0, shown).map((e) => e.bill);
+  const matches = useMemo(() => (typed ? (all ?? recent ?? []).filter(compileQuery(typed)) : null), [all, recent, typed]);
+  const shownMatches = useMemo(() => matches?.slice(0, shown) ?? null, [matches, shown]);
+
+  // Search results come from billSearch rows: their sync state from the bills, the visible ones only.
+  useEffect(() => {
+    if (!shownMatches) return;
+    let live = true;
+    localDb.bills
+      .bulkGet(shownMatches.map((r) => r.localId))
+      .then((bills) => live && setSyncOf(new Map(bills.flatMap((b) => (b ? [[b.localId, b.syncStatus] as const] : [])))))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [localDb, shownMatches]);
+
+  const visible: HistoryRow[] = shownMatches
+    ? shownMatches.map((r) => ({ localId: r.localId, receiptNumber: r.receiptNumber, customerName: r.customerName, totalPaise: r.totalPaise, at: r.finalizedAt, syncStatus: syncOf.get(r.localId) ?? "synced" }))
+    : (rows ?? []);
+  // More to show: more matches, or - with no search - the newest `shown` rows came back full.
+  const more = matches ? matches.length > shown : rows !== null && rows.length >= shown;
   const now = Date.now();
   const groups: { label: string; bills: HistoryRow[] }[] = [];
   for (const b of visible) {
@@ -129,7 +150,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
               <p className="mt-1 text-[13px] text-ink-soft">History shows the bills saved on this phone.</p>
             </div>
           )}
-          {rows !== null && rows.length > 0 && visible.length === 0 && <p className="px-4 py-6 text-center">No bills found.</p>}
+          {matches !== null && (recent !== null || all !== null) && matches.length === 0 && <p className="px-4 py-6 text-center">No bills found.</p>}
           {visible.length > 0 && (
             <ul aria-label="Bills">
               {groups.map((g) => (
@@ -159,17 +180,8 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
             </ul>
           )}
           <div className="flex flex-col items-center gap-2 px-4 py-4">
-            {(results.length > shown || mayHaveMore) && (
-              <button
-                type="button"
-                aria-disabled={loadingAll}
-                onClick={() => {
-                  if (loadingAll) return;
-                  if (mayHaveMore) searchOlder();
-                  setShown((n) => n + PAGE);
-                }}
-                className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
-              >
+            {more && (
+              <button type="button" onClick={() => setShown((n) => n + PAGE)} className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium">
                 Show more
               </button>
             )}

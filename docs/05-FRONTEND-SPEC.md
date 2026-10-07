@@ -211,10 +211,11 @@ Each row shows a sync chip when not yet synced. Never alarming; just information
   S5, back to billing (`ui/useBackEntry.ts`, shared with the Add item panel).
 - **This phone's bills only** — bills are pushed, never pulled (`KB-324`). Empty: "No bills on this phone yet." /
   "History shows the bills saved on this phone."
-- **Load (D60):** opens on the newest 200 rows from the date index (no items); the last 90 days load in the background
-  for search ("Searching the last 90 days"); **Search older bills** (under any search until everything is loaded, so
-  an older `dd-mm` never ends at "No bills found.") loads every bill — "Loading older bills…". With no search, the list
-  is the newest rows; **Show more** adds 200 (and loads everything past the newest 200).
+- **Load (D60, D61):** opens on the newest 200 rows from the bills' date index (no items); **Show more** reads the
+  next 200 from the same index. Search reads the device-only **`billSearch`** rows (D61 — written with each bill): the
+  last 90 days by one range query, in the background ("Searching the last 90 days"); **Search older bills** (under any
+  search until everything is loaded, so an older `dd-mm` never ends at "No bills found.") loads all of the shop's rows —
+  "Loading older bills…". Items are read only when a bill's detail opens.
 - **Search** (`domain/billSearch.ts`): every word must match the customer name, the receipt's sequence number ("142" →
   `KB-000142`, "14" doesn't), the exact total in paise ("112.50", "112.5"), a date `dd-mm` / `dd-mm-yyyy` with `-` `/`
   or `.` and single digits ("4/10"), or an item name; Devanagari digits read as 0–9. **Never the customer's mobile.**

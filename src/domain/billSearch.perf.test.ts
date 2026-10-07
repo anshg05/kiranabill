@@ -5,7 +5,7 @@
 //   npx vitest run --project perf src/domain/billSearch.perf.test.ts
 
 import { describe, expect, it } from "vitest";
-import { compileQuery, toSearchEntry, type SearchableBill } from "./billSearch";
+import { compileQuery, toBillSearchRow, type SearchableBill } from "./billSearch";
 
 const NAMES = ["Chini", "Besan", "Toor Daal", "Parle-G", "Basmati Chawal Premium", "Namak", "Ajwain", "Atta", "Sarson Tel", "Maggi"];
 const QUERIES = ["r", "ra", "ram", "ramesh", "ramesh 4/10", "chini", "112.50", "4/10", "142", "basmati chawal", "xyzq"];
@@ -23,7 +23,7 @@ function bills(n: number): SearchableBill[] {
 
 function measure(n: number) {
   const b0 = performance.now();
-  const entries = bills(n).map(toSearchEntry);
+  const entries = bills(n).map((b, i) => toBillSearchRow({ ...b, localId: String(i), shopId: "s" }));
   const buildMs = performance.now() - b0;
   for (const q of QUERIES) entries.filter(compileQuery(q)); // warm-up (D35: steady state)
   const perQuery: Record<string, { medianMs: number; hits: number }> = {};
