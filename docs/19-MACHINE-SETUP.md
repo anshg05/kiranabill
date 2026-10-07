@@ -236,6 +236,14 @@ This emulates the real Netlify Functions runtime locally — no production Netli
 
 **One real gotcha already found:** Netlify's function bundler scans every file directly inside `netlify/functions/` as a candidate function. Test files must live in `netlify/functions/_shared/`, not the top-level `netlify/functions/` directory, or the dev server crashes trying to treat a test file as an endpoint. This is already correctly structured in the repo — just don't add a new top-level test file there without checking this first.
 
+### Keep ≥ 20 GB free on C: (owner, 7 Oct 2026)
+
+Chrome keeps every site's IndexedDB in its profile on C:. With C: almost full (4.1 GB free of ~209 GB on 7 Oct 2026),
+`localhost:8888`'s storage was cleared from outside the app (KI-68 — Chrome's eviction under disk pressure or a cleanup):
+the device id and the local bills were gone. Keep at least 20 GB free on C:. Likely related but **unconfirmed**: the
+`npm test` out-of-memory runs (4 Oct — "JavaScript heap out of memory" with ~1 GB free commit) — the Windows page file
+can't grow on a full disk.
+
 ### Never `netlify link` this folder (owner, 7 Oct 2026)
 
 A **linked** folder changes local dev: `netlify dev` then injects the Netlify project's variables. Proven 7 Oct 2026: while
