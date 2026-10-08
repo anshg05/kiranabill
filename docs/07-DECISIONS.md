@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 7 Oct 2026 (rev 37) · Supersedes rev 36
+**Last updated:** 8 Oct 2026 (rev 38) · Supersedes rev 37
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1578,6 +1578,22 @@ in-memory IndexedDB could not show it.
    3,825 ms); **keystroke ≤ 50 ms** (D51) — over 9,000 median 4.8 · p95 6.9 · max 14.7 ms, over 40,000 median 14.1 ·
    p95 16.4 · max 17.3 ms. Laptop over the LAN: 35 / 11 / 10 · 278 / 230 / 229 · 1,072 / 1,031 ms · 0.8 / 1.3 / 2.8 ·
    5.0 / 6.2 / 7.0 ms. All within budget; 05 §10.
+
+### D62 — `shop_products.updated_at` is set by the server; the pull re-reads the last minute 🟢
+
+**Owner decision, 8 Oct 2026, `KB-311` (plan Q2).** Migration `20261008090000_shop_products_updated_at`.
+1. **A trigger sets `updated_at = now()`** on every insert and update of `shop_products`; whatever a client sends is
+   ignored. Before it, `updated_at` was client-set (catalog migration) — a write that left it alone (a Catalog price
+   edit, a Studio or SQL edit) was never pulled, not even by the writer's own re-pull (`KB-311` e2e test 4 failed
+   exactly so). Additive (D55 §5): the deployed app only pulls `shop_products`.
+2. **The pull overlaps its cursor by 60 s** (`SHOP_PRODUCTS_PULL_OVERLAP_MS`, `sync.ts`): `updated_at > cursor − 60 s`.
+   `now()` is when the writing transaction STARTED; a slower transaction from another device can commit after this
+   device's cursor passed that time, and `> cursor` alone skipped it forever (reproduced in `catalogEdit.e2e.test.ts`
+   test 7 with two real transactions). Re-read rows are harmless (`bulkPut` by id); the cursor never moves back.
+   Ceiling: a transaction open longer than 60 s can still be missed — none exists today.
+3. **Catalog writes are online only** (`data/catalogEdit.ts`): Postgres first, then the re-pull; never Dexie first.
+   Zero rows updated (RLS) is a failure, `23505` is "already in your catalog".
+4. `shops` has the same client-set `updated_at` (KI-65) and could take the same trigger later.
 
 ---
 

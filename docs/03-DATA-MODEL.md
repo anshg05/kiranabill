@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 4 Oct 2026 (rev 8) · **Status:** Final for MVP
+**Last updated:** 8 Oct 2026 (rev 9) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -166,7 +166,7 @@ writable by none.
 | `use_count` | `int` | Drives match boost and STT vocabulary rank |
 | `sku` / `barcode` | `text` NULL | Reserved. Not used in MVP — see `12-PARKED.md` NI-11. |
 | `is_active` | `boolean` | Soft delete — never hard-delete a product referenced by a bill |
-| `local_id`, `device_id`, `updated_at` | | Sync fields |
+| `local_id`, `device_id`, `updated_at` | | Sync fields. **`updated_at` is set by the server** (trigger, D62, migration `20261008090000`) on every insert and update — the catalog migration's "client-set, no server trigger" comment is superseded |
 
 **Unique:** `(shop_id, lower(display_name))`
 
@@ -293,7 +293,7 @@ different roles hiding under "mirror the server tables":
 `kiranabill-<userId>` (all the tables above, plus a `meta` key/value table holding `activeShopId`), and one
 per-installation database, `kiranabill-device`, holding the persistent `deviceId` and the last signed-in
 `activeUserId` (offline sessions). Sign-out deletes neither. The `shop_products` pull cursor is kept per shop
-(`sync_state` key `shopProducts:<shopId>`). Receipt blocks are pulled and consumed only by the device that
+(`sync_state` key `shopProducts:<shopId>`) and each pull re-reads the 60 s before it (D62). Receipt blocks are pulled and consumed only by the device that
 reserved them. The old shared `kiranabill` database is abandoned (never held bills).
 
 **A local cache of `shops` is also required, even though no earlier section of this document said so

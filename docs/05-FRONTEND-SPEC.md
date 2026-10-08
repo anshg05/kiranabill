@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 7 Oct 2026 (rev 11) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 8 Oct 2026 (rev 12) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -195,6 +195,27 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 - **"Add from ready catalog"** — browse and import base products at any time
 - **Learning suggestions panel** — price drift, unit drift, provisional products awaiting promotion.
   Suggestions appear **only here**, never during billing.
+
+### Implementation notes — Catalog (`KB-311`, 8 Oct 2026; D62)
+
+- **Opens from the ≡ menu**, over the bill in progress; Back / Android back closes "Ready catalog", then Catalog.
+- **Rows:** this shop's active products — name, "Used N times" / "Not used yet", price per unit. Most used first,
+  then by name. **Search** is the Add item index (aliases, fuzzy); filters All · Custom · Learned · From base
+  catalog. A filter with nothing in it says "No products of this kind."
+- **Edits are online only** (owner, Q1): offline the screen says **"Needs internet to change the catalog"**, prices
+  are plain text and "Add from ready catalog" is disabled. Search and billing are unaffected.
+- **Price edit:** tap the price, type rupees (`parseMoneyInput`, up to ₹1,00,000, two decimals). A refused value
+  keeps the input open with the reason. A save goes to Postgres, then the re-pull (D62); a failed save says
+  "Couldn't save — check the internet and try again" and the price stays as it was.
+- **The bill in progress:** after a save, NEW lines use the new price. **A line already on the bill never changes
+  its price** — at most a check (e.g. "unusual rate") may appear on it, against the new catalog price.
+- **Add from ready catalog:** the base products not yet in the shop (by base id or name), alphabetical, 100 shown,
+  search for more; Add copies one in at its suggested price ("Chini added — ₹45 / kg"). A name already in the shop
+  says "<name> is already in your catalog".
+- **Suggestions:** a price paid on 3 bills in 30 days (`listPendingPriceSuggestions`) — "Toor Daal: ₹95 / kg on 3
+  bills (now ₹90)" and **Use ₹95**, applied only by that tap, through the same save. Provisional products are shown
+  read-only ("“kurkure” — said 2 times, not in the catalog"; `KB-320` saves them). No unit drift (nothing records
+  it yet).
 
 ---
 

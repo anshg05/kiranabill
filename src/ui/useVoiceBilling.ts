@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeAudio, VoiceApiError } from "@/data/voiceApi";
 import { useVoiceCapture } from "./useVoiceCapture";
+import { useBrowserOnline } from "./useBrowserOnline";
 
 // KB-302: the voice states of 05-FRONTEND-SPEC.md section 2, driven by
 // capture (useVoiceCapture) and POST /voice (data/voiceApi.ts). Step 2 of
@@ -92,21 +93,6 @@ export function messageFor(err: unknown): string {
     if (err.kind === "timeout") return "Took too long — try again";
   }
   return "Couldn't hear that — try again";
-}
-
-function useBrowserOnline(): boolean {
-  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
-  useEffect(() => {
-    const on = () => setOnline(true);
-    const off = () => setOnline(false);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
-  return online;
 }
 
 export interface UseVoiceBillingOptions {

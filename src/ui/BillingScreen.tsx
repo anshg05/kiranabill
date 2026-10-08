@@ -17,6 +17,8 @@ import { Receipt, ReceiptNumberText } from "./Receipt";
 import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
 import { ShareBar } from "./ShareBar";
 import { HistoryScreen } from "./HistoryScreen";
+import { CatalogScreen } from "./CatalogScreen";
+import { addFromReadyCatalog, saveProductPrice } from "@/data/catalogEdit";
 import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
@@ -28,6 +30,7 @@ import { topUpReceiptBlock } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
 import { learnPendingBills } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
+import { EditableValue } from "./EditableValue";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import type { Customer } from "./useBillLines";
 import { CASH, formatMobile } from "@/domain/customer";
@@ -85,6 +88,9 @@ export function BillingScreen() {
   // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
   // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
   const [shopCatalog, setShopCatalog] = useState<ShopCatalog | null>(null);
+  // KB-311: bumped after a Catalog save - new lines use the new price; lines
+  // already on the bill keep their own.
+  const [catalogVersion, setCatalogVersion] = useState(0);
   useEffect(() => {
     if (!localDb || !shop) return;
     let active = true;
@@ -94,7 +100,7 @@ export function BillingScreen() {
     return () => {
       active = false;
     };
-  }, [localDb, shop]);
+  }, [localDb, shop, catalogVersion]);
   const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog]);
   const vocabulary = useMemo(
     () => (shopCatalog ? buildVocabularyPrompt(shopCatalog.entries, shopCatalog.usageById).names : []),
@@ -172,6 +178,7 @@ export function BillingScreen() {
   };
   // KB-310: History opens over the bill - the bill in progress stays as it is.
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   return (
     <>
     <BillView
@@ -204,9 +211,20 @@ export function BillingScreen() {
       onNewBill={onNewBill}
       share={share}
       onOpenHistory={localDb && shop ? () => setHistoryOpen(true) : undefined}
+      onOpenCatalog={localDb && shop && deviceId ? () => setCatalogOpen(true) : undefined}
     />
     {historyOpen && localDb && shop && (
       <HistoryScreen localDb={localDb} shopId={shop.id} render={renderReceiptFiles} onClose={() => setHistoryOpen(false)} />
+    )}
+    {catalogOpen && localDb && shop && deviceId && (
+      <CatalogScreen
+        localDb={localDb}
+        shopId={shop.id}
+        save={(id, pricePaise) => saveProductPrice(supabase, localDb, shop.id, id, pricePaise)}
+        add={(base) => addFromReadyCatalog(supabase, localDb, shop.id, deviceId, base)}
+        onChanged={() => setCatalogVersion((v) => v + 1)}
+        onClose={() => setCatalogOpen(false)}
+      />
     )}
     </>
   );
@@ -255,6 +273,8 @@ interface BillViewProps {
   share?: ReceiptShare | null;
   /** KB-310: the ≡ menu's History. */
   onOpenHistory?: () => void;
+  /** KB-311: the ≡ menu's Catalog. */
+  onOpenCatalog?: () => void;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -420,103 +440,6 @@ function FlagList({ flags, name, onAcknowledge }: { flags: readonly ShownFlag[];
   );
 }
 
-/**
- * KB-303: a tappable value (44px) that becomes an inline number input - the
- * numeric keyboard (inputmode=decimal), Enter / blur commits, Escape cancels.
- * A rejected value keeps the input open with the reason under it; nothing
- * changes until a value is accepted.
- */
-function EditableValue({
-  label,
-  fieldId,
-  text,
-  initial,
-  onCommit,
-  startOpen = false,
-  kind = "number",
-  pendingTarget = false,
-}: {
-  label: string;
-  fieldId: string;
-  text: string;
-  initial: string;
-  onCommit: (value: string) => string | null;
-  /** KB-305: open (focused, value selected) when the line arrives. */
-  startOpen?: boolean;
-  /** KB-306: the keyboard - numbers (default), text (a name) or a phone number. */
-  kind?: "number" | "text" | "tel";
-  /** KB-307: where a Bill Banao tap sends focus when this value is what's missing. */
-  pendingTarget?: boolean;
-}) {
-  const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
-  const [error, setError] = useState<string | null>(null);
-  if (draft === null) {
-    return (
-      <button
-        type="button"
-        aria-label={label}
-        data-pending-target={pendingTarget || undefined}
-        onClick={() => {
-          setDraft(initial);
-          setError(null);
-        }}
-        className="min-h-11 min-w-11 rounded-[6px] border border-line bg-paper px-2 tabular-nums text-ink"
-      >
-        {text}
-      </button>
-    );
-  }
-  const commit = () => {
-    const message = onCommit(draft);
-    if (message) setError(message);
-    else {
-      setDraft(null);
-      setError(null);
-    }
-  };
-  return (
-    <span className="inline-flex flex-col items-end">
-      <input
-        id={fieldId}
-        name={fieldId}
-        aria-label={label}
-        type={kind === "tel" ? "tel" : "text"}
-        inputMode={kind === "number" ? "decimal" : kind}
-        autoCapitalize={kind === "text" ? "words" : undefined}
-        // Never the browser's saved values - for a phone field that would be the shopkeeper's own number.
-        autoComplete="off"
-        enterKeyHint="done"
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          else if (e.key === "Escape") {
-            setDraft(null);
-            setError(null);
-          }
-        }}
-        // Owner: typing replaces the value; a small correction is one keystroke.
-        onFocus={(e) => e.currentTarget.select()}
-        // Leaving an untouched editor (e.g. for the unit picker beside it) just
-        // closes it - only a changed value, or an explicit Enter, commits (KB-305).
-        onBlur={() => {
-          if (draft === initial) {
-            setDraft(null);
-            setError(null);
-          } else commit();
-        }}
-        className={`h-11 rounded-[6px] border border-line bg-surface px-2 tabular-nums ${kind === "number" ? "w-24 text-right" : "w-44"}`}
-      />
-      {error && (
-        <span role="alert" className="text-[13px] text-danger">
-          {error}
-        </span>
-      )}
-    </span>
-  );
-}
-
 /** KB-303 (owner, decision 3): only compatible units are offered. */
 function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: string; line: BillLine["item"]; onPick: (unit: string) => void }) {
   return (
@@ -659,6 +582,7 @@ export function BillView({
   onNewBill,
   share = null,
   onOpenHistory,
+  onOpenCatalog,
 }: BillViewProps) {
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
   const readOnly = saved !== null;
@@ -837,6 +761,18 @@ export function BillView({
                   className="block min-h-11 w-full px-4 text-left"
                 >
                   History
+                </button>
+              )}
+              {onOpenCatalog && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.closest("details")?.removeAttribute("open");
+                    onOpenCatalog();
+                  }}
+                  className="block min-h-11 w-full px-4 text-left"
+                >
+                  Catalog
                 </button>
               )}
               <button type="button" onClick={onSignOut} className="block min-h-11 w-full px-4 text-left">

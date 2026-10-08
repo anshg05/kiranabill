@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 7 Oct 2026 (rev 89) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 8 Oct 2026 (rev 90) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** next ticket — plan. `KB-310` done 7 Oct 2026.
+**Working on:** `KB-311` (Catalog, S4) — two local commits (D62); awaiting the owner's check. Then `KB-324`.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -315,6 +315,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 8 Oct 2026 | **`KB-311` built — two local commits, not pushed.** (1) D62: `shop_products.updated_at` set by a trigger (a price edit was never pulled before — e2e test 4 red without it); the pull re-reads 60 s before its cursor (a late-committing transaction was skipped — e2e test 7 red without it); `data/catalogEdit.ts` writes online, then re-pulls. Migration `20261008090000` pushed to the remote by the owner (dry run, then push). (2) S4 Catalog screen. Plants caught: price saved locally first (data + UI), edits offline, a suggestion applied without a tap, the overlap removed. Browser (local, DOM checks — screenshots timed out with the window hidden): 320 / 375 / 1280 px no overflow; add from ready, duplicate message, valid/invalid price, open bill keeps ₹45 while the new line is ₹52.50, offline disables edits, Use ₹95. Found and fixed: an empty filter showed a blank list. | Agent |
 | 7 Oct 2026 | **`KB-310` done** — owner check passed at `localhost:8888` (375 px + desktop): "1584", "Ansh" and "6/10" each found KB-000101; detail with receipt + four buttons; Image downloaded; back → History → billing. Phone check on the next draft. **KI-68 cause:** best-effort storage cleared from outside the app (Chrome eviction under disk pressure or a cleanup; `persisted()` false confirmed; quota 10.7 GB, usage 1.56 MB). Mitigations: `persist()` in `KB-401`; Before deployment: installed + persisted on every pilot phone; `KB-324` before the pilot. 19: keep ≥ 20 GB free on C:. | Owner + Agent |
 | 7 Oct 2026 | **History phone bench recorded (D61 §8, 05 §10) with the owner's budgets** — phone at 40,000 bills: open 234 / 72 / 62 ms (≤ 300), 90-day load 1.1–1.6 s (≤ 2 s), older load 3.8–4.5 s (≤ 6 s), keystroke median 4.8 / 14.1 ms (≤ 50). **New KI-68 (HIGH): device storage emptied at `localhost:8888`** in the owner's Chrome between 4 and 6 Oct (new device id, per-user DB down to 1 bill; all 25 bills on the server). Read-only investigation: no app path deletes a DB or the device id; no version-error handler; the agent never used the owner's Chrome — and its own browser pane lost `localhost:8888` data in the same window; `navigator.storage.persist()` is never called; drive C: 4.1 GB free (~2%). Leading hypothesis: Chrome storage-pressure eviction of a best-effort origin (all of an origin's data at once). Not fixed. | Agent |
 | 7 Oct 2026 | **`KB-310` commit 3, not pushed — D61: device-only `billSearch` rows.** Dexie v4 table, written in `finaliseBill`'s transaction (atomic — tested), backfilled by the upgrade (tested from a real old-version DB), never synced (DBCore recorder: a push reads `bills`, never `billSearch`). Search loads: one range query on `[shopId+finalizedAt]`; the `anyOf` path removed; a guard test fails on any `billItems` / `bills` / `get` / cursor access during a load. List "Show more" reads the next page from the bills' index. Plants: a final bill saved without its row (7 tests fail), the 90-day load via `anyOf` (guard fails — also with `anyOf` purely inside `billSearch`). Bench at the LAN address: open 25–30 ms, 90-day load ~245 ms, keystroke over 9,000 median 2.4 ms, all 40,000 ~1.1–1.2 s, keystroke over 40,000 median 11.4 ms. "Show more" UI tests rewritten per owner option A (KI-67: fake-indexeddb + jsdom hang); real browser 200 → 250. KB-324 corrected: sign-out deletes nothing (D38). | Agent |
