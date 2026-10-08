@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 8 Oct 2026 (rev 40) · Supersedes rev 39
+**Last updated:** 8 Oct 2026 (rev 41) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1636,9 +1636,14 @@ lose an edit, and an edit made in Studio / SQL that left `updated_at` alone neve
 alone would not have fixed it — `pullShop` compared the device's own `updatedAt` with the server's — so the rule changes
 with it. This supersedes 02 §2's "last-write-wins on `updated_at`" **for shops**.
 1. **A trigger sets `updated_at = now()`** on every insert and update of `shops` (a client value is ignored). Additive
-   (D55 §5): the deployed app still sends its own value (ignored) and compares on a pull; the server's is later than the
-   one it sent, so at worst it takes an identical row back once per edit. Its clock-skew weakness stays until the next
-   release — no worse than today.
+   (D55 §5). **Why `20261010090000` is compatible with the deployed app (`6e29cf2`, still on the device-clock rule):**
+   that build has no Settings, so it can never create a *pending* shop edit — `pushShop` never has a row to push, and
+   the only thing that writes its local shop row is `pullShop`'s `put` of the server's own row. Its local `updatedAt`
+   is therefore always a server-issued value, and its comparison (`local.updatedAt >= server.updated_at`) is server
+   against server: with the trigger nothing changes while the row is untouched, and a Studio / SQL edit — which now
+   bumps `updated_at` — is newer, so it is taken (KI-65 is fixed for that build too, without a release). Nothing breaks.
+   (The migration file's own comment says the old build would "take an identical row back once per edit" — it would
+   not; this paragraph is the accurate statement.)
 2. **A push** (`pushShop`) sends the fields without `updated_at`, reads back the row's `updated_at` and stores it
    **verbatim** with `syncStatus: synced` — but only if the local row is **still the version it pushed** (its `updatedAt`
    is unchanged, still pending). An edit made while the request was out stays pending and goes up next cycle
