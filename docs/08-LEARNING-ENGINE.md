@@ -1,6 +1,6 @@
 # 08 — Learning Engine
 
-**Last updated:** 18 Aug 2026 (rev 2) · **Status:** Final for MVP
+**Last updated:** 9 Oct 2026 (rev 3) · **Status:** Final for MVP
 
 **Principle:** every bill makes the next bill better, for this shop specifically.
 
@@ -192,6 +192,8 @@ story.
 ---
 
 ## 8. When learning runs
+
+> **Sync (`KB-326`, D66):** learning rows are pushed by the phone that learned them and pulled by a wiped or new phone (per shop, server-stamped, 35 days of observations, honouring `learning_reset`). A phone learns nothing until its first learning pull has succeeded (the learning gate); pulled bills never teach.
 
 | Trigger | Runs |
 |---|---|

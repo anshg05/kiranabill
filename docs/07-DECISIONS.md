@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 9 Oct 2026 (rev 43) · Supersedes rev 40
+**Last updated:** 9 Oct 2026 (rev 44) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1700,6 +1700,44 @@ with it. This supersedes 02 §2's "last-write-wins on `updated_at`" **for shops*
    firing after the browser went offline neither sends nor reschedules; `online` runs a cycle and resumes one timer; repeated events don't stack;
    failures feed the chip; a no-session skip is not a failure; `syncNow` offline sends nothing. The test harness's mock handlers may now be
    async (an edit during a slow push — D64) — a harness change, not an assertion.
+
+### D66 — Learning state is pulled: server stamps as cursor and as the reset cutoff, a learning gate, and 35 days of observations 🟢
+
+**Owner decision, 9 Oct 2026, `KB-326`** (plan Q1–Q5). Migration `20261011090000_learning_updated_at_triggers`. Learned aliases, provisional
+products and price observations were pushed and never pulled, so a wiped or new phone lost its Catalog suggestions (and, once `KB-323` lets
+learned aliases feed the parser, its voice accuracy) even though `KB-324` brought its bills back.
+1. **Identity makes it an upsert.** Every learning row's `local_id` is deterministic (shop + alias, shop + spoken name, bill + line), so a
+   pulled row IS the row this phone would have made: no duplicates, no `lower(alias)` unique violations, no double count.
+2. **The stamp is the server's, on all four tables.** The cursor and the reset cutoff are `updated_at`. **Check (owner, Q5):** on
+   `price_observations` and `learning_events` it already defaulted to `now()` and no push ever sent it — the client-sent columns are
+   `occurred_at` and `created_at`, **which are not used** (an offline-made row pushed late has an old `occurred_at` but a new server stamp, so it
+   is never behind the cursor — tested). `learned_aliases` / `provisional_products` are pushed as upserts and nothing re-stamped an UPDATE (the
+   KI-65 class: a wiped phone would have pulled a stale hit count). So: `BEFORE INSERT OR UPDATE` triggers on those two, and an unconditional
+   `BEFORE INSERT` trigger on the insert-only two so a direct insert cannot back-date a stamp (tested on all four). Additive (D55 §5): the
+   deployed app never reads these stamps.
+3. **`pullLearningState`** (`pullLearning.ts`, in the sync cycle after the bills pull): per shop and per table, resumable keyset pages of 500
+   with D62's 60 s overlap, upsert by `local_id`, **a pending local row is never overwritten** (D64), observations append-only. `.eq("shop_id")`
+   on every query plus RLS (hard rule 12 — a test makes a user a member of two shops, so the filter is the only separation).
+4. **35 days of observations only** (owner, Q1): the suggestion rule reads 30 days. Revisit if a later feature reads further back. The
+   `learning_events` audit log is **not** pulled — only the latest `learning_reset` (owner, Q4); the server keeps the log.
+5. **`learning_reset` is honoured with a server-time cutoff.** The latest reset event's server stamp is the cutoff (it only moves forward); a
+   row stamped at or before it is never pulled — a resetting phone whose clock is 5 minutes ahead or behind changes nothing (tested both ways).
+   The server's rows stay (NI-27). **Rule A:** while a reset of this phone is not on the server (pending, or stuck in conflict) the learning pull
+   sends no request, or it would bring everything back. **Rule B:** while it is not on the server, no learning row is pushed (the event goes first
+   in a cycle; a failed push holds the rest back), so the server never holds a post-reset row stamped before its reset. A later reset by the same
+   phone (or another) simply moves the cutoff forward.
+6. **The learning gate** (owner, Q2): `learnPendingBills` learns nothing until this phone's first learning pull for the shop has succeeded — a
+   fresh local row (hit count 1) would be pushed over the server's (5). The bill waits unlearned (no marker); **when the gate opens, that cycle
+   learns the waiting bills once** (a steady-state cycle never rescans the bills). Pulled bills still never teach (`pulledAt`, D63): learning
+   state comes from the server rows, not from re-reading old bills. After a pull a new bill adds exactly 1 to the pulled count.
+7. **Limits (NI-41):** a phone that already holds learning does not clear it when another phone resets (a shop is one device in the MVP); and a
+   reset event stuck in permanent conflict blocks that phone's learning pull — it fails safe.
+8. **Changed assertions in existing tests, and why:** `learnBill.test.ts` (two tests) and `learnBill.e2e.test.ts` now open the learning gate
+   first (`markLearningPullDone` / a real `pullLearningState`) — the app's entry point waits for it; no expectation changed. `sync.e2e.test.ts`
+   test 7 asserted "every local event of the shop is synced": the first cycle now also opens the gate and learns the waiting bill, whose NEW events
+   go up next cycle, so it asserts the `bill_finalized` event the test made. New: 12 e2e, 3 gate tests, 3 rule A/B tests.
+9. **Today it restores** the Catalog suggestions and Developer mode. The parser does not use learned aliases until `KB-323`, so voice accuracy
+   returns when that lands — this is its groundwork.
 
 ---
 
