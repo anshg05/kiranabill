@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 8 Oct 2026 (rev 13) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 8 Oct 2026 (rev 14) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -233,8 +233,11 @@ Each row shows a sync chip when not yet synced. Never alarming; just information
 
 - **Opens from the ≡ menu**, over the bill in progress (which stays as it is); Back / Android back closes S6, then
   S5, back to billing (`ui/useBackEntry.ts`, shared with the Add item panel).
-- **This phone's bills only** — bills are pushed, never pulled (`KB-324`). Empty: "No bills on this phone yet." /
-  "History shows the bills saved on this phone."
+- **This phone's bills** — the bills saved here, plus the shop's bills pulled from the server (`KB-324`, D63): a cleared
+  phone, a new phone or a new draft address gets its History back, newest first. Until the first pull has finished
+  History says "Loading bills from the server…" (offline: "Connect to the internet to load your earlier bills.") and
+  re-reads as bills land (at most every 2 s) — never "No bills on this phone yet." before the pull has run. Empty after
+  it: "No bills on this phone yet." / "History shows the bills saved on this phone."
 - **Load (D60, D61):** opens on the newest 200 rows from the bills' date index (no items); **Show more** reads the
   next 200 from the same index. Search reads the device-only **`billSearch`** rows (D61 — written with each bill): the
   last 90 days by one range query, in the background ("Searching the last 90 days"); **Search older bills** (under any

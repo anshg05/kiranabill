@@ -7,9 +7,11 @@ import { loadReceipt } from "@/data/receipt";
 import { billDateKey, compileQuery, type BillSearchRow } from "@/domain/billSearch";
 import { formatRupees } from "@/domain/money";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
+import { subscribeBillsPull } from "@/data/billsPullStatus";
 import { Receipt, ReceiptNumberText } from "./Receipt";
 import { ShareBar } from "./ShareBar";
 import { useBackEntry } from "./useBackEntry";
+import { useBrowserOnline } from "./useBrowserOnline";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
 // KB-310 (D60, D61): S5 History and S6 bill detail, this phone's bills only
@@ -54,6 +56,23 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
   const [shown, setShown] = useState(PAGE);
   const [openId, setOpenId] = useState<string | null>(null);
   const [syncOf, setSyncOf] = useState<ReadonlyMap<string, SyncStatus>>(new Map());
+  // KB-324: bills pulled from the server land while this is open - re-read; and say so while the first pull runs.
+  const [pulled, setPulled] = useState(0);
+  const online = useBrowserOnline();
+  // null = not read yet; false = the first pull (this phone's bills from the server) hasn't finished.
+  const [pullDone, setPullDone] = useState<boolean | null>(null);
+  useEffect(() => subscribeBillsPull(localDb.name, () => setPulled((n) => n + 1)), [localDb]);
+  useEffect(() => {
+    let live = true;
+    localDb.syncState
+      .get(`bills:${shopId}`)
+      .then((s) => live && setPullDone((s?.cursor ?? "").includes('"done"')))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [localDb, shopId, pulled]);
+  const loadingFromServer = pullDone === false;
 
   // The list: the newest `shown` bills from the createdAt index (no items).
   useEffect(() => {
@@ -64,7 +83,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
     return () => {
       live = false;
     };
-  }, [localDb, shopId, shown]);
+  }, [localDb, shopId, shown, pulled]);
 
   // Search: the last 90 days' billSearch rows (D61 - one range query), in the background.
   useEffect(() => {
@@ -76,7 +95,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
     return () => {
       live = false;
     };
-  }, [localDb, shopId]);
+  }, [localDb, shopId, pulled]);
 
   const searchOlder = () => {
     setLoadingAll(true);
@@ -85,6 +104,12 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
       .catch((err: unknown) => console.warn("[history] older load failed:", err instanceof Error ? err.message : err))
       .finally(() => setLoadingAll(false));
   };
+
+  // Everything was loaded for an older search: pulled bills arrive in it too.
+  useEffect(() => {
+    if (pulled > 0 && all) searchOlder();
+    // only when a pull lands
+  }, [pulled]);
 
   const typed = query.trim();
   const matches = useMemo(() => (typed ? (all ?? recent ?? []).filter(compileQuery(typed)) : null), [all, recent, typed]);
@@ -144,7 +169,12 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {rows !== null && rows.length === 0 && (
+          {loadingFromServer && (
+            <p className="px-4 pt-3 text-[13px] text-ink-soft">
+              {online ? "Loading bills from the server…" : "Connect to the internet to load your earlier bills."}
+            </p>
+          )}
+          {rows !== null && rows.length === 0 && pullDone === true && (
             <div className="px-4 py-6 text-center">
               <p className="font-medium">No bills on this phone yet.</p>
               <p className="mt-1 text-[13px] text-ink-soft">History shows the bills saved on this phone.</p>

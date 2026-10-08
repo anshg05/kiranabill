@@ -10,6 +10,7 @@ import { finaliseBill } from "@/data/finalise";
 import { BillView } from "./BillingScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { loadRecentRows } from "@/data/history";
+import { emitBillsPull } from "@/data/billsPullStatus";
 
 // "Show more" (owner, option A): the next page is requested from the loader -
 // a spy around the REAL loadRecentRows. Waiting for the 201st row to render
@@ -37,7 +38,12 @@ beforeEach(async () => {
   db = new KiranaBillDB(`ui-history-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Sharma Kirana", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-07T00:00:00.000Z" });
   await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 1000, nextNumber: 1, allocatedAt: "2026-10-07T00:00:00.000Z", syncStatus: "synced" });
+  await setPull("done"); // a device whose first bills pull (KB-324) is finished
 });
+const setPull = (phase: "done" | "backfill" | null) =>
+  phase === null
+    ? db.syncState.delete(`bills:${shopId}`)
+    : db.syncState.put({ tableName: `bills:${shopId}`, lastSyncedAt: null, cursor: JSON.stringify({ phase, before: null }), pendingCount: 0 });
 afterEach(async () => {
   cleanup();
   vi.restoreAllMocks();
@@ -85,6 +91,40 @@ describe("KB-310 - S5 History", () => {
     await open();
     await screen.findByText("No bills on this phone yet.");
     expect(screen.getByText("History shows the bills saved on this phone.")).toBeTruthy();
+  });
+
+  it("KB-324: until the first pull has finished (not started, or running), it says so - never 'No bills on this phone yet.'; when it ends, the list is re-read", async () => {
+    await setPull(null); // not started yet
+    await open();
+    await screen.findByText("Loading bills from the server…");
+    expect(screen.queryByText("No bills on this phone yet.")).toBeNull();
+    await setPull("backfill"); // running
+    const calls = vi.mocked(loadRecentRows).mock.calls.length;
+    await save(0);
+    act(() => emitBillsPull(db.name));
+    await waitFor(() => expect(vi.mocked(loadRecentRows).mock.calls.length).toBeGreaterThan(calls));
+    expect(screen.getByText("Loading bills from the server…")).toBeTruthy();
+    await setPull("done");
+    act(() => emitBillsPull(db.name));
+    await waitFor(() => expect(screen.queryByText("Loading bills from the server…")).toBeNull());
+  });
+
+  it("KB-324: a new phone that is offline says what it needs - not 'No bills'", async () => {
+    await setPull(null);
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    await open();
+    await screen.findByText("Connect to the internet to load your earlier bills.");
+    expect(screen.queryByText("No bills on this phone yet.")).toBeNull();
+    expect(screen.queryByText("Loading bills from the server…")).toBeNull();
+  });
+
+  it("KB-324: pulled bills landing while History is open re-read the list (and the search rows), without reopening", async () => {
+    await open();
+    await screen.findByText("No bills on this phone yet.");
+    const calls = vi.mocked(loadRecentRows).mock.calls.length;
+    await save(0);
+    act(() => emitBillsPull(db.name));
+    await waitFor(() => expect(vi.mocked(loadRecentRows).mock.calls.length).toBeGreaterThan(calls));
   });
 
   it("newest first, grouped Today / Yesterday / dd-mm-yyyy; a row: number, total, the name unless Cash, 'Not synced' while pending", async () => {

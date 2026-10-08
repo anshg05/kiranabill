@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 8 Oct 2026 (rev 38) · Supersedes rev 37
+**Last updated:** 8 Oct 2026 (rev 39) · Supersedes rev 38
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1594,6 +1594,39 @@ in-memory IndexedDB could not show it.
 3. **Catalog writes are online only** (`data/catalogEdit.ts`): Postgres first, then the re-pull; never Dexie first.
    Zero rows updated (RLS) is a failure, `23505` is "already in your catalog".
 4. `shops` has the same client-set `updated_at` (KI-65) and could take the same trigger later.
+
+### D63 — Bills are pulled from the server: a server-set `synced_at`, a resumable backfill, then a 60 s-overlap incremental 🟢
+
+**Owner decision, 8 Oct 2026, `KB-324` (plan Q1, Q2).** Migration `20261009090000_bills_synced_at_trigger`.
+1. **`bills.synced_at` is set by the server** — a `BEFORE INSERT` trigger, `now()`; a client value is ignored. `created_at`
+   and `finalized_at` are the DEVICE's (push_bill passes them through), so a bill made offline yesterday and pushed
+   today looks old and cannot be a cursor. INSERT only: no update path is touched, so `bills_enforce_immutability`'s
+   whole-row comparison never sees it change. **No backfill** (it would need the immutability triggers bypassed —
+   never): bills from before the migration keep `synced_at` null and arrive through the backfill. Additive (D55 §5).
+2. **Backfill, then incremental** (`pullBills`, `sync.ts`; sync_state `bills:<shopId>`, both resumable):
+   - *Backfill:* every bill, newest first, 200 a page, keyset on `(created_at, id)`; the position is saved after each
+     page. Before it starts, the newest server `synced_at` is recorded as the incremental cursor. It runs detached from
+     the sync cycle, so pushes are never held up behind it.
+   - *Incremental:* `synced_at > cursor − 60 s` (the D62 overlap), ids first — the window is re-read every 15 s cycle, so
+     bills (and their items) are downloaded only when this phone lacks them (50 ids a request).
+3. **A pulled bill** — the bill, its items and its `billSearch` row (D61) — is written in one transaction (bulk writes
+   per page). Stored `syncStatus: synced` with its `serverId` (never re-pushed), and a local-only **`pulledAt`**:
+   `learnPendingBills` and `learnFromSavedBill` skip it. It was made, and learned from, on another device (or before this
+   phone was cleared); learning it again would double its counts (hard rules 8, 12). A bill already local (same
+   `local_id`) is never touched. A bill that arrives already cancelled (e.g. a Studio edit) is stored, not listed.
+4. **When:** only inside a sync cycle (a real session, D38) and only while the browser is online; offline it waits —
+   no polling of its own (NI-38). History says "Loading bills from the server…" until the first pull ends ("Connect to
+   the internet to load your earlier bills." offline), never "No bills on this phone yet." before that.
+5. **Not in this ticket:** cancellations reaching other devices — nothing cancels a bill today; `KB-325` designs its own
+   timestamp when it exists. Learning state (aliases, provisional products, price observations) is still not pulled:
+   `KB-326`.
+6. **Measured, 8 Oct 2026** (local stack, 5 items a bill): one 200-bill page = **531,904 B** JSON (2.7 KB a bill) —
+   gzip 55,601 B, brotli 41,242 B. **36,000 bills = 180 pages = 95.7 MB JSON; ≈ 10.0 MB gzip; ≈ 7.4 MB brotli.** Whether
+   the hosted API compresses is assumed, not verified (the remote is never touched from here). Transfer at 10 Mbps:
+   ~8 s compressed, ~77 s uncompressed, plus 180 round trips. Writing into IndexedDB (Chrome desktop, local server): 0.75–
+   0.87 s a page ≈ 230–270 bills/s → **36,000 bills ≈ 2.3–2.6 min on the laptop; on the phone, not measured — if it is
+   4–6× slower (the D61 reads were), 10–15 min in the background.** The newest 200 are on screen after the first page.
+   A shop with 3,000 bills: ~0.8 MB compressed, ~1 min on the phone. No window was added (owner's rule).
 
 ---
 

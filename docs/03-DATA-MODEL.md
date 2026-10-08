@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 8 Oct 2026 (rev 9) · **Status:** Final for MVP
+**Last updated:** 8 Oct 2026 (rev 10) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -282,6 +282,9 @@ different roles hiding under "mirror the server tables":
   no-op, a divergent one is `KB409`. **Only `final`/`cancelled` bills are pushed; drafts stay on the device.**
   `bill_items` rows reference their bill through a composite FK `(bill_id, shop_id) → bills (id, shop_id)`, so an
   item can only belong to a bill of its own shop.
+- **Pulled, then read-only**: `bills` and their items (`KB-324`, D63) — pushed from the device that made them, pulled by the others
+  (and by a cleared phone); `bills.synced_at` is set by the server (trigger), a pulled bill is stored synced with a local-only
+  `pulledAt` and never teaches. Sync state `bills:<shopId>`. Learning tables are still push-only (`KB-326`).
 - **Read-cache (pull-only)**: `shop_products`, `base_products`. Per §0's own rule — *"every write goes
   to Postgres... the cache is downstream of the database, never the other way round"* — these rows are
   never written locally first and carry no meaningful per-row `sync_status`. Freshness is tracked at

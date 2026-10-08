@@ -229,6 +229,48 @@ describe("KB-324 pull bills - real local stack", () => {
     expect(await dbF.billSearch.where("localId").equals(cancelled).count()).toBe(0);
   });
 
+  it("10. a steady-state pull (nothing new) never downloads bill items - only ids; a new bill downloads just itself", async () => {
+    const selects: string[] = [];
+    const spy = new Proxy(client, {
+      get(target, prop, receiver) {
+        if (prop !== "from") return Reflect.get(target, prop, receiver);
+        return (table: string) => {
+          const builder = target.from(table);
+          const select = builder.select.bind(builder);
+          builder.select = ((cols: string, ...rest: unknown[]) => {
+            selects.push(`${table}:${cols}`);
+            return (select as (c: string, ...r: unknown[]) => unknown)(cols, ...rest);
+          }) as typeof builder.select;
+          return builder;
+        };
+      },
+    });
+    const dbH = newDevice();
+    await pullBills(spy, dbH, shopId, { awaitBackfill: true });
+    selects.length = 0;
+    await pullBills(spy, dbH, shopId, { awaitBackfill: true });
+    expect(selects.filter((c) => c.startsWith("bills:")).every((c) => !c.includes("bill_items"))).toBe(true);
+    expect(selects.length).toBeGreaterThan(0);
+
+    const fresh = await makeBill({ customer: "Bilkul Naya" });
+    selects.length = 0;
+    await pullBills(spy, dbH, shopId, { awaitBackfill: true });
+    expect((await dbH.bills.get(fresh))?.customerName).toBe("Bilkul Naya");
+    expect(await dbH.billItems.where("billLocalId").equals(fresh).count()).toBe(3);
+  });
+
+  it("11. the device that made the bills pulls them back: its own bills are untouched (never marked pulled, never duplicated) and the rest still arrive", async () => {
+    const mine = await makeBill({ customer: "Meri Dukaan" });
+    const before = (await dbA.bills.get(mine))!;
+    const beforeItems = await dbA.billItems.where("billLocalId").equals(mine).count();
+    const localOnly = (await dbA.bills.count());
+    await pull(dbA);
+    expect(await dbA.bills.get(mine)).toEqual(before); // byte-for-byte: no pulledAt, same syncStatus/serverId
+    expect(await dbA.billItems.where("billLocalId").equals(mine).count()).toBe(beforeItems);
+    expect(await dbA.bills.count()).toBeGreaterThan(localOnly); // bills made elsewhere (the pre-migration one) arrived
+    expect((await dbA.bills.toArray()).filter((b) => b.pulledAt).every((b) => b.deviceId !== deviceA)).toBe(true);
+  });
+
   it("9. another shop's bills never arrive (RLS)", async () => {
     const other = createClient(url!, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data } = await other.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb324.local`, password: crypto.randomUUID() });

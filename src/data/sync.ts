@@ -2,6 +2,8 @@ import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
 import type { KiranaBillDB, LocalBill, LocalBillItem, SyncStatus } from "@/data/db";
 import { billSearchRowOf } from "@/data/db";
+import type { BillSearchRow } from "@/domain/billSearch";
+import { emitBillsPull, noteBillsWritten } from "@/data/billsPullStatus";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -559,6 +561,9 @@ async function writePulledBills(localDb: KiranaBillDB, shopId: string, rows: any
   const nowIso = new Date().toISOString();
   await localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.billSearch], async () => {
     const existing = await localDb.bills.bulkGet(rows.map((r) => r.local_id as string));
+    const newBills: LocalBill[] = [];
+    const newItems: LocalBillItem[] = [];
+    const newSearch: BillSearchRow[] = [];
     for (const [i, row] of rows.entries()) {
       if (existing[i]) continue; // already here: pushed from this device, or on an overlapping page
       const bill: LocalBill = {
@@ -599,12 +604,17 @@ async function writePulledBills(localDb: KiranaBillDB, shopId: string, rows: any
           reviewFlags: (it.review_flags as LocalBillItem["reviewFlags"]) ?? [],
           wasEdited: Boolean(it.was_edited),
         }));
-      await localDb.bills.add(bill);
-      await localDb.billItems.bulkAdd(items);
+      newBills.push(bill);
+      newItems.push(...items);
       // D61: one search row per FINAL bill - a bill that arrives already cancelled is stored, not listed.
-      if (bill.status === "final") await localDb.billSearch.add(billSearchRowOf(bill, items));
+      if (bill.status === "final") newSearch.push(billSearchRowOf(bill, items));
     }
+    // One bulk write per table - a page of 200 bills is ~1,400 rows.
+    await localDb.bills.bulkAdd(newBills);
+    await localDb.billItems.bulkAdd(newItems);
+    await localDb.billSearch.bulkAdd(newSearch);
   });
+  noteBillsWritten(localDb.name);
 }
 
 // One detached backfill per shop database at a time.
@@ -651,9 +661,11 @@ async function incrementalBills(client: SupabaseClient, localDb: KiranaBillDB, s
   const from = newest ? new Date(new Date(newest).getTime() - SHOP_PRODUCTS_PULL_OVERLAP_MS).toISOString() : null;
   let after: { syncedAt: string; id: string } | null = null;
   for (;;) {
+    // Light first: ids only. The window is re-read every cycle (the overlap), so downloading
+    // the bills' items each time would cost mobile data for nothing - items come only for bills this phone lacks.
     let query = client
       .from("bills")
-      .select(BILLS_SELECT)
+      .select("id, local_id, synced_at")
       .eq("shop_id", shopId)
       .in("status", ["final", "cancelled"])
       .order("synced_at", { ascending: true })
@@ -667,7 +679,17 @@ async function incrementalBills(client: SupabaseClient, localDb: KiranaBillDB, s
       console.warn(`[sync] bills pull failed: ${error?.code ?? "no data"}`);
       return;
     }
-    await writePulledBills(localDb, shopId, data);
+    const have = await localDb.bills.bulkGet(data.map((r) => r.local_id as string));
+    const missing = data.filter((_, i) => !have[i]).map((r) => r.id as string);
+    // 50 ids a request: 200 uuids would make an 8 KB URL, which some proxies refuse.
+    for (let i = 0; i < missing.length; i += 50) {
+      const full = await client.from("bills").select(BILLS_SELECT).in("id", missing.slice(i, i + 50));
+      if (full.error || !full.data) {
+        console.warn(`[sync] bills pull failed: ${full.error?.code ?? "no data"}`);
+        return; // the cursor stays where it was; the next cycle asks again
+      }
+      await writePulledBills(localDb, shopId, full.data);
+    }
     const last = data[data.length - 1];
     if (last?.synced_at) {
       after = { syncedAt: last.synced_at, id: last.id };
@@ -710,7 +732,10 @@ export async function pullBills(client: SupabaseClient, localDb: KiranaBillDB, s
       if (!flight) {
         flight = backfillBills(client, localDb, shopId, opts)
           .catch((err: unknown) => console.warn("[sync] bills backfill stopped:", err instanceof Error ? err.message : err))
-          .finally(() => backfillsInFlight.delete(localDb.name));
+          .finally(() => {
+            backfillsInFlight.delete(localDb.name);
+            emitBillsPull(localDb.name); // the first pull ended (or stopped) - History re-reads its state
+          });
         backfillsInFlight.set(localDb.name, flight);
       }
       if (!opts.awaitBackfill) return; // carry on with the cycle; the backfill continues in the background
