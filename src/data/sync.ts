@@ -1,6 +1,7 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
-import type { KiranaBillDB, SyncStatus } from "@/data/db";
+import type { KiranaBillDB, LocalBill, LocalBillItem, SyncStatus } from "@/data/db";
+import { billSearchRowOf } from "@/data/db";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -503,6 +504,226 @@ export async function pullBaseProducts(client: SupabaseClient, localDb: KiranaBi
 }
 
 // ---------------------------------------------------------------------
+// KB-324: pull bills. Bills were pushed, never pulled - a cleared phone, a new
+// phone or a new draft address showed an empty History though the server had
+// every bill. Finalised bills are immutable, so this is read-only: a bill that
+// already exists locally (same local_id) is never touched.
+//
+// Two phases, both resumable (sync_state key `bills:<shopId>`):
+//  1. BACKFILL - every bill, newest first, by keyset on (created_at, id), a page
+//     at a time (so the recent bills show up first and an interrupted pull
+//     resumes). Before it starts, the newest server `synced_at` is recorded as
+//     the incremental cursor.
+//  2. INCREMENTAL - `synced_at > cursor - 60 s` (D62's overlap). synced_at is the
+//     SERVER's time (trigger, migration 20261009090000): created_at is the
+//     device's, so a bill made offline yesterday and pushed today looks old.
+//     Bills from before the migration have a null synced_at - the backfill
+//     covers them.
+// A pulled bill, its items and its billSearch row (D61) are written in one
+// transaction. It is stored synced (never re-pushed) and with `pulledAt` (never
+// teaches). It runs only inside a sync cycle (real session, D38) and only while
+// the browser is online - offline it waits, no polling of its own (NI-38).
+// ---------------------------------------------------------------------
+
+export const BILLS_PAGE_SIZE = 200;
+const BILLS_SELECT = "*, bill_items(*)";
+
+interface BillsPullState {
+  phase: "backfill" | "done";
+  /** Backfill position: the last (created_at, id) written; null = not started. */
+  before: { createdAt: string; id: string } | null;
+}
+
+export interface PullBillsOptions {
+  pageSize?: number;
+  /** Stop the backfill after this many pages (tests; a half-way pull). */
+  maxPages?: number;
+  /** Await the backfill. Default false: the cycle starts it in the background and carries on pushing. */
+  awaitBackfill?: boolean;
+}
+
+const billsCursorKey = (shopId: string) => `bills:${shopId}`;
+const iso = (serverTime: string) => new Date(serverTime).toISOString(); // the device's format, so strings sort
+
+function parseBillsState(cursor: string | null): BillsPullState {
+  try {
+    if (cursor) return JSON.parse(cursor) as BillsPullState;
+  } catch {
+    /* fall through - a damaged state restarts the backfill, which is idempotent */
+  }
+  return { phase: "backfill", before: null };
+}
+
+async function writePulledBills(localDb: KiranaBillDB, shopId: string, rows: any[]): Promise<void> {
+  if (rows.length === 0) return;
+  const nowIso = new Date().toISOString();
+  await localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.billSearch], async () => {
+    const existing = await localDb.bills.bulkGet(rows.map((r) => r.local_id as string));
+    for (const [i, row] of rows.entries()) {
+      if (existing[i]) continue; // already here: pushed from this device, or on an overlapping page
+      const bill: LocalBill = {
+        localId: row.local_id,
+        serverId: row.id,
+        shopId,
+        status: row.status,
+        syncStatus: "synced",
+        receiptNumber: row.receipt_number,
+        receiptNumberSource: row.receipt_number_source,
+        customerName: row.customer_name,
+        customerMobile: row.customer_mobile,
+        subtotalPaise: Number(row.subtotal_paise),
+        totalPaise: Number(row.total_paise),
+        schemaVersion: row.schema_version,
+        deviceId: row.device_id,
+        createdAt: iso(row.created_at),
+        finalizedAt: row.finalized_at ? iso(row.finalized_at) : null,
+        syncedAt: nowIso,
+        pulledAt: nowIso,
+      };
+      const items: LocalBillItem[] = [...(row.bill_items ?? [])]
+        .sort((a: { line_no: number }, b: { line_no: number }) => a.line_no - b.line_no)
+        .map((it: Record<string, unknown>) => ({
+          billLocalId: bill.localId,
+          shopId,
+          lineNo: it.line_no as number,
+          shopProductId: (it.shop_product_id as string | null) ?? null,
+          displayName: it.display_name as string,
+          spokenName: (it.spoken_name as string | null) ?? null,
+          qty: it.qty === null || it.qty === undefined ? null : Number(it.qty),
+          unit: (it.unit as string | null) ?? null,
+          ratePaise: it.rate_paise === null || it.rate_paise === undefined ? null : Number(it.rate_paise),
+          rateUnit: (it.rate_unit as string | null) ?? null,
+          totalPaise: Number(it.total_paise),
+          priceType: it.price_type as LocalBillItem["priceType"],
+          source: it.source as LocalBillItem["source"],
+          reviewFlags: (it.review_flags as LocalBillItem["reviewFlags"]) ?? [],
+          wasEdited: Boolean(it.was_edited),
+        }));
+      await localDb.bills.add(bill);
+      await localDb.billItems.bulkAdd(items);
+      // D61: one search row per FINAL bill - a bill that arrives already cancelled is stored, not listed.
+      if (bill.status === "final") await localDb.billSearch.add(billSearchRowOf(bill, items));
+    }
+  });
+}
+
+// One detached backfill per shop database at a time.
+const backfillsInFlight = new Map<string, Promise<void>>();
+
+async function backfillBills(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, opts: PullBillsOptions): Promise<void> {
+  const pageSize = opts.pageSize ?? BILLS_PAGE_SIZE;
+  let pages = 0;
+  for (;;) {
+    const state = parseBillsState((await localDb.syncState.get(billsCursorKey(shopId)))?.cursor ?? null);
+    if (state.phase === "done" || !localDb.isOpen()) return;
+    if (opts.maxPages !== undefined && pages >= opts.maxPages) return;
+
+    let query = client
+      .from("bills")
+      .select(BILLS_SELECT)
+      .eq("shop_id", shopId)
+      .in("status", ["final", "cancelled"])
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(pageSize);
+    if (state.before) {
+      const { createdAt, id } = state.before;
+      query = query.or(`created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${id})`);
+    }
+    const { data, error } = await query;
+    if (error || !data) {
+      console.warn(`[sync] bills backfill stopped: ${error?.code ?? "no data"}`); // never the message - it can echo a row
+      return;
+    }
+    await writePulledBills(localDb, shopId, data);
+    pages += 1;
+    const last = data[data.length - 1];
+    const next: BillsPullState =
+      data.length < pageSize || !last ? { phase: "done", before: null } : { phase: "backfill", before: { createdAt: last.created_at, id: last.id } };
+    const prior = await localDb.syncState.get(billsCursorKey(shopId));
+    await localDb.syncState.put({ tableName: billsCursorKey(shopId), lastSyncedAt: prior?.lastSyncedAt ?? null, cursor: JSON.stringify(next), pendingCount: 0 });
+  }
+}
+
+async function incrementalBills(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, pageSize: number): Promise<void> {
+  const key = billsCursorKey(shopId);
+  let newest = (await localDb.syncState.get(key))?.lastSyncedAt ?? null;
+  const from = newest ? new Date(new Date(newest).getTime() - SHOP_PRODUCTS_PULL_OVERLAP_MS).toISOString() : null;
+  let after: { syncedAt: string; id: string } | null = null;
+  for (;;) {
+    let query = client
+      .from("bills")
+      .select(BILLS_SELECT)
+      .eq("shop_id", shopId)
+      .in("status", ["final", "cancelled"])
+      .order("synced_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(pageSize);
+    if (after) query = query.or(`synced_at.gt.${after.syncedAt},and(synced_at.eq.${after.syncedAt},id.gt.${after.id})`);
+    else if (from) query = query.gt("synced_at", from);
+    else query = query.not("synced_at", "is", null);
+    const { data, error } = await query;
+    if (error || !data) {
+      console.warn(`[sync] bills pull failed: ${error?.code ?? "no data"}`);
+      return;
+    }
+    await writePulledBills(localDb, shopId, data);
+    const last = data[data.length - 1];
+    if (last?.synced_at) {
+      after = { syncedAt: last.synced_at, id: last.id };
+      if (!newest || new Date(last.synced_at) > new Date(newest)) newest = last.synced_at;
+    }
+    if (data.length < pageSize || !last) break;
+  }
+  const state = await localDb.syncState.get(key);
+  await localDb.syncState.put({ tableName: key, lastSyncedAt: newest, cursor: state?.cursor ?? null, pendingCount: 0 });
+}
+
+export async function pullBills(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, opts: PullBillsOptions = {}): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return; // offline: wait quietly (NI-38)
+  const key = billsCursorKey(shopId);
+  try {
+    if (!(await localDb.syncState.get(key))) {
+      // First pull on this database: note the server's newest synced_at BEFORE the backfill starts.
+      const { data, error } = await client
+        .from("bills")
+        .select("synced_at")
+        .eq("shop_id", shopId)
+        .not("synced_at", "is", null)
+        .order("synced_at", { ascending: false })
+        .limit(1);
+      if (error || !data) {
+        console.warn(`[sync] bills pull failed: ${error?.code ?? "no data"}`);
+        return;
+      }
+      await localDb.syncState.put({
+        tableName: key,
+        lastSyncedAt: data[0]?.synced_at ?? null,
+        cursor: JSON.stringify({ phase: "backfill", before: null } satisfies BillsPullState),
+        pendingCount: 0,
+      });
+    }
+
+    const phase = () => localDb.syncState.get(key).then((s) => parseBillsState(s?.cursor ?? null).phase);
+    if ((await phase()) === "backfill") {
+      let flight = backfillsInFlight.get(localDb.name);
+      if (!flight) {
+        flight = backfillBills(client, localDb, shopId, opts)
+          .catch((err: unknown) => console.warn("[sync] bills backfill stopped:", err instanceof Error ? err.message : err))
+          .finally(() => backfillsInFlight.delete(localDb.name));
+        backfillsInFlight.set(localDb.name, flight);
+      }
+      if (!opts.awaitBackfill) return; // carry on with the cycle; the backfill continues in the background
+      await flight;
+    }
+    if ((await phase()) === "done") await incrementalBills(client, localDb, shopId, opts.pageSize ?? BILLS_PAGE_SIZE);
+  } catch (err) {
+    // e.g. the database was closed by sign-out mid-pull, or the network dropped.
+    console.warn("[sync] bills pull stopped:", err instanceof Error ? err.message : err);
+  }
+}
+
+// ---------------------------------------------------------------------
 // Hybrid: receiptNumberBlocks. Never created locally (reserved via a real
 // online round-trip - KB-111's job, not this ticket's). This ticket's job
 // is only the generic mechanics: pull newly-reserved blocks, push a
@@ -764,6 +985,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   await pullBaseProducts(client, localDb);
   await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
   await pullShop(client, localDb, shopId);
+  await pullBills(client, localDb, shopId);
 
   return mergeResults([billsResult, learningEventsResult, ...otherPushResults]);
 }

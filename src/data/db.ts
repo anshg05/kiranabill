@@ -61,6 +61,10 @@ export interface LocalBill {
   /** KB-307 (local only - never pushed): voice lines removed before finalising,
    * for learning's alias suppression (08 §2). No customer data. */
   discardedLines?: LearnDiscarded[];
+  /** KB-324 (local only - never pushed): set on a bill PULLED from the server. It was made, and
+   * learned from, on another device (or before this phone was cleared), so it never teaches here
+   * (hard rules 8, 12): learnPendingBills and learnFromSavedBill skip it. */
+  pulledAt?: string;
 }
 
 export interface LocalBillItem {

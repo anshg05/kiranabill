@@ -48,7 +48,7 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
   return localDb.transaction("rw", tables, async () => {
     if (await localDb.learningEvents.get(markerId(billLocalId))) return { learned: false, decisions: 0 };
     const bill = await localDb.bills.get(billLocalId);
-    if (!bill || bill.status !== "final") return { learned: false, decisions: 0 };
+    if (!bill || bill.status !== "final" || bill.pulledAt) return { learned: false, decisions: 0 }; // pulled bills never teach (KB-324)
     const { shopId, deviceId } = bill;
     const nowIso = new Date(nowMs).toISOString();
 
@@ -142,7 +142,7 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
 /** Recovery on start (and after every save): learns each FINAL bill of this
  * shop that has no marker yet. Returns how many were learned. */
 export async function learnPendingBills(localDb: KiranaBillDB, shopId: string, nowMs: number = Date.now()): Promise<number> {
-  const finals = (await localDb.bills.where("shopId").equals(shopId).toArray()).filter((b) => b.status === "final");
+  const finals = (await localDb.bills.where("shopId").equals(shopId).toArray()).filter((b) => b.status === "final" && !b.pulledAt);
   let learned = 0;
   for (const bill of finals) {
     if (await localDb.learningEvents.get(markerId(bill.localId))) continue;

@@ -7,6 +7,7 @@ import {
   pushBills,
   pushLearnedAliases,
   pullShopProducts,
+  pullBills,
   pullReceiptNumberBlocks,
   startSyncLoop,
   stopSyncLoop,
@@ -900,6 +901,24 @@ describe("sync.ts - KB-315", () => {
     expect(seen[1]).toEqual({ shop_id: "shop-1", updated_at__gt: "2026-10-08T09:59:00.000Z" });
     // The cursor itself never moves backwards.
     expect((await localDb.syncState.get("shopProducts:shop-1"))?.lastSyncedAt).toBe("2026-10-08T10:00:00.000Z");
+  });
+
+  it("KB-324: offline, the bills pull waits quietly - no request at all; online it asks for this shop's bills", async () => {
+    const asked: string[] = [];
+    const client = makeMockClient({
+      bills: () => {
+        asked.push("bills");
+        return { data: [], error: null };
+      },
+    });
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await pullBills(client, localDb, "shop-1", { awaitBackfill: true });
+      expect(asked).toEqual([]);
+      expect(await localDb.syncState.get("bills:shop-1")).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("receipt blocks are pulled for THIS device only", async () => {
