@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 9 Oct 2026 (rev 42) · Supersedes rev 40
+**Last updated:** 9 Oct 2026 (rev 43) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1621,9 +1621,9 @@ in-memory IndexedDB could not show it.
    timestamp when it exists. Learning state (aliases, provisional products, price observations) is still not pulled:
    `KB-326`.
 6. **Measured, 8 Oct 2026** (local stack, 5 items a bill): one 200-bill page = **531,904 B** JSON (2.7 KB a bill) —
-   gzip 55,601 B, brotli 41,242 B. **36,000 bills = 180 pages = 95.7 MB JSON; ≈ 10.0 MB gzip; ≈ 7.4 MB brotli.** Whether
-   the hosted API compresses is assumed, not verified (the remote is never touched from here). Transfer at 10 Mbps:
-   ~8 s compressed, ~77 s uncompressed, plus 180 round trips. Writing into IndexedDB (Chrome desktop, local server): 0.75–
+   gzip 55,601 B, brotli 41,242 B. **36,000 bills = 180 pages = 95.7 MB JSON; ≈ 10.0 MB gzip; ≈ 7.4 MB brotli.** **The hosted API compresses — verified by the owner on the draft, 9 Oct 2026:
+   `content-encoding: gzip` (a `shop_products` response, server `cloudflare`). So a 36,000-bill backfill is about 10 MB on the wire, not 96 MB.**
+   Transfer at 10 Mbps: ~8 s (the uncompressed ~77 s no longer applies), plus 180 round trips. Writing into IndexedDB (Chrome desktop, local server): 0.75–
    0.87 s a page ≈ 230–270 bills/s → **36,000 bills ≈ 2.3–2.6 min on the laptop; on the phone, not measured — if it is
    4–6× slower (the D61 reads were), 10–15 min in the background.** The newest 200 are on screen after the first page.
    A shop with 3,000 bills: ~0.8 MB compressed, ~1 min on the phone. No window was added (owner's rule).

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 9 Oct 2026 (rev 98) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 9 Oct 2026 (rev 99) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-313` (offline UI) — two local commits (D65); awaiting the owner's check. No migration.
+**Working on:** `KB-326` (pull learning state) — plan. `KB-313` done 9 Oct 2026.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -52,7 +52,8 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15c. ~~**`KB-311`** — Catalog screen~~ — **done 8 Oct 2026** (D62). Next: `KB-324` (pull bills) — plan.
 15d. ~~**`KB-324`** — pull bills~~ — **done 8 Oct 2026** (D63). New: `KB-326` (before the pilot).
 15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
-15f. **`KB-313`** — offline UI, the half-built bill, sign-out warning — built 9 Oct 2026 (D65), awaiting the owner's check. Closes NI-38.
+15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
+15g. **Next (owner, 9 Oct 2026): `KB-326`** (learning-state pull), then **`KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68), then `KB-314`.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -96,7 +97,7 @@ Phone (Android, Chrome) and desktop, in this order. Tick each in the tracker whe
    and roughly how many seconds until the hint went** (the laptop did ~0.8 s per 200 bills; the phone is unmeasured, D63 §6).
    Then: search a customer name, a receipt number and an amount; open a bill (receipt + four buttons); Android back should
    close the bill, then History, then return to billing.
-3. [ ] (open — inconclusive 8 Oct: the owner opened an empty bills response's body, not its headers; he will send the `content-encoding` value) **Compression (KB-324) — desktop.** Open the draft, sign in, DevTools → Network → clear → reload → the `bills?select=…`
+3. [x] (owner, 9 Oct 2026: `content-encoding: gzip`, server `cloudflare` — recorded in D63 §6: a 36,000-bill backfill is ~10 MB on the wire) **Compression (KB-324) — desktop.** Open the draft, sign in, DevTools → Network → clear → reload → the `bills?select=…`
    request → Response Headers → `content-encoding` (gzip / br, or none). **If none**, tell me: it goes into D63 §6 with the
    figures 36,000 bills ≈ 96 MB uncompressed vs ≈ 10 MB gzip.
 4. [x] **Settings (KB-312) — phone.** ≡ → Settings. Try the phone `0712-2345678` (refused); choose हिन्दी, then open a past
@@ -377,6 +378,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 9 Oct 2026 | **`KB-313` done.** Owner check passed at `localhost:8888` (reload mid-bill; the offline chip and a pending bill syncing on reconnect; sign-out count + Cancel; Clear bill; 320 and 1280); small decisions accepted. **Draft check 3 ticked:** the hosted API answers `content-encoding: gzip` (a `shop_products` response, `cloudflare`) — D63 §6 now says a 36,000-bill backfill is ~10 MB on the wire, not 96 MB. Order from the owner: `KB-326`, then `KB-401`, then `KB-314`. The scratchpad scripts (`plants313.py`, `kb313docs.py`) were never in the repo or its history; deleted. | Owner + Agent |
 | 9 Oct 2026 | **`KB-313` built — two local commits, not pushed (D65). No migration.** (1) The half-built bill: `billDraftStore.ts` (whole validation, money must be a safe integer) in the user's OWN database's `meta`, one key per shop, saved ~250 ms after a change and on `pagehide` / tab hidden; restored once, exactly as left, never re-priced; a finalised bill's draft is dropped; `useBillLines(catalog, { db, shopId })` gains `ready`, `discardDraft`, `clearBill`. The sync loop's state store (`syncStatus.ts` — the loop exposed nothing before) and the NI-38 fix: offline sends nothing and schedules no timer, `syncNow` offline is a no-op, `online` resumes (one timer). No existing loop assertion changed; 8 added. (2) Header chip, Clear bill, the sign-out warning (counts; a separate truthful conflict line; "bill in progress" only for an UNSAVED bill — **found in the browser**: it also appeared over a saved bill). Plants: 13, all caught (two needed a stricter test / removing a redundant line). Browser (local stack): reload mid-bill restored ₹135; offline chip; a bill finalised offline stayed pending (draft gone), synced ~0.5 s after `online`; sign-out warned with the count, Cancel stayed signed in; Clear bill created no bill and no learning event; 320/1280 no overflow (the long chip wraps to two lines). | Agent |
 | 8 Oct 2026 | **Draft phone session passed (owner, ~10:20 PM) — checks 1, 2, 4–8** (details under "Draft deploy — checks"). Phone checks for `KB-310`, `KB-311`, `KB-312`, `KB-324` done. Open: step 3 (compression — inconclusive, the owner will send the `content-encoding` value) and step 9 (fallback number — not done, accepted; covered on desktop in KB-308). `scratch-measure.ts` and `scratch-prodbuild.cjs` were never committed (not in any commit, deleted, `git status` clean). | Owner + Agent |
 | 8 Oct 2026 | **Draft deploy `6ac7c715886e9f4482351669` from `5c4ac93`** (KB-310/311/312/324; no `--prod`, no marker, not linked). Migrations 20261009090000 and 20261010090000 on both sides (all 18 match). Built with the production `VITE_` values read from Netlify and never printed; `dist/`: cloud project ref present, no `localhost:54321/:8888/:5173` or `http://127.0.0.1`, one bare `127.0.0.1` (supabase-js trusted hosts), no dev string, the only JWT is the public `anon` key of the cloud project. `dist/` rebuilt locally afterwards. The nine-step owner checklist is in "Draft deploy — checks". | Agent |

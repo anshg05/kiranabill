@@ -1,6 +1,6 @@
 # 06 — Feature Tickets
 
-**Last updated:** 9 Oct 2026 (rev 35) · **Status:** Final for MVP
+**Last updated:** 9 Oct 2026 (rev 36) · **Status:** Final for MVP
 
 Each ticket is written to be handed to an AI tool as a self-contained prompt.
 
@@ -147,7 +147,7 @@ nothing renumbered.
 | **KB-311** | Catalog screen | S4, including "Add from ready catalog" and the learning suggestions panel | ✅ **Done 8 Oct 2026** — three commits. Owner check passed at `localhost:8888` (search, filters, valid and invalid price, the open bill keeping its line price, offline, Back). Add from ready catalog: the live test shop was onboarded `base_imported`, so it already has every ready product — **the owner's real Add check passed on the draft (8 Oct 2026, the start-empty live shop)**; the agent saw it work locally (4 products added, a duplicate message). Commit 3: clearer ready-catalog empty states; a duplicate re-pulls. D62. |
 | **KB-314** | **Bulk catalog import** | Excel/CSV upload via SheetJS, parsed client-side, preview-and-confirm, then a normal local write that syncs. Table stakes — a 500-product shop will not type them in. | ⬜ Not started. New dependency to justify against `09-WORKING-AGREEMENT.md` §B6 when planned: SheetJS. |
 | **KB-312** | Settings | Shop details, bill language, developer mode | ✅ **Done 8 Oct 2026** — two commits (D64). Owner check passed at `localhost:8888` (all six steps: shop name/phone and the landline refusal, receipt language and a reopened past bill, offline edit then online, a server-side edit reaching the app, Developer mode and Reset learning, 320/1280). Migration `20261010090000` pushed to the remote by the owner (dry run, then push). S7 (05 §6b): shop name and phone, receipt language, collapsed Developer mode. D64 closes KI-65; KI-37 fixed. Logo is `KB-327` (parked); address and prefix are not editable; NI-39, NI-40. |
-| **KB-313** | Offline UI | Chips, disabled mic with reason, **half-built bill survives a network drop** | 🟦 **Built 9 Oct 2026 — two commits, local; awaiting the owner's check** (D65). The half-built bill is kept in the user's own database and restored after a reload; header chip (Offline / Syncing… / amber Sync failing / Not syncing — sign in again); Clear bill; the sign-out warning with counts; the loop waits while offline (closes NI-38). **Corrects this row's earlier claim:** the sync loop exposed no state (a status store was added). |
+| **KB-313** | Offline UI | Chips, disabled mic with reason, **half-built bill survives a network drop** | ✅ **Done 9 Oct 2026** — two commits (D65). Owner check passed at `localhost:8888`: reload mid-bill, the offline chip and a pending bill syncing on reconnect, sign-out count + Cancel, Clear bill, 320 and 1280. The half-built bill is kept in the user's own database and restored after a reload; header chip; Clear bill; the sign-out warning with counts; the loop waits while offline (closes NI-38). **Corrects this row's earlier claim:** the sync loop exposed no state (a status store was added). The phone check rides on the next draft (tracker, "Next draft deploy — KB-313 checks"). |
 
 ---
 
