@@ -137,7 +137,9 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     expect(error).toBeNull();
     expect(data).toEqual([{ bill_id: serverId, event_type: "bill_finalized" }]);
     const localEvents = await localDb.learningEvents.where("shopId").equals(shopId).toArray();
-    expect(localEvents.every((e) => e.syncStatus === "synced")).toBe(true);
+    // KB-326: this first cycle also opens the learning gate and learns the waiting bill, whose NEW events go up next
+    // cycle - so what is asserted is the event this test made, not "every event of the shop".
+    expect(localEvents.filter((e) => e.eventType === "bill_finalized").every((e) => e.syncStatus === "synced")).toBe(true);
   });
 
   it("2. a lost-response retry (same content pushed again) is a no-op success - still exactly 1 bill + 3 items, local synced", async () => {

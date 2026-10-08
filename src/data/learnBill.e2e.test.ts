@@ -12,6 +12,7 @@ import { pullShop, pullShopProducts, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill } from "./finalise";
 import { learnPendingBills } from "./learnBill";
+import { pullLearningState } from "./pullLearning";
 
 /**
  * KB-307 commit 3 - learning on the real local stack, shipped code (D32):
@@ -47,6 +48,7 @@ describe("KB-307 e2e - finalise -> learn -> sync (local Postgres)", () => {
     await pullShopProducts(client, db, shopId);
     await reserveBlock(client, db, shopId, deviceId);
     shop = prepareParserCatalog((await loadShopCatalog(db, shopId)).entries);
+    await pullLearningState(client, db, shopId); // KB-326: learning waits for this phone's first learning pull
   }, 60_000);
 
   const ok = <T,>(r: { ok: true; item: T } | { ok: false; error: string }): T => {

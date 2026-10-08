@@ -1,4 +1,5 @@
 import type { CatalogEntry } from "@/domain/catalog";
+import { isLearningPullDone } from "./pullLearning";
 import { deterministicUuid } from "@/domain/ids";
 import { learnFromBill, type LearnLine, type LearningDecision, type LearningState, type PriceTrackedProduct, type ProvisionalProduct, type LearnedAlias } from "@/domain/learning";
 import type { KiranaBillDB, LocalLearnedAlias, LocalLearningEvent, LocalPriceObservation, LocalProvisionalProduct } from "./db";
@@ -142,6 +143,9 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
 /** Recovery on start (and after every save): learns each FINAL bill of this
  * shop that has no marker yet. Returns how many were learned. */
 export async function learnPendingBills(localDb: KiranaBillDB, shopId: string, nowMs: number = Date.now()): Promise<number> {
+  // KB-326 (D66): not before this phone's first learning pull. A fresh row (hit count 1) would be pushed over the
+  // server's (5). The bills wait, unlearned (no marker), and the sync cycle learns them right after the pull.
+  if (!(await isLearningPullDone(localDb, shopId))) return 0;
   const finals = (await localDb.bills.where("shopId").equals(shopId).toArray()).filter((b) => b.status === "final" && !b.pulledAt);
   let learned = 0;
   for (const bill of finals) {

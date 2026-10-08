@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill } from "./db";
 import { getSyncStatus, isSyncFailing, resetSyncStatus } from "./syncStatus";
+import { isLearningPullDone, pullLearningState } from "./pullLearning";
 import {
   syncNow,
   pushBills,
@@ -1043,6 +1044,57 @@ describe("sync.ts - KB-315", () => {
       await localDb.bills.update("6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12", { syncStatus: "synced" });
       await syncNow(options(countingClient()));
       expect(getSyncStatus()).toMatchObject({ consecutiveFailures: 0, noSession: false, syncing: false });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // KB-326 (D66): a learning_reset that the server doesn't know yet must never be undone - not by a pull (rule A),
+  // and not by pushing learning rows stamped before the reset event (rule B).
+  // -------------------------------------------------------------------------
+  describe("KB-326 - learning_reset ordering", () => {
+    const at = "2026-10-09T10:00:00.000Z";
+    const resetEvent = (syncStatus: "pending" | "synced" | "conflict") => ({
+      localId: "reset-1", shopId: "shop-1", syncStatus, billLocalId: "", eventType: "learning_reset", payload: { clearedCounts: {} }, createdAt: at, updatedAt: at, deviceId: "device-1",
+    });
+    const pendingAlias = {
+      localId: "alias-1", shopId: "shop-1", syncStatus: "pending" as const, alias: "chini", shopProductId: "p1", hitCount: 1, confidence: 0.5, source: "confirmation" as const, updatedAt: at, deviceId: "device-1",
+    };
+    const pushedTables = (calls: string[]) => ({
+      ...everyTableEmpty,
+      learned_aliases: () => { calls.push("learned_aliases"); return { data: { id: "srv-alias" }, error: null }; },
+      price_observations: () => { calls.push("price_observations"); return { data: { id: "srv-obs" }, error: null }; },
+      provisional_products: () => { calls.push("provisional_products"); return { data: { id: "srv-prov" }, error: null }; },
+    });
+
+    it("rule B: the reset event could not be pushed -> this cycle pushes NO learning rows (the server must never hold a post-reset row stamped before the reset)", async () => {
+      await localDb.learningEvents.add(resetEvent("pending"));
+      await localDb.learnedAliases.add(pendingAlias);
+      const calls: string[] = [];
+      const client = makeMockClient({ ...pushedTables(calls), learning_events: () => ({ data: null, error: { message: "fetch failed" } }) });
+      const result = await syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
+      expect(result.anyTransientFailure).toBe(true);
+      expect(calls).toEqual([]);
+      expect((await localDb.learnedAliases.get("alias-1"))?.syncStatus).toBe("pending"); // waits for the next cycle
+    });
+
+    it("rule B: the event pushed fine -> the learning rows go up in the same cycle (the event first)", async () => {
+      await localDb.learningEvents.add(resetEvent("pending"));
+      await localDb.learnedAliases.add(pendingAlias);
+      const calls: string[] = [];
+      const client = makeMockClient({ ...pushedTables(calls), learning_events: () => ({ data: { id: "srv-reset" }, error: null }) });
+      await syncNow({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
+      expect(calls).toContain("learned_aliases");
+      expect((await localDb.learnedAliases.get("alias-1"))?.syncStatus).toBe("synced");
+    });
+
+    it("rule A: a reset that has not reached the server (pending, or stuck in conflict) -> the learning pull sends no request at all", async () => {
+      for (const status of ["pending", "conflict"] as const) {
+        await localDb.learningEvents.put(resetEvent(status));
+        const client = { from: () => { throw new Error("must not ask the server while a reset is not on it"); } } as unknown as SupabaseClient;
+        const result = await pullLearningState(client, localDb, "shop-1");
+        expect(result).toEqual({ done: false, skipped: "reset-not-pushed" });
+      }
+      expect(await isLearningPullDone(localDb, "shop-1")).toBe(false);
     });
   });
 

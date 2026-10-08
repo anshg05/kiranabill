@@ -5,6 +5,8 @@ import { billSearchRowOf } from "@/data/db";
 import type { BillSearchRow } from "@/domain/billSearch";
 import { emitBillsPull, noteBillsWritten } from "@/data/billsPullStatus";
 import { cycleEnded, cycleStarted, cycleThrew, resetSyncStatus } from "@/data/syncStatus";
+import { hasUnsyncedReset, isLearningPullDone, pullLearningState } from "@/data/pullLearning";
+import { learnPendingBills } from "@/data/learnBill";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -994,11 +996,12 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   // serverId written to localDb.
   const learningEventsResult = await pushLearningEvents(client, localDb);
 
+  // KB-326 rule B (D66): while a learning_reset of this phone is not on the server, no learning row goes up - one
+  // pushed before its reset event would carry an older stamp than the reset, and a pull would then drop it.
+  const resetNotOnServer = await hasUnsyncedReset(localDb, shopId);
   // The remaining push-first tables have no dependency on bill serverIds.
   const otherPushResults = await Promise.all([
-    pushLearnedAliases(client, localDb),
-    pushProvisionalProducts(client, localDb),
-    pushPriceObservations(client, localDb),
+    ...(resetNotOnServer ? [] : [pushLearnedAliases(client, localDb), pushProvisionalProducts(client, localDb), pushPriceObservations(client, localDb)]),
     pushReceiptNumberBlocks(client, localDb),
     pushShop(client, localDb),
   ]);
@@ -1009,6 +1012,13 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
   await pullShop(client, localDb, shopId);
   await pullBills(client, localDb, shopId);
+  // KB-326: learning state (aliases, provisional products, the last 35 days of price observations), honouring
+  // learning_reset. Once it is in, bills that were waiting at the learning gate are learned (idempotent).
+  // Only when the gate opens in THIS cycle - a steady-state cycle must not rescan every bill (the app learns after each save).
+  const gateWasOpen = await isLearningPullDone(localDb, shopId);
+  if ((await pullLearningState(client, localDb, shopId)).done && !gateWasOpen) {
+    await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
+  }
 
   return mergeResults([billsResult, learningEventsResult, ...otherPushResults]);
 }

@@ -8,6 +8,7 @@ import { deterministicUuid } from "@/domain/ids";
 import { KiranaBillDB } from "./db";
 import { finaliseBill, type FinaliseInput } from "./finalise";
 import { learnFromSavedBill, learnPendingBills } from "./learnBill";
+import { isLearningPullDone, markLearningPullDone } from "./pullLearning";
 
 // KB-307 commit 3 (owner, 3 Oct 2026): learning runs AFTER the bill commit, in
 // its own transaction (08 §8), from the committed bill. Every learning row's id
@@ -153,6 +154,7 @@ describe("learnFromSavedBill - what a finalised bill writes", () => {
     expect((await snapshot()).events).toHaveLength(0);
     expect(await db.bills.get(draft.localId)).toMatchObject({ status: "final" });
     db.learnedAliases.hook("creating").unsubscribe(fail);
+    await markLearningPullDone(db, shopId); // KB-326: the app's entry point waits for the first learning pull
     expect(await learnPendingBills(db, shopId, NOW)).toBe(1);
     expect((await snapshot()).aliases).toHaveLength(1);
   });
@@ -165,9 +167,37 @@ describe("learnPendingBills - recovery on start", () => {
     await finaliseBill(db, a);
     await finaliseBill(db, b);
     await db.bills.add({ ...(await db.bills.get(a.localId))!, localId: crypto.randomUUID(), status: "draft", receiptNumber: "DRAFT" });
+    await markLearningPullDone(db, shopId); // KB-326: the app's entry point waits for the first learning pull
     expect(await learnPendingBills(db, shopId, NOW)).toBe(2);
     expect(await learnPendingBills(db, shopId, NOW)).toBe(0);
     const markers = (await db.learningEvents.toArray()).filter((e) => e.eventType === "bill_learned").map((e) => e.billLocalId).sort();
     expect(markers).toEqual([a.localId, b.localId].sort());
+  });
+});
+
+describe("learnPendingBills - the learning gate (KB-326, D66)", () => {
+  it("a phone that has not finished its first learning pull learns NOTHING (a fresh row would overwrite the server's counts); the bill waits, unlearned", async () => {
+    const draft = bill([line(1, "2 kilo चिनी")]);
+    await finaliseBill(db, draft);
+    expect(await isLearningPullDone(db, shopId)).toBe(false);
+    expect(await learnPendingBills(db, shopId, NOW)).toBe(0);
+    const snap = await snapshot();
+    expect(snap.aliases).toHaveLength(0);
+    expect(snap.events).toHaveLength(0); // not even a marker: it is learned later, once
+  });
+
+  it("once the pull is done, the waiting bill is learned - once", async () => {
+    const draft = bill([line(1, "2 kilo चिनी")]);
+    await finaliseBill(db, draft);
+    await learnPendingBills(db, shopId, NOW);
+    await markLearningPullDone(db, shopId);
+    expect(await learnPendingBills(db, shopId, NOW)).toBe(1);
+    expect(await learnPendingBills(db, shopId, NOW)).toBe(0);
+    expect((await snapshot()).aliases).toHaveLength(1);
+  });
+
+  it("the gate is per shop: another shop's finished pull does not open this one", async () => {
+    await markLearningPullDone(db, "99999999-9999-4999-8999-999999999999");
+    expect(await isLearningPullDone(db, shopId)).toBe(false);
   });
 });
