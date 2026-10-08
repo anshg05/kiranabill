@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 8 Oct 2026 (rev 95) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 8 Oct 2026 (rev 96) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** next ticket `KB-313` — plan. `KB-312` done 8 Oct 2026.
+**Working on:** next ticket `KB-313` — plan. `KB-312` done 8 Oct 2026. Draft `6ac7c715886e9f4482351669` is live for the owner's phone + desktop checks ("Draft deploy — checks").
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -74,18 +74,49 @@ placeholder), `src/voice/` (server-side Groq/Gemini providers), `netlify/functio
 
 ---
 
-## Next draft deploy — checks (owner)
+## Draft deploy — checks (owner)
 
-Draft only (`npx netlify deploy --site kiranabilling --dir dist --no-build`, 19 §8) — never `--prod`, never the marker.
-Migrations through `20261009090000` are already on the remote (the owner pushed them), so the draft matches the schema.
+**Draft `6ac7c715886e9f4482351669`, 8 Oct 2026, from `5c4ac93`** — https://6ac7c715886e9f4482351669--kiranabilling.netlify.app
+(`npx netlify deploy --site kiranabilling --dir dist --no-build`, 19 §8 — never `--prod`, never the marker; not linked).
+Built with the production `VITE_` values: `dist/` held the cloud project ref, no `localhost:54321` / `:8888` / `127.0.0.1` URL
+(one bare `127.0.0.1` — supabase-js's trusted-host list, expected), no dev string, and only the public **anon** key.
+`dist/` was rebuilt locally afterwards. Remote migrations 20261009090000 and 20261010090000 are on both sides
+(`npx supabase migration list --linked`: all 18 match). **The draft uses the REAL cloud project and the live test shop** —
+a new draft URL is a new origin, so the phone starts with an empty IndexedDB, exactly like a cleared phone.
 
-- [ ] **`KB-311` — Add from ready catalog on a start-empty shop** (the live test shop is start-empty): open Catalog → Add
-  from ready catalog, add a product, see it in the list and in Add item at its price.
-- [ ] **`KB-312` — on the phone:** Settings → change the shop name and the receipt language, open a past bill from History (it shows the new language and name); switch the phone to airplane mode, edit the name, switch back — it syncs (a second browser/device, or Studio, shows it).
-- [ ] **`KB-324` — on the phone:** clear the site's data, sign in, History refills (newest first). Note roughly how long the
-  write takes (the laptop did ~0.8 s per 200 bills; the phone is unmeasured — D63 §6).
-- [ ] **`KB-324` — on desktop DevTools against the draft:** Network → the `bills?select=…` response → `content-encoding`
-  (gzip / br, or none). **If none**, record it in D63 §6 with the figures: 36,000 bills ≈ 96 MB uncompressed vs ≈ 10 MB gzip.
+**These steps create REAL live rows** (marked ⚠): final bills are immutable and cannot be deleted; products added to the
+catalog cannot be removed in the app; edits to the shop row and a product price should be put back by hand.
+
+Phone (Android, Chrome) and desktop, in this order. Tick each in the tracker when done.
+
+1. [ ] **Sign in on the phone** (Google) — it must return to the draft URL, not the live site (D58 §6).
+2. [ ] **History refills (KB-324 + KB-310) — phone.** Open ≡ → History straight away. It should say "Loading bills from the
+   server…" (never "No bills on this phone yet."), fill newest first, and the hint should go. **Note the number of bills
+   and roughly how many seconds until the hint went** (the laptop did ~0.8 s per 200 bills; the phone is unmeasured, D63 §6).
+   Then: search a customer name, a receipt number and an amount; open a bill (receipt + four buttons); Android back should
+   close the bill, then History, then return to billing.
+3. [ ] **Compression (KB-324) — desktop.** Open the draft, sign in, DevTools → Network → clear → reload → the `bills?select=…`
+   request → Response Headers → `content-encoding` (gzip / br, or none). **If none**, tell me: it goes into D63 §6 with the
+   figures 36,000 bills ≈ 96 MB uncompressed vs ≈ 10 MB gzip.
+4. [ ] **Settings (KB-312) — phone.** ≡ → Settings. Try the phone `0712-2345678` (refused); choose हिन्दी, then open a past
+   bill from History — the receipt is Hindi and keeps the new shop name. ⚠ Change the shop name to add " (test)", Save → "Saved".
+   Airplane mode ON, change the name again, Save → "Saved on this phone — it will sync when you're online"; airplane mode OFF —
+   within ~15 s the desktop (reload Settings) shows it. ⚠ **Put the name and the language back** at the end.
+5. [ ] **Catalog (KB-311) — phone.** ≡ → Catalog: search, the filters, a price edit (valid; `12.345` and `0` refused);
+   airplane mode shows "Needs internet to change the catalog". ⚠ A price edit changes a real product — set it back.
+6. [ ] **Add from ready catalog on the live test shop (start-empty) — phone.** Catalog → Add from ready catalog → search,
+   add two products (e.g. Chini, Parle-G) → "… added — ₹X". ⚠ **Two real products now exist** in the live shop. Check them in
+   Catalog, and in Add item at their prices.
+7. [ ] **One voice order, daytime (KB-319).** On the phone say e.g. "2 kilo chini, teen Parle-G 10 wala"; check the lines
+   (the products you just added make Layer 1 answer without Gemini, KI-50: billing is off, so a Layer 2 miss may say
+   "busy" — note it, Retry is on the bill). Edit nothing, Bill Banao. ⚠ **A real final bill** (and learning rows /
+   price observations). Share the receipt as Image.
+8. [ ] **Long customer name (deferred from KB-309) — desktop.** New bill, customer name of 60 characters, Bill Banao, Image
+   and PDF: the name must wrap, not run off the receipt. ⚠ A real final bill.
+9. [ ] **Fallback receipt number (deferred from KB-309) — desktop, if you want it.** DevTools → Application → IndexedDB →
+   `kiranabill-<user id>` → `receiptNumberBlocks` → delete this device's rows, reload, make a bill: the receipt number is a
+   fallback one (`KB-<device prefix>-<n>`) and must wrap on the receipt image. ⚠ A real final bill; the server keeps the
+   block you deleted locally (a gap in the numbers, harmless).
 
 ## Before deployment
 
@@ -332,6 +363,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 8 Oct 2026 | **Draft deploy `6ac7c715886e9f4482351669` from `5c4ac93`** (KB-310/311/312/324; no `--prod`, no marker, not linked). Migrations 20261009090000 and 20261010090000 on both sides (all 18 match). Built with the production `VITE_` values read from Netlify and never printed; `dist/`: cloud project ref present, no `localhost:54321/:8888/:5173` or `http://127.0.0.1`, one bare `127.0.0.1` (supabase-js trusted hosts), no dev string, the only JWT is the public `anon` key of the cloud project. `dist/` rebuilt locally afterwards. The nine-step owner checklist is in "Draft deploy — checks". | Agent |
 | 8 Oct 2026 | **`KB-312` done.** Owner check passed (all six steps); small decisions accepted. Migration `20261010090000` pushed to the remote by the owner. D64 now states why it is compatible with the deployed `6e29cf2`: that build can never create a pending shop edit, so its local shop `updatedAt` is always server-issued and the trigger changes nothing for it — a Studio edit now reaches it (correcting the migration comment's "identical row once per edit"). NI-39 notes that the customer-mobile rule has the same trunk-0 reading (no fix now). | Agent |
 | 8 Oct 2026 | **`KB-312` built — two local commits, not pushed (D64).** (1) **The server's `updated_at` is the only clock for `shops`** — owner-approved after the stop: the old `pullShop` compared the device clock with the server's, so a trigger alone would not have fixed KI-65. Migration `20261010090000` (trigger, applied locally; the owner pushes it). `pushShop` reads back and stores the server's `updated_at` verbatim, only if the row is still the version it pushed (an edit during a slow push stays pending); `pullShop` never touches a pending row and takes the server row whenever the strings differ (never through `Date`: microsecond test). KI-37 fixed: a bill-less `learning_reset` is pushed with `bill_id` null (+2 RLS checks). Shop name/phone rules in `domain/shopSettings.ts` — **found by the tests:** the shared mobile parser read the landline `0712-2345678` as the mobile 7122345678, so the shop phone refuses a leading 0 (NI-39). 6 e2e on two real devices (Studio edit, B's clock +5 min, offline edit, pending not clobbered, KI-37). (2) Settings screen: shop name/phone, receipt language, collapsed Developer mode, Reset learning behind a confirmation; the form follows an edit arriving from the server (not a field being typed in). Plants caught: 7 in sync/data, 7 in the UI, + live-update. Browser (local stack): offline edit → pending → online → pushed, the device holds the server's microsecond `updated_at`; a Studio edit reached the open app in ~15 s; a past bill (8 Oct) reopened in Hindi/English with the new name and phone; reset → the event reached the server with `bill_id` null; 320/375/1280 no overflow, no target under 44 px. New `KB-327`, NI-39, NI-40. | Agent |
 | 8 Oct 2026 | **`KB-324` done.** Owner check passed at `localhost:8888` (clear site data, sign in: History refilled newest first — KB-000101, KB-000074…064 and older; search found them; a receipt opened; offline/online as described); small decisions accepted. Migration `20261009090000` pushed to the remote by the owner. New "Next draft deploy — checks" list (KB-311 real Add; KB-324 phone refill time and the bills response's content-encoding). `scratch-measure.ts` (the payload measurement) was never committed — in neither `e02b74b` nor `0057e7f`, never in history — and is deleted. | Agent |
