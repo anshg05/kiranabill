@@ -4,6 +4,7 @@ import type { KiranaBillDB, LocalBill, LocalBillItem, SyncStatus } from "@/data/
 import { billSearchRowOf } from "@/data/db";
 import type { BillSearchRow } from "@/domain/billSearch";
 import { emitBillsPull, noteBillsWritten } from "@/data/billsPullStatus";
+import { cycleEnded, cycleStarted, cycleThrew, resetSyncStatus } from "@/data/syncStatus";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -926,8 +927,13 @@ export interface SyncNowOptions {
   deviceId: string;
 }
 
+/** KB-313 (NI-38): only an explicit `false` is offline - Node and old browsers have no value at all. */
+const browserOffline = (): boolean => typeof navigator !== "undefined" && navigator.onLine === false;
+
 export interface SyncCycleResult {
   anyTransientFailure: boolean;
+  /** KB-313 (NI-38): the browser is offline - nothing was sent, and it is not a failure. */
+  skippedOffline?: boolean;
   /** True when the cycle did nothing because there was no live session. */
   skippedNoSession?: boolean;
 }
@@ -943,13 +949,25 @@ let syncInFlight: Promise<SyncCycleResult> | null = null;
 
 export function syncNow(options: SyncNowOptions): Promise<SyncCycleResult> {
   if (syncInFlight) return syncInFlight;
-  syncInFlight = runSyncCycle(options).finally(() => {
-    syncInFlight = null;
-  });
+  cycleStarted();
+  syncInFlight = runSyncCycle(options)
+    .then((result) => {
+      cycleEnded(result);
+      return result;
+    })
+    .catch((err: unknown) => {
+      cycleThrew();
+      throw err;
+    })
+    .finally(() => {
+      syncInFlight = null;
+    });
   return syncInFlight;
 }
 
 async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
+  // KB-313: offline - e.g. right after Bill Banao - nothing is sent; the 'online' event runs the next cycle.
+  if (browserOffline()) return { anyTransientFailure: false, skippedOffline: true };
   const client = options.client ?? supabase;
   const { localDb, shopId, deviceId } = options;
 
@@ -1016,6 +1034,8 @@ let onlineListener: (() => void) | null = null;
 
 async function runLoop(options: SyncNowOptions): Promise<void> {
   if (!loopRunning) return;
+  // NI-38: no request and no timer while the browser is offline - the 'online' listener resumes the loop.
+  if (browserOffline()) return;
   let anyTransientFailure = true;
   try {
     ({ anyTransientFailure } = await syncNow(options));
@@ -1026,6 +1046,8 @@ async function runLoop(options: SyncNowOptions): Promise<void> {
   }
   if (!loopRunning) return;
   currentBackoffMs = anyTransientFailure ? Math.min(currentBackoffMs * 2, MAX_BACKOFF_MS) : BASE_INTERVAL_MS;
+  // One timer at a time: an 'online' event can start a second runLoop while one is in flight.
+  if (loopTimer) clearTimeout(loopTimer);
   loopTimer = setTimeout(() => void runLoop(options), currentBackoffMs);
 }
 
@@ -1037,13 +1059,20 @@ export function startSyncLoop(
   loopRunning = true;
   currentBackoffMs = BASE_INTERVAL_MS;
   onlineSource = eventSource;
-  onlineListener = () => void syncNow(options);
+  // KB-313 (NI-38): back online -> a cycle at once and the normal cadence again (the loop timer is not running
+  // while offline), starting from the base interval.
+  // (runLoop's own reschedule clears any older timer, so repeated events never stack.)
+  onlineListener = () => {
+    currentBackoffMs = BASE_INTERVAL_MS;
+    void runLoop(options);
+  };
   onlineSource?.addEventListener("online", onlineListener);
   void runLoop(options);
 }
 
 export function stopSyncLoop(): void {
   loopRunning = false;
+  resetSyncStatus();
   if (loopTimer) clearTimeout(loopTimer);
   loopTimer = null;
   if (onlineSource && onlineListener) onlineSource.removeEventListener("online", onlineListener);

@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill } from "./db";
+import { getSyncStatus, isSyncFailing, resetSyncStatus } from "./syncStatus";
 import {
   syncNow,
   pushBills,
@@ -894,6 +895,155 @@ describe("sync.ts - KB-315", () => {
     expect(isSyncLoopRunning()).toBe(false);
     expect(listeners.size).toBe(0);
     warn.mockRestore();
+  });
+
+  // -------------------------------------------------------------------------
+  // KB-313 / NI-38: while the browser is offline the loop sends nothing and schedules no timer; the 'online'
+  // event runs a cycle at once and resumes the cadence (one timer, however many events). The loop's own
+  // timer is told apart from anything else by its length (>= 10 s), and recorded instead of really waiting.
+  // -------------------------------------------------------------------------
+  describe("KB-313 / NI-38 - the loop waits while offline", () => {
+    interface Recorded { fn: () => void; ms: number; cleared: boolean }
+    let recorded: Recorded[];
+    let online: boolean;
+    let requests: number;
+    let listeners: Set<() => void>;
+    const source = (): OnlineEventSource => ({
+      addEventListener: (_t, l) => listeners.add(l),
+      removeEventListener: (_t, l) => listeners.delete(l),
+    });
+    const liveTimers = () => recorded.filter((r) => !r.cleared);
+
+    beforeEach(() => {
+      recorded = [];
+      listeners = new Set();
+      requests = 0;
+      online = true;
+      resetSyncStatus();
+      vi.stubGlobal("navigator", { get onLine() { return online; } });
+      const realSet = globalThis.setTimeout;
+      const realClear = globalThis.clearTimeout;
+      vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: () => void, ms?: number, ...rest: unknown[]) => {
+        if (typeof ms === "number" && ms >= 10_000) {
+          const r: Recorded = { fn, ms, cleared: false };
+          recorded.push(r);
+          return r as unknown as ReturnType<typeof setTimeout>;
+        }
+        return realSet(fn, ms, ...rest);
+      }) as typeof setTimeout);
+      vi.spyOn(globalThis, "clearTimeout").mockImplementation(((handle: unknown) => {
+        const r = recorded.find((x) => x === handle);
+        if (r) r.cleared = true;
+        else realClear(handle as never);
+      }) as typeof clearTimeout);
+    });
+    afterEach(() => {
+      stopSyncLoop();
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    const countingClient = (extra: Record<string, Handler> = {}) =>
+      makeMockClient({
+        ...everyTableEmpty,
+        shop_products: () => {
+          requests += 1;
+          return { data: [], error: null };
+        },
+        ...extra,
+      });
+    const options = (client: SupabaseClient) => ({ client, localDb, shopId: "shop-1", deviceId: "device-1" });
+    const settle = (n: number) => vi.waitFor(() => expect(requests).toBeGreaterThanOrEqual(n));
+    const pause = () => new Promise((r) => setTimeout(r, 60));
+
+    it("offline at start: no request at all and no timer - the loop is still 'running', waiting for 'online'", async () => {
+      online = false;
+      startSyncLoop(options(countingClient()), source());
+      await pause();
+      expect(requests).toBe(0);
+      expect(liveTimers()).toHaveLength(0);
+      expect(isSyncLoopRunning()).toBe(true);
+      expect(listeners.size).toBe(1);
+    });
+
+    it("online it polls every 15 s; when the timer fires after the browser went offline, it sends nothing and does not reschedule", async () => {
+      startSyncLoop(options(countingClient()), source());
+      await settle(1);
+      await vi.waitFor(() => expect(liveTimers()).toHaveLength(1));
+      expect(liveTimers()[0]!.ms).toBe(15_000);
+
+      online = false;
+      const tick = liveTimers()[0]!;
+      tick.cleared = true;
+      tick.fn();
+      await pause();
+      expect(requests).toBe(1); // nothing new
+      expect(liveTimers()).toHaveLength(0);
+    });
+
+    it("'online' after that: a cycle runs at once and the 15 s cadence resumes", async () => {
+      startSyncLoop(options(countingClient()), source());
+      await settle(1);
+      await vi.waitFor(() => expect(liveTimers()).toHaveLength(1));
+      online = false;
+      const tick = liveTimers()[0]!;
+      tick.cleared = true;
+      tick.fn();
+      await pause();
+
+      online = true;
+      [...listeners].forEach((l) => l());
+      await settle(2);
+      await vi.waitFor(() => expect(liveTimers()).toHaveLength(1));
+      expect(liveTimers()[0]!.ms).toBe(15_000);
+    });
+
+    it("many 'online' events never stack timers: one live timer", async () => {
+      startSyncLoop(options(countingClient()), source());
+      await settle(1);
+      online = true;
+      [...listeners].forEach((l) => l());
+      [...listeners].forEach((l) => l());
+      [...listeners].forEach((l) => l());
+      await pause();
+      await vi.waitFor(() => expect(liveTimers()).toHaveLength(1));
+    });
+
+    it("syncNow while the browser is offline (e.g. right after Bill Banao) sends nothing and is not counted as a failure", async () => {
+      await localDb.bills.add({
+        localId: "6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12", shopId: "shop-1", status: "final", syncStatus: "pending",
+        receiptNumber: "KB-000001", receiptNumberSource: "block", customerName: "Cash", customerMobile: null,
+        subtotalPaise: 100, totalPaise: 100, schemaVersion: 1, deviceId: "device-1",
+        createdAt: "2026-10-08T10:00:00.000Z", finalizedAt: "2026-10-08T10:00:00.000Z", syncedAt: null,
+      });
+      online = false;
+      const client = countingClient({ "rpc:push_bill": () => { throw new Error("push_bill must not be called while offline"); } });
+      const result = await syncNow(options(client));
+      expect(result).toEqual({ anyTransientFailure: false, skippedOffline: true });
+      expect(requests).toBe(0);
+      expect(getSyncStatus()).toMatchObject({ consecutiveFailures: 0, syncing: false });
+      expect((await localDb.bills.get("6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12"))?.syncStatus).toBe("pending");
+    });
+
+    it("cycles feed the chip's status: three failed cycles in a row -> failing; a cycle with no live session -> noSession", async () => {
+      await localDb.bills.add({
+        localId: "6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12", shopId: "shop-1", status: "final", syncStatus: "pending",
+        receiptNumber: "KB-000001", receiptNumberSource: "block", customerName: "Cash", customerMobile: null,
+        subtotalPaise: 100, totalPaise: 100, schemaVersion: 1, deviceId: "device-1",
+        createdAt: "2026-10-08T10:00:00.000Z", finalizedAt: "2026-10-08T10:00:00.000Z", syncedAt: null,
+      });
+      const failing = countingClient({ "rpc:push_bill": () => ({ data: null, error: { message: "fetch failed" } }) });
+      for (let i = 0; i < 3; i++) await syncNow(options(failing));
+      expect(isSyncFailing(getSyncStatus())).toBe(true);
+
+      await syncNow(options(countingClient({ "auth:session": () => ({ data: null, error: null }) })));
+      expect(getSyncStatus().noSession).toBe(true);
+      expect(getSyncStatus().consecutiveFailures).toBe(3); // a no-session skip is not a failure
+
+      await localDb.bills.update("6f1c2b0e-4a57-4c1e-9d8a-2b7f0d3e5a12", { syncStatus: "synced" });
+      await syncNow(options(countingClient()));
+      expect(getSyncStatus()).toMatchObject({ consecutiveFailures: 0, noSession: false, syncing: false });
+    });
   });
 
   it("the shop_products pull cursor is kept PER SHOP", async () => {

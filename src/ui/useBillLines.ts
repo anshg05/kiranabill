@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { CatalogEntry } from "@/domain/catalog";
 import {
   acknowledgementScopes,
@@ -19,13 +19,16 @@ import { CASH, parseCustomerName, parseIndianMobile } from "@/domain/customer";
 import { amountNeeded, visibleFlags, type FinalFlag, type FinalLine } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
 import type { BillLine } from "@/data/voiceBilling";
+import type { KiranaBillDB } from "@/data/db";
+import { DRAFT_SAVE_DELAY_MS, clearDraft, loadDraft, saveDraft } from "./billDraftStore";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
 // utterance it came from, and what was spoken), editing, removing with a
 // one-level undo, and the bill's flags re-derived after every change
 // (domain/billEdit.ts billFlags). The app never changes a number itself: a
-// line changes only through the shopkeeper's edit. Kept in memory until
-// KB-313 persists the bill.
+// line changes only through the shopkeeper's edit. KB-313: with a `persist`
+// target the half-built bill is kept in the user's own database and comes back
+// after a reload (billDraftStore.ts).
 
 export interface BillRow extends BillEntry {
   readonly displayName: string;
@@ -54,7 +57,7 @@ export const PARSE_FAILED = "Couldn't read the items";
 /** How long "Chini removed — Undo" stays (owner: one level of undo). */
 export const UNDO_MS = 6_000;
 
-interface State {
+export interface BillState {
   /** KB-307: the bill's identity from the moment it starts - bills.local_id
    * (a UUID, D37) and created_at. Finalising twice under one localId writes
    * one bill (data/finalise.ts). */
@@ -103,25 +106,26 @@ type Action =
   | { type: "dismiss"; id: string }
   | { type: "customer"; customer: Partial<Customer> }
   | { type: "reset" }
+  | { type: "restore"; state: BillState }
   | { type: "replace"; id: string; row: BillRow }
   | { type: "remove"; id: string }
   | { type: "undo" }
   | { type: "forget" }
   | { type: "acknowledge"; key: string };
 
-export const EMPTY_BILL: State = { localId: "", startedAt: "", rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null }, discarded: [] };
+export const EMPTY_BILL: BillState = { localId: "", startedAt: "", rows: [], utterances: [], nextId: 1, removed: null, acknowledged: new Set(), notAdded: [], nextNotAddedId: 1, focusLineId: null, customer: { name: CASH, mobile: null }, discarded: [] };
 
 /** KB-307: a fresh, empty bill - "New bill" after finalising, and the first bill. */
-export function newBill(): State {
+export function newBill(): BillState {
   return { ...EMPTY_BILL, localId: crypto.randomUUID(), startedAt: new Date().toISOString() };
 }
 
-const updateNotAdded = (state: State, id: string, change: Partial<NotAdded>): State => ({
+const updateNotAdded = (state: BillState, id: string, change: Partial<NotAdded>): BillState => ({
   ...state,
   notAdded: state.notAdded.map((n) => (n.id === id ? { ...n, ...change } : n)),
 });
 
-export function billReducer(state: State, action: Action): State {
+export function billReducer(state: BillState, action: Action): BillState {
   switch (action.type) {
     case "add": {
       // KB-319: a Retry's lines land only while its entry is still listed -
@@ -162,6 +166,9 @@ export function billReducer(state: State, action: Action): State {
       return { ...state, customer: { ...state.customer, ...action.customer } };
     case "reset":
       return newBill();
+    case "restore":
+      // KB-313: only onto a bill nobody has started - a late restore never wipes lines already added.
+      return state.rows.length === 0 && state.notAdded.length === 0 && state.customer.name === CASH && state.customer.mobile === null ? action.state : state;
     case "replace": {
       // KB-304 (owner): an acknowledgement lapses on any edit to its line.
       const scopes = acknowledgementScopes(action.row.id, action.row.utteranceId);
@@ -209,6 +216,10 @@ export interface BillLines {
   readonly localId: string;
   readonly startedAt: string;
   reset: () => void;
+  /** KB-313: the saved draft (if any) has been looked at - false only while it loads. */
+  readonly ready: boolean;
+  discardDraft: () => Promise<void>;
+  clearBill: () => Promise<void>;
   /** KB-307: everything data/finalise.ts needs, as the screen holds it now. */
   readonly draft: BillDraft;
   /** KB-319: heard, not on the bill yet - Retry or dismiss. */
@@ -237,8 +248,69 @@ export interface BillLines {
   acknowledge: (key: string) => void;
 }
 
-export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
+/** KB-313: where the half-built bill is kept - the signed-in user's own database (D38), one key per shop. */
+export interface BillPersist {
+  readonly db: KiranaBillDB;
+  readonly shopId: string;
+}
+
+export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPersist): BillLines {
   const [state, dispatch] = useReducer(billReducer, undefined, newBill);
+  const db = persist?.db ?? null;
+  const shopId = persist?.shopId ?? null;
+  // ready: the saved draft (if any) has been looked at. Without a database there is nothing to wait for.
+  const [ready, setReady] = useState(persist === undefined);
+  // After Bill Banao until the next bill: the saved bill's draft must not come back.
+  const frozen = useRef(false);
+  const latest = useRef(state);
+  latest.current = state;
+
+  useEffect(() => {
+    if (!db || !shopId) return;
+    let live = true;
+    void (async () => {
+      try {
+        const stored = await loadDraft(db, shopId);
+        if (!stored || !live) return;
+        if (await db.bills.get(stored.localId)) {
+          await clearDraft(db, shopId); // finalised meanwhile (a crash right after Bill Banao) - never re-finalise it
+          return;
+        }
+        dispatch({ type: "restore", state: stored });
+      } catch (err) {
+        console.warn("[billDraft] restore failed:", err instanceof Error ? err.message : err);
+      } finally {
+        if (live) setReady(true);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [db, shopId]);
+
+  // Keep it: shortly after every change, and at once when the page is hidden or closed.
+  useEffect(() => {
+    if (!db || !shopId || !ready) return;
+    const timer = setTimeout(() => {
+      if (!frozen.current) void saveDraft(db, shopId, latest.current).catch((err: unknown) => console.warn("[billDraft] save failed:", err instanceof Error ? err.message : err));
+    }, DRAFT_SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [db, shopId, ready, state]);
+  useEffect(() => {
+    if (!db || !shopId || !ready) return;
+    const flush = () => {
+      if (!frozen.current) void saveDraft(db, shopId, latest.current).catch((err: unknown) => console.warn("[billDraft] save failed:", err instanceof Error ? err.message : err));
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [db, shopId, ready]);
 
   const placed = useMemo(() => billFlags(state.rows, state.utterances, catalog), [state.rows, state.utterances, catalog]);
   // KB-307: on a line that needs an amount, "Price needed" replaces
@@ -321,7 +393,21 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
   const retrying = useCallback((id: string) => dispatch({ type: "retrying", id }), []);
   const retryFailed = useCallback((id: string, message: string) => dispatch({ type: "retryFailed", id, message }), []);
   const dismiss = useCallback((id: string) => dispatch({ type: "dismiss", id }), []);
-  const reset = useCallback(() => dispatch({ type: "reset" }), []);
+  const reset = useCallback(() => {
+    frozen.current = false;
+    dispatch({ type: "reset" });
+  }, []);
+  /** Bill Banao saved this bill: its draft goes, and stays gone until the next bill. */
+  const discardDraft = useCallback(async () => {
+    frozen.current = true;
+    if (db && shopId) await clearDraft(db, shopId);
+  }, [db, shopId]);
+  /** "Clear bill": the bill is thrown away - nothing is saved, nothing is learned (hard rule 8). */
+  const clearBill = useCallback(async () => {
+    frozen.current = false;
+    dispatch({ type: "reset" });
+    if (db && shopId) await clearDraft(db, shopId);
+  }, [db, shopId]);
 
   return {
     rows: state.rows,
@@ -330,6 +416,9 @@ export function useBillLines(catalog: readonly CatalogEntry[]): BillLines {
     localId: state.localId,
     startedAt: state.startedAt,
     reset,
+    ready,
+    discardDraft,
+    clearBill,
     draft,
     notAdded: state.notAdded,
     focusLineId: state.focusLineId,
