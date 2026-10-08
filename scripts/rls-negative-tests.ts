@@ -622,6 +622,17 @@ async function main(): Promise<void> {
       });
     }
 
+    // KB-312 (KI-37): a learning_reset event has no bill - pushed with bill_id null. RLS still keys it on shop_id.
+    await checkRejects(client, "KB-312 / KI-37: owner A cannot insert a BILL-LESS learning_events row (a learning_reset) into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, null, 'learning_reset', gen_random_uuid(), 'test-device')`, [shopB]);
+    });
+    await check(client, "KB-312 / KI-37 sanity: owner A can insert a bill-less learning_reset into their OWN shop", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, null, 'learning_reset', gen_random_uuid(), 'test-device')`, [shopA]);
+      return "accepted";
+    });
+
     await check(client, "learning write isolation (KB-307): owner A's UPDATE of shop B's learned alias / provisional product affects zero rows", async () => {
       await asUser(client, ownerB);
       await client.query(`insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'b-alias', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);

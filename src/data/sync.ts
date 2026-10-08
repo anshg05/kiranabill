@@ -107,25 +107,6 @@ function mergeResults(results: PushResult[]): PushResult {
   return { anyTransientFailure: results.some((r) => r.anyTransientFailure) };
 }
 
-/**
- * Logs a discarded local edit somewhere durable - the last-write-wins
- * rule (02-ARCHITECTURE.md section 2) stays exactly as specified, this
- * only makes sure "silently" doesn't also mean "unrecoverably
- * untraceable." Structured console.warn, not a UI surface - the doc is
- * explicit that this kind of conflict never blocks or alarms the user.
- */
-function logDiscardedEdit(params: {
-  table: string;
-  id: string;
-  discardedLocal: unknown;
-  wonRemote: unknown;
-}): void {
-  console.warn(
-    `[sync] last-write-wins: discarded local edit on ${params.table} id=${params.id}`,
-    { discardedLocal: params.discardedLocal, wonRemote: params.wonRemote },
-  );
-}
-
 // ---------------------------------------------------------------------
 // Phase 1: push bills - awaited to completion before phase 2
 // (learningEvents) ever starts, so a learningEvent can never be checked
@@ -222,8 +203,10 @@ export async function pushLearningEvents(client: SupabaseClient, localDb: Kirana
   let anyTransientFailure = false;
 
   for (const event of pending) {
-    const parentBill = await localDb.bills.get(event.billLocalId);
-    if (!parentBill?.serverId) {
+    // KB-312 (KI-37): an event with no bill (learning_reset) has billLocalId "" and goes up with
+    // bill_id null (the column is nullable); RLS still checks its shop_id.
+    const parentBill = event.billLocalId ? await localDb.bills.get(event.billLocalId) : null;
+    if (event.billLocalId && !parentBill?.serverId) {
       // Parent hasn't synced yet - not an error, not a retry-with-backoff.
       // Resolves itself next cycle once the bill syncs.
       continue;
@@ -235,7 +218,7 @@ export async function pushLearningEvents(client: SupabaseClient, localDb: Kirana
       {
         shop_id: event.shopId,
         local_id: event.localId,
-        bill_id: parentBill.serverId,
+        bill_id: parentBill?.serverId ?? null,
         event_type: event.eventType,
         payload: event.payload,
         created_at: event.createdAt,
@@ -835,18 +818,19 @@ export async function pushReceiptNumberBlocks(client: SupabaseClient, localDb: K
 }
 
 // ---------------------------------------------------------------------
-// shops: bidirectional, last-write-wins on updated_at (02-ARCHITECTURE.md
-// section 2's own conflict-strategy table). Discard-the-loser semantics
-// implemented exactly as specified - not softened - but every discard is
-// logged (logDiscardedEdit) so "silently" doesn't also mean
-// "unrecoverably untraceable."
-//
-// A pull only ever overwrites a LOCAL ROW ALREADY IN "synced" STATE. A
-// row still "pending" (a local edit not yet even attempted against the
-// server) is left alone this cycle - overwriting an edit the user hasn't
-// had a chance to push yet would be a worse, more silent loss than the
-// documented conflict case, which is about two already-synced bases
-// diverging, not about clobbering an in-flight local write.
+// shops: bidirectional. KB-312 (docs/07-DECISIONS.md D64): the SERVER's
+// updated_at is the only clock (a trigger sets it on every insert and update -
+// a device clock can be minutes off, and a Studio edit leaves it alone).
+//  - A push sends the fields (never updated_at), reads back the server's
+//    updated_at, and stores it VERBATIM (Postgres has microseconds, a JS Date
+//    only milliseconds - never round-trip it through Date) - but only if the
+//    local row is still the exact version that was pushed. An edit made while
+//    the request was out stays pending and is pushed next cycle.
+//  - A pull never touches a row still "pending" (an edit not yet on the
+//    server); otherwise it takes the server's row whenever its updated_at
+//    string differs from the local one. No comparison against a device clock.
+// Whole-row push for now: two phones editing the same shop while one is
+// offline - the later ARRIVAL overwrites the other's fields (NI-40).
 // ---------------------------------------------------------------------
 
 export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): Promise<PushResult> {
@@ -866,10 +850,9 @@ export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): P
         logo_url: shop.logoUrl,
         bill_language: shop.billLanguage,
         receipt_prefix: shop.receiptPrefix,
-        updated_at: shop.updatedAt,
       })
       .eq("id", shop.id)
-      .select("id");
+      .select("id, updated_at");
 
     if (error || !data || data.length === 0) {
       if (isPermanentError(error) || (!error && data?.length === 0)) {
@@ -885,7 +868,15 @@ export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): P
       continue;
     }
 
-    await localDb.shops.update(shop.id, { syncStatus: "synced" });
+    // Take the server's updated_at only if nothing was edited while the request was out: an edit
+    // changes updatedAt (updateShopSettings), so "still the version I pushed" is exactly this check.
+    const serverUpdatedAt = data[0]?.updated_at as string | undefined;
+    await localDb.transaction("rw", localDb.shops, async () => {
+      const current = await localDb.shops.get(shop.id);
+      if (current && current.updatedAt === shop.updatedAt && current.syncStatus === "pending" && serverUpdatedAt) {
+        await localDb.shops.update(shop.id, { syncStatus: "synced", updatedAt: serverUpdatedAt });
+      }
+    });
   }
 
   return { anyTransientFailure };
@@ -905,19 +896,8 @@ export async function pullShop(client: SupabaseClient, localDb: KiranaBillDB, sh
     return;
   }
 
-  if (local && local.updatedAt >= data.updated_at) {
-    // Local is already at least as new - nothing to do.
-    return;
-  }
-
-  if (local) {
-    logDiscardedEdit({
-      table: "shops",
-      id: shopId,
-      discardedLocal: local,
-      wonRemote: data,
-    });
-  }
+  // Verbatim string comparison, never through Date (microseconds): the same version -> nothing to do.
+  if (local && local.updatedAt === data.updated_at) return;
 
   await localDb.shops.put({
     id: data.id,

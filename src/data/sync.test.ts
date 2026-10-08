@@ -16,6 +16,7 @@ import {
   pushLearningEvents,
   pushPriceObservations,
   pullShop,
+  pushShop,
 } from "./sync";
 
 /**
@@ -27,7 +28,8 @@ import {
  * than a generic mock, so each adversarial scenario controls exactly
  * what the "server" does.
  */
-type Handler = (op: string, payload: unknown, filters: Record<string, unknown>) => { data: unknown; error: unknown };
+type HandlerResult = { data: unknown; error: unknown };
+type Handler = (op: string, payload: unknown, filters: Record<string, unknown>) => HandlerResult | Promise<HandlerResult>;
 
 function makeMockClient(handlers: Record<string, Handler>): SupabaseClient {
   const from = (table: string) => {
@@ -95,7 +97,7 @@ function makeMockClient(handlers: Record<string, Handler>): SupabaseClient {
   const auth = {
     getSession: async () => {
       const override = handlers["auth:session"];
-      const session = override ? override("session", null, {}).data : { user: { id: "user-1" } };
+      const session = override ? (await override("session", null, {})).data : { user: { id: "user-1" } };
       return { data: { session }, error: null };
     },
   };
@@ -453,7 +455,30 @@ describe("sync.ts", () => {
     });
   });
 
-  describe("adversarial: pull racing a concurrent local edit (shops, last-write-wins)", () => {
+  describe("KB-312 / KI-37: a learning event with no bill (learning_reset) is pushed with bill_id null", () => {
+    it("pushes it, marks it synced, and a bill-linked event still waits for its bill's serverId", async () => {
+      const now = "2026-10-08T10:00:00.000Z";
+      await localDb.learningEvents.bulkAdd([
+        { localId: "reset-1", shopId: "shop-1", syncStatus: "pending", billLocalId: "", eventType: "learning_reset", payload: { clearedCounts: { learnedAliases: 2 } }, createdAt: now, updatedAt: now, deviceId: "d1" },
+        { localId: "ev-unsynced-bill", shopId: "shop-1", syncStatus: "pending", billLocalId: "bill-not-synced", eventType: "bill_finalized", payload: {}, createdAt: now, updatedAt: now, deviceId: "d1" },
+      ]);
+      const inserted: Array<Record<string, unknown>> = [];
+      const client = makeMockClient({
+        learning_events: (op, payload) => {
+          if (op === "insert") inserted.push(payload as Record<string, unknown>);
+          return { data: { id: "server-reset-1" }, error: null };
+        },
+      });
+      const result = await pushLearningEvents(client, localDb);
+      expect(result.anyTransientFailure).toBe(false);
+      expect(inserted).toHaveLength(1); // the bill-linked one is NOT pushed
+      expect(inserted[0]).toMatchObject({ shop_id: "shop-1", local_id: "reset-1", bill_id: null, event_type: "learning_reset", payload: { clearedCounts: { learnedAliases: 2 } } });
+      expect((await localDb.learningEvents.get("reset-1"))).toMatchObject({ syncStatus: "synced", serverId: "server-reset-1" });
+      expect((await localDb.learningEvents.get("ev-unsynced-bill"))?.syncStatus).toBe("pending");
+    });
+  });
+
+  describe("adversarial: pull racing a concurrent local edit (shops - the server's updated_at is the only clock, D64)", () => {
     it("a pull does NOT clobber a local row that is still pending an unpushed edit", async () => {
       await localDb.shops.add({
         id: "shop-1",
@@ -492,94 +517,93 @@ describe("sync.ts", () => {
       expect(shop?.syncStatus).toBe("pending");
     });
 
-    it("a pull DOES overwrite an already-synced local row when remote is newer, and logs the discard", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // KB-312 / D64: the SERVER's updated_at is the only clock. A synced local row carries the server's own
+    // string (stored verbatim, microseconds and all); a pull takes the server row whenever the strings differ,
+    // whichever device clock is "later" - never a comparison against a device clock.
+    const localShop = (over: Partial<import("./db").LocalShop> = {}): import("./db").LocalShop => ({
+      id: "shop-1", syncStatus: "synced", name: "Local Name", phone: null, address: null, logoUrl: null,
+      catalogMode: "custom_only", billLanguage: "en", receiptPrefix: null, updatedAt: "2026-09-20T13:00:00.123456+00:00", ...over,
+    });
+    const remoteShop = (over: Record<string, unknown> = {}) => ({
+      id: "shop-1", name: "Remote Name", phone: null, address: null, logo_url: null, catalog_mode: "custom_only",
+      bill_language: "en", receipt_prefix: null, updated_at: "2026-09-20T13:00:00.123456+00:00", ...over,
+    });
 
-      await localDb.shops.add({
-        id: "shop-1",
-        syncStatus: "synced", // no unpushed edit - this is genuinely stale
-        name: "Stale Local Name",
-        phone: null,
-        address: null,
-        logoUrl: null,
-        catalogMode: "custom_only",
-        billLanguage: "hi",
-        receiptPrefix: null,
-        updatedAt: "2026-09-20T11:00:00.000Z",
-      });
-
-      const client = makeMockClient({
-        shops: () => ({
-          data: {
-            id: "shop-1",
-            name: "Remote Name",
-            phone: null,
-            address: null,
-            logo_url: null,
-            catalog_mode: "custom_only",
-            bill_language: "hi",
-            receipt_prefix: null,
-            updated_at: "2026-09-20T13:00:00.000Z",
-          },
-          error: null,
-        }),
-      });
-
+    it("a synced local row is replaced when the server's updated_at differs - even when the DEVICE clock says local is newer", async () => {
+      // A device whose clock is 5 minutes ahead: its row says 13:05, the server says 13:01 (another phone's later edit).
+      await localDb.shops.add(localShop({ updatedAt: "2026-09-20T13:05:00.000Z" }));
+      const client = makeMockClient({ shops: () => ({ data: remoteShop({ updated_at: "2026-09-20T13:01:00.000000+00:00" }), error: null }) });
       await pullShop(client, localDb, "shop-1");
-
       const shop = await localDb.shops.get("shop-1");
       expect(shop?.name).toBe("Remote Name");
       expect(shop?.syncStatus).toBe("synced");
-
-      // Discard is logged with enough detail to reconstruct what happened -
-      // not silently untraceable, even though the doc's discard-the-loser
-      // rule itself is implemented exactly as specified, unsoftened.
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("last-write-wins"),
-        expect.objectContaining({
-          discardedLocal: expect.objectContaining({ name: "Stale Local Name" }),
-          wonRemote: expect.objectContaining({ name: "Remote Name" }),
-        }),
-      );
-
-      warnSpy.mockRestore();
+      expect(shop?.updatedAt).toBe("2026-09-20T13:01:00.000000+00:00"); // stored exactly as returned
     });
 
-    it("a pull is a no-op when the local synced row is already at least as new as remote", async () => {
-      await localDb.shops.add({
-        id: "shop-1",
-        syncStatus: "synced",
-        name: "Current Name",
-        phone: null,
-        address: null,
-        logoUrl: null,
-        catalogMode: "custom_only",
-        billLanguage: "hi",
-        receiptPrefix: null,
-        updatedAt: "2026-09-20T13:00:00.000Z",
-      });
-
-      const client = makeMockClient({
-        shops: () => ({
-          data: {
-            id: "shop-1",
-            name: "Older Remote Name",
-            phone: null,
-            address: null,
-            logo_url: null,
-            catalog_mode: "custom_only",
-            bill_language: "hi",
-            receipt_prefix: null,
-            updated_at: "2026-09-20T12:00:00.000Z", // older than local
-          },
-          error: null,
-        }),
-      });
-
+    it("an identical updated_at (microseconds included) is a no-op - strings compared verbatim, never through Date", async () => {
+      await localDb.shops.add(localShop({ name: "Current Name", updatedAt: "2026-09-20T13:00:00.123456+00:00" }));
+      const client = makeMockClient({ shops: () => ({ data: remoteShop({ name: "Same Version", updated_at: "2026-09-20T13:00:00.123456+00:00" }), error: null }) });
       await pullShop(client, localDb, "shop-1");
+      expect((await localDb.shops.get("shop-1"))?.name).toBe("Current Name"); // not re-taken
+    });
 
+    it("a server version one MICROSECOND later is taken (a Date round-trip would call them equal)", async () => {
+      await localDb.shops.add(localShop({ name: "Current Name", updatedAt: "2026-09-20T13:00:00.123456+00:00" }));
+      const client = makeMockClient({ shops: () => ({ data: remoteShop({ name: "One Microsecond Later", updated_at: "2026-09-20T13:00:00.123457+00:00" }), error: null }) });
+      await pullShop(client, localDb, "shop-1");
       const shop = await localDb.shops.get("shop-1");
-      expect(shop?.name).toBe("Current Name"); // unchanged
+      expect(shop?.name).toBe("One Microsecond Later");
+      expect(shop?.updatedAt).toBe("2026-09-20T13:00:00.123457+00:00");
+    });
+  });
+
+  describe("pushShop (KB-312, D64): the server's updated_at comes back and is stored; an edit made while the push is in flight survives", () => {
+    const row = (over: Partial<import("./db").LocalShop> = {}): import("./db").LocalShop => ({
+      id: "shop-1", syncStatus: "pending", name: "Edited Name", phone: "9876543210", address: null, logoUrl: null,
+      catalogMode: "custom_only", billLanguage: "hi", receiptPrefix: null, updatedAt: "2026-09-20T12:00:00.000Z", ...over,
+    });
+
+    it("sends the fields without updated_at, then stores the server's updated_at exactly as returned and marks the row synced", async () => {
+      await localDb.shops.add(row());
+      let sent: Record<string, unknown> | null = null;
+      const client = makeMockClient({
+        shops: (_op, payload) => {
+          sent = payload as Record<string, unknown>;
+          return { data: [{ id: "shop-1", updated_at: "2026-09-20T12:00:03.654321+00:00" }], error: null };
+        },
+      });
+      const result = await pushShop(client, localDb);
+      expect(result.anyTransientFailure).toBe(false);
+      expect(sent).toMatchObject({ name: "Edited Name", phone: "9876543210", bill_language: "hi" });
+      expect(sent).not.toHaveProperty("updated_at"); // the server stamps it (trigger)
+      const shop = await localDb.shops.get("shop-1");
+      expect(shop).toMatchObject({ syncStatus: "synced", updatedAt: "2026-09-20T12:00:03.654321+00:00" });
+    });
+
+    it("an edit made while the push is in flight is NOT clobbered: the row stays pending with the new edit, and the next cycle pushes it", async () => {
+      await localDb.shops.add(row());
+      const pushed: string[] = [];
+      let calls = 0;
+      const client = makeMockClient({
+        shops: async (_op, payload) => {
+          calls += 1;
+          pushed.push((payload as { name: string }).name);
+          if (calls === 1) {
+            // the shopkeeper saves again while the first request is still out
+            await localDb.shops.update("shop-1", { name: "Edited Again", updatedAt: "2026-09-20T12:00:01.000Z", syncStatus: "pending" });
+          }
+          return { data: [{ id: "shop-1", updated_at: `2026-09-20T12:00:0${calls + 2}.000000+00:00` }], error: null };
+        },
+      });
+
+      await pushShop(client, localDb);
+      let shop = await localDb.shops.get("shop-1");
+      expect(shop).toMatchObject({ name: "Edited Again", syncStatus: "pending", updatedAt: "2026-09-20T12:00:01.000Z" }); // survived
+
+      await pushShop(client, localDb); // the next cycle
+      shop = await localDb.shops.get("shop-1");
+      expect(pushed).toEqual(["Edited Name", "Edited Again"]);
+      expect(shop).toMatchObject({ name: "Edited Again", syncStatus: "synced", updatedAt: "2026-09-20T12:00:04.000000+00:00" });
     });
   });
 
