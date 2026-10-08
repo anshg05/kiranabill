@@ -85,9 +85,10 @@ Sign-out stops the sync loop, forgets this device's remembered user (so an offli
 them), and ends the Supabase session. **Local data is not deleted** — each user has their own local database,
 and the same user signing back in continues where they left off, unsynced bills included.
 
-**Required of the UI (not built yet — `KB-312` Settings / `KB-313` offline UI):** before signing out, if any
+**Built in `KB-313` (D65):** before signing out, if any
 bills are still unsynced, **warn with the count** ("3 bills haven't reached the server yet — they'll stay on
-this phone and sync when you sign back in"). Never a silent sign-out over unsynced bills.
+this phone and sync when you sign back in"). Never a silent sign-out over unsynced bills. Bills that will never sync on their own (a permanent
+conflict) get their own line, and a bill in progress is mentioned.
 
 ---
 

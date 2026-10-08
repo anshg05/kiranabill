@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 8 Oct 2026 (rev 97) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 9 Oct 2026 (rev 98) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** next ticket `KB-313` — plan. `KB-312` done 8 Oct 2026. Draft `6ac7c715886e9f4482351669` is live for the owner's phone + desktop checks ("Draft deploy — checks").
+**Working on:** `KB-313` (offline UI) — two local commits (D65); awaiting the owner's check. No migration.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -52,6 +52,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15c. ~~**`KB-311`** — Catalog screen~~ — **done 8 Oct 2026** (D62). Next: `KB-324` (pull bills) — plan.
 15d. ~~**`KB-324`** — pull bills~~ — **done 8 Oct 2026** (D63). New: `KB-326` (before the pilot).
 15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
+15f. **`KB-313`** — offline UI, the half-built bill, sign-out warning — built 9 Oct 2026 (D65), awaiting the owner's check. Closes NI-38.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -123,6 +124,13 @@ shop has one bill, KB-000051), search / open / back worked; Settings: the landli
 synced, values restored afterwards; Catalog: search, filters, valid and invalid prices, the offline note; Add from ready catalog on
 the start-empty live shop worked; voice "3 पारले जी 10 वाले" → 3 piece × ₹10; an open-bill price change kept ₹45 on the existing line and
 added the new line at ₹50 (total ₹125); a long customer name, Image and PDF. **Phone checks for KB-310, KB-311, KB-312 and KB-324 done.**
+
+## Next draft deploy — KB-313 checks (owner)
+
+- [ ] **Reload mid-bill (phone):** add two lines, switch to another app for a minute (or swipe the tab away), come back — the bill is as left.
+- [ ] **Airplane mode:** the grey "Offline" chip; finalise a bill; it stays "Not synced" in History; airplane off — it syncs and the chip clears.
+- [ ] **Sign out with an unsynced bill:** the warning with the count; Cancel stays signed in.
+- [ ] **Clear bill** (≡ menu, only with lines): the confirmation, then an empty bill.
 
 ## Before deployment
 
@@ -369,6 +377,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 9 Oct 2026 | **`KB-313` built — two local commits, not pushed (D65). No migration.** (1) The half-built bill: `billDraftStore.ts` (whole validation, money must be a safe integer) in the user's OWN database's `meta`, one key per shop, saved ~250 ms after a change and on `pagehide` / tab hidden; restored once, exactly as left, never re-priced; a finalised bill's draft is dropped; `useBillLines(catalog, { db, shopId })` gains `ready`, `discardDraft`, `clearBill`. The sync loop's state store (`syncStatus.ts` — the loop exposed nothing before) and the NI-38 fix: offline sends nothing and schedules no timer, `syncNow` offline is a no-op, `online` resumes (one timer). No existing loop assertion changed; 8 added. (2) Header chip, Clear bill, the sign-out warning (counts; a separate truthful conflict line; "bill in progress" only for an UNSAVED bill — **found in the browser**: it also appeared over a saved bill). Plants: 13, all caught (two needed a stricter test / removing a redundant line). Browser (local stack): reload mid-bill restored ₹135; offline chip; a bill finalised offline stayed pending (draft gone), synced ~0.5 s after `online`; sign-out warned with the count, Cancel stayed signed in; Clear bill created no bill and no learning event; 320/1280 no overflow (the long chip wraps to two lines). | Agent |
 | 8 Oct 2026 | **Draft phone session passed (owner, ~10:20 PM) — checks 1, 2, 4–8** (details under "Draft deploy — checks"). Phone checks for `KB-310`, `KB-311`, `KB-312`, `KB-324` done. Open: step 3 (compression — inconclusive, the owner will send the `content-encoding` value) and step 9 (fallback number — not done, accepted; covered on desktop in KB-308). `scratch-measure.ts` and `scratch-prodbuild.cjs` were never committed (not in any commit, deleted, `git status` clean). | Owner + Agent |
 | 8 Oct 2026 | **Draft deploy `6ac7c715886e9f4482351669` from `5c4ac93`** (KB-310/311/312/324; no `--prod`, no marker, not linked). Migrations 20261009090000 and 20261010090000 on both sides (all 18 match). Built with the production `VITE_` values read from Netlify and never printed; `dist/`: cloud project ref present, no `localhost:54321/:8888/:5173` or `http://127.0.0.1`, one bare `127.0.0.1` (supabase-js trusted hosts), no dev string, the only JWT is the public `anon` key of the cloud project. `dist/` rebuilt locally afterwards. The nine-step owner checklist is in "Draft deploy — checks". | Agent |
 | 8 Oct 2026 | **`KB-312` done.** Owner check passed (all six steps); small decisions accepted. Migration `20261010090000` pushed to the remote by the owner. D64 now states why it is compatible with the deployed `6e29cf2`: that build can never create a pending shop edit, so its local shop `updatedAt` is always server-issued and the trigger changes nothing for it — a Studio edit now reaches it (correcting the migration comment's "identical row once per edit"). NI-39 notes that the customer-mobile rule has the same trunk-0 reading (no fix now). | Agent |

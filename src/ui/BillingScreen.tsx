@@ -32,6 +32,9 @@ import { syncNow } from "@/data/sync";
 import { learnPendingBills } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
 import { EditableValue } from "./EditableValue";
+import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
+import type { SyncChip, Unsynced } from "./syncChip";
+import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import type { Customer } from "./useBillLines";
 import { CASH, formatMobile } from "@/domain/customer";
@@ -110,14 +113,15 @@ export function BillingScreen() {
 
   // KB-303: the bill being built - its lines, edits, removals and flags
   // (useBillLines; KB-304 will display the flags, KB-305 adds items).
-  const bill = useBillLines(parser?.entries ?? NO_ENTRIES);
+  // KB-313: the half-built bill is kept in this user's own database and comes back after a reload.
+  const bill = useBillLines(parser?.entries ?? NO_ENTRIES, localDb && shop ? { db: localDb, shopId: shop.id } : undefined);
   const { add: addToBill, rows } = bill;
   useEffect(() => {
-    if (parser && rows.length === 0) {
+    if (parser && bill.ready && rows.length === 0) {
       for (const u of devTryUtterances(parser)) addToBill(u.lines, u.flags, u.transcript);
     }
     // only when the catalog arrives - a dev ?try= bill, once
-  }, [parser]);
+  }, [parser, bill.ready]);
 
   // DEV: the bill's flags after every change - there is no flag UI until KB-304.
   useEffect(() => {
@@ -143,7 +147,7 @@ export function BillingScreen() {
     accessToken,
     vocabulary,
     onTranscript,
-    notReadyReason: parser ? null : "Loading your catalog…",
+    notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, top the
   // receipt block up and start a sync (D38's loop would anyway). Neither is
@@ -151,13 +155,15 @@ export function BillingScreen() {
   // KB-307 commit 3: then learning (08 §8: after the receipt, its own
   // transaction, never able to fail the bill), then the sync - so the bill and
   // its learning rows push in one cycle.
+  const { discardDraft } = bill;
   const onSaved = useCallback(() => {
+    void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
     if (!localDb || !shop || !deviceId) return;
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     void learnPendingBills(localDb, shop.id)
       .catch((err: unknown) => console.warn("[learning] failed (the bill is saved; retried on next start):", err))
       .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
-  }, [deviceId, localDb, shop]);
+  }, [deviceId, discardDraft, localDb, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
     if (!localDb || !shop) return;
@@ -181,6 +187,7 @@ export function BillingScreen() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const sync = useSyncChip(localDb);
   return (
     <>
     <BillView
@@ -215,6 +222,10 @@ export function BillingScreen() {
       onOpenHistory={localDb && shop ? () => setHistoryOpen(true) : undefined}
       onOpenCatalog={localDb && shop && deviceId ? () => setCatalogOpen(true) : undefined}
       onOpenSettings={localDb && shop && deviceId ? () => setSettingsOpen(true) : undefined}
+      syncChip={sync.chip}
+      syncDetail={sync.detail}
+      unsynced={sync.unsynced}
+      onClearBill={() => void bill.clearBill()}
     />
     {historyOpen && localDb && shop && (
       <HistoryScreen localDb={localDb} shopId={shop.id} render={renderReceiptFiles} onClose={() => setHistoryOpen(false)} />
@@ -283,6 +294,13 @@ interface BillViewProps {
   onOpenCatalog?: () => void;
   /** KB-312: the ≡ menu's Settings. */
   onOpenSettings?: () => void;
+  /** KB-313: the header chip (05 §7) and what its detail says. A status only - it never blocks billing. */
+  syncChip?: SyncChip | null;
+  syncDetail?: { readonly pending: number; readonly conflict: number; readonly lastAttemptAt: string | null };
+  /** KB-313: bills that haven't reached the server (pending) or never will on their own (conflict) - the sign-out warning. */
+  unsynced?: Unsynced;
+  /** KB-313: "Clear bill" in the ≡ menu - offered only while the bill has lines. */
+  onClearBill?: () => void;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -592,11 +610,16 @@ export function BillView({
   onOpenHistory,
   onOpenCatalog,
   onOpenSettings,
+  syncChip = null,
+  syncDetail,
+  unsynced,
+  onClearBill,
 }: BillViewProps) {
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
   const readOnly = saved !== null;
   // KB-305: the add-item panel, and what its search starts with.
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
+  const [confirm, setConfirm] = useState<"signout" | "clear" | null>(null);
   const canAdd = catalog !== null && onAddByHand !== undefined;
   // Both markups are in the DOM (CSS picks one); a new line's qty editor opens
   // only in the visible one, so exactly one input takes focus.
@@ -750,8 +773,11 @@ export function BillView({
   return (
     <div className="h-dvh bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
-        <header className="flex items-center justify-between border-b border-line px-4 py-2">
-          <h1 className="text-[20px] font-semibold">KiranaBill</h1>
+        <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="text-[20px] font-semibold">KiranaBill</h1>
+            <SyncChipView chip={syncChip} detail={syncDetail} />
+          </div>
           <details className="relative">
             <summary
               aria-label="Menu"
@@ -796,12 +822,40 @@ export function BillView({
                   Settings
                 </button>
               )}
-              <button type="button" onClick={onSignOut} className="block min-h-11 w-full px-4 text-left">
+              {onClearBill && lines.length > 0 && !saved && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.closest("details")?.removeAttribute("open");
+                    setConfirm("clear");
+                  }}
+                  className="block min-h-11 w-full px-4 text-left"
+                >
+                  Clear bill
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.currentTarget.closest("details")?.removeAttribute("open");
+                  // 16 §2: never a silent sign-out over bills that haven't reached the server.
+                  if (unsynced && unsynced.pending + unsynced.conflict > 0) setConfirm("signout");
+                  else onSignOut();
+                }}
+                className="block min-h-11 w-full px-4 text-left"
+              >
                 Sign out
               </button>
             </div>
           </details>
         </header>
+
+        {confirm === "signout" && unsynced && (
+          <ConfirmDialog {...signOutWarning(unsynced, lines.length > 0 && !saved)} confirmLabel="Sign out anyway" onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onSignOut(); }} />
+        )}
+        {confirm === "clear" && (
+          <ConfirmDialog {...clearBillWarning(lines.length)} confirmLabel="Clear bill" onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onClearBill?.(); }} />
+        )}
 
         {/* KB-306 (D6): the customer defaults to Cash, is editable any time and
             never blocks or asks (hard rule 6). Mobile is optional, 10 digits. */}

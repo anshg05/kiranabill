@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 8 Oct 2026 (rev 41) · Supersedes rev 40
+**Last updated:** 9 Oct 2026 (rev 42) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1662,6 +1662,44 @@ with it. This supersedes 02 §2's "last-write-wins on `updated_at`" **for shops*
 7. Tested on the real stack (`shopSettings.e2e.test.ts`): a Studio-style edit reaches the device; a device whose clock is
    5 minutes ahead and edits first — another device's later edit still wins on it; a pending edit is not clobbered by a
    pull; plus unit tests for a microsecond difference, an identical timestamp, and an edit during a slow push.
+
+### D65 — The half-built bill is kept in the user's own database; the sync loop waits while offline; the header chip is a status, never a dialog 🟢
+
+**Owner decision, 8 Oct 2026, `KB-313`** (plan Q1–Q5). No migration, no new dependency.
+1. **The half-built bill survives** a reload, Android killing the backgrounded tab, or a crash (02, 05 §9, 16 §6 all promised it; it was
+   held in a `useReducer` only). It is kept in the **`meta` table of the signed-in user's OWN database** (`kiranabill-<userId>`, D38) —
+   never the shared device database, so one user's bill can never show for another user on the same phone — under **one key per shop**
+   (`billDraft:<shopId>`). Nothing new in the Dexie schema. **No expiry.**
+   - *Written* ~250 ms after a change (a burst of edits is one write) and at once on `pagehide` / when the tab is hidden.
+   - *Kept:* lines, utterances with their flags and transcripts, acknowledged flags, "Not added" entries (a retry that was in flight comes
+     back as not retrying — its request died with the page — transcript kept, so Retry works), the customer, the lines removed for learning,
+     the bill's id and start time. Not kept: the one-level undo and the focused line.
+   - *Restored* silently, exactly as left, once the draft has been looked at (the mic stays off until then, like the catalog).
+     **Prices come back exactly as saved — nothing here looks at the catalog (hard rule 7)**; only the flags are re-derived from the lines.
+   - *Never restored:* a bill whose `local_id` is already in `bills` (a crash right after Bill Banao — it is dropped, never re-finalised);
+     a damaged or unknown-version value (a whole validation: money must be a safe integer, the customer must pass the same rules as the
+     `bills` CHECKs — it starts an empty bill and removes the value, never throws); onto a bill someone already started.
+   - *Dropped:* when Bill Banao saves (and it stays gone until New bill), on **Clear bill**, and an empty bill keeps none.
+2. **Clear bill** (≡ menu, only while the bill has lines, behind a confirmation "N lines will be removed — nothing is saved."): the bill is
+   thrown away and a new one starts. **It teaches nothing** (hard rule 8): the lines removed never reach learning (checked: no bill, no
+   learning events).
+3. **The sync loop waits while the browser is offline (closes NI-38).** Offline: `runLoop` sends nothing and schedules **no timer**; a
+   `syncNow` (e.g. right after Bill Banao) returns `{ skippedOffline }` without a request and is not a failure. The `online` event runs a cycle
+   at once and the 15 s cadence resumes (one timer at a time — `runLoop`'s reschedule clears any older one). "Offline" means
+   `navigator.onLine === false`; Node and old browsers have no value and count as online. The existing back-off for "online but failing" is unchanged.
+4. **The chip** (05 §7), in the header — a status, never a dialog: grey **Offline**; **Not syncing — sign in again** (online but no live
+   session, D38's offline-session mode); amber **Sync failing** (3 transient failures in a row, or any bill in a permanent conflict — tappable:
+   how many bills are waiting, the permanent ones separately, the last attempt, "Billing continues."); **Syncing…** only while a cycle runs
+   AND something is waiting (an idle shop never flickers). The loop's state is a small store (`data/syncStatus.ts`) — **the loop exposed
+   nothing before** (06 said "already built"; it wasn't).
+5. **Sign-out warning** (16 §2): with bills that haven't reached the server, Sign out asks first — the count ("3 bills haven't reached the
+   server yet — they'll stay on this phone and sync when you sign back in"), **a separate, truthful line for bills in permanent conflict**
+   ("won't sync on its own" — signing back in will not fix them), and "Your bill in progress stays on this phone too" while a bill is being
+   built. **Cancel** / **Sign out anyway**. With nothing unsynced it signs out at once.
+6. **KB-110b loop tests:** none of the existing assertions changed. Added: offline at start sends nothing and schedules no timer; the timer
+   firing after the browser went offline neither sends nor reschedules; `online` runs a cycle and resumes one timer; repeated events don't stack;
+   failures feed the chip; a no-session skip is not a failure; `syncNow` offline sends nothing. The test harness's mock handlers may now be
+   async (an edit during a slow push — D64) — a harness change, not an assertion.
 
 ---
 

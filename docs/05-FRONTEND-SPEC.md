@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 8 Oct 2026 (rev 15) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 9 Oct 2026 (rev 16) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -139,7 +139,7 @@ a warning triangle is not.
   are tooltips.
 - **"Add manually" on failure** needs Add item (`KB-305`); until then the mic is the only way out of a failure.
 - **Not in KB-302:** flag display and "focus the first flagged line" (`KB-304` — flags are stored per bill
-  line, re-based per utterance); editing (`KB-303`); the bill surviving a reload (`KB-313`).
+  line, re-based per utterance); editing (`KB-303`); the bill surviving a reload (`KB-313` — built, D65).
 - **Dev only:** `?lang=hi|en|auto` (Whisper language hint for the owner's measurement) and `[voice]` console
   logs (transcript, layer, lines, flags, numbers heard, tap→listening and stop→transcript timings); both
   stripped from production builds (grepped).
@@ -356,10 +356,22 @@ Shop details, receipt language, developer mode.
 |---|---|
 | Offline | Small grey chip in the header: "Offline" |
 | Offline, billing | Everything works. No dialogs, no nags. |
-| Syncing | Chip: "Syncing…" |
-| Sync failing | Amber chip, tappable for detail. **Never blocks billing.** |
+| Syncing | Chip: "Syncing…" — only while a cycle runs and something is waiting |
+| Sync failing | Amber chip "Sync failing", tappable for detail. **Never blocks billing.** |
+| No live session (offline-session mode, D38) | Chip: "Not syncing — sign in again" |
 
 **Never** a full-screen "no internet" state. The shop keeps running when the wifi doesn't.
+
+### Implementation notes — offline UI (`KB-313`, 9 Oct 2026; D65)
+
+- **The chip** sits in the header beside the title (it wraps to two lines at 320 px, never overflows). Grey "Offline" and "Syncing…" and the
+  amber-outlined "Not syncing — sign in again" are plain text; **"Sync failing" is a button** (3 failures in a row, or a bill in a permanent
+  conflict) opening a small detail: bills waiting, bills that couldn't be saved ("They stay on this phone."), last attempt, "Billing continues."
+- **The half-built bill survives** a reload, the tab being killed, or a crash — kept in the user's own database, restored exactly as left,
+  never re-priced, never twice (a bill already finalised is dropped). **≡ → Clear bill** (only with lines, behind a confirmation) throws it away
+  and teaches nothing.
+- **Sign out** with unsynced bills asks first (16 §2): the count, a separate line for bills that won't sync on their own, "Sign out anyway".
+- **The loop is quiet offline** (NI-38): no requests, no timer; the `online` event resumes it. Voice already says "Offline — voice needs internet".
 
 ---
 
