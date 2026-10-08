@@ -233,10 +233,8 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
           online={online}
           add={async (b) => {
             const r = await add(b);
-            if (r.ok) {
-              await reload();
-              onChanged();
-            }
+            if (r.ok || r.reason === "duplicate") await reload(); // a duplicate's row was just re-pulled
+            if (r.ok) onChanged();
             return r;
           }}
           onClose={() => setReadyOpen(false)}
@@ -277,14 +275,14 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
     };
   }, [localDb]);
 
-  const available = useMemo(() => {
+  const typed = query.trim();
+  const { available, matched } = useMemo(() => {
     const ids = new Set(inShop.flatMap((p) => (p.baseProductId ? [p.baseProductId] : [])));
     const names = new Set(inShop.map((p) => p.displayName.toLowerCase()));
-    const q = query.trim().toLowerCase();
-    return (bases ?? []).filter(
-      (b) => !ids.has(b.id) && !names.has(b.displayName.toLowerCase()) && (!q || [b.displayName, ...b.aliases].some((a) => a.toLowerCase().includes(q))),
-    );
-  }, [bases, inShop, query]);
+    const q = typed.toLowerCase();
+    const matching = (bases ?? []).filter((b) => !q || [b.displayName, ...b.aliases].some((a) => a.toLowerCase().includes(q)));
+    return { matched: matching.length, available: matching.filter((b) => !ids.has(b.id) && !names.has(b.displayName.toLowerCase())) };
+  }, [bases, inShop, typed]);
 
   const onAdd = (b: LocalBaseProduct) => {
     setBusy(b.id);
@@ -328,7 +326,15 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {bases !== null && bases.length === 0 && <p className="px-4 py-6 text-center">The ready catalog isn't on this phone yet.</p>}
-          {bases !== null && bases.length > 0 && available.length === 0 && <p className="px-4 py-6 text-center">Nothing more to add.</p>}
+          {bases !== null && bases.length > 0 && available.length === 0 && (
+            <p className="px-4 py-6 text-center [overflow-wrap:anywhere]">
+              {!typed
+                ? "Your shop already has every product in the ready catalog."
+                : matched > 0
+                  ? `“${typed}” is already in your catalog.`
+                  : `No ready product matches “${typed}”. Add it from a bill: Add item → + Add “${typed}” as a new product.`}
+            </p>
+          )}
           <ul aria-label="Ready products">
             {available.slice(0, READY_SHOWN).map((b) => (
               <li key={b.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2">

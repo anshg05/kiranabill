@@ -190,12 +190,46 @@ describe("KB-311 - S4 Catalog", () => {
     expect(within(ready).getByText("Besan added — ₹90 / kg")).toBeTruthy();
   });
 
-  it("a duplicate name is a plain message", async () => {
-    await open(fakeWriters({ ok: false, reason: "duplicate" }));
+  it("a duplicate name is a plain message, and the product (re-pulled) leaves the ready list", async () => {
+    // What the data layer's re-pull does on a duplicate: the server's row arrives in Dexie.
+    const writers = fakeWriters({ ok: false, reason: "duplicate" });
+    writers.add.mockImplementation(async (b: LocalBaseProduct) => {
+      await db.shopProducts.put(product({ displayName: b.displayName, baseProductId: null, source: "custom", pricePaise: 1_000 }));
+      return { ok: false, reason: "duplicate" } as const;
+    });
+    await open(writers);
     fireEvent.click(screen.getByRole("button", { name: "Add from ready catalog" }));
     const ready = await screen.findByRole("region", { name: "Ready catalog" });
     fireEvent.click(await within(ready).findByRole("button", { name: "Add Besan" }));
     expect((await within(ready).findByRole("alert")).textContent).toBe("Besan is already in your catalog");
+    await waitFor(() => expect(within(ready).queryByRole("button", { name: "Add Besan" })).toBeNull());
+  });
+
+  it("ready catalog empty because the shop has every ready product: says so", async () => {
+    await db.shopProducts.put(product({ displayName: "Besan" }));
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Add from ready catalog" }));
+    const ready = await screen.findByRole("region", { name: "Ready catalog" });
+    expect((await within(ready).findByText("Your shop already has every product in the ready catalog.")).textContent).toBeTruthy();
+  });
+
+  it("a ready-catalog search with no match says so and points to Add item", async () => {
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Add from ready catalog" }));
+    const ready = await screen.findByRole("region", { name: "Ready catalog" });
+    await within(ready).findByTestId("ready-name");
+    fireEvent.change(within(ready).getByRole("searchbox", { name: "Search ready catalog" }), { target: { value: "shahi <b>jeera" } });
+    expect(within(ready).getByText("No ready product matches “shahi <b>jeera”. Add it from a bill: Add item → + Add “shahi <b>jeera” as a new product.")).toBeTruthy();
+    expect(ready.querySelector("b")).toBeNull(); // the query is plain text
+  });
+
+  it("a search that only matches products the shop already has says they're already in the catalog", async () => {
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Add from ready catalog" }));
+    const ready = await screen.findByRole("region", { name: "Ready catalog" });
+    await within(ready).findByTestId("ready-name");
+    fireEvent.change(within(ready).getByRole("searchbox", { name: "Search ready catalog" }), { target: { value: "sugar" } });
+    expect(within(ready).getByText("“sugar” is already in your catalog.")).toBeTruthy();
   });
 
   it("suggestions: a price paid 3 times shows 'Use ₹X' - applied only on the tap, through the same save", async () => {

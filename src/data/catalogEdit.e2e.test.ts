@@ -112,6 +112,19 @@ describe("KB-311 catalog edits - real local stack", () => {
     expect(await localDb.shopProducts.where("shopId").equals(shopId).count()).toBe(before);
   });
 
+  it("3b. a duplicate whose server row this device hasn't pulled yet: 'duplicate', and the row arrives in Dexie", async () => {
+    const base = (await localDb.baseProducts.toArray()).find((b) => b.displayName === "Besan")!;
+    const id = crypto.randomUUID(); // another device's copy, inserted straight on the server
+    const ins = await client.from("shop_products").insert({
+      id, shop_id: shopId, display_name: "Besan", unit: "kg", price_paise: 8_800, source: "custom",
+      local_id: crypto.randomUUID(), device_id: "another-device",
+    });
+    expect(ins.error).toBeNull();
+    expect(await localDb.shopProducts.get(id)).toBeUndefined();
+    expect(await addFromReadyCatalog(client, localDb, shopId, deviceId, base)).toEqual({ ok: false, reason: "duplicate" });
+    expect((await local(id)).pricePaise).toBe(8_800);
+  });
+
   it("4. a price save goes to the server, then the pull brings it to Dexie and the billing catalog", async () => {
     const { row } = await addBase("Desi Shakkar");
     expect(await saveProductPrice(client, localDb, shopId, row.id, 5_250)).toEqual({ ok: true });

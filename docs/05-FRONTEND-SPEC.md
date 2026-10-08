@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 8 Oct 2026 (rev 12) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 8 Oct 2026 (rev 13) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -211,7 +211,10 @@ Either way, base products can be pulled in later from Catalog → "Add from read
   its price** — at most a check (e.g. "unusual rate") may appear on it, against the new catalog price.
 - **Add from ready catalog:** the base products not yet in the shop (by base id or name), alphabetical, 100 shown,
   search for more; Add copies one in at its suggested price ("Chini added — ₹45 / kg"). A name already in the shop
-  says "<name> is already in your catalog".
+  says "<name> is already in your catalog" (and its row is re-pulled, so it leaves the list). **Empty states:** the
+  shop has every ready product → "Your shop already has every product in the ready catalog."; a search with no
+  match → "No ready product matches “x”. Add it from a bill: Add item → + Add “x” as a new product."; a search that
+  only matches products the shop already has → "“x” is already in your catalog."
 - **Suggestions:** a price paid on 3 bills in 30 days (`listPendingPriceSuggestions`) — "Toor Daal: ₹95 / kg on 3
   bills (now ₹90)" and **Use ₹95**, applied only by that tap, through the same save. Provisional products are shown
   read-only ("“kurkure” — said 2 times, not in the catalog"; `KB-320` saves them). No unit drift (nothing records

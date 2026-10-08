@@ -62,7 +62,11 @@ export async function addFromReadyCatalog(
       device_id: deviceId,
     });
     if (error) {
-      if (error.code === UNIQUE_VIOLATION) return { ok: false, reason: "duplicate" };
+      if (error.code === UNIQUE_VIOLATION) {
+        // The server has it and this device doesn't yet (another device added it) - bring it in.
+        await pullShopProducts(client, localDb, shopId);
+        return { ok: false, reason: "duplicate" };
+      }
       console.warn(`[catalog] add failed: ${error.message}`);
       return { ok: false, reason: "failed" };
     }
