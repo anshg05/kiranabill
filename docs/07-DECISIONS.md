@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 8 Oct 2026 (rev 39) · Supersedes rev 38
+**Last updated:** 8 Oct 2026 (rev 40) · Supersedes rev 39
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1593,7 +1593,7 @@ in-memory IndexedDB could not show it.
    Ceiling: a transaction open longer than 60 s can still be missed — none exists today.
 3. **Catalog writes are online only** (`data/catalogEdit.ts`): Postgres first, then the re-pull; never Dexie first.
    Zero rows updated (RLS) is a failure, `23505` is "already in your catalog".
-4. `shops` has the same client-set `updated_at` (KI-65) and could take the same trigger later.
+4. `shops` had the same client-set `updated_at` (KI-65) — done in D64 (a trigger and a new sync rule).
 
 ### D63 — Bills are pulled from the server: a server-set `synced_at`, a resumable backfill, then a 60 s-overlap incremental 🟢
 
@@ -1627,6 +1627,36 @@ in-memory IndexedDB could not show it.
    0.87 s a page ≈ 230–270 bills/s → **36,000 bills ≈ 2.3–2.6 min on the laptop; on the phone, not measured — if it is
    4–6× slower (the D61 reads were), 10–15 min in the background.** The newest 200 are on screen after the first page.
    A shop with 3,000 bills: ~0.8 MB compressed, ~1 min on the phone. No window was added (owner's rule).
+
+### D64 — For `shops`, the server's `updated_at` is the only clock (replaces last-write-wins on a device clock) 🟢
+
+**Owner decision, 8 Oct 2026, `KB-312`** (closes KI-65). Migration `20261010090000_shops_updated_at_trigger`.
+Settings makes shop edits routine, and `shops.updated_at` was set by the device: two phones with skewed clocks could
+lose an edit, and an edit made in Studio / SQL that left `updated_at` alone never reached a device (KI-65). A trigger
+alone would not have fixed it — `pullShop` compared the device's own `updatedAt` with the server's — so the rule changes
+with it. This supersedes 02 §2's "last-write-wins on `updated_at`" **for shops**.
+1. **A trigger sets `updated_at = now()`** on every insert and update of `shops` (a client value is ignored). Additive
+   (D55 §5): the deployed app still sends its own value (ignored) and compares on a pull; the server's is later than the
+   one it sent, so at worst it takes an identical row back once per edit. Its clock-skew weakness stays until the next
+   release — no worse than today.
+2. **A push** (`pushShop`) sends the fields without `updated_at`, reads back the row's `updated_at` and stores it
+   **verbatim** with `syncStatus: synced` — but only if the local row is **still the version it pushed** (its `updatedAt`
+   is unchanged, still pending). An edit made while the request was out stays pending and goes up next cycle
+   (`updateShopSettings` gives every edit a distinct `updatedAt`, also two in one millisecond).
+3. **A pull** (`pullShop`) never touches a `pending` row; otherwise it takes the server row whenever its `updated_at`
+   **string differs** from the local one. **Strings are compared verbatim, never through `Date`** (JS has milliseconds,
+   Postgres microseconds — "equal" would never be equal and every pull would re-take the row). No comparison with a
+   device clock at all. The "discarded local edit" log is gone: replacing a synced row is the normal path.
+4. **Order is unchanged**: a cycle pushes before it pulls, so a pending edit is on the server before any pull.
+5. **Whole-row push for now — NI-40:** two phones editing the same shop while one is offline — the **later arrival**
+   overwrites the other's fields, including any server-side change to logo / address / prefix it had not pulled yet.
+   Revisit with per-field push **before a shop can have a second device or staff**.
+6. `createShop` / onboarding are unaffected: the shop is inserted on the server and `pullShop` fills Dexie; nothing
+   writes the local shop row with a device-clock time any more except `updateShopSettings`, which is then replaced by
+   the server's value on its push.
+7. Tested on the real stack (`shopSettings.e2e.test.ts`): a Studio-style edit reaches the device; a device whose clock is
+   5 minutes ahead and edits first — another device's later edit still wins on it; a pending edit is not clobbered by a
+   pull; plus unit tests for a microsecond difference, an identical timestamp, and an edit during a slow push.
 
 ---
 

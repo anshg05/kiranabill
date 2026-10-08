@@ -10,6 +10,7 @@ import type { PriceSuggestion } from "@/domain/learning";
 import { formatRupees } from "@/domain/money";
 import { EditableValue } from "./EditableValue";
 import { useBackEntry } from "./useBackEntry";
+import { priceDriftText } from "./priceDriftText";
 import { useBrowserOnline } from "./useBrowserOnline";
 
 // KB-311 (owner, 8 Oct 2026): S4 Catalog, over the bill in progress.
@@ -161,7 +162,7 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
                 {priceSuggestions.map(({ s, p }) => (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-                      {p.displayName}: {priceText(s.suggestedPricePaise, p.unit)} on {s.observationCount} bills (now {formatRupees(p.pricePaise)})
+                      {priceDriftText(p.displayName, p.unit, s.suggestedPricePaise, s.observationCount, p.pricePaise)}
                     </span>
                     <button
                       type="button"

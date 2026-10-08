@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 8 Oct 2026 (rev 14) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 8 Oct 2026 (rev 15) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -119,7 +119,7 @@ a warning triangle is not.
 - **Units** are shown as the domain spells them (`gm`, `kg`, `piece`, `packet`) — the diagram's `pcs` is not
   mapped. Item names are the spoken name, capitalised by CSS.
 - **Not built yet:** mic, Add item and Bill Banao are disabled (reason in a tooltip only); the customer row is
-  static "Cash" (`KB-306`); the ≡ menu holds only Sign out until S7 (`KB-312`).
+  static "Cash" (`KB-306`); the ≡ menu later grew History (`KB-310`), Catalog (`KB-311`) and Settings (`KB-312`) above Sign out.
 - **Dev only:** `?try=<utterance>` fills the bill with real `parseUtterance()` output for browser checks;
   removed from production builds (D39).
 - **Shop load failure:** online, no cached shop, lookup failed → "Server se connect nahi ho paaya" + Retry, never
@@ -320,6 +320,33 @@ TOTAL                             ₹142.50    ← larger, bold
   instead of 160). **A hi / both SMS is Unicode anyway** (Devanagari labels), so it takes more parts.
 - **The mobile** is never shown on the receipt or the saved screen; read from the stored bill at tap / sheet-open time;
   with the SMS sheet open it appears only as the field's value.
+
+---
+
+## 6b. S7 — Settings
+
+Shop details, receipt language, developer mode.
+
+### Implementation notes — Settings (`KB-312`, 8 Oct 2026; D64)
+
+- **Opens from the ≡ menu**, over the bill in progress; Back / Android back closes it.
+- **Shop details: name and phone only** (owner, Q1). They print on every receipt. Name: required, 60 characters. Phone:
+  optional, **an Indian mobile — 10 digits starting 6-9** (the customer-mobile rule); a **leading 0 is refused** ("Enter
+  the 10-digit mobile number without a leading 0 …") because the shared parser would read the landline `0712-2345678`
+  as the mobile 7122345678 — landlines with an STD code: NI-39. Address (printed nowhere — NI-36), the logo (`KB-327`)
+  and the receipt prefix (changing it mid-run would mix prefixes in one shop's numbering) are not editable here.
+- **Local first, works offline:** Save writes this phone's shop row as pending and the ordinary sync pushes it (D64).
+  "Saved" online; "Saved on this phone — it will sync when you're online" offline. Save does nothing until something
+  changed. An edit that arrives from the server while Settings is open appears — except in a field being typed in.
+- **Receipt language:** English / हिन्दी / Both — what the CUSTOMER's receipt is printed in (not the screen's language,
+  `KI-59`). Saves at once. **A receipt opened from History is built from today's shop name, phone and language** (owner,
+  Q4): changing them changes how a past bill looks when reopened; the bill itself (numbers, items, total) never changes.
+- **Developer mode** (08 §9): a visible, collapsed section. This shop's **learned aliases** (alias → product, times seen,
+  confidence), **provisional products** (said N times) and **price suggestions**, read-only — nothing here applies
+  anything. **Reset learning** asks first: "Clear what the app has learned on this phone? Your bills and catalog are not
+  touched. The server keeps its copy." The reset is **local-only** (NI-27) and the result says so: "Cleared on this
+  phone: N learned aliases, N provisional products, N price records. The server's copy was not deleted." It writes a
+  `learning_reset` event that now reaches the server (KI-37, `bill_id` null) — `KB-326` must honour it.
 
 ---
 

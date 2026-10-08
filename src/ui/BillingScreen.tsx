@@ -18,6 +18,7 @@ import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
 import { ShareBar } from "./ShareBar";
 import { HistoryScreen } from "./HistoryScreen";
 import { CatalogScreen } from "./CatalogScreen";
+import { SettingsScreen } from "./SettingsScreen";
 import { addFromReadyCatalog, saveProductPrice } from "@/data/catalogEdit";
 import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
@@ -179,6 +180,7 @@ export function BillingScreen() {
   // KB-310: History opens over the bill - the bill in progress stays as it is.
   const [historyOpen, setHistoryOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <>
     <BillView
@@ -212,9 +214,13 @@ export function BillingScreen() {
       share={share}
       onOpenHistory={localDb && shop ? () => setHistoryOpen(true) : undefined}
       onOpenCatalog={localDb && shop && deviceId ? () => setCatalogOpen(true) : undefined}
+      onOpenSettings={localDb && shop && deviceId ? () => setSettingsOpen(true) : undefined}
     />
     {historyOpen && localDb && shop && (
       <HistoryScreen localDb={localDb} shopId={shop.id} render={renderReceiptFiles} onClose={() => setHistoryOpen(false)} />
+    )}
+    {settingsOpen && localDb && shop && deviceId && (
+      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} onClose={() => setSettingsOpen(false)} />
     )}
     {catalogOpen && localDb && shop && deviceId && (
       <CatalogScreen
@@ -275,6 +281,8 @@ interface BillViewProps {
   onOpenHistory?: () => void;
   /** KB-311: the ≡ menu's Catalog. */
   onOpenCatalog?: () => void;
+  /** KB-312: the ≡ menu's Settings. */
+  onOpenSettings?: () => void;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -583,6 +591,7 @@ export function BillView({
   share = null,
   onOpenHistory,
   onOpenCatalog,
+  onOpenSettings,
 }: BillViewProps) {
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
   const readOnly = saved !== null;
@@ -773,6 +782,18 @@ export function BillView({
                   className="block min-h-11 w-full px-4 text-left"
                 >
                   Catalog
+                </button>
+              )}
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.closest("details")?.removeAttribute("open");
+                    onOpenSettings();
+                  }}
+                  className="block min-h-11 w-full px-4 text-left"
+                >
+                  Settings
                 </button>
               )}
               <button type="button" onClick={onSignOut} className="block min-h-11 w-full px-4 text-left">

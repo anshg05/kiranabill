@@ -1,6 +1,6 @@
 # 02 — System Architecture
 
-**Last updated:** 27 Sep 2026 (rev 4) · **Status:** Final for MVP
+**Last updated:** 8 Oct 2026 (rev 5) · **Status:** Final for MVP
 **Read `07-DECISIONS.md` before changing anything here.**
 
 ---
@@ -67,7 +67,7 @@ two write paths and that is where the bugs live.
 | Finalised bills | **Immutable, append-only** | None possible. Insert-only. |
 | Bill items | Immutable once the bill is finalised | None possible |
 | Shop catalog | Mutable, low frequency | Last-write-wins on `updated_at` |
-| Shop settings | Mutable, very low frequency | Last-write-wins on `updated_at` |
+| Shop settings | Mutable, very low frequency | The server's `updated_at` is the only clock (D64): a push stores the server's value, a pull takes the server row when it differs; a pending local edit is never overwritten by a pull |
 | Learning data | Additive counters | Max-wins on counters, union on sets |
 
 Immutable bills are what make this a weekend problem instead of a distributed-systems problem.

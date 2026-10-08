@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 8 Oct 2026 (rev 10) · **Status:** Final for MVP
+**Last updated:** 8 Oct 2026 (rev 11) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -124,7 +124,7 @@ shop-scoped and protected by RLS.
 | `catalog_mode` | `text` | `'base_imported'` \| `'custom_only'` — chosen at onboarding |
 | `bill_language` | `text` | `'en'` \| `'hi'` \| `'both'` — default **`'en'`** for new shops (D57, migration `20261004090000`; was `'hi'` — existing shops kept their value). The customer's receipt language (`KB-308`); set in Studio until `KB-312` — **with `updated_at = now()`** in the same update, or devices never pull it (KI-65) |
 | `receipt_prefix` | `text` | e.g. `KB` |
-| `created_at`, `updated_at` | `timestamptz` | |
+| `created_at`, `updated_at` | `timestamptz` | **`updated_at` is set by the server** (trigger, D64, migration `20261010090000`) on every insert and update; a device stores it verbatim (never through a JS `Date`) |
 
 ### `shop_members`
 `(shop_id, user_id, role)` where role ∈ `owner` \| `manager` \| `staff`.

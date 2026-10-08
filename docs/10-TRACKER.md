@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 8 Oct 2026 (rev 93) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 8 Oct 2026 (rev 94) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** next ticket `KB-312` — plan. `KB-324` done 8 Oct 2026.
+**Working on:** `KB-312` (Settings, S7) — two local commits (D64); awaiting the owner's check. The owner pushes migration `20261010090000` after `--dry-run`.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -51,6 +51,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15b. ~~**`KB-310`** — History + search~~ — **done 7 Oct 2026** (D60, D61). New: KI-67, KI-68, `KB-324` (before the pilot), `KB-325` (parked).
 15c. ~~**`KB-311`** — Catalog screen~~ — **done 8 Oct 2026** (D62). Next: `KB-324` (pull bills) — plan.
 15d. ~~**`KB-324`** — pull bills~~ — **done 8 Oct 2026** (D63). New: `KB-326` (before the pilot).
+15e. **`KB-312`** — Settings (S7) — built 8 Oct 2026 (D64), awaiting the owner's check. New: `KB-327` (logo, parked), NI-39, NI-40. Closes KI-65 and KI-37.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -80,6 +81,7 @@ Migrations through `20261009090000` are already on the remote (the owner pushed 
 
 - [ ] **`KB-311` — Add from ready catalog on a start-empty shop** (the live test shop is start-empty): open Catalog → Add
   from ready catalog, add a product, see it in the list and in Add item at its price.
+- [ ] **`KB-312` — on the phone:** Settings → change the shop name and the receipt language, open a past bill from History (it shows the new language and name); switch the phone to airplane mode, edit the name, switch back — it syncs (a second browser/device, or Studio, shows it).
 - [ ] **`KB-324` — on the phone:** clear the site's data, sign in, History refills (newest first). Note roughly how long the
   write takes (the laptop did ~0.8 s per 200 bills; the phone is unmeasured — D63 §6).
 - [ ] **`KB-324` — on desktop DevTools against the draft:** Network → the `bills?select=…` response → `content-encoding`
@@ -330,6 +332,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 8 Oct 2026 | **`KB-312` built — two local commits, not pushed (D64).** (1) **The server's `updated_at` is the only clock for `shops`** — owner-approved after the stop: the old `pullShop` compared the device clock with the server's, so a trigger alone would not have fixed KI-65. Migration `20261010090000` (trigger, applied locally; the owner pushes it). `pushShop` reads back and stores the server's `updated_at` verbatim, only if the row is still the version it pushed (an edit during a slow push stays pending); `pullShop` never touches a pending row and takes the server row whenever the strings differ (never through `Date`: microsecond test). KI-37 fixed: a bill-less `learning_reset` is pushed with `bill_id` null (+2 RLS checks). Shop name/phone rules in `domain/shopSettings.ts` — **found by the tests:** the shared mobile parser read the landline `0712-2345678` as the mobile 7122345678, so the shop phone refuses a leading 0 (NI-39). 6 e2e on two real devices (Studio edit, B's clock +5 min, offline edit, pending not clobbered, KI-37). (2) Settings screen: shop name/phone, receipt language, collapsed Developer mode, Reset learning behind a confirmation; the form follows an edit arriving from the server (not a field being typed in). Plants caught: 7 in sync/data, 7 in the UI, + live-update. Browser (local stack): offline edit → pending → online → pushed, the device holds the server's microsecond `updated_at`; a Studio edit reached the open app in ~15 s; a past bill (8 Oct) reopened in Hindi/English with the new name and phone; reset → the event reached the server with `bill_id` null; 320/375/1280 no overflow, no target under 44 px. New `KB-327`, NI-39, NI-40. | Agent |
 | 8 Oct 2026 | **`KB-324` done.** Owner check passed at `localhost:8888` (clear site data, sign in: History refilled newest first — KB-000101, KB-000074…064 and older; search found them; a receipt opened; offline/online as described); small decisions accepted. Migration `20261009090000` pushed to the remote by the owner. New "Next draft deploy — checks" list (KB-311 real Add; KB-324 phone refill time and the bills response's content-encoding). `scratch-measure.ts` (the payload measurement) was never committed — in neither `e02b74b` nor `0057e7f`, never in history — and is deleted. | Agent |
 | 8 Oct 2026 | **`KB-324` built — two local commits, not pushed (D63).** Migration `20261009090000`: a `BEFORE INSERT` trigger sets `bills.synced_at` (applied locally; the owner pushes it). `pullBills`: resumable newest-first backfill (200 a page, keyset) + incremental `synced_at > cursor − 60 s` fetching ids first; pulled bills in one transaction with their `billSearch` rows, `syncStatus synced`, local-only `pulledAt` (never teach). 11 e2e on two real devices (pre-migration bill, mid-backfill push exactly once, old offline bill, RLS, own-bills untouched, steady-state payload). Plants caught: no search row, pending (re-push), cursor on created_at, full download each cycle, no already-local check, learning guards. History: "Loading bills from the server…", live re-read. **Measured:** 200-bill page 532 KB JSON / 56 KB gzip; 36,000 bills ≈ 96 MB / ≈ 10 MB gzip; ≈ 2.3–2.6 min to write on the laptop, phone not measured (D63 §6). Real browser (wiped site data → 1,500 bills back in ~5 s, first rows at ~1.8 s; search by name, receipt no. and item; receipt opens with the four share buttons). | Agent |
 | 8 Oct 2026 | **`KB-311` done (commit 3).** Owner check passed (steps 1-6, 8, 9). Step 7: "shahi jeera" showed "Nothing more to add." — not a bug (his Gupta Store is `base_imported`, has every ready product; no "Shahi Jeera" exists) but the message explained neither case. Now: "Your shop already has every product in the ready catalog." / "No ready product matches “x”. Add it from a bill: Add item → + Add “x” as a new product." / "“x” is already in your catalog." (matches exist but all in the shop). A duplicate now re-pulls the server's row (e2e 3b red without it). **The owner's real Add-from-ready check rides on the next draft deploy (the live test shop is start-empty).** | Agent |
