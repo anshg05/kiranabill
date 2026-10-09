@@ -1761,7 +1761,7 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
    added" entry, no typed customer; no recording or utterance in flight; not saving and not on the saved-bill screen; no panel or dialog open (every
    overlay reports through `useBackEntry`; the sign-in screen counts as safe — nothing to lose); the draft and the catalog have loaded — and it
    has held for **5 s** (a foreground event does not restart that). It is re-checked when the waiting worker appears, whenever the answer
-   changes, and when the app returns to the foreground (where `registration.update()` also runs, at most once per 10 minutes; the browser checks
+   changes, and when the app returns to the foreground (where `registration.update()` also runs, at most once per 10 minutes - **only a completed check uses the slot**: a failed one, e.g. offline, does not, and a check in flight is not repeated (owner, 10 Oct 2026, found at the phone test); the browser checks
    on every navigation anyway, and `sw.js` is served `no-cache` with `updateViaCache: "none"`). If the app is closed, the browser applies it at the
    next launch. The half-built bill (D65) survives a reload but is only the last line of defence. **If a phone is busy all day, the update waits all
    day — by design.**
@@ -1810,6 +1810,16 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
     plugin, persistent storage, Settings lines. No existing assertion changed. 30 plants (each breaks one rule — never-handle list, same-origin,
     GET only, install checks, no half cache, normal never skips waiting, safe-moment re-check, settle, loop guard, defer-while-busy, force,
     each gate report, kill-build registration, persist semantics, precache fonts and budget, cache naming) — all caught.
+12. **Phone proof (owner, Android 10 / Chrome, 9-10 Oct 2026, the `sw-test` alias, 0 credits).** Install from Chrome, standalone, Google sign-in returned
+    into the installed app, offline open with the last bill, offline chip, an offline bill synced, reload mid-bill, sign-out count, learning lists after
+    clearing site data, `?nosw=1`, the icon on a real home screen, and the installed app's storage line **"Storage: protected"** (KI-68's mitigation
+    works once installed; the browser tab was "not protected yet"). **Update tests, each on its own build:** (1) v2 arrived under a bill - no reload,
+    Settings still `alias-v1`, the bill untouched; (2) Clear bill - one reload, `alias-v2`, no second blink; (3) from v2, v3 arrived under a bill, then Clear
+    bill + Home, 3-5 minutes in the background - on reopening at most one reload, `alias-v3`, no repeated blinking (the hidden-page timer worry did not
+    materialise on the phone). **Found and fixed:** a foreground check that failed offline used up the 10-minute slot (the page set the time before
+    knowing the result); now only a completed check counts (`updater.ts`; 5 tests - failed, thrown, in flight, success, failure-then-success - and 4
+    plants). It rides on the next release draft for phone confirmation; no new alias test. `register.ts`: a check before the worker has registered is
+    not a completed check either.
 
 ---
 

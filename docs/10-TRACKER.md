@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 9 Oct 2026 (rev 102) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 10 Oct 2026 (rev 103) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67), pushed; phone checks on `sw-test` v1 PASSED (owner, 9 Oct); the update test (v2) is next.** `KB-326` done 9 Oct 2026.
+**Working on:** `KB-314` (bulk catalog import) — plan. `KB-401` done 10 Oct 2026 (D67).
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -54,7 +54,8 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
 15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
 15g. ~~**`KB-326`** — learning-state pull~~ — **done 9 Oct 2026** (D66). New: NI-41.
-15h. **`KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68) — **built 9 Oct 2026 (D67); phone checks passed; the update test on `sw-test` (v2) is the last check**; then `KB-314`.
+15h. ~~**`KB-401`** — PWA: offline open, updates, persistent storage~~ — **done 10 Oct 2026** (D67; phone checks passed). Closed KI-40; KI-68's mitigation confirmed ("Storage: protected" on the installed phone).
+15i. **Next: `KB-314`** (bulk catalog import) — plan.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -62,7 +63,7 @@ https://kiranabilling.netlify.app **only** when the commit carries the owner-app
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (9 Oct 2026, `KB-401`):** `npm test` 1402 tests in 83 files (Vitest `unit` in parallel, then `perf` alone, D35);
+**Test state (10 Oct 2026, `KB-401` closed):** `npm test` 1405 tests in 83 files (Vitest `unit` in parallel, then `perf` alone, D35);
 `test:e2e` 72 in 12 files; `test:rls` 55/55. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **`npm test` workers (owner, 4 Oct 2026):** until the owner fixes the machine's memory (~1.1 GB free commit; the default 11 workers run out of heap), VERIFY runs `npm test -- --maxWorkers=2` and says so. **The default run must pass before any `[deploy]` release** (also in "Before deployment").
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
@@ -159,14 +160,14 @@ Headers checked with `curl -sI`: `/sw.js` → `Cache-Control: no-cache`, `applic
 
 *After these:* the agent builds **v2** (a new build id) and deploys it to the same alias — the update test: open the installed app with an empty bill; within seconds it reloads once and Settings → Version shows the new id; with a bill on screen it never reloads.
 
-## Alias deploy `sw-test` v2 — the update test (owner, installed app on the phone)
+## Alias deploy `sw-test` v2/v3 — the update tests (owner, installed app on the phone) — **PASSED, all three**
 
 Build ids: **v1 = `alias-v1`** (installed), **v2 = `alias-v2`** (the same code, only the build id differs). How the installed app learns of v2: the page asks the browser for a new `sw.js` when it
 comes back to the **foreground** (the first time in a page's life at once, then at most every 10 minutes — a check that fails offline still uses up that slot), and the browser also looks on a launch
 of its own schedule. Reliable trigger: switch to another app for a few seconds and back. Steps are in the session record; results go here.
 - [x] 1. v1 open with a bill on screen when v2 arrived: no reload, Settings still `alias-v1`, the bill untouched — **PASSED (owner, 10 Oct 2026).**
 - [x] 2. Clear the bill: exactly one reload, Settings `alias-v2`, no second blink — **PASSED (owner, 10 Oct 2026).**
-- [ ] 3. The same after the app has sat in the background for a few minutes — **needs v3.** The owner's first report of a pass was before v3 existed, so it is **not recorded**; **v3 (`alias-v3`, cache `kb-ee9c4cc9c5ec`) deployed 10 Oct 2026** to the same alias; to be redone.
+- [x] 3. The same after the app sat in the background for a few minutes — **PASSED (owner, 10 Oct 2026) on v3** (from `alias-v2`: v3 waited under a bill, no reload; Clear bill + Home; 3-5 minutes; on reopening at most one reload, `alias-v3`, no repeated blinking). The owner's earlier report of a pass came before v3 existed and was not recorded; v3 (`alias-v3`, cache `kb-ee9c4cc9c5ec`) was then deployed and the test redone. **All three update tests passed.**
 - Installed-app storage line (owner, 10 Oct 2026): **"Storage: protected"** — `KI-68`'s mitigation works on a real phone once installed.
 
 ## Before deployment
@@ -214,7 +215,7 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **GST: simple bill vs tax invoice (NI-35)** — the receipt is a kirana parchi, not a GST tax invoice. If any pilot shop is
   GST-registered, the owner confirms with the shops / an accountant whether a tax-invoice format (GSTIN etc.) is needed — before the
   pilot. (Owner, 3 Oct 2026, `KB-308`.)
-- [ ] **Persistent storage on every pilot phone (KI-68):** the app is installed (PWA, `KB-401`) and `navigator.storage.persisted()` is `true`.
+- [ ] **Persistent storage on every pilot phone (KI-68):** the app is installed (PWA, `KB-401`) and `navigator.storage.persisted()` is `true` — Settings → Developer mode says "Storage: protected". **Mitigation confirmed on the owner's installed phone (10 Oct 2026); still to confirm per pilot phone.**
 - [ ] **`KB-324` — bills pulled from the server** (KI-68): a cleared phone, a new phone or a new draft address must not show an empty History.
 - [ ] **`KB-326` — learning state pulled from the server** (KI-68): a wiped or new phone keeps its voice accuracy and the Catalog suggestions.
 - [ ] **A live voice order through Layer 2 succeeds after Gemini billing is on** (KI-66 / KI-50, owner, 7 Oct 2026): KI-66 was
@@ -414,6 +415,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 10 Oct 2026 | **`KB-401` done (D67).** Update test 3 passed on v3 (the earlier "pass" came before v3 existed and was not recorded); all three update tests passed on one build. **Fix, test first:** a foreground update check that fails (offline) no longer uses up the 10-minute slot - only a completed check counts, and a check in flight is not repeated (`updater.ts`, `register.ts`; 5 new tests, red first for the right reason: 3 failed because the failed check had used the slot; 4 plants caught). One changed assertion: the existing "at most once per gap" test now awaits the check (a check completes asynchronously). It rides on the next release draft for phone confirmation. `KI-68`: mitigation confirmed on the owner's installed phone ("Storage: protected"); the per-pilot-phone item stays. VERIFY: `npm test` 83 files / 1405, typecheck and lint clean (one lint run crashed on memory, the re-run was clean), build clean, `npm audit --omit=dev` 0. | Agent |
 | 10 Oct 2026 | **Update tests 1 and 2 on `sw-test` PASSED (owner)** (v2 arrived under a bill: no reload, still `alias-v1`; Clear bill: one reload, `alias-v2`). The installed app's storage line is **"Storage: protected"**. The owner's report that test 3 passed predates any v3, so it is not recorded: **v3** (`alias-v3`, only the build id differs; same dist checks) deployed to the same alias for test 3. Approved next: a failed foreground update check must not use up the 10-minute slot. | Agent |
 | 9 Oct 2026 | **`sw-test` v1 phone session PASSED (owner, Android 10 / Chrome) — all 13 checks.** Installed, standalone, Google sign-in returned into the installed app, offline open with the last bill, offline chip, an offline bill synced, reload mid-bill, sign-out count, learning lists returned after clearing site data, `?nosw=1`; the alias deploy cost 0 credits; the icon reads well. `KI-40` closed; `KI-68` waits for the owner's storage-line text. Checklist ticked. **v2** (`alias-v2`, build id only) built and deployed to the same alias for the update test. | Agent |
 | 9 Oct 2026 | **`KB-401` (3)–(4): the chosen icon, pushed with the earlier commits (`2e61d70..caf72f6`, no marker); alias deploy v1.** Icon: golden-yellow `#FFCF33`, tilted white thermal slip with an indigo outline, indigo mic badge (maskable: farthest artwork pixel 203.5 of 204.8; at 48 px the slip edge stays crisp on light and dark wallpapers; item rows blur into bars, the badge reads as a dot with a mic). First alias deploy served the manifest as `application/octet-stream` → `netlify.toml` header added (`application/manifest+json`), redeployed. `npm test` 83 files / 1402, typecheck, lint, dist checks clean (cloud ref present, no localhost/127.0.0.1 URL, 27 files precached, none of `/voice`, Supabase, `__dev`). The three draft-check lists are now ONE list: "Alias deploy `sw-test` v1". Scratch icon files deleted. | Agent |
