@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67) — two local commits, not pushed — awaiting the owner's phone checks (icon chosen and wired in).** `KB-326` done 9 Oct 2026.
+**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67), pushed; phone checks on `sw-test` v1 PASSED (owner, 9 Oct); the update test (v2) is next.** `KB-326` done 9 Oct 2026.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -54,7 +54,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
 15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
 15g. ~~**`KB-326`** — learning-state pull~~ — **done 9 Oct 2026** (D66). New: NI-41.
-15h. **`KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68) — **built 9 Oct 2026 (D67), owner check pending**; then `KB-314`.
+15h. **`KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68) — **built 9 Oct 2026 (D67); phone checks passed; the update test on `sw-test` (v2) is the last check**; then `KB-314`.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -127,36 +127,46 @@ synced, values restored afterwards; Catalog: search, filters, valid and invalid 
 the start-empty live shop worked; voice "3 पारले जी 10 वाले" → 3 piece × ₹10; an open-bill price change kept ₹45 on the existing line and
 added the new line at ₹50 (total ₹125); a long customer name, Image and PDF. **Phone checks for KB-310, KB-311, KB-312 and KB-324 done.**
 
-## Alias deploy `sw-test` v1 — ONE phone checklist (owner, Android Chrome) — KB-401, KB-313, KB-326
+## Alias deploy `sw-test` v1 — ONE phone checklist (owner, Android Chrome) — KB-401, KB-313, KB-326 — **PASSED, all 13 (owner, Android 10 / Chrome, 9 Oct 2026)**
 
 **URL:** https://sw-test--kiranabilling.netlify.app — built from `caf72f6` with the production VITE values (build id `alias-v1`), `--alias sw-test`, no `--prod`, no marker, not linked.
 Headers checked with `curl -sI`: `/sw.js` → `Cache-Control: no-cache`, `application/javascript`; `/manifest.webmanifest` → `Cache-Control: no-cache`, `application/manifest+json`.
+**Result:** installed from Chrome; opens from the home screen without the URL bar; Google sign-in returned INTO the installed app; the Settings storage line showed (the owner reports its exact text separately — `KI-68` stays open until that is recorded); offline open with the last bill; offline chip; a bill finalised offline synced on reconnect; reload mid-bill restored it; the sign-out count; the learning lists returned after clearing site data; `?nosw=1`. **The alias deploy cost 0 credits (dashboard) — D67 §9's assumption is now verified.** The icon reads well on a real home screen. Phone checks for `KB-313`, `KB-326` and `KB-401` (all but the update test) are done.
 **Real data:** a draft uses the production Supabase — every bill made here is a real live row. After the checks, **v2** (the update test) is built and deployed to this same alias.
 
 *Install and shell (KB-401)*
-- [ ] **Install:** open the URL in Chrome (online) → menu → "Install app" (or "Add to Home screen").
-- [ ] **Standalone:** open it from the home screen — no URL bar; the yellow icon and the splash show.
-- [ ] **Google sign-in returns INTO the installed app** (not into a Chrome tab).
-- [ ] **Settings:** `Version alias-v1`; Developer mode says "Storage: protected" — or, if not, say what it says.
+- [x] **Install:** open the URL in Chrome (online) → menu → "Install app" (or "Add to Home screen").
+- [x] **Standalone:** open it from the home screen — no URL bar; the yellow icon and the splash show.
+- [x] **Google sign-in returns INTO the installed app** (not into a Chrome tab).
+- [x] **Settings:** `Version alias-v1`; Developer mode says "Storage: protected" — or, if not, say what it says.
 
 *Offline (KB-401, KB-313)*
-- [ ] **Last bill:** online, finalise one bill. Airplane mode, close the app, open it from the home screen — it opens, and History shows that bill.
-- [ ] **Offline chip:** the grey "Offline" chip shows.
-- [ ] **Offline bill syncs:** finalise a bill offline — History shows "Not synced"; airplane off — it syncs and the chip clears.
+- [x] **Last bill:** online, finalise one bill. Airplane mode, close the app, open it from the home screen — it opens, and History shows that bill.
+- [x] **Offline chip:** the grey "Offline" chip shows.
+- [x] **Offline bill syncs:** finalise a bill offline — History shows "Not synced"; airplane off — it syncs and the chip clears.
 
 *Mid-bill (KB-313)*
-- [ ] **Reload mid-bill:** add two lines, go to another app for a minute (or swipe the app away), come back — the bill is as left.
-- [ ] **Sign-out warning:** with an unsynced bill (airplane on) ≡ → Sign out shows the count; **Cancel** keeps you signed in.
-- [ ] **Clear bill** (≡ menu, only with lines): the confirmation, then an empty bill.
+- [x] **Reload mid-bill:** add two lines, go to another app for a minute (or swipe the app away), come back — the bill is as left.
+- [x] **Sign-out warning:** with an unsynced bill (airplane on) ≡ → Sign out shows the count; **Cancel** keeps you signed in.
+- [x] **Clear bill** (≡ menu, only with lines): the confirmation, then an empty bill.
 
 *Learning (KB-326)* — only after everything above has synced (clearing data loses anything unsynced)
-- [ ] Make 3 bills with the same changed price for one product → Catalog → Suggestions shows it. Clear the app's storage (Android Settings → Apps → KiranaBill → Storage → Clear), open, sign in — Developer mode lists and Catalog suggestions are back. Reset learning, clear again — nothing returns.
+- [x] Make 3 bills with the same changed price for one product → Catalog → Suggestions shows it. Clear the app's storage (Android Settings → Apps → KiranaBill → Storage → Clear), open, sign in — Developer mode lists and Catalog suggestions are back. Reset learning, clear again — nothing returns.
 
 *Recovery and cost*
-- [ ] `https://sw-test--kiranabilling.netlify.app/?nosw=1` — reloads once, the app works.
-- [ ] Netlify dashboard: the alias deploys cost **0 credits** (assumed in D67 §9, not verified).
+- [x] `https://sw-test--kiranabilling.netlify.app/?nosw=1` — reloads once, the app works.
+- [x] Netlify dashboard: the alias deploys cost **0 credits** (assumed in D67 §9, not verified).
 
 *After these:* the agent builds **v2** (a new build id) and deploys it to the same alias — the update test: open the installed app with an empty bill; within seconds it reloads once and Settings → Version shows the new id; with a bill on screen it never reloads.
+
+## Alias deploy `sw-test` v2 — the update test (owner, installed app on the phone)
+
+Build ids: **v1 = `alias-v1`** (installed), **v2 = `alias-v2`** (the same code, only the build id differs). How the installed app learns of v2: the page asks the browser for a new `sw.js` when it
+comes back to the **foreground** (the first time in a page's life at once, then at most every 10 minutes — a check that fails offline still uses up that slot), and the browser also looks on a launch
+of its own schedule. Reliable trigger: switch to another app for a few seconds and back. Steps are in the session record; results go here.
+- [ ] 1. v1 open with a bill on screen when v2 arrives: no reload, Settings still `alias-v1`, the bill untouched.
+- [ ] 2. Clear the bill (or finalise + New bill): exactly one reload within seconds; Settings shows `alias-v2`.
+- [ ] 3. The same after the app has sat in the background for a few minutes (needs v3 — deployed on request).
 
 ## Before deployment
 
@@ -169,7 +179,7 @@ where the detail lives; tick it off there and strike it here.
   against the first Netlify build log. `17-MANUAL-TASKS.md` M-13.
 - [x] ~~**`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`~~ — **done 27 Sep 2026,
   `KB-316`** (D40): a type error in `netlify/functions` now fails `npm run build`, i.e. the Netlify deploy.
-- [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`) — **built 9 Oct (D67); closes at the phone check.**
+- [x] ~~**`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`)~~ — **done 9 Oct 2026:** the installed app opened offline with the last bill on the owner's phone (D67).
   `12-PARKED.md` §A.
 - [x] ~~**`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.~~ — **done 3 Oct 2026,
   `KB-307`** (D53: `bills_enforce_totals` trigger, KB422).
@@ -403,6 +413,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 9 Oct 2026 | **`sw-test` v1 phone session PASSED (owner, Android 10 / Chrome) — all 13 checks.** Installed, standalone, Google sign-in returned into the installed app, offline open with the last bill, offline chip, an offline bill synced, reload mid-bill, sign-out count, learning lists returned after clearing site data, `?nosw=1`; the alias deploy cost 0 credits; the icon reads well. `KI-40` closed; `KI-68` waits for the owner's storage-line text. Checklist ticked. **v2** (`alias-v2`, build id only) built and deployed to the same alias for the update test. | Agent |
 | 9 Oct 2026 | **`KB-401` (3)–(4): the chosen icon, pushed with the earlier commits (`2e61d70..caf72f6`, no marker); alias deploy v1.** Icon: golden-yellow `#FFCF33`, tilted white thermal slip with an indigo outline, indigo mic badge (maskable: farthest artwork pixel 203.5 of 204.8; at 48 px the slip edge stays crisp on light and dark wallpapers; item rows blur into bars, the badge reads as a dot with a mic). First alias deploy served the manifest as `application/octet-stream` → `netlify.toml` header added (`application/manifest+json`), redeployed. `npm test` 83 files / 1402, typecheck, lint, dist checks clean (cloud ref present, no localhost/127.0.0.1 URL, 27 files precached, none of `/voice`, Supabase, `__dev`). The three draft-check lists are now ONE list: "Alias deploy `sw-test` v1". Scratch icon files deleted. | Agent |
 | 9 Oct 2026 | **`KB-401` built — two local commits, not pushed (D67). No migration, no new dependency.** Hand-written service worker (`src/sw/`), update policy + safe-moment gate (`src/pwa/`), a Vite plugin that bundles the worker and injects the precache list (`scripts/pwa-build.ts`), persistent storage (`storagePersist.ts`, recorded in the device meta, shown in Settings → Developer mode), manifest + placeholder icons + `netlify.toml` no-cache headers for `/sw.js` and the manifest, Version in Settings. **Proved in a real browser on the production build:** offline open, the update flow (waits under a bill, one reload 6.0 s after Clear bill), `?nosw=1`, force mid-bill (draft restored), kill (found and fixed a reload loop: a kill build must not register). 83 files / 1402 tests, e2e 72, RLS 55/55, typecheck + lint clean, 30 plants caught. `npm audit --omit=dev` 0; dev tooling has 21 advisories (NI-42). Docker Desktop and the local stack were started for the checks. Three icon concepts drawn for the owner (scratch, never committed). New "Next draft deploy — KB-401 checks". | Agent |
 | 9 Oct 2026 | **`KB-326` done.** Owner check passed at `localhost:8888` (3 bills → suggestion and lists; wipe → they return; reset → wipe → nothing returns); the four small decisions accepted. Migration `20261011090000` pushed to the remote by the owner. `scratch-seed326.cjs` and `scratch-check326.cjs` were never committed (not in any commit, deleted, `git status` clean). | Owner + Agent |
