@@ -28,7 +28,8 @@
     "dexie": "^4.4.6",
     "lucide-react": "^1.48.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "read-excel-file": "9.3.10"
   },
   "devDependencies": {
     "@netlify/functions": "^6.0.0",
