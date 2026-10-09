@@ -127,27 +127,36 @@ synced, values restored afterwards; Catalog: search, filters, valid and invalid 
 the start-empty live shop worked; voice "3 पारले जी 10 वाले" → 3 piece × ₹10; an open-bill price change kept ₹45 on the existing line and
 added the new line at ₹50 (total ₹125); a long customer name, Image and PDF. **Phone checks for KB-310, KB-311, KB-312 and KB-324 done.**
 
-## Next draft deploy — KB-313 checks (owner)
+## Alias deploy `sw-test` v1 — ONE phone checklist (owner, Android Chrome) — KB-401, KB-313, KB-326
 
-- [ ] **Reload mid-bill (phone):** add two lines, switch to another app for a minute (or swipe the tab away), come back — the bill is as left.
-- [ ] **Airplane mode:** the grey "Offline" chip; finalise a bill; it stays "Not synced" in History; airplane off — it syncs and the chip clears.
-- [ ] **Sign out with an unsynced bill:** the warning with the count; Cancel stays signed in.
+**URL:** https://sw-test--kiranabilling.netlify.app — built from `caf72f6` with the production VITE values (build id `alias-v1`), `--alias sw-test`, no `--prod`, no marker, not linked.
+Headers checked with `curl -sI`: `/sw.js` → `Cache-Control: no-cache`, `application/javascript`; `/manifest.webmanifest` → `Cache-Control: no-cache`, `application/manifest+json`.
+**Real data:** a draft uses the production Supabase — every bill made here is a real live row. After the checks, **v2** (the update test) is built and deployed to this same alias.
+
+*Install and shell (KB-401)*
+- [ ] **Install:** open the URL in Chrome (online) → menu → "Install app" (or "Add to Home screen").
+- [ ] **Standalone:** open it from the home screen — no URL bar; the yellow icon and the splash show.
+- [ ] **Google sign-in returns INTO the installed app** (not into a Chrome tab).
+- [ ] **Settings:** `Version alias-v1`; Developer mode says "Storage: protected" — or, if not, say what it says.
+
+*Offline (KB-401, KB-313)*
+- [ ] **Last bill:** online, finalise one bill. Airplane mode, close the app, open it from the home screen — it opens, and History shows that bill.
+- [ ] **Offline chip:** the grey "Offline" chip shows.
+- [ ] **Offline bill syncs:** finalise a bill offline — History shows "Not synced"; airplane off — it syncs and the chip clears.
+
+*Mid-bill (KB-313)*
+- [ ] **Reload mid-bill:** add two lines, go to another app for a minute (or swipe the app away), come back — the bill is as left.
+- [ ] **Sign-out warning:** with an unsynced bill (airplane on) ≡ → Sign out shows the count; **Cancel** keeps you signed in.
 - [ ] **Clear bill** (≡ menu, only with lines): the confirmation, then an empty bill.
 
-## Next draft deploy — KB-326 check (owner)
+*Learning (KB-326)* — only after everything above has synced (clearing data loses anything unsynced)
+- [ ] Make 3 bills with the same changed price for one product → Catalog → Suggestions shows it. Clear the app's storage (Android Settings → Apps → KiranaBill → Storage → Clear), open, sign in — Developer mode lists and Catalog suggestions are back. Reset learning, clear again — nothing returns.
 
-- [ ] **Wiped phone gets its learning back:** after a few bills with a changed price (3 bills with the same new price make a Catalog suggestion), clear the site's data, sign in — Settings → Developer mode and Catalog → Suggestions show them again. Reset learning, clear the data again — nothing returns.
+*Recovery and cost*
+- [ ] `https://sw-test--kiranabilling.netlify.app/?nosw=1` — reloads once, the app works.
+- [ ] Netlify dashboard: the alias deploys cost **0 credits** (assumed in D67 §9, not verified).
 
-## Next draft deploy — KB-401 checks (owner, Android Chrome)
-
-Use **`npx netlify deploy --site kiranabilling --dir dist --no-build --alias sw-test`** (a draft, never `--prod`), built with the production VITE values.
-Each plain draft is a different origin, so only a fixed alias can show an update — deploy it **twice** (the second after changing the build id).
-- [ ] **Credits:** after the first alias deploy, the Netlify dashboard shows it cost 0 credits (assumed in D67 §9, not verified).
-- [ ] **Install:** open the alias in Chrome (online) → menu → "Install app": it opens without the URL bar, the icon and the paper splash show; sign in with Google — the sign-in **returns inside the installed app**.
-- [ ] **Offline open:** airplane mode, open the app from the home screen — it opens (the bill / History from this phone).
-- [ ] **Update:** deploy the alias again; open the app with an **empty bill** and leave it — within seconds it reloads once; Settings → Version shows the new id. With a bill on screen it never reloads.
-- [ ] **Storage:** after installing and one bill, Settings → Developer mode says "Storage: protected" (report what it says if not).
-- [ ] **Recovery:** open `/?nosw=1` on the phone — it reloads once and the app works.
+*After these:* the agent builds **v2** (a new build id) and deploys it to the same alias — the update test: open the installed app with an empty bill; within seconds it reloads once and Settings → Version shows the new id; with a bill on screen it never reloads.
 
 ## Before deployment
 
@@ -394,6 +403,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 9 Oct 2026 | **`KB-401` (3)–(4): the chosen icon, pushed with the earlier commits (`2e61d70..caf72f6`, no marker); alias deploy v1.** Icon: golden-yellow `#FFCF33`, tilted white thermal slip with an indigo outline, indigo mic badge (maskable: farthest artwork pixel 203.5 of 204.8; at 48 px the slip edge stays crisp on light and dark wallpapers; item rows blur into bars, the badge reads as a dot with a mic). First alias deploy served the manifest as `application/octet-stream` → `netlify.toml` header added (`application/manifest+json`), redeployed. `npm test` 83 files / 1402, typecheck, lint, dist checks clean (cloud ref present, no localhost/127.0.0.1 URL, 27 files precached, none of `/voice`, Supabase, `__dev`). The three draft-check lists are now ONE list: "Alias deploy `sw-test` v1". Scratch icon files deleted. | Agent |
 | 9 Oct 2026 | **`KB-401` built — two local commits, not pushed (D67). No migration, no new dependency.** Hand-written service worker (`src/sw/`), update policy + safe-moment gate (`src/pwa/`), a Vite plugin that bundles the worker and injects the precache list (`scripts/pwa-build.ts`), persistent storage (`storagePersist.ts`, recorded in the device meta, shown in Settings → Developer mode), manifest + placeholder icons + `netlify.toml` no-cache headers for `/sw.js` and the manifest, Version in Settings. **Proved in a real browser on the production build:** offline open, the update flow (waits under a bill, one reload 6.0 s after Clear bill), `?nosw=1`, force mid-bill (draft restored), kill (found and fixed a reload loop: a kill build must not register). 83 files / 1402 tests, e2e 72, RLS 55/55, typecheck + lint clean, 30 plants caught. `npm audit --omit=dev` 0; dev tooling has 21 advisories (NI-42). Docker Desktop and the local stack were started for the checks. Three icon concepts drawn for the owner (scratch, never committed). New "Next draft deploy — KB-401 checks". | Agent |
 | 9 Oct 2026 | **`KB-326` done.** Owner check passed at `localhost:8888` (3 bills → suggestion and lists; wipe → they return; reset → wipe → nothing returns); the four small decisions accepted. Migration `20261011090000` pushed to the remote by the owner. `scratch-seed326.cjs` and `scratch-check326.cjs` were never committed (not in any commit, deleted, `git status` clean). | Owner + Agent |
 | 9 Oct 2026 | **`KB-326` built — two local commits, not pushed (D66).** Migration `20261011090000` (applied locally; the owner pushes it): server-stamp triggers on all four learning tables. **Q5 check:** `updated_at` on `price_observations` / `learning_events` was already server-defaulted and never sent by a push (the client-sent `occurred_at` / `created_at` are not used); the update-stamp gap was on the two upserted tables (a wiped phone would have pulled a stale hit count). `pullLearningState` (per shop, resumable, 60 s overlap, pending rows never overwritten, 35 days of observations); `learning_reset` honoured with a SERVER-time cutoff — tested with the resetting phone's clock 5 min ahead and behind — rule A (no pull while this phone's reset is not on the server) and rule B (no learning push before it); the learning gate; the gate-opening cycle learns the waiting bills. 12 e2e + 6 unit; 10 plants caught + the triggers disabled locally; 3 existing tests adjusted (listed in D66 §8). Browser (local stack): after wiping site data the Developer mode lists (alias, provisional, suggestion) and the Catalog suggestion ("Toor Daal: ₹105 / kg on 3 bills") came back within ~0.3 s of the first cycle; Reset learning → the event reached the server (which kept its 1 alias / 3 observations / 1 provisional) → wipe → nothing came back. NI-41 logs the two limits. | Agent |
