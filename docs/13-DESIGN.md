@@ -258,7 +258,9 @@ accompany a label except for universally understood controls (close, back, mic).
 ## 10. App icon and install (KB-401, D67)
 
 `theme_color` and `background_color` are **paper `#FBF9F4`** (the header is paper: the Android status bar and the splash match it; indigo would
-clash with a light header). The icon is **indigo + paper + turmeric** only. It must read at **48 px** (no text, nothing finer than ~2 px at 48),
-resemble no existing brand, and sit inside the **maskable safe zone** (a circle of radius 40% of the icon, centred) so Android's round or squircle
-mask never cuts it. Three concepts were drawn (a parchi with a torn edge and a voice wave; a speech bubble that is a receipt; a K monogram);
-the owner chooses - until then `public/icons/` holds a plain placeholder. No orientation lock, no custom install button.
+clash with a light header). The **app icon** (owner, 9 Oct 2026; final for now — he will design his own later) is a tilted white thermal slip with a thin indigo outline
+(torn edge, header block, three item rows, dashed divider, a bold ₹ total row) and a round indigo mic badge over its corner, on a bright
+golden-yellow **`#FFCF33`** (the one colour outside the token set, used only in the icon files). The outline keeps the slip crisp on yellow at
+48 px; the only glyph is ₹. Store 512 is a full square (no baked corners or shadows); the maskable 512 sits inside the **safe zone** (a circle of
+radius 40% of the icon, centred — measured: farthest artwork pixel 203.5 of 204.8) so Android's round or squircle mask never cuts it.
+No orientation lock, no custom install button.

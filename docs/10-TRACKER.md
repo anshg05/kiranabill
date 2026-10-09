@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67) — two local commits, not pushed — awaiting the owner's check and the icon choice (3 concepts).** `KB-326` done 9 Oct 2026.
+**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67) — two local commits, not pushed — awaiting the owner's phone checks (icon chosen and wired in).** `KB-326` done 9 Oct 2026.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up

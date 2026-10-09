@@ -1745,7 +1745,7 @@ learned aliases feed the parser, its voice accuracy) even though `KB-324` brough
 must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone check passes.
 1. **What is precached** — an exact URL list generated at build time from `dist/` (`scripts/pwa-build.ts`, `src/sw/precache.ts`): `/`, the JS and
    CSS, **Mukta woff2 (12 files)**, **only IBM Plex Mono latin + latin-ext 400/600 woff2 (4 files — KB-308's note)**, the manifest and the icons:
-   24 files, 1.3 MB raw (about 0.85 MB over the wire). The `.woff` fallbacks, the other Plex subsets and source maps are never listed. The
+   27 files, 1.36 MB raw (about 0.85 MB over the wire). The `.woff` fallbacks, the other Plex subsets and source maps are never listed. The
    build fails if the list holds anything that is not an app file (`/voice`, `/.netlify`, `/__dev`, `sw.js`, another origin) or grows past 2 MB.
    One cache per build, named from a hash of every file's content; an unchanged file is **copied** from the previous cache, so an update
    downloads only what changed (about 0.2 MB: the new JS and CSS).
@@ -1778,13 +1778,15 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 6. **Installability.** `manifest.webmanifest`: name and short name "KiranaBill", `id`/`start_url`/`scope` `/`, `display: standalone`,
    `theme_color` and `background_color` the paper `#FBF9F4` (owner: the header is paper, so the status bar and the splash match), no orientation
    lock, PNG icons 192 and 512 plus a maskable 512, an SVG favicon. No custom "Install app" button (Chrome's menu has one). Settings shows the
-   build id (`Version …`) so support can see which version a phone has. **The icon is a placeholder** until the owner chooses from three
-   concepts (13-DESIGN §10).
+   build id (`Version …`) so support can see which version a phone has. **The icon** (owner, 9 Oct 2026 — final for now; he will design his
+   own later): a tilted thermal slip with a thin indigo outline and a round indigo mic badge on a bright golden-yellow `#FFCF33`. Store 512 (full
+   square — no baked corners or shadows), maskable 512 (the artwork's farthest pixel is 203.5 of the 204.8 px safe-zone radius), 192, a 180 px
+   apple-touch icon and a 32 px favicon; SVG sources in `public/icons/` (13-DESIGN §10).
 7. **Dependency (09 §B6): none added.** `vite-plugin-pwa` 2.0.0 + Workbox adds 160 packages (`workbox-build` alone has 37 direct dependencies)
    to solve a problem this small — and still needs custom code for the never-cache list, the safe-moment update, the three modes and `?nosw=1`.
    Instead: `src/sw/` (pure routing + precache rules + the worker, ~170 lines), `src/pwa/` (updater, gate, registration), and
    `scripts/pwa-build.ts` — a Vite plugin that, after the app build, bundles the worker with Vite's own second build and injects the list.
-8. **Proved in a real browser** (production build, `vite preview`, the local stack): first load installs and claims, 24 files cached, no reload;
+8. **Proved in a real browser** (production build, `vite preview`, the local stack): first load installs and claims, 24 files cached (27 with the final icons), no reload;
    **offline open** (preview server stopped) — the app renders from the worker (`transferSize` 0) from Dexie, including `/?code=…`; offline
    `/voice`, `/.netlify/functions/voice` and an unknown asset are network errors, never the shell; **update flow** — v1 controlling, bill on
    screen, v2 builds and installs and *waits* (cache listed, same document after 12 s), Clear bill → **6.0 s later one reload**, v2 controls, the
