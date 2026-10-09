@@ -2,12 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { KiranaBillDB, LocalBaseProduct, LocalProvisionalProduct, LocalShopProduct } from "@/data/db";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
+import type { ImportOutcome, ImportRow } from "@/data/catalogImport";
 import { listPendingPriceSuggestions, listProvisionalProducts } from "@/data/learningAudit";
 import { loadShopCatalog } from "@/data/shopCatalog";
 import { MAX_RATE_PAISE, parseMoneyInput } from "@/domain/billEdit";
 import { prepareParserCatalog, searchCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { PriceSuggestion } from "@/domain/learning";
 import { formatRupees } from "@/domain/money";
+import { CatalogImportSheet } from "./CatalogImportSheet";
 import { EditableValue } from "./EditableValue";
 import { useBackEntry } from "./useBackEntry";
 import { priceDriftText } from "./priceDriftText";
@@ -43,6 +45,8 @@ interface CatalogScreenProps {
   shopId: string;
   save: (productId: string, pricePaise: number) => Promise<CatalogWriteResult>;
   add: (base: LocalBaseProduct) => Promise<CatalogWriteResult>;
+  /** KB-314: bulk import from a file (data/catalogImport.ts). Absent = no "Import from file". */
+  importRows?: (rows: ImportRow[], onProgress: (done: number, total: number) => void) => Promise<ImportOutcome>;
   /** After a write the server accepted - billing reloads its catalog (new lines use it). */
   onChanged: () => void;
   onClose: () => void;
@@ -56,7 +60,7 @@ interface Loaded {
   provisional: LocalProvisionalProduct[];
 }
 
-export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }: CatalogScreenProps) {
+export function CatalogScreen({ localDb, shopId, save, add, importRows, onChanged, onClose }: CatalogScreenProps) {
   useBackEntry("kbCatalog", onClose);
   const online = useBrowserOnline();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -65,6 +69,7 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
   const [saving, setSaving] = useState<ReadonlySet<string>>(new Set());
   const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
   const [readyOpen, setReadyOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const reload = useCallback(async () => {
     const [all, catalog, suggestions, provisional] = await Promise.all([
@@ -119,7 +124,7 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
 
   return (
     <section aria-label="Catalog" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
-      <div inert={readyOpen} aria-hidden={readyOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
+      <div inert={readyOpen || importOpen} aria-hidden={readyOpen || importOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
@@ -144,14 +149,26 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
               </label>
             ))}
           </div>
-          <button
-            type="button"
-            aria-disabled={!online}
-            onClick={online ? () => setReadyOpen(true) : undefined}
-            className="min-h-11 self-start rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
-          >
-            Add from ready catalog
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              aria-disabled={!online}
+              onClick={online ? () => setReadyOpen(true) : undefined}
+              className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
+            >
+              Add from ready catalog
+            </button>
+            {importRows && (
+              <button
+                type="button"
+                aria-disabled={!online}
+                onClick={online ? () => setImportOpen(true) : undefined}
+                className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
+              >
+                Import from file
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -187,7 +204,7 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
             <p className="px-4 py-6 text-center">{typed ? "No products found." : "No products of this kind."}</p>
           )}
           {loaded && loaded.products.length === 0 && !typed && (
-            <p className="px-4 py-6 text-center">No products yet — add them from the ready catalog.</p>
+            <p className="px-4 py-6 text-center">No products yet — add them from the ready catalog or import a file.</p>
           )}
           {loaded && (
             <ul aria-label="Products">
@@ -227,6 +244,19 @@ export function CatalogScreen({ localDb, shopId, save, add, onChanged, onClose }
           )}
         </div>
       </div>
+      {importOpen && loaded && importRows && (
+        <CatalogImportSheet
+          existing={loaded.all}
+          online={online}
+          run={async (rows, onProgress) => {
+            const outcome = await importRows(rows, onProgress);
+            await reload(); // even a stopped run may have added some
+            if (outcome.added > 0) onChanged();
+            return outcome;
+          }}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
       {readyOpen && loaded && (
         <ReadyCatalog
           localDb={localDb}

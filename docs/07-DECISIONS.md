@@ -1821,6 +1821,59 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
     plants). It rides on the next release draft for phone confirmation; no new alias test. `register.ts`: a check before the worker has registered is
     not a completed check either.
 
+### D68 — Bulk catalog import: add-only, previewed, online; `read-excel-file` replaces SheetJS 🟢
+
+**Owner decision, 10 Oct 2026, `KB-314`** (plan Q1-Q4 and additions). No migration. Supersedes D8's "SheetJS" (SD-014 -> SD-030).
+1. **Add-only (Q1).** A row whose name matches a product already in the shop is skipped; its price, unit and aliases are never changed (hard
+   rule 7). The preview shows the file's price beside the shop's ("your shop has ₹48 / kg; the file says ₹50. Not changed."). Updating prices from a
+   file is a separate parked ticket, `KB-328`.
+2. **Online, like every catalog write (D62).** The ticket said "a normal local write that syncs"; `shop_products` is a pull-only cache, so the import
+   inserts into Postgres and the ordinary pull brings the products into Dexie. This also settles D37 §5's old note ("when `KB-311`/`KB-314` let a
+   device create `shop_products`, revisit push order / 23503"): a bill can never reference a product the server lacks, because the server always has
+   it first. Offline, "Import from file" is disabled with the Catalog's usual note; the preview itself needs no network.
+3. **The flow.** Catalog -> Import from file -> pick a `.xlsx` or `.csv` (decided from the file's first bytes, not its name) -> the columns found by
+   header name (English and common spreadsheet-export synonyms, Hindi headers, "Hindi name" as aliases; a sale price beats an MRP; changeable by
+   dropdown) -> a preview: **N to add - M already in your shop - K problems**, every distinct unit found with its count (a unit the app does not
+   know is flagged, so "kgg" shows), the file's unused columns, the aliases left out, the first 20 problem reasons with their line -> Add. The first
+   row must be the column names. Limits: 5 MB, 5,000 rows, and 10,000 products in the shop (D7 - rows past it become problems). A sample CSV
+   (UTF-8 with a byte-order mark, so Excel shows the Hindi) downloads from the sheet.
+4. **Reading (Q2-Q3, additions).** *Unit is required and never defaulted* (that would invent a unit): a row without one is a problem. Common
+   spellings are normalised to the app's own (kg, gm, liter, ml, piece - Kg/kilo/किलो, g/gram, ltr/litre, pcs/nos/नग...); any other unit is kept as
+   typed (units are free text, KI-16), lower-cased, and flagged. *Price* is integer paise from the text, never a float: `parseMoneyInput` plus a
+   leading rupee sign / Rs / INR, a trailing "/-", Devanagari digits and **western or Indian grouping** ("1,250.50", "₹ 12,500", "1,00,000");
+   "45,50" (a decimal comma), more than 2 decimals, 0 and anything unclear are problems - never guessed. The cap is the rate cap, ₹1,00,000, so
+   **"₹ 1,25,000" is read as 125000 and refused as too large**, not reported as unclear. *Names* are NFC, control characters dropped,
+   inner whitespace collapsed and trimmed before they are compared AND stored, and compared case-folded: a decomposed Devanagari name matches the
+   composed one, "Chini  " matches "Chini". A hidden (inactive) product still holds its name - the unique index counts it - so it is "already in your
+   shop (hidden)". The same name twice in a file: the first is kept, the second is a problem pointing at it.
+5. **Aliases (Q4).** An optional column, split on comma, semicolon, pipe or newline. Dropped (and listed, the product is still added): an alias
+   **shorter than 3 characters**; one **equal to another product's name or alias** - in the shop, or another NEW row's name; one **two new rows both
+   claim** (dropped from both). An alias equal to its own name is just redundant. Seen in the browser check: in a shop that already has the ready
+   catalog most common Hinglish aliases (cheeni, atta, namak, tel, chai) are taken, so a file's aliases are mostly dropped there - correct by the
+   rule, and listed so nothing is silent. **`bench:numbers` 129/129 (0 bail, 0 wrong) and `eval:real` 25 fast-path hits / 25 correct / 0 wrong are
+   unchanged** - both use the base catalog, and nothing on their path changed.
+6. **Writing.** Batches of 200, one `insert` each, so a batch is all-or-nothing; `source` `custom`, a **deterministic `local_id`** from the shop and the
+   name key, the device id. A unique violation (a name the server has and this phone had not pulled) triggers a pull and a row-by-row retry of that batch
+   only (a row that collides is "already there"); any other error stops the run - the rest are reported as not sent, and **running it again is safe**
+   (what is in is skipped). A re-run adds nothing and moves no price, unit or timestamp (e2e). 450 rows: 221-614 ms against the local stack; 445 rows
+   from the browser, 921 ms (progress 200 / 400 / 445); a 450-row `.xlsx` read and previewed in 270 ms.
+7. **Dependency (09 §B6, SD-030): `read-excel-file` pinned to 9.3.10, loaded only when a file is picked** (`read-excel-file/universal`: no Web
+   Worker). **Why 9.3.10 and not the newest:** 9.3.12 and 9.3.11 were published on 7 Oct 2026 - 2 days old; the owner's rule is a version at least 14
+   days old, and 9.3.10 (10 Aug 2026, 60 days) is the newest that is. Its resolved dependencies are all older than 14 days (saxen 11.2.0 is the
+   youngest, 17 days). `npm audit --omit=dev` stays 0; the lockfile is add-only (`read-excel-file` and 5 new packages - `fflate`, `saxen`, `unzipper-esm`, `worker-f`, `node-int64`; `graceful-fs` was
+   already there and lost `"dev": true` because it is now reachable from a runtime dependency). No install scripts. **SheetJS rejected:** its npm package (0.18.5) carries two high
+   advisories (prototype pollution GHSA-4r6h-8v6p-xvw6, ReDoS GHSA-5pgg-2g8v-p4x9) and the fixes ship only from SheetJS's own CDN, outside the registry.
+   **Bundle:** the main chunk 702.6 -> 724.0 kB (gzip 207.8 -> 215.1: the sheet, the reader, the domain code); the parser is its own lazy chunk,
+   61.4 kB (17.7 gzip), not on the billing path; precache 27 -> 28 files, 1.36 -> 1.44 MB (budget 2 MB).
+8. **Tests.** domain 98 (CSV, header mapping, prices, units, names, preview classification, aliases, the 10,000 limit, the sample file), reader 12 (a real
+   zipped workbook written by a test helper, `src/data/testXlsx.ts`, which uses read-excel-file's own `fflate`), UI 26, e2e 8 (batching, re-run, a stale
+   name, atomic batches, another shop, RLS, deterministic ids). 26 plants, each breaking one rule - all caught after two fixes: the overlay test
+   was vacuous (a screen that never reports is "not safe" anyway - it now starts from an idle screen), and a per-row "already there" pre-check was an
+   optimisation no test could see - removed (the 23505 on the row says the same). The only changed existing text: the Catalog's empty state now says "...
+   from the ready catalog or import a file."
+9. **Limits (NI-43)** and **D55:** client code only - no migration, nothing for the owner to push; it reaches phones through the update flow (D67). The
+   Android file-picker check rides on the release draft.
+
 ---
 
 ## Superseded

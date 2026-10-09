@@ -22,6 +22,7 @@ import { HistoryScreen } from "./HistoryScreen";
 import { CatalogScreen } from "./CatalogScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { addFromReadyCatalog, saveProductPrice } from "@/data/catalogEdit";
+import { importProducts } from "@/data/catalogImport";
 import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
@@ -246,6 +247,7 @@ export function BillingScreen() {
         shopId={shop.id}
         save={(id, pricePaise) => saveProductPrice(supabase, localDb, shop.id, id, pricePaise)}
         add={(base) => addFromReadyCatalog(supabase, localDb, shop.id, deviceId, base)}
+        importRows={(rows, onProgress) => importProducts(supabase, localDb, shop.id, deviceId, rows, onProgress)}
         onChanged={() => setCatalogVersion((v) => v + 1)}
         onClose={() => setCatalogOpen(false)}
       />

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 10 Oct 2026 (rev 103) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 10 Oct 2026 (rev 104) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-314` (bulk catalog import) — plan. `KB-401` done 10 Oct 2026 (D67).
+**Working on:** `KB-314` (bulk catalog import) — **built 10 Oct 2026 (D68), three local commits, not pushed — awaiting the owner's check at `localhost`.** `KB-401` done 10 Oct 2026 (D67).
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -55,7 +55,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
 15g. ~~**`KB-326`** — learning-state pull~~ — **done 9 Oct 2026** (D66). New: NI-41.
 15h. ~~**`KB-401`** — PWA: offline open, updates, persistent storage~~ — **done 10 Oct 2026** (D67; phone checks passed). Closed KI-40; KI-68's mitigation confirmed ("Storage: protected" on the installed phone).
-15i. **Next: `KB-314`** (bulk catalog import) — plan.
+15i. **`KB-314`** (bulk catalog import) — **built 10 Oct 2026 (D68), owner check pending.** New: `KB-328` (price updates from a file, parked), `NI-43`, `SD-030`.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -63,8 +63,8 @@ https://kiranabilling.netlify.app **only** when the commit carries the owner-app
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (10 Oct 2026, `KB-401` closed):** `npm test` 1405 tests in 83 files (Vitest `unit` in parallel, then `perf` alone, D35);
-`test:e2e` 72 in 12 files; `test:rls` 55/55. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
+**Test state (10 Oct 2026, `KB-314` built):** `npm test` 1541 tests in 87 files (Vitest `unit` in parallel, then `perf` alone, D35);
+`test:e2e` 80 in 13 files; `test:rls` 55/55. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **`npm test` workers (owner, 4 Oct 2026):** until the owner fixes the machine's memory (~1.1 GB free commit; the default 11 workers run out of heap), VERIFY runs `npm test -- --maxWorkers=2` and says so. **The default run must pass before any `[deploy]` release** (also in "Before deployment").
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
 `eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
@@ -169,6 +169,11 @@ of its own schedule. Reliable trigger: switch to another app for a few seconds a
 - [x] 2. Clear the bill: exactly one reload, Settings `alias-v2`, no second blink — **PASSED (owner, 10 Oct 2026).**
 - [x] 3. The same after the app sat in the background for a few minutes — **PASSED (owner, 10 Oct 2026) on v3** (from `alias-v2`: v3 waited under a bill, no reload; Clear bill + Home; 3-5 minutes; on reopening at most one reload, `alias-v3`, no repeated blinking). The owner's earlier report of a pass came before v3 existed and was not recorded; v3 (`alias-v3`, cache `kb-ee9c4cc9c5ec`) was then deployed and the test redone. **All three update tests passed.**
 - Installed-app storage line (owner, 10 Oct 2026): **"Storage: protected"** — `KI-68`'s mitigation works on a real phone once installed.
+
+## Next release draft — KB-314 check (owner)
+
+- [ ] **Android file picker:** Catalog → Import from file → the phone's file picker offers the `.xlsx` / `.csv` (from Files, Drive or Downloads); pick the sample CSV (download it from the sheet first) and a real spreadsheet: the preview appears, Add works, the products are in the Catalog. (The browser checks used a programmatic file; the real picker rides on the release draft.)
+- [ ] Re-pick the same file: "0 to add · N already in your shop".
 
 ## Before deployment
 
@@ -415,6 +420,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 10 Oct 2026 | **`KB-314` built — three local commits, not pushed (D68). No migration.** Bulk catalog import: add-only (an existing name is skipped, its price and unit never changed; the file's price shown beside the shop's), unit required and never defaulted, prices as integer paise (western and Indian grouping; a decimal comma or > 2 decimals refused; the ₹1,00,000 rate cap), names NFC + trimmed + whitespace-collapsed, aliases dropped when < 3 characters or equal to another product's name/alias (listed), preview with units found, problems (line + reason) and the first 20 of each list, batches of 200 online. `.xlsx` via **`read-excel-file` pinned to 9.3.10** (9.3.11/9.3.12 were 2 days old, the owner's rule is 14; SheetJS rejected - 2 high advisories; SD-030, lazy chunk 61 kB), `.csv` by our own reader. **Tests red first:** 98 domain + 12 reader (a real zipped workbook) + 26 UI + 8 e2e; 26 plants caught (two weak tests fixed: a vacuous overlay test and an unobservable pre-check, removed). **Real browser (dev, local stack):** a 450-row `.xlsx` with deliberate mess read and previewed in 270 ms (445 to add, 5 problems with their lines, "kgg" flagged, 4 aliases left out), added in 921 ms (progress 200/400/445), Catalog 481 → 926, re-run "0 to add · 445 already in your shop"; a UTF-8 BOM `.csv` with Hindi headers and names ("किलो" → kg, "₹ 320", "1,250.50"); a file with odd headers (description / MRP / selling price / primary unit / Hindi name; changing the price column follows); 375 px layout, no overflow. **VERIFY:** `npm test` 87 files / 1541, e2e 13 / 80, RLS 55/55, typecheck + lint clean, `npm audit --omit=dev` 0, dist clean; `bench:numbers` 129/129 (0 bail, 0 wrong) and `eval:real` 25/25/0 unchanged. The machine ran out of memory once during VERIFY (RLS and audit were re-run on their own after stopping the Supabase studio/analytics containers). Main bundle 702.6 → 724.0 kB. New: `KB-328`, `NI-43`. | Agent |
 | 10 Oct 2026 | **`KB-401` done (D67).** Update test 3 passed on v3 (the earlier "pass" came before v3 existed and was not recorded); all three update tests passed on one build. **Fix, test first:** a foreground update check that fails (offline) no longer uses up the 10-minute slot - only a completed check counts, and a check in flight is not repeated (`updater.ts`, `register.ts`; 5 new tests, red first for the right reason: 3 failed because the failed check had used the slot; 4 plants caught). One changed assertion: the existing "at most once per gap" test now awaits the check (a check completes asynchronously). It rides on the next release draft for phone confirmation. `KI-68`: mitigation confirmed on the owner's installed phone ("Storage: protected"); the per-pilot-phone item stays. VERIFY: `npm test` 83 files / 1405, typecheck and lint clean (one lint run crashed on memory, the re-run was clean), build clean, `npm audit --omit=dev` 0. | Agent |
 | 10 Oct 2026 | **Update tests 1 and 2 on `sw-test` PASSED (owner)** (v2 arrived under a bill: no reload, still `alias-v1`; Clear bill: one reload, `alias-v2`). The installed app's storage line is **"Storage: protected"**. The owner's report that test 3 passed predates any v3, so it is not recorded: **v3** (`alias-v3`, only the build id differs; same dist checks) deployed to the same alias for test 3. Approved next: a failed foreground update check must not use up the 10-minute slot. | Agent |
 | 9 Oct 2026 | **`sw-test` v1 phone session PASSED (owner, Android 10 / Chrome) — all 13 checks.** Installed, standalone, Google sign-in returned into the installed app, offline open with the last bill, offline chip, an offline bill synced, reload mid-bill, sign-out count, learning lists returned after clearing site data, `?nosw=1`; the alias deploy cost 0 credits; the icon reads well. `KI-40` closed; `KI-68` waits for the owner's storage-line text. Checklist ticked. **v2** (`alias-v2`, build id only) built and deployed to the same alias for the update test. | Agent |

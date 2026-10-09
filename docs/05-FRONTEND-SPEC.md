@@ -220,6 +220,19 @@ Either way, base products can be pulled in later from Catalog → "Add from read
   read-only ("“kurkure” — said 2 times, not in the catalog"; `KB-320` saves them). No unit drift (nothing records
   it yet).
 
+### Implementation notes — Import from file (`KB-314`, 10 Oct 2026; D68)
+
+- **Button "Import from file"** beside "Add from ready catalog"; online only (same note when offline). The sheet is an overlay (Android back closes it;
+  an app update never reloads under it - D67).
+- **Pick** a `.xlsx` or `.csv` (first row = column names; Name, Price, Unit needed; Category, Aliases, SKU, Barcode optional) or **Download sample CSV**.
+  A file that cannot be read says why - not UTF-8 ("save as CSV UTF-8 or .xlsx"), an old `.xls`, over 5 MB or 5,000 rows, no rows below the header.
+- **Preview:** the column for each field in a dropdown (found by header name; changeable; a missing required column says which, nothing is guessed),
+  then **"N to add · M already in your shop · K problems"**, the units found (an unknown one flagged), then lists - Problems (line + reason), Already in
+  your shop (shop price beside the file's, "Not changed"), To add, Aliases left out - each the first 20 and "…and N more". **Add N products** is
+  absent when nothing is new and disabled offline.
+- **While it runs:** "Adding 200 of 445…" and nothing else can be pressed. **Result:** "Added N · already there M · failed K"; a run that stopped says
+  so and that running it again skips what is already in.
+
 ---
 
 ## 5. S5 — History

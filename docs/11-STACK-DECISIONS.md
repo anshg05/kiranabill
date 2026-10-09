@@ -240,12 +240,30 @@ getting transactions and schema versioning wrong here would corrupt bill data.
 Was SD-Q3. Reports are post-MVP. Deciding a charting library now would be picking a tool for a
 feature that doesn't exist. Revisit when a report ticket is written.
 
-## SD-014 — Excel import/export: **SheetJS (xlsx)** · 17 Aug 2026
+## SD-014 — Excel import/export: **SheetJS (xlsx)** · 17 Aug 2026 — **superseded 10 Oct 2026 by SD-030**
 
 Needed for bulk catalog upload (`KB-314`), which is table stakes — Vyapar and myBillBook both have
 it, and a shop with 500+ products will not type them in one at a time. SheetJS parses `.xlsx`
 client-side, so upload becomes a normal local write that syncs like anything else. No server-side
 file handling, no new infrastructure.
+
+---
+
+## SD-030 — Spreadsheet import: **`read-excel-file` 9.3.10** (runtime, lazy-loaded) · 10 Oct 2026 (supersedes SD-014)
+
+Owner decision in the `KB-314` plan (Q3), after a check of the packages. Exact version pinned. Reads `.xlsx` in the browser from a `Blob`
+(`read-excel-file/universal` - no Web Worker); `.csv` is read by our own 50-line RFC 4180 reader (`src/domain/csv.ts`), no library.
+
+| Rejected | Why |
+|---|---|
+| **SheetJS `xlsx`** (SD-014) | The npm package is stuck at 0.18.5 with two **high** advisories - prototype pollution (GHSA-4r6h-8v6p-xvw6) and ReDoS (GHSA-5pgg-2g8v-p4x9); the fixes exist only on SheetJS's CDN tarball, outside the registry and the lockfile's integrity model. `npm audit` on a bare install: 1 high. |
+| **CSV only** | No dependency, but a shopkeeper's file is usually an Excel/Vyapar `.xlsx`; "Save as CSV UTF-8" is a step too far. |
+| `exceljs` | 21.8 MB unpacked, 9 dependencies including streams and archive libraries - far more than reading rows needs. |
+| `read-excel-file` 9.3.11 / 9.3.12 | Published 7 Oct 2026 - under the owner's 14-day rule. **9.3.10** (10 Aug 2026) is the newest older than 14 days. |
+
+**Cost:** 5 new transitive packages (`fflate`, `saxen`, `unzipper-esm`, `worker-f`, `node-int64`; `graceful-fs` was already in the tree; MIT/ISC, no install scripts), `npm audit`
+0, a lazy chunk of 61.4 kB (17.7 gzip) that only loads when an `.xlsx` is picked. Revisit when the 14-day rule allows a newer version and the
+changelog shows something we need. Not supported: `.xls` (Excel 97-2003) and `.ods` - the message says to save as `.xlsx` or CSV UTF-8.
 
 ---
 

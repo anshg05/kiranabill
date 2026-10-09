@@ -70,12 +70,7 @@ export async function importProducts(
       out.added += batch.length;
     } else if (error.code === UNIQUE_VIOLATION) {
       await pullQuietly(client, localDb, shopId);
-      const have = new Set((await localDb.shopProducts.where("shopId").equals(shopId).toArray()).map((p) => nameKey(p.displayName)));
       for (const r of batch) {
-        if (have.has(nameKey(r.name))) {
-          out.alreadyThere += 1;
-          continue;
-        }
         const one = await client.from("shop_products").insert(record(r));
         if (!one.error) out.added += 1;
         else if (one.error.code === UNIQUE_VIOLATION) out.alreadyThere += 1;
