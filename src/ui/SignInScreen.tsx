@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import { useUpdateGate } from "@/pwa/updateGate";
 import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
 
 /** S1 (05-FRONTEND-SPEC.md): Google sign-in only. (A dev-only email form
@@ -7,6 +8,7 @@ import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
 export function SignInScreen() {
   const { signInWithGoogle } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  useUpdateGate(true); // KB-401: nothing here to lose - a waiting update may apply
 
   const handleClick = () => {
     setError(null);

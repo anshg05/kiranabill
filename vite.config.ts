@@ -4,6 +4,7 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { computeBuildId, resolveSwMode, serviceWorkerPlugin } from "./scripts/pwa-build";
 
 const AUDIO_EXTENSIONS: Record<string, string> = { "audio/webm": "webm", "audio/mp4": "mp4", "audio/ogg": "ogg", "audio/wav": "wav" };
 const MAX_SAVE_BYTES = 20 * 1024 * 1024;
@@ -60,7 +61,13 @@ function devSaveRecording(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), devSaveRecording()],
+  plugins: [react(), tailwindcss(), devSaveRecording(), serviceWorkerPlugin()],
+  // KB-401: which build a page is (shown in Settings); the worker is built after the app (scripts/pwa-build.ts).
+  // A kill build (src/sw/mode.txt) never registers a worker - see src/pwa/register.ts.
+  define: {
+    __BUILD_ID__: JSON.stringify(computeBuildId(process.env, new Date())),
+    __KB_SW_KILL__: JSON.stringify(resolveSwMode(process.cwd(), process.env) === "kill"),
+  },
   resolve: {
     alias: {
       "@": "/src",

@@ -8,3 +8,15 @@
   # D55: build (and spend production-deploy credits) only for a commit whose
   # message contains "[deploy]" - the owner approves every release.
   ignore = "bash scripts/netlify-ignore.sh"
+
+# KB-401 (D67): the browser must re-check the worker script and the manifest on every launch - a fix (or the kill
+# switch) can only reach phones if /sw.js is never served stale. (src/pwa/register.ts also passes updateViaCache: "none".)
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"

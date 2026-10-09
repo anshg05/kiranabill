@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/app/App";
+import { startServiceWorker } from "@/pwa/register";
 import "./index.css";
 
 const root = createRoot(document.getElementById("root")!);
@@ -18,3 +19,5 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
     </StrictMode>,
   );
 }
+// KB-401: production only (nothing registers in the dev server); after the first render, never before it.
+startServiceWorker();

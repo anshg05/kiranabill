@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liveQuery } from "dexie";
 import { ArrowLeft } from "lucide-react";
+import type { DeviceDB } from "@/data/device";
 import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct, LocalShop } from "@/data/db";
 import { listLearnedAliases, listPendingPriceSuggestions, listProvisionalProducts, resetLearning } from "@/data/learningAudit";
 import { updateShopSettings } from "@/data/shopSettings";
+import { readStorageStatus, storageStatusText, type StorageStatus } from "@/data/storagePersist";
+import { BUILD_ID } from "@/pwa/buildId";
 import { formatMobile } from "@/domain/customer";
 import type { PriceSuggestion } from "@/domain/learning";
 import type { BillLanguage } from "@/domain/receipt";
@@ -35,10 +38,12 @@ interface SettingsScreenProps {
   localDb: KiranaBillDB;
   shopId: string;
   deviceId: string;
+  /** KB-401: where "is this phone's storage protected?" is recorded (D67). */
+  deviceDb?: DeviceDB;
   onClose: () => void;
 }
 
-export function SettingsScreen({ localDb, shopId, deviceId, onClose }: SettingsScreenProps) {
+export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, onClose }: SettingsScreenProps) {
   useBackEntry("kbSettings", onClose);
   const online = useBrowserOnline();
   const [shop, setShop] = useState<LocalShop | null>(null);
@@ -177,13 +182,23 @@ export function SettingsScreen({ localDb, shopId, deviceId, onClose }: SettingsS
                 A receipt opened from History shows today's shop name, phone and language, not the ones it was first printed with.
               </p>
 
-              <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} />
+              <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} />
+              <p className="mt-6 text-[13px] text-ink-soft">Version {BUILD_ID}</p>
             </>
           )}
         </div>
       </div>
     </section>
   );
+}
+
+/** KB-401 (KI-68): is this phone's storage protected from the browser's clean-up? A fact for the pilot check - never an alarm. */
+function StorageLine({ deviceDb }: { deviceDb: DeviceDB }) {
+  const [status, setStatus] = useState<StorageStatus | null>(null);
+  useEffect(() => {
+    void readStorageStatus(deviceDb).then((r) => setStatus(r.status));
+  }, [deviceDb]);
+  return status === null ? null : <p className="text-[13px] text-ink-soft">{storageStatusText(status)}</p>;
 }
 
 interface Learning {
@@ -193,7 +208,7 @@ interface Learning {
 }
 
 /** 08 section 9 - learned aliases with confidence, provisional products with counts, pending price suggestions, a reset. Read-only, this shop only. */
-function DeveloperMode({ localDb, shopId, deviceId }: { localDb: KiranaBillDB; shopId: string; deviceId: string }) {
+function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: KiranaBillDB; shopId: string; deviceId: string; deviceDb?: DeviceDB }) {
   const [opened, setOpened] = useState(false);
   const [learning, setLearning] = useState<Learning | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -238,6 +253,7 @@ function DeveloperMode({ localDb, shopId, deviceId }: { localDb: KiranaBillDB; s
       <summary className="min-h-11 cursor-pointer font-medium">Developer mode</summary>
       <div className="mt-2 flex flex-col gap-4">
         <p className="text-[13px] text-ink-soft">What the app has learned about this shop on this phone. Nothing here changes a price or a unit.</p>
+        {deviceDb && <StorageLine deviceDb={deviceDb} />}
         {learning && (
           <>
             {learning.aliases.length > 0 && (

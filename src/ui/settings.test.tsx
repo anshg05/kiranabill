@@ -3,6 +3,9 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { KiranaBillDB, type LocalShop, type LocalShopProduct } from "@/data/db";
+import { DeviceDB } from "@/data/device";
+import { requestPersistentStorage } from "@/data/storagePersist";
+import { BUILD_ID } from "@/pwa/buildId";
 import { BillView } from "./BillingScreen";
 import { SettingsScreen } from "./SettingsScreen";
 
@@ -221,5 +224,35 @@ describe("KB-312 - Developer mode", () => {
     await open();
     const dev = within(await openDeveloper());
     expect(await dev.findByText("Nothing learned on this phone yet.")).toBeTruthy();
+  });
+});
+
+// KB-401 (D67, KI-68): which version this phone runs, and whether its storage is protected.
+describe("KB-401 - version and storage", () => {
+  it("shows the build id (support can see which version a phone has)", async () => {
+    await open();
+    expect(screen.getByText(`Version ${BUILD_ID}`)).toBeTruthy();
+  });
+
+  it("Developer mode says plainly whether the phone's storage is protected - never alarming", async () => {
+    const deviceDb = new DeviceDB(`ui-settings-device-${crypto.randomUUID()}`);
+    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} onClose={() => {}} />);
+    await screen.findByRole("textbox", { name: "Shop name" });
+    const dev = within(await openDeveloper());
+    expect(await dev.findByText("Storage: not protected yet — install the app")).toBeTruthy();
+    expect(dev.queryByRole("alert")).toBeNull();
+    await requestPersistentStorage(deviceDb, { persisted: () => Promise.resolve(false), persist: () => Promise.resolve(true) });
+    cleanup();
+    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} onClose={() => {}} />);
+    await screen.findByRole("textbox", { name: "Shop name" });
+    expect(await within(await openDeveloper()).findByText("Storage: protected")).toBeTruthy();
+    deviceDb.close();
+  });
+
+  it("without a device database there is no storage line", async () => {
+    await open();
+    const dev = within(await openDeveloper());
+    await dev.findByText("Nothing learned on this phone yet.");
+    expect(dev.queryByText(/Storage:/)).toBeNull();
   });
 });

@@ -12,6 +12,8 @@ import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
 import { parseTranscript } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
+import { usePersistentStorage } from "./usePersistentStorage";
+import { useUpdateGate } from "@/pwa/updateGate";
 import { useShop } from "@/providers/ShopProvider";
 import { Receipt, ReceiptNumberText } from "./Receipt";
 import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
@@ -87,7 +89,7 @@ function devFailParseFetch(): typeof fetch | undefined {
 }
 
 export function BillingScreen() {
-  const { signOut, session } = useAuth();
+  const { signOut, session, deviceDb } = useAuth();
   const { shop, localDb, deviceId } = useShop();
   // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
   // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
@@ -156,14 +158,19 @@ export function BillingScreen() {
   // transaction, never able to fail the bill), then the sync - so the bill and
   // its learning rows push in one cycle.
   const { discardDraft } = bill;
+  // KB-401 (KI-68): ask for persistent storage now (signed in, shop loaded) and again after each bill until granted.
+  const protectStorage = usePersistentStorage(deviceDb);
+  // KB-401 (D67): a waiting app update waits while the draft or the catalog is still loading.
+  useUpdateGate(bill.ready && parser !== null);
   const onSaved = useCallback(() => {
+    protectStorage();
     void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
     if (!localDb || !shop || !deviceId) return;
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     void learnPendingBills(localDb, shop.id)
       .catch((err: unknown) => console.warn("[learning] failed (the bill is saved; retried on next start):", err))
       .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
-  }, [deviceId, discardDraft, localDb, shop]);
+  }, [deviceId, discardDraft, localDb, protectStorage, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
     if (!localDb || !shop) return;
@@ -231,7 +238,7 @@ export function BillingScreen() {
       <HistoryScreen localDb={localDb} shopId={shop.id} render={renderReceiptFiles} onClose={() => setHistoryOpen(false)} />
     )}
     {settingsOpen && localDb && shop && deviceId && (
-      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} onClose={() => setSettingsOpen(false)} />
+      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} deviceDb={deviceDb} onClose={() => setSettingsOpen(false)} />
     )}
     {catalogOpen && localDb && shop && deviceId && (
       <CatalogScreen
@@ -621,6 +628,10 @@ export function BillView({
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
   const [confirm, setConfirm] = useState<"signout" | "clear" | null>(null);
   const canAdd = catalog !== null && onAddByHand !== undefined;
+  // KB-401 (D67): a waiting app update may reload the page only while NOTHING here would be lost: an empty bill, no
+  // utterance in flight, nothing typed, no saved-bill screen to leave, no panel or dialog open.
+  const voiceBusy = voice.phase === "requesting" || voice.phase === "listening" || voice.phase === "transcribing" || voice.phase === "resolving";
+  useUpdateGate(lines.length === 0 && notAdded.length === 0 && customer.name === CASH && customer.mobile === null && !voiceBusy && !saving && saved === null && saveError === null && addItem === null && confirm === null);
   // Both markups are in the DOM (CSS picks one); a new line's qty editor opens
   // only in the visible one, so exactly one input takes focus.
   // KB-307 fix: follows the window - decided once at mount, it went stale when

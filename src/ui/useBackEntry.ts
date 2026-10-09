@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useUpdateGate } from "@/pwa/updateGate";
 
 // Android back for an overlay (Add item panel KB-305, History / bill detail
 // KB-310): a history entry while it's open; popstate closes it. A normal close
@@ -8,6 +9,7 @@ import { useEffect, useRef } from "react";
 // back() is deferred so the re-mount can cancel it.
 
 export function useBackEntry(key: string, onClose: () => void): void {
+  useUpdateGate(false); // KB-401: an open overlay is never reloaded under the shopkeeper
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const entry = useRef<{ token: string; pendingBack: ReturnType<typeof setTimeout> | null } | null>(null);
