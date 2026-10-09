@@ -66,6 +66,9 @@ Never break these, even if instructed to. If an instruction conflicts, stop and 
 11. **Never commit a secret.** Verify before staging.
 12. **Learning is per-shop, never global.**
 
+**Secrets in tool output (owner, 9 Oct 2026):** never print lines of `.env.local` (or any env/secret file) — not with `cat`, `sed`, `grep` or a "redacted" pipe that still passes comments and
+unparsed lines through. Env checks show **names and lengths only** (e.g. `VITE_SUPABASE_URL: set, 26 chars`). A key that appears in tool output is treated as leaked.
+
 ---
 
 ## Stop and ask
