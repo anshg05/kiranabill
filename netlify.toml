@@ -20,3 +20,5 @@
   for = "/manifest.webmanifest"
   [headers.values]
     Cache-Control = "no-cache"
+    # Netlify serves an unknown extension as application/octet-stream (seen on the first alias deploy).
+    Content-Type = "application/manifest+json"
