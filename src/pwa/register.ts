@@ -85,7 +85,7 @@ export function startServiceWorker(): void {
     reload: () => window.location.reload(),
     guard: sessionGuard(),
     now: () => Date.now(),
-    checkForUpdate: () => (registration ? registration.update() : Promise.resolve()),
+    checkForUpdate: () => (registration ? registration.update() : Promise.reject(new Error("not registered yet"))), // not a completed check
   });
   sw.addEventListener("controllerchange", () => updater.controllerChanged());
   sw.addEventListener("message", (e) => updater.message(e.data));

@@ -186,22 +186,61 @@ describe("force mode", () => {
 });
 
 describe("checking for a new version", () => {
-  it("asks the browser at most once per gap", () => {
+  // KB-401 follow-up (owner, 10 Oct 2026): only a COMPLETED check uses up the 10-minute slot - one that failed
+  // (offline) must not, or a foreground event before the network is back blocks every check for 10 minutes.
+  it("asks the browser at most once per gap once a check has completed", async () => {
     const s = setup();
     s.updater.foreground();
     s.updater.foreground();
     expect(s.deps.checkForUpdate).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(UPDATE_CHECK_MIN_GAP_MS - 1);
+    await vi.advanceTimersByTimeAsync(UPDATE_CHECK_MIN_GAP_MS - 1);
     s.updater.foreground();
     expect(s.deps.checkForUpdate).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(2);
+    await vi.advanceTimersByTimeAsync(2);
     s.updater.foreground();
     expect(s.deps.checkForUpdate).toHaveBeenCalledTimes(2);
   });
 
-  it("a failing check (offline) is swallowed", async () => {
-    const s = setup({ checkForUpdate: vi.fn(() => Promise.reject(new Error("offline"))) });
+  it("a failing check (offline) is swallowed and does NOT use up the slot", async () => {
+    const check = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue(undefined);
+    const s = setup({ checkForUpdate: check });
     expect(() => s.updater.foreground()).not.toThrow();
     await vi.advanceTimersByTimeAsync(0);
+    s.updater.foreground(); // seconds later, network back: asks again at once
+    expect(check).toHaveBeenCalledTimes(2);
+  });
+
+  it("a check that throws before returning a promise is the same as a failed one", async () => {
+    const check = vi.fn().mockImplementationOnce(() => { throw new Error("boom"); }).mockResolvedValue(undefined);
+    const s = setup({ checkForUpdate: check });
+    expect(() => s.updater.foreground()).not.toThrow();
+    await vi.advanceTimersByTimeAsync(0);
+    s.updater.foreground();
+    expect(check).toHaveBeenCalledTimes(2);
+  });
+
+  it("a check still in flight is not asked again, and once it completes it counts", async () => {
+    let finish: () => void = () => {};
+    const check = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const s = setup({ checkForUpdate: check });
+    s.updater.foreground();
+    s.updater.foreground();
+    s.updater.foreground();
+    expect(check).toHaveBeenCalledTimes(1);
+    finish();
+    await vi.advanceTimersByTimeAsync(0);
+    s.updater.foreground(); // completed a moment ago: inside the gap
+    expect(check).toHaveBeenCalledTimes(1);
+  });
+
+  it("after a failure and then a success, the success counts", async () => {
+    const check = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue(undefined);
+    const s = setup({ checkForUpdate: check });
+    s.updater.foreground();
+    await vi.advanceTimersByTimeAsync(0);
+    s.updater.foreground(); // succeeds
+    await vi.advanceTimersByTimeAsync(0);
+    s.updater.foreground(); // inside the gap now
+    expect(check).toHaveBeenCalledTimes(2);
   });
 });

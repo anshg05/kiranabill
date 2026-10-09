@@ -35,7 +35,8 @@ export function createUpdater(deps: UpdaterDeps): Updater {
   let applying = false; // this page asked the waiting worker to take over
   let pendingReload = false; // ...and the worker did, but the bill was busy at that moment
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let lastCheck = Number.NEGATIVE_INFINITY;
+  let lastCheck = Number.NEGATIVE_INFINITY; // when the last COMPLETED check finished
+  let checking = false;
 
   function reloadOnce(): void {
     const raw = deps.guard.get(STAMP_KEY);
@@ -87,14 +88,23 @@ export function createUpdater(deps: UpdaterDeps): Updater {
     },
     foreground() {
       evaluate();
-      const t = deps.now();
-      if (t - lastCheck < UPDATE_CHECK_MIN_GAP_MS) return;
-      lastCheck = t;
+      if (checking || deps.now() - lastCheck < UPDATE_CHECK_MIN_GAP_MS) return;
+      checking = true;
+      // Only a COMPLETED check uses up the slot: one that failed (offline) must not block the next foreground for 10 minutes.
+      let check: Promise<unknown>;
       try {
-        deps.checkForUpdate().catch(() => undefined); // offline is fine: nothing to learn
-      } catch {
-        // a throwing check is the same as an offline one
+        check = deps.checkForUpdate();
+      } catch (err) {
+        check = Promise.reject(err);
       }
+      check.then(
+        () => {
+          lastCheck = deps.now();
+        },
+        () => undefined, // offline is fine: nothing learned, the slot stays free
+      ).finally(() => {
+        checking = false;
+      });
     },
   };
 }
