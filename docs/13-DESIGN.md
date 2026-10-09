@@ -252,3 +252,13 @@ mediocre ones.
 
 **Lucide**, at 20px, 1.5px stroke, `ink-soft`. One consistent set, no emoji, no mixing. Icons always
 accompany a label except for universally understood controls (close, back, mic).
+
+---
+
+## 10. App icon and install (KB-401, D67)
+
+`theme_color` and `background_color` are **paper `#FBF9F4`** (the header is paper: the Android status bar and the splash match it; indigo would
+clash with a light header). The icon is **indigo + paper + turmeric** only. It must read at **48 px** (no text, nothing finer than ~2 px at 48),
+resemble no existing brand, and sit inside the **maskable safe zone** (a circle of radius 40% of the icon, centred) so Android's round or squircle
+mask never cuts it. Three concepts were drawn (a parchi with a torn edge and a voice wave; a speech bubble that is a receipt; a K monogram);
+the owner chooses - until then `public/icons/` holds a plain placeholder. No orientation lock, no custom install button.

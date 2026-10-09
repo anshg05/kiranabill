@@ -1739,6 +1739,76 @@ learned aliases feed the parser, its voice accuracy) even though `KB-324` brough
 9. **Today it restores** the Catalog suggestions and Developer mode. The parser does not use learned aliases until `KB-323`, so voice accuracy
    returns when that lands — this is its groundwork.
 
+### D67 — The app is an installable PWA with a hand-written service worker: offline open, updates that wait for a safe moment, and a way back from a bad worker 🟢
+
+**Owner decision, 9 Oct 2026, `KB-401`** (plan approved with one required fix: a waiting worker does not take over on a plain reload, so the page
+must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone check passes.
+1. **What is precached** — an exact URL list generated at build time from `dist/` (`scripts/pwa-build.ts`, `src/sw/precache.ts`): `/`, the JS and
+   CSS, **Mukta woff2 (12 files)**, **only IBM Plex Mono latin + latin-ext 400/600 woff2 (4 files — KB-308's note)**, the manifest and the icons:
+   24 files, 1.3 MB raw (about 0.85 MB over the wire). The `.woff` fallbacks, the other Plex subsets and source maps are never listed. The
+   build fails if the list holds anything that is not an app file (`/voice`, `/.netlify`, `/__dev`, `sw.js`, another origin) or grows past 2 MB.
+   One cache per build, named from a hash of every file's content; an unchanged file is **copied** from the previous cache, so an update
+   downloads only what changed (about 0.2 MB: the new JS and CSS).
+2. **What the worker never touches.** It answers only a same-origin GET that is an exact precache match, and a same-origin navigation to `/`
+   (any query — the sign-in return `/?code=…` is served the cached shell and the app reads the URL itself). Everything else gets no `respondWith`
+   at all: `/voice`, the Netlify functions, every POST, the dev routes (refused in code even if listed), and the Supabase API and Google
+   sign-in (cross-origin). There is **no runtime caching**, so no cache can hold a stale API answer. Offline data stays Dexie's job. Any
+   exception inside the worker falls back to the network; an install that cannot fetch every file (or gets HTML where a script should be, or a
+   redirect) fails whole — no half-filled cache, the old worker carries on.
+3. **Updates never reload under a bill.** A new version installs and **waits** (normal mode has no `skipWaiting`). At a *safe moment* the page
+   posts `kb-skip-waiting` to the waiting worker and reloads **once** on `controllerchange` (a reload stamp in `sessionStorage` refuses a second
+   reload inside 30 s — no reload loop). A first install's `clients.claim()` never reloads. **Safe** means: the bill has no lines, no "Not
+   added" entry, no typed customer; no recording or utterance in flight; not saving and not on the saved-bill screen; no panel or dialog open (every
+   overlay reports through `useBackEntry`; the sign-in screen counts as safe — nothing to lose); the draft and the catalog have loaded — and it
+   has held for **5 s** (a foreground event does not restart that). It is re-checked when the waiting worker appears, whenever the answer
+   changes, and when the app returns to the foreground (where `registration.update()` also runs, at most once per 10 minutes; the browser checks
+   on every navigation anyway, and `sw.js` is served `no-cache` with `updateViaCache: "none"`). If the app is closed, the browser applies it at the
+   next launch. The half-built bill (D65) survives a reload but is only the last line of defence. **If a phone is busy all day, the update waits all
+   day — by design.**
+4. **Recovery.** *Per phone, no deploy:* open `/?nosw=1` — the worker serves that page from the network and drops everything; the page also
+   unregisters every worker and deletes every cache, then loads the plain page, which registers a fresh worker (offline it changes nothing).
+   *All phones, a release (the owner's `[deploy]`):* `src/sw/mode.txt` (committed — reviewed in git, never a Netlify setting) is `normal`,
+   `force` or `kill`. **force** = install, `skipWaiting`, `claim`, tell the open pages to reload — **it can reload mid-bill; the draft restores
+   it** (owner: emergencies only). **kill** = a tombstone: deletes every cache, unregisters, reloads the open pages; a kill *build's* pages never
+   register a worker (otherwise the tombstone would reload them forever — found in the real-browser check). A later `normal` release registers again.
+5. **Persistent storage (KI-68).** `navigator.storage.persist()` when the billing screen mounts (signed in, shop loaded), on `appinstalled`, and
+   after each saved bill while not granted; the answer (`granted` / `denied` / `unsupported`, and when) is recorded in the **device** database's
+   `meta` (a per-installation fact, D38). Chrome decides from engagement and install signals, not from a prompt, so a refusal is expected before
+   install and is **never shown** to the shopkeeper; Settings → Developer mode says "Storage: protected" or "not protected yet — install the app".
+6. **Installability.** `manifest.webmanifest`: name and short name "KiranaBill", `id`/`start_url`/`scope` `/`, `display: standalone`,
+   `theme_color` and `background_color` the paper `#FBF9F4` (owner: the header is paper, so the status bar and the splash match), no orientation
+   lock, PNG icons 192 and 512 plus a maskable 512, an SVG favicon. No custom "Install app" button (Chrome's menu has one). Settings shows the
+   build id (`Version …`) so support can see which version a phone has. **The icon is a placeholder** until the owner chooses from three
+   concepts (13-DESIGN §10).
+7. **Dependency (09 §B6): none added.** `vite-plugin-pwa` 2.0.0 + Workbox adds 160 packages (`workbox-build` alone has 37 direct dependencies)
+   to solve a problem this small — and still needs custom code for the never-cache list, the safe-moment update, the three modes and `?nosw=1`.
+   Instead: `src/sw/` (pure routing + precache rules + the worker, ~170 lines), `src/pwa/` (updater, gate, registration), and
+   `scripts/pwa-build.ts` — a Vite plugin that, after the app build, bundles the worker with Vite's own second build and injects the list.
+8. **Proved in a real browser** (production build, `vite preview`, the local stack): first load installs and claims, 24 files cached, no reload;
+   **offline open** (preview server stopped) — the app renders from the worker (`transferSize` 0) from Dexie, including `/?code=…`; offline
+   `/voice`, `/.netlify/functions/voice` and an unknown asset are network errors, never the shell; **update flow** — v1 controlling, bill on
+   screen, v2 builds and installs and *waits* (cache listed, same document after 12 s), Clear bill → **6.0 s later one reload**, v2 controls, the
+   old cache is gone, Settings shows v2, and 40 s later still the same document; `?nosw=1`; **force** mid-bill (reloaded at once, the bill came
+   back from the draft); **kill** (caches empty, unregistered, no loop, no re-registration; a normal release then registered again).
+   One earlier attempt did not apply within my observation window while the tab had been hidden for minutes (Chrome throttles timers in
+   hidden pages); the settle timer was also being restarted by foreground events — now it is not (test added). The final-code run applied in 6.0 s.
+9. **D55.** Nothing about deploys changes: the worker is static files in `dist/`; drafts stay 0 credits; production still needs the owner's
+   `[deploy]` (15 credits). **Rollout is no longer instant:** a production release reaches a phone when its worker updates (the next safe
+   moment or launch). A bad production worker cannot be hot-fixed except by a release (15 credits) — or per phone by `?nosw=1` (0). Hence: drafts
+   first, and a draft's worker can never touch the production site's (different origin). **Phone update test:** every draft URL is a different
+   origin, so two drafts cannot show an update; use `netlify deploy --alias sw-test` twice (a fixed host, `sw-test--kiranabilling.netlify.app`).
+   Assumed to be a draft that costs 0 credits — **owner confirms in the dashboard after the first one.** `KB-401` should reach production
+   before any later release depends on offline open.
+10. **Limits:** (a) an update applies only when the phone has been idle at the billing screen for 5 s — a phone used all day updates at the
+    next quiet moment or launch; (b) in the one reload after an update the open page briefly runs old JS against the new worker — old font
+    files the new cache lacks fall back to the network (or a fallback face) until the reload lands; (c) Android Chrome only — no iOS
+    apple-touch icon or splash; (d) `npm audit` reports advisories in dev tooling (NI-42), none in production dependencies.
+11. **Tests.** 83 files / 1402 tests (was 72 / 1287): routing, precache rules, the worker against stub scope (install, copy-from-previous,
+    activate, message, fetch, `?nosw`, kill), the updater (settle, loop guard, force, foreground), the gate and every overlay's report, the build
+    plugin, persistent storage, Settings lines. No existing assertion changed. 30 plants (each breaks one rule — never-handle list, same-origin,
+    GET only, install checks, no half cache, normal never skips waiting, safe-moment re-check, settle, loop guard, defer-while-busy, force,
+    each gate report, kill-build registration, persist semantics, precache fonts and budget, cache naming) — all caught.
+
 ---
 
 ## Superseded

@@ -146,6 +146,8 @@ codes — retries with backoff).
 
 **Non-negotiable:** a half-built bill is never lost to a network blink.
 
+**Offline open (`KB-401`, `07-DECISIONS.md` D67):** a hand-written service worker precaches the app shell (HTML, JS, CSS, Mukta, four Plex Mono files) so an installed or visited app opens with no network; it never touches `/voice`, the Supabase API, auth redirects or dev routes, and caches no data (that is Dexie's). A new version waits and is applied only when the bill is empty and nothing is open; `/?nosw=1`, a `force` release or a `kill` release recover a bad worker.
+
 **Offline start (`KB-315`, `07-DECISIONS.md` D38):** a signed-in shopkeeper opening the app with no network
 reaches a working app from IndexedDB alone — the device remembers the last user with a real session and, when
 the token refresh fails only because the network is down, runs an **offline session** from that user's local

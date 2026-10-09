@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 9 Oct 2026 (rev 101) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 9 Oct 2026 (rev 102) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** `KB-401` (PWA) — plan. `KB-326` done 9 Oct 2026.
+**Working on:** `KB-401` (PWA) — **built 9 Oct 2026 (D67) — two local commits, not pushed — awaiting the owner's check and the icon choice (3 concepts).** `KB-326` done 9 Oct 2026.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -54,7 +54,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
 15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
 15g. ~~**`KB-326`** — learning-state pull~~ — **done 9 Oct 2026** (D66). New: NI-41.
-15h. **Next: `KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68) — plan; then `KB-314`.
+15h. **`KB-401`** (PWA: offline open, persistent storage — KI-40, KI-68) — **built 9 Oct 2026 (D67), owner check pending**; then `KB-314`.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
@@ -62,8 +62,8 @@ https://kiranabilling.netlify.app **only** when the commit carries the owner-app
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (4 Oct 2026, `KB-308` commit 3):** `npm test` 1098 tests in 52 files (Vitest `unit` in parallel, then `perf` alone, D35);
-`test:e2e` 34 in 7 files; `test:rls` 50/50. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
+**Test state (9 Oct 2026, `KB-401`):** `npm test` 1402 tests in 83 files (Vitest `unit` in parallel, then `perf` alone, D35);
+`test:e2e` 72 in 12 files; `test:rls` 55/55. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **`npm test` workers (owner, 4 Oct 2026):** until the owner fixes the machine's memory (~1.1 GB free commit; the default 11 workers run out of heap), VERIFY runs `npm test -- --maxWorkers=2` and says so. **The default run must pass before any `[deploy]` release** (also in "Before deployment").
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
 `eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
@@ -138,6 +138,17 @@ added the new line at ₹50 (total ₹125); a long customer name, Image and PDF.
 
 - [ ] **Wiped phone gets its learning back:** after a few bills with a changed price (3 bills with the same new price make a Catalog suggestion), clear the site's data, sign in — Settings → Developer mode and Catalog → Suggestions show them again. Reset learning, clear the data again — nothing returns.
 
+## Next draft deploy — KB-401 checks (owner, Android Chrome)
+
+Use **`npx netlify deploy --site kiranabilling --dir dist --no-build --alias sw-test`** (a draft, never `--prod`), built with the production VITE values.
+Each plain draft is a different origin, so only a fixed alias can show an update — deploy it **twice** (the second after changing the build id).
+- [ ] **Credits:** after the first alias deploy, the Netlify dashboard shows it cost 0 credits (assumed in D67 §9, not verified).
+- [ ] **Install:** open the alias in Chrome (online) → menu → "Install app": it opens without the URL bar, the icon and the paper splash show; sign in with Google — the sign-in **returns inside the installed app**.
+- [ ] **Offline open:** airplane mode, open the app from the home screen — it opens (the bill / History from this phone).
+- [ ] **Update:** deploy the alias again; open the app with an **empty bill** and leave it — within seconds it reloads once; Settings → Version shows the new id. With a bill on screen it never reloads.
+- [ ] **Storage:** after installing and one bill, Settings → Developer mode says "Storage: protected" (report what it says if not).
+- [ ] **Recovery:** open `/?nosw=1` on the phone — it reloads once and the app works.
+
 ## Before deployment
 
 Must be done before any production deploy or the pilot. Added 27 Sep 2026 (owner). Each line points to
@@ -149,7 +160,7 @@ where the detail lives; tick it off there and strike it here.
   against the first Netlify build log. `17-MANUAL-TASKS.md` M-13.
 - [x] ~~**`KI-36`** — `tsc` and ESLint cover `netlify/`, `eval/`, `scripts/` and all of `src/`~~ — **done 27 Sep 2026,
   `KB-316`** (D40): a type error in `netlify/functions` now fails `npm run build`, i.e. the Netlify deploy.
-- [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`).
+- [ ] **`KI-40`** — service worker precaching the app shell, so the app opens with no network (`KB-401`) — **built 9 Oct (D67); closes at the phone check.**
   `12-PARKED.md` §A.
 - [x] ~~**`KI-41`** — `push_bill()` verifies that item totals sum to `subtotal_paise` / `total_paise`.~~ — **done 3 Oct 2026,
   `KB-307`** (D53: `bills_enforce_totals` trigger, KB422).
@@ -383,6 +394,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 9 Oct 2026 | **`KB-401` built — two local commits, not pushed (D67). No migration, no new dependency.** Hand-written service worker (`src/sw/`), update policy + safe-moment gate (`src/pwa/`), a Vite plugin that bundles the worker and injects the precache list (`scripts/pwa-build.ts`), persistent storage (`storagePersist.ts`, recorded in the device meta, shown in Settings → Developer mode), manifest + placeholder icons + `netlify.toml` no-cache headers for `/sw.js` and the manifest, Version in Settings. **Proved in a real browser on the production build:** offline open, the update flow (waits under a bill, one reload 6.0 s after Clear bill), `?nosw=1`, force mid-bill (draft restored), kill (found and fixed a reload loop: a kill build must not register). 83 files / 1402 tests, e2e 72, RLS 55/55, typecheck + lint clean, 30 plants caught. `npm audit --omit=dev` 0; dev tooling has 21 advisories (NI-42). Docker Desktop and the local stack were started for the checks. Three icon concepts drawn for the owner (scratch, never committed). New "Next draft deploy — KB-401 checks". | Agent |
 | 9 Oct 2026 | **`KB-326` done.** Owner check passed at `localhost:8888` (3 bills → suggestion and lists; wipe → they return; reset → wipe → nothing returns); the four small decisions accepted. Migration `20261011090000` pushed to the remote by the owner. `scratch-seed326.cjs` and `scratch-check326.cjs` were never committed (not in any commit, deleted, `git status` clean). | Owner + Agent |
 | 9 Oct 2026 | **`KB-326` built — two local commits, not pushed (D66).** Migration `20261011090000` (applied locally; the owner pushes it): server-stamp triggers on all four learning tables. **Q5 check:** `updated_at` on `price_observations` / `learning_events` was already server-defaulted and never sent by a push (the client-sent `occurred_at` / `created_at` are not used); the update-stamp gap was on the two upserted tables (a wiped phone would have pulled a stale hit count). `pullLearningState` (per shop, resumable, 60 s overlap, pending rows never overwritten, 35 days of observations); `learning_reset` honoured with a SERVER-time cutoff — tested with the resetting phone's clock 5 min ahead and behind — rule A (no pull while this phone's reset is not on the server) and rule B (no learning push before it); the learning gate; the gate-opening cycle learns the waiting bills. 12 e2e + 6 unit; 10 plants caught + the triggers disabled locally; 3 existing tests adjusted (listed in D66 §8). Browser (local stack): after wiping site data the Developer mode lists (alias, provisional, suggestion) and the Catalog suggestion ("Toor Daal: ₹105 / kg on 3 bills") came back within ~0.3 s of the first cycle; Reset learning → the event reached the server (which kept its 1 alias / 3 observations / 1 provisional) → wipe → nothing came back. NI-41 logs the two limits. | Agent |
 | 9 Oct 2026 | **`KB-313` done.** Owner check passed at `localhost:8888` (reload mid-bill; the offline chip and a pending bill syncing on reconnect; sign-out count + Cancel; Clear bill; 320 and 1280); small decisions accepted. **Draft check 3 ticked:** the hosted API answers `content-encoding: gzip` (a `shop_products` response, `cloudflare`) — D63 §6 now says a 36,000-bill backfill is ~10 MB on the wire, not 96 MB. Order from the owner: `KB-326`, then `KB-401`, then `KB-314`. The scratchpad scripts (`plants313.py`, `kb313docs.py`) were never in the repo or its history; deleted. | Owner + Agent |
