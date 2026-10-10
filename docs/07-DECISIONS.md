@@ -1874,12 +1874,29 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 9. **Limits (NI-43)** and **D55:** client code only - no migration, nothing for the owner to push; it reaches phones through the update flow (D67). The
    Android file-picker check rides on the release draft.
 
+### D69 — The eval baseline is `eval:real` + `bench:numbers` + `coverage:probe`; `run-eval.ts` is retired 🟢
+
+**Owner decision, 10 Oct 2026, audit Part 1 (decision 1).** `KB-004`'s `eval/run-eval.ts` was never connected to `parseUtterance()`: `npm run eval` reports 0 pass / 0 warn / 0 fail / 25 skip, so the old "25/25 run, baseline recorded" could never be met, and `KI-05` (HIGH, before the pilot) asked for it to be wired.
+1. **The baseline is three tools that really run the parser**, with these recorded figures (10 Oct 2026): `npm run eval:real` — **25 hits / 25 correct / 0 wrong of 39** real transcripts (also guarded by `eval/real-transcripts.test.ts` inside `npm test`); `npm run bench:numbers` — **129/129 correct, 0 bail, 0 wrong**; `npm run coverage:probe` — **145/154 = 94.2% hit**.
+2. **"No regression"** (06's Definition of done and the Release gate's "Eval baseline with no regression") means **none of the three gets worse than its recorded figure**: `eval:real` hits >= 25 and wrong = 0; `bench:numbers` correct = 129 and wrong = 0; `coverage:probe` >= 94.2%. A figure may go up (the recorded value is then raised by a decision).
+3. **`KB-004` is SUPERSEDED, `KI-05` is closed.** `eval/run-eval.ts` and `npm run eval` are **retired in the docs only** — the file and the script stay in the repo until a cleanup ticket removes them (`voice-cases.json`'s stale VC015/VC016 expectations are moot while it is retired).
+4. **What the baseline does not measure:** all three run on text, not audio (`eval:audio` is report-only); the real transcripts are one shop's recordings (the owner's voice); and **nothing here exercises Layer 2 (Gemini)** — `KB-318` brings its own re-verification (KI-45, KI-52) once billing is on (KI-50).
+
+### D70 — Supabase Free for now, upgrade later; backups by a scheduled dump; `KB-403` deferred 🟢
+
+**Owner decision, 10 Oct 2026, audit Part 1 (decision 13).** (`11-STACK-DECISIONS.md` already said "free tier ample for the pilot … Pro when a shop's data justifies PITR"; no decision about the plan had been recorded.)
+1. **The plan:** Supabase **Free** for now; upgrade (Pro, daily backups, no pausing; PITR is an add-on needing Pro + Small compute) **later**, when a shop's data justifies it. **`KB-403` (PITR) is deferred**, not dropped.
+2. **What Free means** (Supabase docs, checked 10 Oct 2026): **no daily backups**; a project with about a week of inactivity is **paused** and can be resumed from the dashboard for up to a year.
+3. **So, before the pilot — `KB-407`:** a scheduled `supabase db dump --linked` kept **off this machine**, plus **one restore rehearsal into the local stack**. The rehearsal must also prove what a dump leaves out by default (the `auth` users) and how a restored shop is linked back to its owner — a backup that cannot be restored is not a backup.
+4. **Not covered:** Storage objects (none are used yet); the phones are a second copy only of their own unsynced bills (`KB-324`/`KB-326` pull a wiped phone back, but one phone is no backup of another's). **A paused project:** bills keep being made offline and sync on resume, but `/voice` checks the session against Supabase — expect voice to fail while paused (not tested).
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 10 Oct 2026 | `KB-403`: Supabase PITR enabled before real shop data enters; `KB-004`/`KI-05`: a wired `run-eval.ts` as the eval baseline | **Supabase Free + a scheduled `db dump` and a restore rehearsal (`KB-407`), PITR deferred** (D70); **`eval:real` + `bench:numbers` + `coverage:probe` are the eval baseline, `run-eval.ts` retired** (D69) | Owner, audit Part 1. Free has no backups; `run-eval.ts` never ran. |
 | 3 Oct 2026 | 05 §10: keystroke → search results < 16 ms | **Lookup ≤ 16 ms; keystroke → visible results ≤ 50 ms median** (D51) | A 60 Hz frame is ~16 ms by itself; measured on a real phone. |
 | 2 Oct 2026 | `geminiParseProvider.ts`: 3 attempts on a 5xx (0.5 / 1 s sleeps), no deadline | **One attempt, 6 s deadline; the shopkeeper's Retry** (D50) | 19.5 s of hidden retries can't fit an 8 s client deadline; the 5xx seen were quota. |
 | 30 Sep 2026 | D45 / `05-FRONTEND-SPEC.md` §10: first (cold) tap → listening ≤ 300 ms | **≤ 1 s** (D49); warm < 100 ms unchanged | Measured: cold 816 ms, 709 of it the browser opening the device. |
