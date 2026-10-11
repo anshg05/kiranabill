@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { ParsedItem } from "@/domain/grammar";
@@ -17,9 +17,11 @@ import { VoiceUserError } from "./useVoiceBilling";
 // pending". Retry re-sends the TEXT only - same slice, no Groq, no re-record.
 // The real voiceApi.parseTranscript and resolveUtterance run; only fetch is fake.
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   vi.useRealTimers();
+  // KB-331: a closed Add item panel takes its history entry off on the next tick - let it land (as addItem.test.tsx does).
+  await new Promise((r) => setTimeout(r, 30));
 });
 
 const catalog = SEED_PARSER_CATALOG.entries;
@@ -76,6 +78,8 @@ function Harness({ api }: { api: MutableRefObject<Api | null> }) {
       notAdded={bill.notAdded}
       onRetry={resolver.retry}
       onDismiss={bill.dismiss}
+      catalog={SEED_PARSER_CATALOG}
+      onAddByHand={bill.addByHand}
     />
   );
 }
@@ -240,6 +244,73 @@ describe("KB-319 - Retry re-sends the text only", () => {
     await tap(retryButton(MISS));
     expect(within(entry(MISS)).getByText("Couldn't find an item — add it manually")).toBeTruthy();
     expect(get().bill.rows).toHaveLength(0);
+  });
+});
+
+// KB-331: each "Not added" entry also gets "Add by hand" - an extra way out, never a replacement (D50).
+describe("KB-331 - Add by hand on a Not-added entry", () => {
+  const addByHand = (t: string) => screen.getByRole("button", { name: `Add by hand “${t}”` });
+  const panelSearch = () => within(screen.getByRole("region", { name: "Add item" })).getByRole("searchbox", { name: "Search products" }) as HTMLInputElement;
+
+  it("a 502 entry has Add by hand beside Retry and ✕; it opens the panel with THAT entry's words and adds nothing", async () => {
+    fetchMock.mockResolvedValueOnce(status(502));
+    const get = setup();
+    await say(get, MISS);
+    expect(within(entry(MISS)).getByRole("button", { name: `Add by hand “${MISS}”` })).toBeTruthy();
+    await tap(addByHand(MISS));
+    expect(panelSearch().value).toBe(MISS);
+    expect(get().bill.rows).toHaveLength(0);
+  });
+
+  it("each entry prefills its own words", async () => {
+    fetchMock.mockResolvedValueOnce(status(502)).mockResolvedValueOnce(status(503));
+    const get = setup();
+    await say(get, MISS);
+    await say(get, "3 aur kuch");
+    await tap(addByHand("3 aur kuch"));
+    expect(panelSearch().value).toBe("3 aur kuch");
+  });
+
+  it("the entry is NOT dismissed by adding something: it stays, still 1 check pending, Bill Banao still waits, Retry still works", async () => {
+    fetchMock.mockResolvedValueOnce(status(502)).mockResolvedValueOnce(ok());
+    const get = setup();
+    await say(get, MISS);
+    await tap(addByHand(MISS));
+    fireEvent.change(panelSearch(), { target: { value: "chini" } });
+    await tap(within(screen.getByRole("region", { name: "Add item" })).getAllByRole("button", { name: /^Chini/ })[0]!); // pick a catalog product
+    expect(get().bill.rows.map((r) => r.displayName)).toEqual(["Chini"]);
+    expect(entry(MISS)).toBeTruthy();
+    expect(get().bill.notAdded).toHaveLength(1);
+    expect(pending()).toBe("1 check pending");
+    await tap(retryButton(MISS));
+    expect(notAddedList()).toBeNull(); // the retry worked as before
+  });
+
+  it("a Retry that failed again keeps Add by hand on the entry", async () => {
+    fetchMock.mockResolvedValueOnce(status(502)).mockResolvedValueOnce(status(503));
+    const get = setup();
+    await say(get, MISS);
+    await tap(retryButton(MISS));
+    expect(within(entry(MISS)).getByText("Couldn't read the items")).toBeTruthy();
+    expect(addByHand(MISS)).toBeTruthy();
+  });
+
+  it("Retry hears no item: the entry shows 'add it manually' with Add by hand", async () => {
+    const nothing = { ...geminiNaya, qty: null };
+    fetchMock.mockResolvedValueOnce(status(502)).mockResolvedValueOnce(new Response(JSON.stringify({ items: [nothing] }), { status: 200 }));
+    const get = setup();
+    await say(get, MISS);
+    await tap(retryButton(MISS));
+    expect(addByHand(MISS)).toBeTruthy();
+  });
+
+  it("the words are plain text in the button's name and the entry (hard rule 9)", async () => {
+    fetchMock.mockResolvedValueOnce(status(502));
+    const get = setup();
+    await say(get, "<i>2</i> kuch");
+    expect(document.body.querySelector("i")).toBeNull();
+    await tap(addByHand("<i>2</i> kuch"));
+    expect(panelSearch().value).toBe("<i>2</i> kuch");
   });
 });
 

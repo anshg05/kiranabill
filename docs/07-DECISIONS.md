@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 11 Oct 2026 (rev 48) · Supersedes rev 40
+**Last updated:** 11 Oct 2026 (rev 49) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1939,6 +1939,15 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 8. **The restore rehearsal** (`scripts/backup/rehearseRestore.ts`): a scratch database on the local stack, standing in for a fresh project (auth + storage structure copied from the local stack, then the repo's migrations, then the decrypted data), every table's row count compared with the manifest. Run against a throwaway key on the local stack (exact to the live database too) and on **one real production backup** (15 tables, 553 rows, all equal). **Unproven:** a restore into a *hosted* project (`session_replication_role` on the hosted role) — rehearse once on a spare hosted project if one ever exists.
 10. **Found by the owner's first run of `setup-key.sh` (11 Oct 2026) and fixed:** the owner's Desktop is redirected into OneDrive, so exporting the key to `~/Desktop` failed at stage 3 - and the script's exit trap then deleted the temporary keyring (with the only private key) while the PUBLIC half stayed on the laptop: a lock whose key did not exist. **No backup had run, so nothing was lost.** Fix: the export goes to a local non-synced folder opened in Notepad; every check runs before a key is made; on any failure everything the script made is removed; the settings file carries `keyConfirmed: true` only after stage 4 proved the key opens a test note; **`backup.ts` refuses to run without it** (`assertKeyConfirmed`, tested red first); `--reset` removes an unfinished setup.
 9. **Found while building:** (a) the Git-for-Windows gpg is an MSYS program that reads `C:\x` as a relative path — every path handed to it is written `/c/x`; (b) gpg-agent's socket path has a length limit, so keyrings live under short paths; (c) a restore must clear what the migrations seeded (`base_products`) or the load collides on the first primary key.
+
+### D76 — "Add by hand" on every voice failure, and on each "Not added" entry 🟢
+
+**Owner decisions, 11 Oct 2026, `KB-331`** (audit Part 2 decision 18; plan approved with decisions a-g).
+1. **Every failure the shopkeeper can see** (mic denied / none / unsupported / did not start / interrupted, silent recording or empty transcript, transcription network / timeout / rate limit / busy / session / server, catalog not loaded, a parse failure retryable or not, "Couldn't find an item") **carries an "Add by hand" button**; so does **each "Not added" entry**, including after a Retry that failed again. It opens the Add item panel with the heard words in the search (selected), or an **empty search when nothing was heard** (the audio is not kept - D50).
+2. **It only opens the panel.** It adds nothing and fills no quantity or price (hard rule 5 as reworded in D72: the app never invents a number); whatever the shopkeeper then picks follows the panel's existing rules (a catalog pick is 1 unit at the shop's price; a custom item is "Price needed" and must be priced or removed before Bill Banao - D54). The transcript is plain text everywhere (hard rule 9).
+3. **D50 intact:** an utterance that failed is still never silently lost - "Not added" entries, Retry and ✕ work as before, and **adding by hand does not dismiss an entry** (nothing can know the added item is what was said; the shopkeeper taps ✕ or Retry succeeds). Not-added entries still block Bill Banao.
+4. **Offline keeps its plain reason line** (it is not a failure view; Add item sits right under it). **No Retry for a transcription failure** - the audio is not kept. On the saved screen the button starts the next bill first, like Add item and the mic.
+5. English wording only; the strings for `KB-332` are listed on that ticket's row in `06`.
 
 ---
 

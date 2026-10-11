@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 9 Oct 2026 (rev 16) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 11 Oct 2026 (rev 17) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -76,7 +76,7 @@ glance · tap to fix anything wrong
 | Transcript ready | **Show the transcript text immediately** |
 | Resolving | Items append as they resolve |
 | Done | Items in table; the newest line scrolls into view. Nothing takes focus - **Bill Banao** focuses the first flagged line |
-| Failed | Inline message + **"Add by hand"** on every failure, the heard transcript prefilled when there is one — never a dead end (built today for "Couldn't find an item" only; every failure: `KB-331`) |
+| Failed | Inline message + **"Add by hand"** on every failure, the heard transcript prefilled when there is one (an empty search when there is none) — never a dead end. **Built (`KB-331`, 11 Oct 2026, D76):** every failure message, and each "Not added" entry, carries the button; it only opens the Add item panel — it adds nothing and fills no quantity or price |
 | Offline | Mic disabled, one-line reason |
 
 **Why "Done" does not move focus (owner, 11 Oct 2026, audit Part 2 correction 17):** the shopkeeper may still be speaking the next item, or reading the transcript; a focus jump (and the keyboard it can raise) while they are mid-thought would interrupt them. The list scrolls the newest line into view and the flags are visible where they are; the one deliberate focus move is **Bill Banao**, which the shopkeeper has just tapped, and which takes them to the first thing that still needs a check (`pendingFocus.test.tsx`).
@@ -166,7 +166,7 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - Tap adds with the shop's price pre-filled, qty focused, qty defaulted to 1
 - **Target: under 2 seconds from tap to item on bill**
 - ~~Adding a new product from here creates a `shop_product` directly~~ **Superseded 2 Oct 2026 (owner, `KB-305`):** "+ Add “x” as a new product" adds a **bill line only** — qty "—", unit "—", price "—" (no qty without a unit, `KB-303`), MEDIUM `incomplete_item` until filled. The product itself comes through L1 at finalise (`08-LEARNING-ENGINE.md` §3, `KB-307`+) — hard rule 8.
-- **Implementation notes (`KB-305`, 2 Oct 2026):** a **non-modal panel** over the item list — TOTAL, the mic and Bill Banao stay visible and usable (§8 rule 1); search from 2 characters, at most 8 results, equal scores by the shop's use count; the shop's catalog from Dexie, inactive products never shown; a catalog pick is named by the product, never the typed fragment (no false alias at finalise); Android back closes the panel (a history entry while open), never the app; "Couldn't find an item — add it manually" carries an **Add by hand** button that opens the panel with the heard words.
+- **Implementation notes (`KB-305`, 2 Oct 2026):** a **non-modal panel** over the item list — TOTAL, the mic and Bill Banao stay visible and usable (§8 rule 1); search from 2 characters, at most 8 results, equal scores by the shop's use count; the shop's catalog from Dexie, inactive products never shown; a catalog pick is named by the product, never the typed fragment (no false alias at finalise); Android back closes the panel (a history entry while open), never the app; "Couldn't find an item — add it manually" carries an **Add by hand** button that opens the panel with the heard words - since `KB-331` every voice failure does, and so does each "Not added" entry (empty search when nothing was heard).
 
 ---
 
@@ -396,7 +396,7 @@ Shop details, receipt language, developer mode.
 1. **No modal ever stands between the mic and the receipt.**
 2. **No question is asked mid-bill.** Customer defaults to "Cash".
 3. **Unknown products are added and flagged**, never refused.
-4. **Voice failure always falls back to search**, never to a dead end. (Today the mic stays usable and Add item is always on screen; the "Add by hand" button is on the failure message for "Couldn't find an item" only - every failure: `KB-331`.)
+4. **Voice failure always falls back to search**, never to a dead end. **Built (`KB-331`, D76):** every failure message (mic denied, no mic, unsupported, interrupted, silent recording, network, timeout, rate limit, busy, session, server, "Couldn't read the items", "Couldn't find an item") and every "Not added" entry has an **Add by hand** button; the mic stays usable and Add item stays on screen. Offline shows its plain reason line (Add item sits right under it).
 5. **Numbers are the loudest thing on a flagged line** — inline sentences, not icons.
 6. **A half-built bill survives** a network drop, a tab switch, and an app backgrounding.
 

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 11 Oct 2026 (rev 110) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 11 Oct 2026 (rev 111) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing in flight - `KB-407` DONE 11 Oct 2026 (D75); next in the agreed order: `KB-331`. `KB-105b`, `KB-334` done 11 Oct 2026. The audit (`docs/21-AUDIT-2026-10.md`) is complete and accepted (11 Oct 2026). `KB-314` and `KB-401` done 10 Oct 2026 (D68, D67).
+**Working on:** `KB-331` BUILT 11 Oct 2026 (D76) - **awaiting the owner's check**; the `KB-330` plan is next. `KB-407` DONE 11 Oct 2026 (D75). `KB-105b`, `KB-334` done 11 Oct 2026. The audit (`docs/21-AUDIT-2026-10.md`) is complete and accepted (11 Oct 2026). `KB-314` and `KB-401` done 10 Oct 2026 (D68, D67).
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -62,7 +62,7 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 1. ~~**`KB-105b`** - the four missing RLS checks~~ - **done 11 Oct 2026** (`test:rls` 79/79).
 2. ~~**`KB-334`**~~ - multi-device safety (D73, D74) - **done 11 Oct 2026** (migration `20261011100000` pushed by the owner 11 Oct 2026, 20/20 on both sides).
 3. ~~**`KB-407`**~~ - **DONE 11 Oct 2026 (D75)** - scheduled `db dump` to the owner's **Google Drive, encrypted** (the plan says how, and where the key lives - never in the repo, never in the same Drive folder) + one restore rehearsal (prove the data and the `auth` users are in it - KI-25(3)).
-4. **`KB-331`** - "Add by hand" on every voice failure, transcript prefilled.
+4. **`KB-331`** - "Add by hand" on every voice failure, transcript prefilled - **built 11 Oct 2026 (D76), awaiting the owner's check**.
 5. **`KB-330`** - Catalog rename / aliases edit / archive (D71).
 6. **`KB-329`** - price-suggestion Ignore, 90 days, saved and synced - **with KI-63**.
 7. **`KB-325`** - cancel and reissue a bill.
@@ -308,7 +308,7 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **`KB-335` — `flowType: 'pkce'` + exact Redirect URLs** (owner, 11 Oct 2026; was readiness item 10). Before the pilot.
 - [ ] **`KB-329` — price-suggestion Ignore, saved and synced (90 days)** (owner, 11 Oct 2026, audit Part 2 decision 21). Before the pilot; unplanned.
 - [ ] **`KB-330` — Catalog rename, aliases edit, archive (never a hard delete; no unit change - D71)** (owner, 11 Oct 2026, decision 22). Before the pilot; unplanned.
-- [ ] **`KB-331` — "Add by hand" on every voice failure, transcript prefilled** (owner, 11 Oct 2026, decision 18). Before the pilot; unplanned.
+- [x] ~~**`KB-331` — "Add by hand" on every voice failure, transcript prefilled** (owner, 11 Oct 2026, decision 18).~~ — **built 11 Oct 2026 (D76); ticks when the owner's check passes.**
 - [ ] **`KB-325` — cancel and reissue a bill** (owner, 11 Oct 2026). Before the pilot; unplanned.
 - [ ] **`KB-321` — write usage (Catalog ordering, vocabulary input); the Whisper prompt on only after a measured before/after** (owner, 11 Oct 2026). Before the pilot.
 - [ ] **`KB-323` — learned aliases feed the parser, with how a wrongly learned alias is noticed, and the alias-conflict rule** (owner, 11 Oct 2026). Before the pilot.
@@ -501,6 +501,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 11 Oct 2026 | **`KB-331` built - "Add by hand" on every voice failure and on each "Not added" entry (D76). UI only: no migration, no dependency, no deploy; awaiting the owner's check.** `BillingScreen.tsx`: `VoiceStatus` shows the button on every failed state (17 kinds from the code: 5 capture errors, silent recording, 6 transcription errors, catalog not loaded, parse failures, "Couldn't find an item", a failed Retry) - prefilled with the transcript, or an empty search when nothing was heard; `NotAddedList` gets the same per entry; one `openAdd` serves them and the Add item button (on the saved screen it starts the next bill first). It only opens the panel: nothing is added, no quantity or price filled (rule 5 / D72), transcript as plain text (rule 9). **D50 intact:** no change to `useOrderResolver` / `useBillLines` / `messageFor`; entries, Retry and ✕ work as before and adding by hand does not dismiss an entry. **Tests first, red for the right reason (the button was missing); +25 tests, 7 plants** (button only for NO_ITEM_FOUND; prefill dropped on the status line / on the entry; auto-dismiss on Add by hand; auto-add; no button on entries; transcript as HTML) - **each failed the intended tests**. VERIFY: typecheck and lint clean; `npm test` **89 files / 1633** (was 1608); `test:e2e` **15 files / 93** (a first run had two files fail with a transient `fetch failed` on the local stack - both pass alone and the full rerun is 15/15; no data path changed); `test:rls` 82/82; `npm audit --omit=dev` 0; `bench:numbers` WRONG 0; `eval:real` 25 hit / 0 wrong of 39. **Browser check at 375 px (me, local stack, a throwaway local account):** real mic-denied failure -> button, empty panel, nothing added; a real transcription failure and a "microphone didn't start" failure -> button; a faked parse failure (`?failparse=502`) -> "Not added" entry with Retry, Add by hand and ✕ (all 44 px high, no horizontal overflow); the entry's button opens the panel with "2 kuch naya" selected, 0 lines added, "1 check pending" stays. **Not exercised in a real browser:** a real recording (the pane blocks the mic) - the failure paths were driven with a stubbed `getUserMedia`. Docs: 05 (§2 Failed, §3a, §8 rule 4), 06 (`KB-331`, with the `KB-332` string list), 07 (D76), 12 (SG-12: a Retry for a failed transcription, parked), 16. **Stale lines fixed on the way:** "Last updated" on 05, 06, 12 and 16 (they still said 9 Oct / 27 Sep). | Agent |
 | 11 Oct 2026 | **`KB-407` CLOSED (Step 4 done by the owner).** The real key from Bitwarden went into a TEMPORARY keyring, the real backup's manifest decrypted (15 tables, 553 rows, migrations to `20261011100000`), then `backup:rehearse --interactive` restored it into a scratch database: **every count equal**. Cleaned up (`/tmp/kbopen.*` gone; verified by me: the laptop's backup keyring holds 0 secret keys, no temp leftovers). Both tasks Ready; **next runs 12 Oct 13:00 and 18:00**. Open for the pilot checklist: the weekly Drive look (`M-38`), healthchecks.io only if the laptop will be off for days. Next ticket: `KB-331`. | Agent |
 | 11 Oct 2026 | **`KB-407` Step 3 (`M-37`, part 1) done by the owner: the first real backup.** `npm run backup`: C: 44.0 GiB free, `data dump: 15 tables, 553 rows`, backup `20261011T145844Z` written to `H:\My Drive\KiranaBill-Backups` (data 40,861 B, schema 6,827 B, manifest 716 B; no `.tmp`), retention kept 3 / 3; `--check-stale` printed "fresh"; `alert.ps1` showed its message box (screenshot). Verified by me: the three files, `LAST_SUCCESS.json` (553 rows, source linked), the local spool holds the 3 files. **Google Drive's own window: all three "Successfully uploaded", Up to date** - so NI-47's blind spot was checked once by eye. Next: Step 4, the test decrypt with the real key. | Agent |
 | 11 Oct 2026 | **`KB-407` Step 2 (`M-36`) done by the owner:** `install-task.ps1` registered `KiranaBill Backup` (logon + 13:00, `--if-stale`) and `KiranaBill Backup Check` (30 min after logon + 18:00); read back: both Ready, owner's account, interactive only, StartWhenAvailable, restart 6 x 30 min, limits 30 / 5 min, never run yet. | Agent |

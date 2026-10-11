@@ -38,7 +38,7 @@ import { EditableValue } from "./EditableValue";
 import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
-import { IDLE_VOICE, NO_ITEM_FOUND, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import type { Customer } from "./useBillLines";
 import { CASH, formatMobile } from "@/domain/customer";
 
@@ -335,7 +335,18 @@ const NO_CUSTOMER: Customer = { name: CASH, mobile: null };
  * unnoticed) until the shopkeeper taps Retry (the text only - no re-record)
  * or ✕. Several can be pending; new recordings carry on.
  */
-function NotAddedList({ entries, onRetry, onDismiss }: { entries: readonly NotAdded[]; onRetry?: (id: string) => void; onDismiss?: (id: string) => void }) {
+function NotAddedList({
+  entries,
+  onRetry,
+  onDismiss,
+  onAddByHand,
+}: {
+  entries: readonly NotAdded[];
+  onRetry?: (id: string) => void;
+  onDismiss?: (id: string) => void;
+  /** KB-331: opens the add panel with this entry's words. The entry stays until Retry works or ✕ (D50). */
+  onAddByHand?: (query: string) => void;
+}) {
   if (entries.length === 0) return null;
   return (
     <ul aria-label="Not added">
@@ -356,6 +367,16 @@ function NotAddedList({ entries, onRetry, onDismiss }: { entries: readonly NotAd
             >
               {n.retrying ? "Reading…" : "Retry"}
             </button>
+            {onAddByHand && (
+              <button
+                type="button"
+                aria-label={`Add by hand “${n.transcript}”`}
+                onClick={() => onAddByHand(n.transcript)}
+                className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
+              >
+                Add by hand
+              </button>
+            )}
             <button
               type="button"
               aria-label={`Dismiss “${n.transcript}”`}
@@ -510,12 +531,12 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
         )}
         <p role="alert" className={`${base} text-danger`}>
           {voice.message}
-          {/* KB-305: "Couldn't find an item — add it manually" opens the add panel with the heard words. */}
-          {voice.message === NO_ITEM_FOUND && voice.transcript && onAddByHand && (
+          {/* KB-305 / KB-331: every failure opens the add panel - the heard words in the search, or empty. It adds nothing itself. */}
+          {onAddByHand && (
             <button
               type="button"
-              aria-label={`Add “${voice.transcript}” by hand`}
-              onClick={() => onAddByHand(voice.transcript!)}
+              aria-label={voice.transcript ? `Add “${voice.transcript}” by hand` : "Add by hand"}
+              onClick={() => onAddByHand(voice.transcript ?? "")}
               className="ml-2 min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
             >
               Add by hand
@@ -774,6 +795,9 @@ export function BillView({
     then?.();
   };
 
+  // The one way into the Add item panel (button, voice failure, Not-added entry); on the saved screen it starts the next bill first.
+  const openAdd = canAdd ? (query: string) => (readOnly ? nextBillThen(() => setAddItem({ query }))() : setAddItem({ query })) : undefined;
+
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
 
@@ -970,7 +994,7 @@ export function BillView({
           </table>
           </>
           )}
-          <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} />
+          <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
           <div ref={endRef} />
         </div>
         {addItem && canAdd && (
@@ -1022,7 +1046,7 @@ export function BillView({
         )}
 
         <div className="border-t border-line">
-          <VoiceStatus voice={voice} onAddByHand={canAdd ? (query) => setAddItem({ query }) : undefined} />
+          <VoiceStatus voice={voice} onAddByHand={openAdd} />
         </div>
         <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
           {announcement}
@@ -1038,7 +1062,7 @@ export function BillView({
             <button
               type="button"
               disabled={!canAdd}
-              onClick={readOnly ? nextBillThen(() => setAddItem({ query: "" })) : () => setAddItem({ query: "" })}
+              onClick={() => openAdd!("")}
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink disabled:opacity-50"
             >
               <Plus size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />

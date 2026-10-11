@@ -284,3 +284,66 @@ describe("KB-305 - 'Couldn't find an item — add it manually' is actionable", (
     expect([input.selectionStart, input.selectionEnd]).toEqual([0, "kuch naya cheez".length]);
   });
 });
+
+// KB-331 (owner, 11 Oct 2026): EVERY failure the shopkeeper can see has "Add by hand" - the heard words prefilled when
+// there are some, an empty search when there aren't. It only opens the panel: it adds nothing, fills no qty or price.
+describe("KB-331 - 'Add by hand' on every voice failure", () => {
+  const failed = (message: string, transcript: string | null): VoiceView => ({ phase: "failed", transcript, message, elapsedMs: 0, disabledReason: null });
+  const NO_TRANSCRIPT = [
+    "Mic permission denied — allow it in the browser's site settings",
+    "No microphone found",
+    "Voice isn't supported in this browser",
+    "The microphone didn't start — try again",
+    "Recording stopped — the app went to the background. Tap to try again",
+    "Didn't catch anything — try again",
+    "No internet — voice needs a connection",
+    "Took too long — try again",
+    "Too many voice requests — wait a minute and try again",
+    "Voice service busy — try again in a minute",
+    "Session expired — sign out and sign in again",
+    "Couldn't hear that — try again",
+  ];
+  const WITH_TRANSCRIPT = [
+    "Couldn't hear that — try again", // no shop catalog
+    "Session expired — sign out and sign in again", // a non-retryable parse failure
+    "Couldn't read the items — Retry below", // a retryable parse failure (the entry is listed too)
+    NO_ITEM_FOUND,
+  ];
+
+  it.each(NO_TRANSCRIPT)("no transcript - %s: the button opens an EMPTY panel and adds nothing", (message) => {
+    const api = { current: null as BillLines | null };
+    render(<Harness voice={failed(message, null)} api={api} />);
+    act(() => screen.getByRole("button", { name: "Add by hand" }).click());
+    expect(search().value).toBe("");
+    expect(api.current!.rows).toHaveLength(0);
+    expect(api.current!.pending).toBe(0);
+  });
+
+  it.each(WITH_TRANSCRIPT)("transcript - %s: the button opens the panel with the heard words, adds nothing", (message) => {
+    const api = { current: null as BillLines | null };
+    render(<Harness voice={failed(message, "2 kuch naya")} api={api} />);
+    act(() => screen.getByRole("button", { name: "Add “2 kuch naya” by hand" }).click());
+    expect(search().value).toBe("2 kuch naya");
+    expect(api.current!.rows).toHaveLength(0); // no qty, no price, no line of its own
+  });
+
+  it("the heard words are plain text: markup in a transcript makes no element (hard rule 9)", () => {
+    render(<Harness voice={failed(NO_ITEM_FOUND, "<b>x</b> 2 kilo")} />);
+    expect(screen.getByTestId("voice-transcript").textContent).toBe("“<b>x</b> 2 kilo”");
+    expect(document.body.querySelector("b")).toBeNull();
+    act(() => screen.getByRole("button", { name: "Add “<b>x</b> 2 kilo” by hand" }).click());
+    expect(search().value).toBe("<b>x</b> 2 kilo");
+    expect(panel()!.querySelector("b")).toBeNull();
+  });
+
+  it("offline is not a failure view: its plain reason line stays, with no Add by hand button (Add item is right below)", () => {
+    render(<Harness voice={{ phase: "idle", transcript: null, message: null, elapsedMs: 0, disabledReason: "Offline — voice needs internet" }} />);
+    expect(screen.getByText("Offline — voice needs internet")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Add .*by hand/ })).toBeNull();
+  });
+
+  it("a non-failed state has no Add by hand button", () => {
+    render(<Harness voice={{ phase: "idle", transcript: "2 kilo chini", message: null, elapsedMs: 0, disabledReason: null }} />);
+    expect(screen.queryByRole("button", { name: /by hand/ })).toBeNull();
+  });
+});
