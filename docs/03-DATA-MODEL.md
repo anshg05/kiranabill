@@ -226,6 +226,8 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 `(id, shop_id, device_id, block_start, block_end, next_number, allocated_at)`
 Reserved while online, consumed offline. See `02-ARCHITECTURE.md` §4.
 
+**`receipt_number_blocks_no_overlap` (`KB-334`, D74):** `exclude using gist (shop_id with =, int4range(block_start, block_end, '[]') with &&)` - no two blocks of one shop may overlap, whichever device writes (needs `btree_gist`, in the `extensions` schema). The device that loses a race gets `23P01`, re-reads the highest block and takes the next range. With several devices, bill numbers interleave (each device draws its own block) but never repeat.
+
 ---
 
 ## 5. Learning tables

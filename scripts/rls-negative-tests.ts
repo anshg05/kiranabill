@@ -789,6 +789,37 @@ async function main(): Promise<void> {
       return "0 rows deleted and the block is still there";
     });
 
+    // KB-334 (D73, D74): two devices of one shop must never hold overlapping receipt-number ranges.
+    // The exclusion constraint refuses it (23P01) for ANY writer, whatever the client does.
+    await checkRejects(client, "receipt_number_blocks no-overlap (KB-334): shop A cannot take a range that overlaps its own block [1-50]", "23P01", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into receipt_number_blocks (shop_id, device_id, block_start, block_end, next_number) values ($1, 'second-device', 25, 75, 25)`,
+        [shopA],
+      );
+    });
+    await check(client, "receipt_number_blocks no-overlap sanity (KB-334): the next range [51-100] is accepted, and a different shop may hold the same range [1-50]", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into receipt_number_blocks (shop_id, device_id, block_start, block_end, next_number) values ($1, 'second-device', 51, 100, 51)`,
+        [shopA],
+      );
+      await asSuperuser(client);
+      const same = await client.query(
+        `select count(distinct shop_id)::int as shops from receipt_number_blocks where shop_id = any($1::uuid[]) and block_start = 1 and block_end = 50`,
+        [[shopA, shopB]],
+      );
+      if (same.rows[0].shops !== 2) throw new Error(`expected both shops to hold [1-50], got ${same.rows[0].shops}`);
+      return "adjacent accepted; the same range in two shops coexists";
+    });
+    await checkRejects(client, "receipt_number_blocks no-overlap (KB-334): a range that starts after it ends is refused", "22000", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into receipt_number_blocks (shop_id, device_id, block_start, block_end, next_number) values ($1, 'second-device', 200, 150, 200)`,
+        [shopA],
+      );
+    });
+
     // (2) base_products - one SELECT policy; nobody but the migrations writes it.
     await asSuperuser(client);
     const baseFirst = await client.query(`select id, suggested_price_paise from base_products order by id limit 1`);

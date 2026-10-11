@@ -8,6 +8,10 @@ import type { KiranaBillDB } from "@/data/db";
 // of that: reserve, consume, and the offline-exhaustion fallback.
 
 const BLOCK_SIZE = 50;
+/** KB-334 (D73, D74): how many times reserveBlock tries when another device took the range first. */
+export const RESERVE_MAX_ATTEMPTS = 6;
+/** The longest single wait between two attempts (grows with the attempt, jittered so devices do not stay in step). */
+export const RESERVE_RETRY_MAX_WAIT_MS = 60 * (RESERVE_MAX_ATTEMPTS - 1);
 const RESERVE_THRESHOLD = 10;
 const FALLBACK_COUNTER_KEY = "receiptNumberFallback";
 
@@ -30,15 +34,20 @@ function formatFallbackNumber(prefix: string, deviceId: string, n: number): stri
   return `${prefix}-${deviceId}-${n}`;
 }
 
+/** The database refused the range because another device took it first: exclusion_violation / unique_violation. */
+const isRangeTaken = (error: { code?: string } | null): boolean => error?.code === "23P01" || error?.code === "23505";
+
 /**
- * Reserves the next 50-number block for a shop. Plain SELECT-then-INSERT,
- * not an atomic RPC - a deliberate MVP simplification (07-DECISIONS.md
- * D22), not an oversight. The real race window: two devices reserving
- * for the same shop within the same query round-trip could both read the
- * same max(block_end) and insert overlapping ranges. Accepted because
- * Offline Level 4 (multi-device concurrent use) is explicitly out of
- * scope for this project's MVP. Revisit before any multi-device support
- * ships - not discovered via a real collision during the pilot.
+ * Reserves the next 50-number block for a shop: read the highest block, insert the next range.
+ *
+ * KB-334 (D73, D74): a shop may use several devices at once, so two devices can read the same highest block
+ * and insert the same range. It is NOT made atomic in the client - the database decides: the exclusion
+ * constraint receipt_number_blocks_no_overlap refuses an overlapping range (23P01), and the device that lost
+ * re-reads the highest block and tries the next range, up to RESERVE_MAX_ATTEMPTS times with a short,
+ * growing, jittered wait. Plain invoker queries - no SECURITY DEFINER, RLS stays the boundary.
+ *
+ * Never throws and never blocks billing: callers do not await it for a bill. Any other error, or running out
+ * of attempts, simply leaves this device without a new block, and the next bill uses the D23 fallback number.
  */
 export async function reserveBlock(
   client: SupabaseClient,
@@ -46,53 +55,65 @@ export async function reserveBlock(
   shopId: string,
   deviceId: string,
 ): Promise<void> {
-  const { data: existing, error: maxError } = await client
-    .from("receipt_number_blocks")
-    .select("block_end")
-    .eq("shop_id", shopId)
-    .order("block_end", { ascending: false })
-    .limit(1);
+  for (let attempt = 1; attempt <= RESERVE_MAX_ATTEMPTS; attempt++) {
+    const { data: existing, error: maxError } = await client
+      .from("receipt_number_blocks")
+      .select("block_end")
+      .eq("shop_id", shopId)
+      .order("block_end", { ascending: false })
+      .limit(1);
 
-  if (maxError) {
-    console.warn(`[receiptNumbers] reserveBlock: failed to read existing blocks: ${maxError.message}`);
+    if (maxError) {
+      console.warn(`[receiptNumbers] reserveBlock: failed to read existing blocks: ${maxError.message}`);
+      return;
+    }
+
+    const blockStart = ((existing?.[0]?.block_end as number | undefined) ?? 0) + 1;
+    const blockEnd = blockStart + BLOCK_SIZE - 1;
+    const allocatedAt = new Date().toISOString();
+
+    const { data, error } = await client
+      .from("receipt_number_blocks")
+      .insert({
+        shop_id: shopId,
+        device_id: deviceId,
+        block_start: blockStart,
+        block_end: blockEnd,
+        next_number: blockStart,
+        allocated_at: allocatedAt,
+      })
+      .select("id")
+      .single();
+
+    if (error && isRangeTaken(error)) {
+      if (attempt === RESERVE_MAX_ATTEMPTS) {
+        console.warn(`[receiptNumbers] reserveBlock: another device kept taking the range (${attempt} attempts) - the next bill uses a fallback number`);
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * (RESERVE_RETRY_MAX_WAIT_MS - 20) * (attempt / (RESERVE_MAX_ATTEMPTS - 1))));
+      continue;
+    }
+
+    if (error || !data) {
+      console.warn(`[receiptNumbers] reserveBlock: insert failed: ${error?.message}`);
+      return;
+    }
+
+    // Optimistic local write: this block was just successfully created via
+    // a real online round-trip, so it's already synced - no need to wait
+    // for KB-110's next pull cycle to be able to use it immediately.
+    await localDb.receiptNumberBlocks.put({
+      id: data.id,
+      shopId,
+      deviceId,
+      blockStart,
+      blockEnd,
+      nextNumber: blockStart,
+      allocatedAt,
+      syncStatus: "synced",
+    });
     return;
   }
-
-  const blockStart = ((existing?.[0]?.block_end as number | undefined) ?? 0) + 1;
-  const blockEnd = blockStart + BLOCK_SIZE - 1;
-  const allocatedAt = new Date().toISOString();
-
-  const { data, error } = await client
-    .from("receipt_number_blocks")
-    .insert({
-      shop_id: shopId,
-      device_id: deviceId,
-      block_start: blockStart,
-      block_end: blockEnd,
-      next_number: blockStart,
-      allocated_at: allocatedAt,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    console.warn(`[receiptNumbers] reserveBlock: insert failed: ${error?.message}`);
-    return;
-  }
-
-  // Optimistic local write: this block was just successfully created via
-  // a real online round-trip, so it's already synced - no need to wait
-  // for KB-110's next pull cycle to be able to use it immediately.
-  await localDb.receiptNumberBlocks.put({
-    id: data.id,
-    shopId,
-    deviceId,
-    blockStart,
-    blockEnd,
-    nextNumber: blockStart,
-    allocatedAt,
-    syncStatus: "synced",
-  });
 }
 
 interface AllocatedReceiptNumber {

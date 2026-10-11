@@ -132,7 +132,7 @@ codes — retries with backoff).
 | 1 | Read catalog, history, settings offline | ✅ |
 | 2 | Create, edit, finalise bills offline; sync on reconnect | ✅ |
 | 3 | Voice offline | ❌ Requires Web Speech offline pack — post-MVP |
-| 4 | Several devices at the same time | ✅ **From the pilot (D73, 11 Oct 2026)** - bills are append-only and idempotent; the collision points (receipt blocks, the shop row, learning counts) are made safe by `KB-334`. Editing one *record* on two devices at once is last-write-wins by the server clock where it exists (`shops`, D64), online-only for the catalog (D62) |
+| 4 | Several devices at the same time | ✅ **From the pilot (D73, D74, 11 Oct 2026)** - bills are append-only and idempotent; receipt blocks cannot overlap (an exclusion constraint + a client retry) and a settings push sends only the changed fields (`KB-334`); learning counts: an accepted limit until `KB-323` (NI-44). Editing one *record* on two devices at once is last-write-wins by the server clock where it exists (`shops`, D64), online-only for the catalog (D62) |
 
 **Required offline UX**
 

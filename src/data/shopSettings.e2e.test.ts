@@ -120,8 +120,46 @@ describe("KB-312 / KI-65 shop settings sync - real local stack", () => {
     await pullShop(client, dbB, shopId);
     expect(await dbB.shops.get(shopId)).toMatchObject({ name: "B Pending Edit", syncStatus: "pending" }); // untouched
     await pushShop(client, dbB);
-    expect((await pg.query("select name from shops where id = $1", [shopId])).rows[0].name).toBe("B Pending Edit"); // whole-row push: the later arrival wins (NI-40)
+    expect((await pg.query("select name from shops where id = $1", [shopId])).rows[0].name).toBe("B Pending Edit"); // the same field on both: the later ARRIVAL wins (D64)
     expect((await dbB.shops.get(shopId))?.syncStatus).toBe("synced");
+  });
+
+  it("7. KB-334 / NI-40: A edits the NAME offline while B changes the PHONE - both changes survive, on the server and on both devices", async () => {
+    await pg.query("update shops set name = 'Base Name', phone = null, bill_language = 'en' where id = $1", [shopId]);
+    await pullShop(client, dbA, shopId);
+    await pullShop(client, dbB, shopId);
+    await updateShopSettings(dbA, shopId, { name: "A Name (offline)" }); // pending, not pushed: A has no network
+    await updateShopSettings(dbB, shopId, { phone: "9000000001" });
+    await pushShop(client, dbB);
+    // A comes online. A whole-row push (before KB-334) would put the old phone (null) back; now only the name goes.
+    await pushShop(client, dbA);
+    await pullShop(client, dbA, shopId);
+    await pullShop(client, dbB, shopId);
+    const server = await pg.query("select name, phone, bill_language from shops where id = $1", [shopId]);
+    expect(server.rows[0]).toEqual({ name: "A Name (offline)", phone: "9000000001", bill_language: "en" });
+    for (const db of [dbA, dbB]) {
+      const local = (await db.shops.get(shopId))!;
+      expect(local).toMatchObject({ name: "A Name (offline)", phone: "9000000001", billLanguage: "en", syncStatus: "synced", updatedAt: await serverUpdatedAt() });
+      expect(local).not.toHaveProperty("pendingFields");
+    }
+  });
+
+  it("8. KB-334 / NI-40: edit, reload before the sync, come online - only the changed field is pushed (the phone another device set is not undone)", async () => {
+    await pg.query("update shops set name = 'Base Name', phone = null where id = $1", [shopId]);
+    const name = `e2e-shop-reload-${crypto.randomUUID()}`;
+    let phone = new KiranaBillDB(name);
+    await pullShop(client, phone, shopId);
+    await updateShopSettings(phone, shopId, { name: "Edited Before The Reload" });
+    phone.close(); // the app is killed before it could sync
+    await pg.query("update shops set phone = '9000000002' where id = $1", [shopId]); // meanwhile another device sets the phone
+    phone = new KiranaBillDB(name); // the app is opened again
+    expect(await phone.shops.get(shopId)).toMatchObject({ syncStatus: "pending", pendingFields: ["name"], phone: null }); // a stale phone, but not pending
+    expect((await pushShop(client, phone)).anyTransientFailure).toBe(false);
+    const server = await pg.query("select name, phone from shops where id = $1", [shopId]);
+    expect(server.rows[0]).toEqual({ name: "Edited Before The Reload", phone: "9000000002" });
+    expect(await phone.shops.get(shopId)).toMatchObject({ phone: "9000000002", syncStatus: "synced" }); // and this phone now has it
+    phone.close();
+    await phone.delete();
   });
 
   it("6. KI-37: a learning reset (an event with no bill) reaches the server with bill_id null, in this shop", async () => {

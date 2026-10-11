@@ -190,9 +190,19 @@ export interface LocalReceiptNumberBlock {
   syncStatus: SyncStatus;
 }
 
+/** KB-334 (NI-40): the shop columns a Settings Save can change - and so the only ones a push may send. */
+export type ShopField = "name" | "phone" | "billLanguage";
+
 export interface LocalShop {
   id: string;
   syncStatus: SyncStatus;
+  /**
+   * KB-334 (D74): which fields this phone changed since the server last confirmed the row. Stored WITH the
+   * pending row, so it survives a reload or an app kill; cleared only when that version is confirmed (D64).
+   * pushShop sends just these, so a stale phone cannot overwrite what another device changed. Absent on a
+   * pending row written before KB-334: that one is still pushed whole.
+   */
+  pendingFields?: ShopField[];
   name: string;
   phone: string | null;
   address: string | null;

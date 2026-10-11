@@ -1,6 +1,6 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
-import type { KiranaBillDB, LocalBill, LocalBillItem, SyncStatus } from "@/data/db";
+import type { KiranaBillDB, LocalBill, LocalBillItem, LocalShop, ShopField, SyncStatus } from "@/data/db";
 import { billSearchRowOf } from "@/data/db";
 import type { BillSearchRow } from "@/domain/billSearch";
 import { emitBillsPull, noteBillsWritten } from "@/data/billsPullStatus";
@@ -832,30 +832,45 @@ export async function pushReceiptNumberBlocks(client: SupabaseClient, localDb: K
 //  - A pull never touches a row still "pending" (an edit not yet on the
 //    server); otherwise it takes the server's row whenever its updated_at
 //    string differs from the local one. No comparison against a device clock.
-// Whole-row push for now: two phones editing the same shop while one is
-// offline - the later ARRIVAL overwrites the other's fields (NI-40).
+// KB-334 (D74, NI-40): the push sends only the fields this phone changed (pendingFields), so two phones
+// editing DIFFERENT fields of the shop both survive; the same field on both: the later ARRIVAL wins.
 // ---------------------------------------------------------------------
 
+/** KB-334 (NI-40): the server column behind each field Settings can change. */
+const SHOP_COLUMN: Record<ShopField, "name" | "phone" | "bill_language"> = { name: "name", phone: "phone", billLanguage: "bill_language" };
+
+/**
+ * KB-334 (D74, NI-40): pushes ONLY the fields this phone changed (pendingFields, stored with the pending
+ * row), so a stale phone cannot overwrite what another device changed. A row that has been pending since
+ * before KB-334 has no set and is pushed whole, as before. On confirm the phone takes the server's whole
+ * row - it now holds the other device's changes too - and the server's updated_at, verbatim (D64).
+ */
 export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): Promise<PushResult> {
   const pending = await localDb.shops.where("syncStatus").equals("pending").toArray();
   let anyTransientFailure = false;
 
   for (const shop of pending) {
-    // .select("id") (an array, not .single()) so a zero-row result is
+    const fields = shop.pendingFields;
+    const payload: Record<string, unknown> =
+      fields === undefined
+        ? {
+            name: shop.name,
+            phone: shop.phone,
+            address: shop.address,
+            logo_url: shop.logoUrl,
+            bill_language: shop.billLanguage,
+            receipt_prefix: shop.receiptPrefix,
+          }
+        : Object.fromEntries(fields.map((f) => [SHOP_COLUMN[f], shop[f]]));
+
+    // .select(...) (an array, not .single()) so a zero-row result is
     // checked explicitly - same reasoning as pushReceiptNumberBlocks:
     // RLS UPDATE is a silent zero-row filter, not a raised error.
     const { data, error } = await client
       .from("shops")
-      .update({
-        name: shop.name,
-        phone: shop.phone,
-        address: shop.address,
-        logo_url: shop.logoUrl,
-        bill_language: shop.billLanguage,
-        receipt_prefix: shop.receiptPrefix,
-      })
+      .update(payload)
       .eq("id", shop.id)
-      .select("id, updated_at");
+      .select("id, updated_at, name, phone, address, logo_url, bill_language, receipt_prefix");
 
     if (error || !data || data.length === 0) {
       if (isPermanentError(error) || (!error && data?.length === 0)) {
@@ -871,14 +886,38 @@ export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): P
       continue;
     }
 
-    // Take the server's updated_at only if nothing was edited while the request was out: an edit
-    // changes updatedAt (updateShopSettings), so "still the version I pushed" is exactly this check.
-    const serverUpdatedAt = data[0]?.updated_at as string | undefined;
+    const server = data[0] as Record<string, unknown>;
+    const serverUpdatedAt = server.updated_at as string | undefined;
     await localDb.transaction("rw", localDb.shops, async () => {
       const current = await localDb.shops.get(shop.id);
-      if (current && current.updatedAt === shop.updatedAt && current.syncStatus === "pending" && serverUpdatedAt) {
-        await localDb.shops.update(shop.id, { syncStatus: "synced", updatedAt: serverUpdatedAt });
+      if (!current || current.syncStatus !== "pending" || !serverUpdatedAt) return;
+
+      // Fields pushed in this request are on the server now - unless the shopkeeper changed one again while
+      // the request was out (its value differs from what was sent): that one stays pending.
+      const stillPending =
+        current.updatedAt === shop.updatedAt
+          ? []
+          : (current.pendingFields ?? []).filter((f) => !(fields ?? []).includes(f) || current[f] !== shop[f]);
+
+      if (current.updatedAt !== shop.updatedAt && (current.pendingFields === undefined || stillPending.length > 0)) {
+        // Edited in flight: stays pending, and the next cycle sends only what is left. A legacy row (no set)
+        // is pushed whole again, as before.
+        const next: LocalShop = { ...current };
+        if (current.pendingFields !== undefined) next.pendingFields = stillPending;
+        await localDb.shops.put(next);
+        return;
       }
+
+      // Nothing (still) pending: the server's row is the truth for every column, version included.
+      const synced: LocalShop = { ...current, syncStatus: "synced", updatedAt: serverUpdatedAt };
+      delete synced.pendingFields;
+      if (typeof server.name === "string") synced.name = server.name;
+      if ("phone" in server) synced.phone = server.phone as string | null;
+      if ("address" in server) synced.address = server.address as string | null;
+      if ("logo_url" in server) synced.logoUrl = server.logo_url as string | null;
+      if (server.bill_language === "en" || server.bill_language === "hi" || server.bill_language === "both") synced.billLanguage = server.bill_language;
+      if ("receipt_prefix" in server) synced.receiptPrefix = server.receipt_prefix as string | null;
+      await localDb.shops.put(synced);
     });
   }
 

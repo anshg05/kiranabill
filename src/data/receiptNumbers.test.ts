@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB } from "./db";
-import { reserveBlock, consumeNextNumber } from "./receiptNumbers";
+import { reserveBlock, consumeNextNumber, RESERVE_MAX_ATTEMPTS, RESERVE_RETRY_MAX_WAIT_MS } from "./receiptNumbers";
 
 type Result = { data: unknown; error: unknown };
 // A handler may return a promise - to hold a "network" call open (KI-64).
@@ -63,6 +63,7 @@ describe("receiptNumbers.ts", () => {
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
     await localDb.delete();
     vi.unstubAllGlobals();
   });
@@ -100,6 +101,101 @@ describe("receiptNumbers.ts", () => {
       const block = await localDb.receiptNumberBlocks.get("block-2");
       expect(block?.blockStart).toBe(151);
       expect(block?.blockEnd).toBe(200);
+    });
+  });
+
+  // KB-334 (D73, D74): several devices reserve at once; the database refuses an overlapping block
+  // (exclusion_violation 23P01, or a unique violation 23505) and the loser re-reads and tries again.
+  describe("reserveBlock under contention (KB-334)", () => {
+    const refused = (code: string) => ({ data: null, error: { code, message: "refused" } });
+
+    /** Reads return the given maxima in turn; inserts return the given results in turn. */
+    function contended(maxima: number[][], inserts: Array<Result>) {
+      let reads = 0;
+      let writes = 0;
+      const seen: Array<{ start: number }> = [];
+      const client = makeMockClient({
+        receipt_number_blocks: (op, payload) => {
+          if (op === "select") return { data: maxima[Math.min(reads++, maxima.length - 1)]!.map((end) => ({ block_end: end })), error: null };
+          if (op === "insert") {
+            seen.push({ start: (payload as { block_start: number }).block_start });
+            return inserts[Math.min(writes++, inserts.length - 1)]!;
+          }
+          throw new Error(`unexpected op "${op}"`);
+        },
+      });
+      return { client, counts: () => ({ reads, writes }), seen };
+    }
+
+    it("an exclusion violation (23P01): re-reads the highest block and takes the NEXT range", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { client, counts, seen } = contended([[0], [50]], [refused("23P01"), { data: { id: "block-2" }, error: null }]);
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.runAllTimersAsync();
+      await done;
+      expect(counts()).toEqual({ reads: 2, writes: 2 });
+      expect(seen.map((s) => s.start)).toEqual([1, 51]);
+      const block = await localDb.receiptNumberBlocks.get("block-2");
+      expect(block).toMatchObject({ blockStart: 51, blockEnd: 100, nextNumber: 51, deviceId: "device-1" });
+    });
+
+    it("a unique violation (23505) is retried the same way", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { client, counts } = contended([[0], [50]], [refused("23505"), { data: { id: "block-3" }, error: null }]);
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.runAllTimersAsync();
+      await done;
+      expect(counts().writes).toBe(2);
+      expect((await localDb.receiptNumberBlocks.get("block-3"))?.blockStart).toBe(51);
+    });
+
+    it("any other error is NOT retried: one attempt, no block, nothing thrown", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { client, counts } = contended([[0]], [refused("42501")]);
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.runAllTimersAsync();
+      await done;
+      expect(counts()).toEqual({ reads: 1, writes: 1 });
+      expect(await localDb.receiptNumberBlocks.count()).toBe(0);
+    });
+
+    it("keeps losing: gives up after RESERVE_MAX_ATTEMPTS, resolves without throwing, no block (the next bill uses the D23 number)", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { client, counts } = contended([[0]], [refused("23P01")]);
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.runAllTimersAsync();
+      await expect(done).resolves.toBeUndefined();
+      expect(counts().writes).toBe(RESERVE_MAX_ATTEMPTS);
+      expect(await localDb.receiptNumberBlocks.count()).toBe(0);
+    });
+
+    it("a failed read of the existing blocks is not retried", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      let reads = 0;
+      const client = makeMockClient({
+        receipt_number_blocks: (op) => {
+          if (op === "select") {
+            reads++;
+            return { data: null, error: { code: "08006", message: "connection" } };
+          }
+          throw new Error("insert must not run");
+        },
+      });
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.runAllTimersAsync();
+      await done;
+      expect(reads).toBe(1);
+    });
+
+    it("the retry waits a short, growing time - billing is never held up by it (the caller never awaits reserveBlock)", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { client, counts } = contended([[0], [50]], [refused("23P01"), { data: { id: "block-4" }, error: null }]);
+      const done = reserveBlock(client, localDb, "shop-1", "device-1");
+      await vi.advanceTimersByTimeAsync(0);
+      expect(counts().writes).toBe(1); // the retry has not run yet: it is waiting
+      await vi.advanceTimersByTimeAsync(RESERVE_RETRY_MAX_WAIT_MS);
+      await done;
+      expect(counts().writes).toBe(2);
     });
   });
 

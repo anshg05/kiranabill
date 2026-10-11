@@ -609,6 +609,100 @@ describe("sync.ts", () => {
     });
   });
 
+  describe("pushShop only sends the fields this phone changed (KB-334, D74, NI-40)", () => {
+    const row = (over: Partial<import("./db").LocalShop> = {}): import("./db").LocalShop => ({
+      id: "shop-1", syncStatus: "pending", name: "My Name", phone: "9876543210", address: "Local Address", logoUrl: "local.png",
+      catalogMode: "custom_only", billLanguage: "hi", receiptPrefix: "LOC", updatedAt: "2026-09-20T12:00:00.000Z", pendingFields: ["name"], ...over,
+    });
+    const serverRow = (over: Record<string, unknown> = {}) => ({
+      id: "shop-1", updated_at: "2026-09-20T12:00:05.000000+00:00", name: "My Name", phone: "9000000001", address: "Server Address",
+      logo_url: "server.png", bill_language: "both", receipt_prefix: "SRV", ...over,
+    });
+
+    it("a name edit sends the name and NOTHING else - not the phone, language, address, logo or prefix", async () => {
+      await localDb.shops.add(row());
+      const sent: Array<Record<string, unknown>> = [];
+      const client = makeMockClient({ shops: (_op, payload) => { sent.push(payload as Record<string, unknown>); return { data: [serverRow()], error: null }; } });
+      await pushShop(client, localDb);
+      expect(sent).toEqual([{ name: "My Name" }]);
+    });
+
+    it("a phone + language edit sends exactly those two columns", async () => {
+      await localDb.shops.add(row({ pendingFields: ["phone", "billLanguage"] }));
+      const sent: Array<Record<string, unknown>> = [];
+      const client = makeMockClient({ shops: (_op, payload) => { sent.push(payload as Record<string, unknown>); return { data: [serverRow()], error: null }; } });
+      await pushShop(client, localDb);
+      expect(sent).toEqual([{ phone: "9876543210", bill_language: "hi" }]);
+    });
+
+    it("a row with no set (pending since before KB-334) is still pushed whole", async () => {
+      const legacy = row();
+      delete legacy.pendingFields;
+      await localDb.shops.add(legacy);
+      const sent: Array<Record<string, unknown>> = [];
+      const client = makeMockClient({ shops: (_op, payload) => { sent.push(payload as Record<string, unknown>); return { data: [serverRow()], error: null }; } });
+      await pushShop(client, localDb);
+      expect(Object.keys(sent[0]!).sort()).toEqual(["address", "bill_language", "logo_url", "name", "phone", "receipt_prefix"]);
+    });
+
+    it("on confirm the phone takes the SERVER's row for every column (it holds the other device's changes), the set is gone, and the version is the server's", async () => {
+      await localDb.shops.add(row());
+      const client = makeMockClient({ shops: () => ({ data: [serverRow()], error: null }) });
+      await pushShop(client, localDb);
+      const shop = (await localDb.shops.get("shop-1"))!;
+      expect(shop).toMatchObject({
+        syncStatus: "synced", updatedAt: "2026-09-20T12:00:05.000000+00:00", name: "My Name", phone: "9000000001", address: "Server Address",
+        logoUrl: "server.png", billLanguage: "both", receiptPrefix: "SRV",
+      });
+      expect(shop).not.toHaveProperty("pendingFields");
+    });
+
+    it("an edit of ANOTHER field made while the push is in flight: the pushed field stops being pending, the new one stays - and the next cycle sends only it", async () => {
+      await localDb.shops.add(row());
+      const sent: Array<Record<string, unknown>> = [];
+      let calls = 0;
+      const client = makeMockClient({
+        shops: async (_op, payload) => {
+          calls += 1;
+          sent.push(payload as Record<string, unknown>);
+          if (calls === 1) await localDb.shops.update("shop-1", { phone: "9111111111", updatedAt: "2026-09-20T12:00:01.000Z", pendingFields: ["name", "phone"] });
+          return { data: [serverRow({ phone: "9000000001", updated_at: `2026-09-20T12:00:0${calls + 4}.000000+00:00` })], error: null };
+        },
+      });
+      await pushShop(client, localDb);
+      expect(await localDb.shops.get("shop-1")).toMatchObject({ syncStatus: "pending", phone: "9111111111", pendingFields: ["phone"] });
+      await pushShop(client, localDb);
+      expect(sent).toEqual([{ name: "My Name" }, { phone: "9111111111" }]);
+      expect(await localDb.shops.get("shop-1")).toMatchObject({ syncStatus: "synced" });
+    });
+
+    it("the SAME field edited again while the push is in flight stays pending with its new value", async () => {
+      await localDb.shops.add(row());
+      const sent: Array<Record<string, unknown>> = [];
+      let calls = 0;
+      const client = makeMockClient({
+        shops: async (_op, payload) => {
+          calls += 1;
+          sent.push(payload as Record<string, unknown>);
+          if (calls === 1) await localDb.shops.update("shop-1", { name: "My Name v2", updatedAt: "2026-09-20T12:00:01.000Z", pendingFields: ["name"] });
+          return { data: [serverRow({ updated_at: `2026-09-20T12:00:0${calls + 4}.000000+00:00` })], error: null };
+        },
+      });
+      await pushShop(client, localDb);
+      expect(await localDb.shops.get("shop-1")).toMatchObject({ syncStatus: "pending", name: "My Name v2", pendingFields: ["name"] });
+      await pushShop(client, localDb);
+      expect(sent).toEqual([{ name: "My Name" }, { name: "My Name v2" }]);
+    });
+
+    it("a push that fails keeps the set exactly as it was", async () => {
+      await localDb.shops.add(row({ pendingFields: ["name", "phone"] }));
+      const client = makeMockClient({ shops: () => ({ data: null, error: { code: "08006", message: "network" } }) });
+      const result = await pushShop(client, localDb);
+      expect(result.anyTransientFailure).toBe(true);
+      expect(await localDb.shops.get("shop-1")).toMatchObject({ syncStatus: "pending", pendingFields: ["name", "phone"] });
+    });
+  });
+
   describe("syncNow orchestration", () => {
     it("runs bills before learningEvents, then the independent push-first tables, then pulls - and reports aggregate transient failure", async () => {
       await localDb.bills.add({

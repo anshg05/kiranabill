@@ -312,6 +312,7 @@ TOTAL                             ₹142.50    ← larger, bold
   `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
 - **A total-only line** (D47): qty `—`, rate `—`, the spoken amount. Amounts always carry ₹ in exact paise
   (`formatRupees` — ₹22.50 prints ₹22.50, never rounded).
+- **Bill numbers with several devices (D73, D74):** each device draws its own block of 50, so numbers can interleave in time (`KB-000012` may be issued after `KB-000061` by another device). They **never repeat** and a number never changes after it is issued.
 - Share (`KB-309`, D58 — the legacy behaviour): four buttons under the saved receipt — **Image**, **PDF**,
   **WhatsApp**, **SMS**.
 
