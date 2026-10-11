@@ -272,6 +272,15 @@ If `.netlify/state.json` ever holds a `siteId`, run `npx netlify unlink` before 
 
 ---
 
+### Dev-only URL flags (the dev server only - `npm run dev`; `npm run build` drops them)
+
+| Flag | What it does | Its limit |
+|---|---|---|
+| `?failparse=502\|429\|network\|timeout` | Fails the **first Layer 2 parse request** of each transcript, so the "Not added" / Retry flow can be seen | **Only orders the fast path can't read.** An order Layer 1 reads on the device never sends a parse request, so the flag does nothing for it (the owner saw "items still added", 11 Oct 2026). Use a sentence with an item Layer 1 can't match (e.g. a two-item order with an unknown product). It does not fail the transcription call. |
+| `?try=<utterance>` | Fills the bill with real Layer 1 output and its review flags | Layer 1 only; no voice |
+| `?lang=hi\|en\|auto` | Switches the Whisper language hint | Dev only |
+| `?save=1` | Sends each recording and its transcript to a local folder | Dev only |
+
 ## 9. Final verification checklist
 
 Run all of these before considering the machine "ready." Compare the numbers against `docs/10-TRACKER.md`'s current recorded state — they should match (or be higher, if work has continued since this doc was last updated).

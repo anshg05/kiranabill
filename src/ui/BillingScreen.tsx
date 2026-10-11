@@ -71,7 +71,9 @@ function devTryUtterances(shop: ParserCatalog): { transcript: string; lines: Bil
  * FIRST parse of each transcript fail that way, so the "Not added" / Retry
  * flow can be seen in a browser; the Retry then goes to the real /voice.
  * `timeout` never answers, so the real 8 s client deadline fires. Removed
- * from `npm run build` (VERIFY greps dist/ for "failparse"). */
+ * from `npm run build` (VERIFY greps dist/ for "failparse").
+ * LIMIT: it only fails the Layer 2 parse REQUEST, so it only affects orders the
+ * fast path can't read - an order Layer 1 reads on the device never sends one. */
 function devFailParseFetch(): typeof fetch | undefined {
   if (!import.meta.env.DEV) return undefined;
   const mode = new URLSearchParams(window.location.search).get("failparse");
