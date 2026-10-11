@@ -35,7 +35,7 @@ describe("KB-407 encrypted backup + restore rehearsal - real local stack", () =>
     const pub = spawnSync(GPG, ["--homedir", gpgPath({ gpgExe: GPG }, fullHome), "--batch", "--export", fpr], { encoding: "buffer" }).stdout;
     const imp = spawnSync(GPG, ["--homedir", gpgPath({ gpgExe: GPG }, pubHome), "--batch", "--import"], { input: pub, encoding: "buffer" });
     if (imp.status !== 0) throw new Error("could not import the public key");
-    cfg = { driveFolder: join(root, "drive"), recipient: fpr, gpgExe: GPG, gnupgHome: pubHome, stateDir: join(root, "state"), spoolDir: join(root, "state", "spool") };
+    cfg = { driveFolder: join(root, "drive"), recipient: fpr, gpgExe: GPG, gnupgHome: pubHome, stateDir: join(root, "state"), spoolDir: join(root, "state", "spool"), keyConfirmed: true };
   });
 
   afterAll(() => {

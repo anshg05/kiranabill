@@ -54,6 +54,15 @@ export interface BackupConfig {
   /** last-success marker, the log, and the local spool of the last few encrypted sets. */
   stateDir: string;
   spoolDir: string;
+  /** setup-key.sh writes true only AFTER the owner opened a test note with the real private key (stage 4). */
+  keyConfirmed: boolean;
+}
+
+/** A public key whose private half was never saved and proven turns every backup into a trap: refuse it. */
+export function assertKeyConfirmed(cfg: Pick<BackupConfig, "keyConfirmed">): void {
+  if (cfg.keyConfirmed !== true) {
+    throw new Error("the backup key was never confirmed (setup-key.sh did not finish stage 4) - no backup may run with an unproven key. Run: bash scripts/backup/setup-key.sh --reset, then setup-key.sh again");
+  }
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): BackupConfig {
@@ -70,7 +79,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BackupConfig {
     gnupgHome: raw.gnupgHome ?? join(appData, "KiranaBillBackup", "gnupg"),
     stateDir,
     spoolDir: raw.spoolDir ?? join(stateDir, "spool"),
+    keyConfirmed: raw.keyConfirmed === true,
   };
+  assertKeyConfirmed(cfg);
   if (!cfg.driveFolder) throw new Error(`config ${file}: driveFolder is empty`);
   if (!cfg.recipient) throw new Error(`config ${file}: recipient (the public key fingerprint) is empty`);
   return cfg;
@@ -262,6 +273,7 @@ export interface RunResult {
 }
 
 export async function runBackup(cfg: BackupConfig, opts: RunOptions): Promise<RunResult> {
+  if (!opts.probe) assertKeyConfirmed(cfg);
   checkFreeSpace(cfg);
   const dest = opts.outDir ?? cfg.driveFolder;
   if (!opts.probe && !(existsSync(dest) && statSync(dest).isDirectory())) {
