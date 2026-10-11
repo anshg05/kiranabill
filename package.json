@@ -17,6 +17,9 @@
     "try": "tsx scripts/try.ts",
     "bench:numbers": "tsx eval/number-benchmark.ts",
     "coverage:probe": "tsx eval/coverage-probe.ts",
+    "backup": "tsx scripts/backup/backup.ts",
+    "backup:probe": "tsx scripts/backup/backup.ts --probe --no-alert",
+    "backup:rehearse": "tsx scripts/backup/rehearseRestore.ts",
     "test:rls": "tsx scripts/rls-negative-tests.ts",
     "lint": "eslint ."
   },

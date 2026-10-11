@@ -19,3 +19,8 @@ deno.lock
 
 # Supabase Studio's saved local SQL snippets - the owner's scratch queries, never committed.
 supabase/snippets/
+
+# KB-407: backups and keys never enter the repo (they hold customer names and mobiles / the private key).
+kb-backup-*
+*.gpg
+KiranaBill-BACKUP-PRIVATE-KEY*

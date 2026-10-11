@@ -10,5 +10,5 @@
     "tsBuildInfoFile": "../node_modules/.tmp/scripts.tsbuildinfo",
     "skipLibCheck": true
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "backup/*.ts"]
 }

@@ -45,6 +45,7 @@ on this project.
 | Sync, offline, receipt numbers | `02-ARCHITECTURE.md` §2–4, `16-APP-FLOW.md` §5 |
 | Any screen | `05-FRONTEND-SPEC.md`, `13-DESIGN.md`, `16-APP-FLOW.md` |
 | Manual setup | `17-MANUAL-TASKS.md` |
+| Backups, restore, key custody | `22-BACKUP-AND-RESTORE.md` |
 
 **Never read `legacy/` in depth.** It is reference only, never imported, never edited, never linted.
 Its useful content is already extracted into `14-LEGACY-REFERENCE.md`. Read that instead.

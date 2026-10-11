@@ -116,10 +116,15 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 
 | # | Task | Cost | Notes |
 |---|---|---|---|
-| M-30 | **Enable Supabase PITR** | **$25/month (Pro)** | Do this **before** real shop data enters. The one paid thing in the MVP, and it is worth it — the loudest complaint in this market is shopkeepers losing months of data. |
+| M-30 | ~~**Enable Supabase PITR**~~ - **deferred (D70, 10 Oct 2026): Free for now; backups are `M-34`..`M-38` (`KB-407`)** | ~~$25/month (Pro)~~ | ~~Do this **before** real shop data enters. The one paid thing in the MVP, and it is worth it — the loudest complaint in this market is shopkeepers losing months of data.~~ |
 | M-31 | Test on a real budget Android, not just desktop | Free | Performance budgets in `05-FRONTEND-SPEC.md` §10 assume a cheap phone |
 | M-32 | **Run the 20-bill pilot** | Free | Only you can do this. See `01-PRD.md` §8. |
 | M-33 | Custom domain (optional) | ~₹800/yr | |
+| M-34 | **Install Google Drive for desktop**, sign in as the backup account, create `KiranaBill-Backups` in My Drive | Free | **Done 11 Oct 2026** (account anshgupta0404, drive `H:`). |
+| M-35 | **Make the backup key**: `bash scripts/backup/setup-key.sh "H:/My Drive/KiranaBill-Backups"` in your own Git Bash window; save the **private key + passphrase in a password manager that is NOT the backup Google account** | Free | **Only you run this.** Losing the key or the passphrase makes every backup unreadable, for good. `22-BACKUP-AND-RESTORE.md` §3. |
+| M-36 | **Register the two scheduled tasks**: `powershell -ExecutionPolicy Bypass -File scripts\backup\install-task.ps1` | Free | Run once; `-DryRun` shows what it would do, `-Remove` undoes it. |
+| M-37 | **First real backup, then decrypt one with the real key** (`22-BACKUP-AND-RESTORE.md` §7-§8) | Free | Proves the key and passphrase work on a real file. |
+| M-38 | **Weekly:** open drive.google.com → `KiranaBill-Backups`, check the newest file's date. **Consider healthchecks.io if the laptop will be off for days.** | Free | A script cannot see whether Drive uploaded the file. |
 
 ---
 

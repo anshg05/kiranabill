@@ -288,6 +288,12 @@ If every one of these passes and matches the tracker's recorded state, the new m
 
 ---
 
+## 9b. The scheduled backup (`KB-407`, D75)
+
+The daily encrypted backup (`22-BACKUP-AND-RESTORE.md`) needs, on this machine: **Docker Desktop** (the Supabase CLI dumps inside a container; the script starts it if needed), **Git for Windows' GnuPG** (`C:\Program Files\Git\usr\bin\gpg.exe`), **Node** (the task runs `node_modules\tsx\dist\cli.mjs`), **Google Drive for desktop** signed in as the backup account (here `H:\My Drive\KiranaBill-Backups`), a Supabase CLI logged in (`npx supabase login`), and **at least 2 GiB free on C:** (the run refuses below that). Settings live in `%APPDATA%\KiranaBillBackup\config.json` (a folder and the PUBLIC fingerprint — no secret); the log and the last-success marker in `%LOCALAPPDATA%\KiranaBillBackup`. On a NEW machine do **not** run `setup-key.sh` again (a new key could not open the old backups): see `22-BACKUP-AND-RESTORE.md` §9.
+
+---
+
 ## 10. What this document deliberately does not cover
 
 - **Product/account setup questions** (which Claude plan, billing, UI navigation) — see `support.claude.com`.
