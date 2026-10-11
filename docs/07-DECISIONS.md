@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 9 Oct 2026 (rev 44) · Supersedes rev 40
+**Last updated:** 11 Oct 2026 (rev 45) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1898,12 +1898,22 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 3. **No unit change for now.** A product's unit sets what its price means (₹45 per kg is not ₹45 per packet); changing it in place would silently change the meaning of the stored price and of every later bill (hard rule 7: never auto-change a price or unit - this is the manual version of the same danger). **The remedy is archive + add again** with the right unit and price.
 4. Writes stay online (D62). Unit learning (`KB-322`) still only *suggests*.
 
+### D72 — Hard rule 5 reworded: nothing stops the shopkeeper, but a line with no price is priced before Bill Banao 🟢
+
+**Owner decision, 11 Oct 2026, audit Part 3 (P3-1).** The audit found two owner texts that disagreed: hard rule 5 said "never block billing on … a missing rate", while **D54** offers Bill Banao only when nothing is pending, "Price needed" included (`finalise.test.tsx` "'Price needed' (decision 2)…"; the bare "ajwain" with total 0 must not print as "Ajwain ₹0").
+1. **D54's behaviour stays.** A line with no price (a custom item, or a line with no total) must be priced - or removed - before Bill Banao.
+2. **Rule 5 is reworded** (`CLAUDE.md`, `18-AGENT-CONTRACT.md` §hard rules): *"Never stop the shopkeeper adding items, and never ask a question, because of an unknown product, a missing customer name or a missing rate. A line with no price must be priced (or removed) before Bill Banao - the app never invents a number."*
+3. **What the rule still forbids:** a refusal to add an unknown product; a question mid-bill; a modal between the mic and the receipt (05 §8); a made-up price or a ₹0 line on a receipt. **What it permits:** the one pending check "Price needed", which the shopkeeper clears by typing a number or removing the line.
+4. Old wording, for the record: "Never block billing on an unknown product, missing customer name, or missing rate."
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 11 Oct 2026 | D7: a product is added "inline during billing" by "the same database write" as the Catalog screen and the import; the client "falls back to server-side search" above 10,000 products | The Catalog screen and the file import write **online** (D62 §3, D68); **a product added mid-bill is bill-only** until promotion (`KB-320`, after the pilot starts); **there is no server-side search** - a shop's catalog is capped at 10,000 products (`MAX_SHOP_PRODUCTS`) | Owner, audit Part 3 (P3-2). D62 never said it overrode D7. |
+| 11 Oct 2026 | Hard rule 5: "Never block billing on an unknown product, missing customer name, or missing rate" | **D72:** never stop the shopkeeper adding items or ask a question for those reasons; a line with no price is priced (or removed) before Bill Banao; the app never invents a number | Owner, audit Part 3 (P3-1). D54 had already made "Price needed" a pending check. |
 | 10 Oct 2026 | `KB-403`: Supabase PITR enabled before real shop data enters; `KB-004`/`KI-05`: a wired `run-eval.ts` as the eval baseline | **Supabase Free + a scheduled `db dump` and a restore rehearsal (`KB-407`), PITR deferred** (D70); **`eval:real` + `bench:numbers` + `coverage:probe` are the eval baseline, `run-eval.ts` retired** (D69) | Owner, audit Part 1. Free has no backups; `run-eval.ts` never ran. |
 | 3 Oct 2026 | 05 §10: keystroke → search results < 16 ms | **Lookup ≤ 16 ms; keystroke → visible results ≤ 50 ms median** (D51) | A 60 Hz frame is ~16 ms by itself; measured on a real phone. |
 | 2 Oct 2026 | `geminiParseProvider.ts`: 3 attempts on a 5xx (0.5 / 1 s sleeps), no deadline | **One attempt, 6 s deadline; the shopkeeper's Retry** (D50) | 19.5 s of hidden retries can't fit an 8 s client deadline; the 5xx seen were quota. |

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 11 Oct 2026 (rev 105) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
+**Last updated:** 11 Oct 2026 (rev 106) · **Current phase:** 3 — Billing UI, in progress. `KB-301`, `KB-316`, `KB-302`, `KB-317` (voice accuracy + speed) done.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** the audit (`docs/21-AUDIT-2026-10.md`) — Part 1 accepted and its record fixes applied; Part 2 next. No production deploy until the audit is done. `KB-314` and `KB-401` done 10 Oct 2026 (D68, D67).
+**Working on:** `KB-105b` (the four missing RLS checks) - **plan** (first of the agreed pre-pilot order below). The audit (`docs/21-AUDIT-2026-10.md`) is complete and accepted (11 Oct 2026). `KB-314` and `KB-401` done 10 Oct 2026 (D68, D67).
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -57,6 +57,19 @@ the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
 15h. ~~**`KB-401`** — PWA: offline open, updates, persistent storage~~ — **done 10 Oct 2026** (D67; phone checks passed). Closed KI-40; KI-68's mitigation confirmed ("Storage: protected" on the installed phone).
 15i. ~~**`KB-314`** — bulk catalog import~~ — **done 10 Oct 2026** (D68; owner check passed). New: `KB-328` (price updates from a file, parked), `NI-43`, `SD-030`. The Android file-picker check rides on the release draft.
 16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
+
+**Agreed order to the pilot - owner, 11 Oct 2026 (audit Part 3). Each ticket gets its own plan and its own stop. ONE release at the end (06 "Release plan").**
+1. **`KB-105b`** - the four missing RLS checks.
+2. **`KB-407`** - scheduled `db dump` off the machine + one restore rehearsal (prove the data and the `auth` users are in it - KI-25(3)).
+3. **`KB-331`** - "Add by hand" on every voice failure, transcript prefilled.
+4. **`KB-330`** - Catalog rename / aliases edit / archive (D71).
+5. **`KB-329`** - price-suggestion Ignore, 90 days, saved and synced - **with KI-63** (per-kg rate on a per-gm product).
+6. **`KB-325`** - cancel and reissue a bill.
+7. **`KB-404`** - turns, seconds, fast-path hit/miss, and the transcript per bill.
+8. **`KB-321` + `KB-323`** - writing usage only (the Whisper prompt on only after a measured before/after); learned aliases feed the parser, **with a plan for how a wrongly learned alias gets noticed**, and the alias-conflict rule.
+As their inputs arrive: **`KB-332`** (Hindi screen - owner's wording first), **`pkce`** (auth redirect hardening, readiness item 10), **`KB-318`** (Gemini billing, KI-50).
+Then: **one release draft + the full phone session** (including the four unmeasured 05 §10 budgets) **+ one deploy**.
+After the pilot starts: `KB-320`, `KB-322`, `KB-333` (cleanup). `KB-402` is folded into the phone session (no ticket).
 
 **Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
 https://kiranabilling.netlify.app **only** when the commit carries the owner-approved deploy marker (see "Before deployment").
@@ -191,7 +204,7 @@ e2e 80, RLS 55/55, typecheck, lint, `npm audit --omit=dev` 0; `eval:real` 25 hit
 | 6 | **KI-50 Gemini billing** — free-tier quota (20/day) is exhausted in a day; every Layer 2 parse fails; most real Hindi orders reach Layer 2 (Layer 1 hit 25 of 39 real transcripts) | OPEN | O | no (Layer 1 still works) | **YES** |
 | 7 | `KB-318` (KI-45 gram mis-scaling — loud, a HIGH flag blocks Bill Banao; **KI-52 a different product picked with no flag — silent**; KI-47; thinking config). Cannot be built or verified until #6 | OPEN, blocked on #6 | C (after O) | no | **YES** (KI-52 is a wrong-number risk the thesis forbids) |
 | 8 | A live voice order through Layer 2 succeeds after billing (KI-66; the release-draft check) | OPEN | O + C | no | **YES** |
-| 9 | **KI-59** — the shopkeeper's screen in Hindi/Hinglish (flag sentences, input errors, status lines); no ticket number yet; needs the owner's wording review | OPEN | O (wording) + C (build) | no | **YES** (owner marked HIGH, before pilot) |
+| 9 | **KI-59** — the shopkeeper's screen in Hindi/Hinglish (flag sentences, input errors, status lines); **now `KB-332`** (11 Oct 2026); needs the owner's wording review first | OPEN | O (wording) + C (build) | no | **YES** (owner marked HIGH, before pilot) |
 | 10 | **Auth redirect hardening**: exact Redirect URLs, remove `http://localhost:5173/**`, `flowType: 'pkce'`. **Sequence matters:** the wildcard `https://*--kiranabilling.netlify.app/**` is what lets phone drafts sign in; tighten it only AFTER the last draft. `pkce` is a code change — ship it in the release draft so it is phone-tested before production | OPEN | C (pkce, tests) then O (dashboard) | no (the wildcard is live now) | **YES** |
 | 11 | **Supabase sign-ups** are disabled (owner, 27 Sep). Re-enabling lets any Google account create a shop and spend Groq/Gemini via `/voice` (300/h per shop). Safer: keep them off and create each pilot shop's user yourself — **whether a Google sign-in for a pre-created user works with sign-ups off is untested; try it on a draft** | OPEN — decision + a test | O (+ C to test) | no | **YES** |
 | 12 | Onboard a **fresh** pilot shop with the Ready catalog (the live test shop is start-empty; no live voice check means anything on it); KI-53 owner-led catalog review (duplicate/synonym products) first | OPEN | O (+ C for any bug) | no | **YES** |
@@ -288,6 +301,10 @@ where the detail lives; tick it off there and strike it here.
 - [ ] **`KB-329` — price-suggestion Ignore, saved and synced (90 days)** (owner, 11 Oct 2026, audit Part 2 decision 21). Before the pilot; unplanned.
 - [ ] **`KB-330` — Catalog rename, aliases edit, archive (never a hard delete; no unit change - D71)** (owner, 11 Oct 2026, decision 22). Before the pilot; unplanned.
 - [ ] **`KB-331` — "Add by hand" on every voice failure, transcript prefilled** (owner, 11 Oct 2026, decision 18). Before the pilot; unplanned.
+- [ ] **`KB-325` — cancel and reissue a bill** (owner, 11 Oct 2026). Before the pilot; unplanned.
+- [ ] **`KB-321` — write usage (Catalog ordering, vocabulary input); the Whisper prompt on only after a measured before/after** (owner, 11 Oct 2026). Before the pilot.
+- [ ] **`KB-323` — learned aliases feed the parser, with how a wrongly learned alias is noticed, and the alias-conflict rule** (owner, 11 Oct 2026). Before the pilot.
+- [ ] **`KB-332` — the shopkeeper's screen in Hindi / Hinglish (KI-59)** (owner, 11 Oct 2026). Before the pilot; the owner's wording review first.
 - [ ] **`KB-404` — turns-to-bill / seconds-to-bill per bill (and the runtime fast-path hit/miss log)** (owner, 10 Oct 2026): the release gate cannot be measured without it. Before the pilot; to be planned later.
 
 ---
@@ -476,6 +493,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 11 Oct 2026 | **Audit Part 3 accepted; owner decisions recorded (docs only).** **Rule 5 reworded (D72):** never stop the shopkeeper adding items or ask a question for an unknown product, a missing customer name or a missing rate; a line with no price is priced (or removed) before Bill Banao - D54 stands; `CLAUDE.md` and `18-AGENT-CONTRACT.md` updated. **Before the pilot:** `KB-325` (cancel and reissue), `KB-323` (its plan must show how a wrong alias is noticed + the conflict rule), `KB-321` (writing usage only), new `KB-332` (Hindi screen, KI-59; wording first). **After the pilot starts:** `KB-320`, `KB-322`, new `KB-333` (cleanup). **`KB-402` folded** into the release draft's phone session. **One release at the end.** D7 recorded as superseded; 12 cleaned (KI-06…KI-16, KI-18, KI-40, KI-48 closed; KI-33/KI-62 merged into NI-42; KI-49 reworded; NI-02/03/04/13/20/25 closed; new KI-69). The agreed order is in "Right now". | Agent |
 | 11 Oct 2026 | **Audit Part 2 accepted; record fixes applied (docs only).** Reviewer's two corrections: the vocabulary IS built and sent (`buildVocabularyPrompt`) - empty only because `use_count` is never written (so `KB-321` is *writing usage*, not wiring); the catalog slice <= 30 is MET (`buildCatalogSlice`, `SLICE_MAX_ENTRIES`). Owner decisions: **three new tickets BEFORE THE PILOT, unplanned - `KB-329` (price-suggestion Ignore, saved and synced), `KB-330` (Catalog rename / aliases / archive; D71: never a hard delete, no unit change), `KB-331` (Add by hand on every voice failure)**; 05 "Done" reworded to the current behaviour (focus moving while the shopkeeper speaks would interrupt); use_count folded into `KB-321`; the alias-conflict rule added to `KB-323`; the budget list is input to `KB-402`. Spec fixes in 01, 04, 05, 08, 16. | Agent |
 | 10 Oct 2026 | **Audit Part 1 accepted; record fixes applied (docs only).** Owner: `KB-004` SUPERSEDED and `KI-05` closed - the eval baseline is `eval:real` + `bench:numbers` + `coverage:probe` (D69), `run-eval.ts` retired in the docs; new tickets `KB-105b` (the four missing RLS checks) and `KB-407` (scheduled db dump + one restore rehearsal), both before the pilot; Supabase Free for now, `KB-403` deferred (D70); `KB-404` kept, before the pilot. Fixed in 06 / 10: `KB-107b`/`KB-327` merged (schema done, UI = `KB-327`), `KB-209` reworded, `KB-210` marked done, `KB-317`'s icon, `KB-314`'s Detail text, `KB-208`'s 17 codes, the `KB-006`/`KB-009` figures, `KB-207`'s missing runtime log, the Phase progress table and the Metrics table. Reviewer's correction recorded: the Whisper vocabulary prompt is EMPTY in production, not merely unranked. Decided later, with the whole picture: `KB-321` and turning the prompt on, `KB-402`, `KB-325`, and whether `KB-320`/`322`/`323` come before the pilot. | Agent |
 | 10 Oct 2026 | **Release 1 readiness report** (docs and checks only): one table of every Before-deployment item and open HIGH KI/NI with status, who acts and what each blocks - the production deploy of `main` (a) or the first pilot shop (b); Supabase backups and pausing checked against its docs (Free has no backups; Pro daily, 7 days; PITR is an add-on); Netlify credits (15 per deploy, a hard limit that pauses the site at 0; rollbacks are free); proposed release steps. Findings: the credit balance is the only thing that can block deploy (a); the pilot is blocked by KI-50 / `KB-318`, KI-59, auth hardening, backups, DPDP, sign-up policy, onboarding and per-phone storage. Checks run: migrations 19/19 on both sides, `npm test` at the DEFAULT workers 87 / 1541 green, `eval` still 0/0/0/25. Tracker items ticked: default-workers test, `KB-324`, `KB-326`. | Agent |

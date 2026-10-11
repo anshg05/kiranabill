@@ -179,7 +179,7 @@ Rules:
 3. **`domain/` imports nothing** from `data/`, `providers/`, or `ui/`. No `fetch`, no Supabase, no
    browser APIs.
 4. **RLS on `shop_id` is the security boundary.** Never client-side filtering.
-5. **Never block billing** on an unknown product, a missing customer name, or a missing rate.
+5. **Never stop the shopkeeper adding items, and never ask a question,** because of an unknown product, a missing customer name or a missing rate. A line with no price must be priced (or removed) before Bill Banao - the app never invents a number.
 6. **Never ask the user a question mid-bill.** Customer defaults to "Cash".
 7. **Never auto-change a price or unit.** Suggest only.
 8. **Only finalised bills teach the learning engine.**
