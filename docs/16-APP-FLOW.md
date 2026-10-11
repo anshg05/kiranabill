@@ -312,7 +312,7 @@ flowchart LR
 | Receipt number block exhausted offline | Full-device-UUID fallback number (D23), marked `receipt_number_source = 'fallback'`; never renumbered |
 | Sync fails repeatedly | Amber chip, tap for detail. **Billing continues.** |
 | App backgrounded mid-bill | Draft in IndexedDB. Returns exactly as left. |
-| Two devices, same shop | Out of MVP scope. One device per shop. |
+| Two devices, same shop | **Supported (D73).** Bills append and push idempotently; receipt-number blocks must never overlap (`KB-334`); each device has its own draft |
 | Product renamed after old bills exist | Old bills keep their `display_name` snapshot |
 
 ---

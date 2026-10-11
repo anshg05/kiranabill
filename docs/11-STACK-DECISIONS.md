@@ -72,6 +72,8 @@ engine solves a problem we deliberately designed away.
 **Warning to future self:** if bills ever become editable, or two devices bill simultaneously, this
 decision must be revisited immediately. Reopen this ADR before adding either.
 
+**Reopened 11 Oct 2026 by `07-DECISIONS.md` D73** (the owner wants several devices per shop). Bills stay append-only and idempotent, so the ADR's conclusion stands; the collision points are `KB-334`.
+
 ---
 
 ## SD-004 — Hosting and functions: **Netlify**

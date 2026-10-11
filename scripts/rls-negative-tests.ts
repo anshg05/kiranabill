@@ -59,6 +59,12 @@ async function asSuperuser(client: Client): Promise<void> {
   await client.query("reset role");
 }
 
+/** An unauthenticated caller: the `anon` role, no user id (KB-105b). */
+async function asAnon(client: Client): Promise<void> {
+  await client.query("select set_config('request.jwt.claim.sub', '', true)");
+  await client.query("set local role anon");
+}
+
 interface TestResult {
   name: string;
   passed: boolean;
@@ -719,6 +725,200 @@ async function main(): Promise<void> {
         [id, shopA],
       );
       await client.query(`update bills set status = 'cancelled' where id = $1`, [id]);
+    });
+
+    // --- KB-105b: the four things KB-105 left unproven ---------------------
+    // (1) receipt_number_blocks  (2) base_products is read-only
+    // (3) cross-shop READS of the four learning tables  (4) Storage `shop-logos`.
+    // Each family has a positive control, so a check that "sees nothing" can't pass
+    // just because the data never existed.
+
+    // (1) receipt_number_blocks - insert/select/update policies on is_shop_member(shop_id); no delete policy.
+    const blockA = randomUUID();
+    const blockB = randomUUID();
+    await asUser(client, ownerB);
+    await client.query(
+      `insert into receipt_number_blocks (id, shop_id, device_id, block_start, block_end, next_number) values ($1, $2, 'test-device', 1, 50, 1)`,
+      [blockB, shopB],
+    );
+    await asUser(client, ownerA);
+    await client.query(
+      `insert into receipt_number_blocks (id, shop_id, device_id, block_start, block_end, next_number) values ($1, $2, 'test-device', 1, 50, 1)`,
+      [blockA, shopA],
+    );
+
+    await check(client, "receipt_number_blocks read isolation (KB-105b): shop A reads zero blocks of any other shop", async () => {
+      await asUser(client, ownerA);
+      const other = await client.query(`select 1 from receipt_number_blocks where shop_id <> $1`, [shopA]);
+      if (other.rowCount !== 0) throw new Error(`expected 0 rows of other shops' blocks, got ${other.rowCount}`);
+      return "0 rows of any other shop's blocks, as expected";
+    });
+    await check(client, "receipt_number_blocks read sanity (KB-105b): shop A sees its own block (1)", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`select 1 from receipt_number_blocks where shop_id = $1`, [shopA]);
+      if (res.rowCount !== 1) throw new Error(`expected 1 row, got ${res.rowCount}`);
+      return "1 row visible, as expected";
+    });
+    await checkRejects(client, "receipt_number_blocks write isolation (KB-105b): shop A cannot INSERT a block into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into receipt_number_blocks (shop_id, device_id, block_start, block_end, next_number) values ($1, 'test-device', 51, 100, 51)`,
+        [shopB],
+      );
+    });
+    await check(client, "receipt_number_blocks write isolation (KB-105b): shop A's UPDATE of shop B's block affects zero rows, and B's block is unchanged", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`update receipt_number_blocks set next_number = 40 where id = $1`, [blockB]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows affected, got ${res.rowCount}`);
+      await asSuperuser(client);
+      const after = await client.query(`select next_number from receipt_number_blocks where id = $1`, [blockB]);
+      if (Number(after.rows[0]?.next_number) !== 1) throw new Error(`shop B's next_number changed to ${after.rows[0]?.next_number}`);
+      return "0 rows affected and next_number still 1";
+    });
+    await checkRejects(client, "receipt_number_blocks write isolation (KB-105b): shop A cannot move its own block into shop B (UPDATE shop_id)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update receipt_number_blocks set shop_id = $1 where id = $2`, [shopB, blockA]);
+    });
+    await check(client, "receipt_number_blocks has no delete policy (KB-105b): shop A cannot delete even its OWN block (0 rows)", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`delete from receipt_number_blocks where id = $1`, [blockA]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows deleted, got ${res.rowCount}`);
+      await asSuperuser(client);
+      const still = await client.query(`select 1 from receipt_number_blocks where id = $1`, [blockA]);
+      if (still.rowCount !== 1) throw new Error("the block is gone");
+      return "0 rows deleted and the block is still there";
+    });
+
+    // (2) base_products - one SELECT policy; nobody but the migrations writes it.
+    await asSuperuser(client);
+    const baseFirst = await client.query(`select id, suggested_price_paise from base_products order by id limit 1`);
+    if (baseFirst.rowCount !== 1) throw new Error("base_products is empty - the local seed (supabase db reset) is missing");
+    const baseRow = { id: String(baseFirst.rows[0].id), price: Number(baseFirst.rows[0].suggested_price_paise) };
+    await check(client, "base_products read sanity (KB-105b): an authenticated user can read the ready catalog", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`select 1 from base_products limit 5`);
+      if (res.rowCount === 0) throw new Error("expected rows (the local seed)");
+      return `${res.rowCount} rows visible`;
+    });
+    await checkRejects(client, "base_products is read-only (KB-105b): an authenticated user cannot INSERT", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into base_products (catalog_version, display_name, guard_category, default_unit, suggested_price_paise) values (1, 'Smuggled', 'other', 'kg', 100)`,
+      );
+    });
+    await check(client, "base_products is read-only (KB-105b): an authenticated user's UPDATE and DELETE affect zero rows, and the row is unchanged", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update base_products set suggested_price_paise = 1 where id = $1`, [baseRow.id]);
+      const del = await client.query(`delete from base_products where id = $1`, [baseRow.id]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`expected 0 / 0 rows, got ${upd.rowCount} / ${del.rowCount}`);
+      await asSuperuser(client);
+      const after = await client.query(`select suggested_price_paise from base_products where id = $1`, [baseRow.id]);
+      if (after.rowCount !== 1 || Number(after.rows[0].suggested_price_paise) !== baseRow.price) throw new Error("the base row changed or is gone");
+      return "0 / 0 rows affected; the row is unchanged";
+    });
+    await checkRejects(client, "base_products is read-only (KB-105b): the anon role cannot INSERT", "42501", async () => {
+      await asAnon(client);
+      await client.query(
+        `insert into base_products (catalog_version, display_name, guard_category, default_unit, suggested_price_paise) values (1, 'Smuggled', 'other', 'kg', 100)`,
+      );
+    });
+
+    // (3) cross-shop READS of the four learning tables (KB-307 proved only the writes).
+    // Each statement names the placeholders it uses: $1 shop, $2 shop product, $3 a distinguishing word.
+    const learningSeeds: Array<[string, string]> = [
+      ["learned_aliases", `insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, $3, $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`],
+      ["provisional_products", `insert into provisional_products (shop_id, spoken_name, seen_count, local_id, device_id) values ($1, $3, 1, gen_random_uuid(), 'test-device')`],
+      ["price_observations", `insert into price_observations (shop_id, shop_product_id, observed_price_paise, local_id, device_id) values ($1, $2, 123, gen_random_uuid(), 'test-device')`],
+      ["learning_events", `insert into learning_events (shop_id, bill_id, event_type, local_id, device_id) values ($1, null, 'learning_reset', gen_random_uuid(), 'test-device')`],
+    ];
+    for (const [shop, owner, product, word] of [
+      [shopA, ownerA, shopProductA, "a-read"],
+      [shopB, ownerB, shopProductB, "b-read"],
+    ] as const) {
+      await asUser(client, owner);
+      for (const [, sql] of learningSeeds) {
+        const all = [shop, product, word];
+        const used = [1, 2, 3].filter((n) => sql.includes(`$${n}`));
+        // Postgres wants parameters numbered 1..n with no gaps, so renumber the ones this statement uses.
+        let renumbered = sql;
+        used.forEach((n, i) => {
+          renumbered = renumbered.split(`$${n}`).join(`$#${i + 1}`);
+        });
+        await client.query(renumbered.split("$#").join("$"), used.map((n) => all[n - 1]));
+      }
+    }
+    for (const [table] of learningSeeds) {
+      await check(client, `learning read isolation (KB-105b): shop A reads zero ${table} rows of any other shop`, async () => {
+        await asUser(client, ownerA);
+        const res = await client.query(`select 1 from ${table} where shop_id <> $1`, [shopA]);
+        if (res.rowCount !== 0) throw new Error(`expected 0 rows, got ${res.rowCount}`);
+        return "0 rows of another shop, as expected";
+      });
+    }
+    await check(client, "learning read sanity (KB-105b): shop A sees its own row in each of the four learning tables", async () => {
+      await asUser(client, ownerA);
+      const seen: string[] = [];
+      for (const [table] of learningSeeds) {
+        const res = await client.query(`select 1 from ${table} where shop_id = $1`, [shopA]);
+        if ((res.rowCount ?? 0) < 1) throw new Error(`${table}: expected at least 1 own row, got ${res.rowCount}`);
+        seen.push(`${table} ${res.rowCount}`);
+      }
+      return seen.join(", ");
+    });
+
+    // (4) Storage `shop-logos` - public read, writes only by a member of the shop named by the FIRST FOLDER of the path.
+    // Checked through the database role (what the Storage API runs as), not the HTTP API.
+    // storage.protect_delete blocks direct DELETEs unless storage.allow_delete_query is 'true' - set it so the POLICY decides.
+    const logoB = `${shopB}/logo.png`;
+    const logoA = `${shopA}/logo.png`;
+    await asSuperuser(client);
+    await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', $1)`, [logoB]);
+    await client.query(`select set_config('storage.allow_delete_query', 'true', true)`);
+
+    await checkRejects(client, "shop-logos (KB-105b): shop A cannot INSERT an object under shop B's folder", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', $1)`, [`${shopB}/smuggled.png`]);
+    });
+    await check(client, "shop-logos sanity (KB-105b): shop A CAN insert an object under its own folder", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', $1)`, [logoA]);
+      return "accepted";
+    });
+    await check(client, "shop-logos (KB-105b): public read stays - shop A can SEE shop B's logo object", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`select 1 from storage.objects where bucket_id = 'shop-logos' and name = $1`, [logoB]);
+      if (res.rowCount !== 1) throw new Error(`expected 1 row, got ${res.rowCount}`);
+      return "visible, as designed";
+    });
+    await check(client, "shop-logos (KB-105b): shop A's UPDATE and DELETE of shop B's logo affect zero rows", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update storage.objects set metadata = '{"tampered":true}'::jsonb where bucket_id = 'shop-logos' and name = $1`, [logoB]);
+      const del = await client.query(`delete from storage.objects where bucket_id = 'shop-logos' and name = $1`, [logoB]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`expected 0 / 0 rows, got ${upd.rowCount} / ${del.rowCount}`);
+      return "0 / 0 rows affected";
+    });
+    await checkRejects(client, "shop-logos (KB-105b): shop A cannot RENAME its own object into shop B's folder (UPDATE name)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update storage.objects set name = $1 where bucket_id = 'shop-logos' and name = $2`, [`${shopB}/moved.png`, logoA]);
+    });
+    await checkRejects(client, "shop-logos (KB-105b): a path whose first folder is not a shop id is rejected (invalid uuid)", "22P02", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', 'not-a-shop/logo.png')`);
+    });
+    await checkRejects(client, "shop-logos (KB-105b): a path with no folder is rejected", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', 'logo.png')`);
+    });
+    await checkRejects(client, "shop-logos (KB-105b): the anon role cannot INSERT", "42501", async () => {
+      await asAnon(client);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('shop-logos', $1)`, [`${shopA}/anon.png`]);
+    });
+    await check(client, "shop-logos (KB-105b): shop B's logo object is intact after all of that", async () => {
+      await asSuperuser(client);
+      const res = await client.query(`select metadata from storage.objects where bucket_id = 'shop-logos' and name = $1`, [logoB]);
+      if (res.rowCount !== 1) throw new Error("the object is gone");
+      if (res.rows[0].metadata !== null) throw new Error(`metadata changed: ${JSON.stringify(res.rows[0].metadata)}`);
+      return "present, metadata untouched";
     });
   } finally {
     await client.query("rollback");

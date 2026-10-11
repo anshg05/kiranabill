@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 11 Oct 2026 (rev 45) · Supersedes rev 40
+**Last updated:** 11 Oct 2026 (rev 46) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1906,12 +1906,21 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 3. **What the rule still forbids:** a refusal to add an unknown product; a question mid-bill; a modal between the mic and the receipt (05 §8); a made-up price or a ₹0 line on a receipt. **What it permits:** the one pending check "Price needed", which the shopkeeper clears by typing a number or removing the line.
 4. Old wording, for the record: "Never block billing on an unknown product, missing customer name, or missing rate."
 
+### D73 — A shop may use the app on several devices at the same time; "one device per shop" is withdrawn 🟢
+
+**Owner decision, 11 Oct 2026** (rejecting audit proposal P3-3, "one phone per shop").
+1. **A shop may have several devices - phones, a laptop - signed in and billing at the same time.** This supersedes `02-ARCHITECTURE.md` §3 level 4 ("One device per shop in MVP"), D5's level-4 row, `16-APP-FLOW.md` §9 ("Two devices, same shop: out of MVP scope") and `12-PARKED.md` §B ("not needed for one counter"). Those lines were updated the same day.
+2. **D22's revisit trigger fires** - "before any multi-device support ships" - so before the pilot, not after a collision. What breaks today (checked on the local database and in `receiptNumbers.ts`): `receipt_number_blocks` has **no constraint but its primary key**; `reserveBlock` reads `max(block_end)` then inserts the next 50, so two devices can take overlapping blocks. Two customers then hold the same bill number, and the second device's bill is rejected at push because `bills` has `unique (shop_id, receipt_number)` - a permanent conflict, so **that bill can never sync**.
+3. **`11-STACK-DECISIONS.md`'s "no general sync engine" ADR warned** to reopen it "if two devices bill simultaneously". Reopened here. Bills stay append-only and idempotent (`push_bill`, `local_id`), so bills themselves do not conflict; the collision points are receipt blocks, the `shops` row, learning counts and anything else that assumed one device - all in **`KB-334`**. The ADR's conclusion (no general sync engine) stands unless `KB-334` finds otherwise.
+4. **Constraints on the fix (owner):** reservation is made race-safe **without `security definer`** (it stays invoker; RLS stays the boundary - D37) - a unique or exclusion constraint on the block range plus a retry on `23505` - with a two-device e2e race test. The learning-count overwrite (D66's "stale second phone") gets a server-side merge or an explicitly accepted limit; NI-40 and NI-41 are re-judged, fix or accept explicitly.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 11 Oct 2026 | `02-ARCHITECTURE.md` §3 level 4 / D5: "one device per shop in MVP"; D22: reservation is a plain SELECT-then-INSERT because only one device reserves | **Several devices at once (D73)**; reservation made race-safe in `KB-334`, before the pilot | Owner. The pilot shop may use phones and a laptop together. |
 | 11 Oct 2026 | D7: a product is added "inline during billing" by "the same database write" as the Catalog screen and the import; the client "falls back to server-side search" above 10,000 products | The Catalog screen and the file import write **online** (D62 §3, D68); **a product added mid-bill is bill-only** until promotion (`KB-320`, after the pilot starts); **there is no server-side search** - a shop's catalog is capped at 10,000 products (`MAX_SHOP_PRODUCTS`) | Owner, audit Part 3 (P3-2). D62 never said it overrode D7. |
 | 11 Oct 2026 | Hard rule 5: "Never block billing on an unknown product, missing customer name, or missing rate" | **D72:** never stop the shopkeeper adding items or ask a question for those reasons; a line with no price is priced (or removed) before Bill Banao; the app never invents a number | Owner, audit Part 3 (P3-1). D54 had already made "Price needed" a pending check. |
 | 10 Oct 2026 | `KB-403`: Supabase PITR enabled before real shop data enters; `KB-004`/`KI-05`: a wired `run-eval.ts` as the eval baseline | **Supabase Free + a scheduled `db dump` and a restore rehearsal (`KB-407`), PITR deferred** (D70); **`eval:real` + `bench:numbers` + `coverage:probe` are the eval baseline, `run-eval.ts` retired** (D69) | Owner, audit Part 1. Free has no backups; `run-eval.ts` never ran. |

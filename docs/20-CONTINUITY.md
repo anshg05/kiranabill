@@ -86,6 +86,7 @@ The checklist lives in `10-TRACKER.md` "Before deployment" — read it before ap
   starts from `CLAUDE.md` → `10-TRACKER.md`. Uncommitted work shows in `git status` — ask the agent to report it first.
 - **Long conversations get compacted** (summarised). Decisions survive only if they reached `docs/` — that's why each ticket ends
   with DOCUMENT.
+- **DOCUMENT is a sweep (owner, 11 Oct 2026):** each ticket updates 06 (status), the tracker, 12, 07 and every spec it touches, fixes any stale line noticed on the way, and names those fixes in the tracker's changelog row (`18-AGENT-CONTRACT.md` §3).
 - `git push` from PowerShell can fail on credentials; the agent pushes from its Bash tool instead.
 - Preview-pane screenshots can time out; the agent then proves UI state with in-page measurements (focus, sizes, overflow).
 - Single branch only: check `git worktree list` if a session seems to start in an odd checkout.

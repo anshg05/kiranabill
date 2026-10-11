@@ -100,6 +100,8 @@ and run again. **After two failed attempts, stop and report** rather than trying
 Update every doc the change affects. Then list what you updated. A ticket where docs weren't touched
 but behaviour changed is **not done**.
 
+**DOCUMENT is a sweep, not a note (standing rule, owner, 11 Oct 2026).** Every ticket's DOCUMENT step updates, in the same commit: `06-FEATURE-TICKETS.md` (status), `10-TRACKER.md` (Right now, test state, changelog), `12-PARKED.md` (new items opened, closed ones struck), `07-DECISIONS.md` (a new D-entry for any decision; the Superseded table when one is replaced), and **every spec the change touches** (01, 02, 03, 04, 05, 08, 16 …). **Any stale line you notice on the way is fixed in the same step and named in the tracker's changelog row** - fixing a stale doc line is never scope creep; fixing stale code still needs a plan.
+
 ### HANDOFF
 
 ```
