@@ -95,7 +95,7 @@ adoption friction.
 | F8 | Finalise + receipt | Image, PDF, WhatsApp. Kirana parchi format, not a tax invoice. |
 | F9 | Bill history | Cloud-stored, searchable by date, amount, customer name, item |
 | F10 | Learning system | Per-shop. Corrections → provisional (3 sightings) → promoted. |
-| F11 | Settings | Shop details, bill language, catalog source, developer mode |
+| F11 | Settings | Shop details, bill language, developer mode. (The catalog source is chosen once at onboarding and extended from Catalog → Add from ready catalog - not a Settings control.) |
 
 ### Out — deliberately, with reasons
 
@@ -125,7 +125,7 @@ Cement/steel/building materials. This is a grocery product.
 | Surface | How | When |
 |---|---|---|
 | Website | React PWA | MVP |
-| Installable PWA | Manifest + install prompt | MVP |
+| Installable PWA | Manifest, service worker and offline app load (D67); installed from the browser's own menu - no in-app install button | MVP |
 | Android app | Capacitor wrapper around the same build, Play Store | After web MVP is validated in the pilot shop |
 | iOS app | Same wrapper | Deferred — Apple charges $99/year vs Google's $25 one-time |
 
@@ -161,14 +161,14 @@ The MVP is validated when, measured over **20 consecutive real bills in the pilo
 | S3 | Median seconds from mic-tap to items on screen | < 2s for fast-path, < 5s otherwise |
 | S4 | Zero-edit bill accuracy | ≥ 80% |
 | S5 | Voice faster than typing the same bill | Yes, measured |
-| S6 | Fast-path coverage (no LLM call) | ≥ 60% of utterances — **60–70% target, MEASURED at 92.8% (`KB-009`, 15 Sep 2026)** |
+| S6 | Fast-path coverage (no LLM call) | ≥ 60% of utterances — **60–70% target; lab figure 94.2% (145/154, `npm run coverage:probe`, 10 Oct 2026, D69; first measured 92.8% by `KB-009`, 15 Sep 2026)** |
 | S7 | Bills lost or corrupted | Zero |
 
 **S2 is the release gate.** A billing app that is silently wrong about money is not shippable,
 regardless of how good every other number looks.
 
-**S6's 92.8% is a Phase 0 measurement, not this table's pilot number yet.** `KB-009` ran the real
-deterministic parser over 125 hand-authored fixture cases (`docs/10-TRACKER.md`), not the 20
+**S6's lab figure is a Phase 0 measurement, not this table's pilot number yet.** `KB-009` ran the real
+deterministic parser over 125 hand-authored fixture cases (92.8%; today's `coverage:probe` reads 145/154 = 94.2%, D69), not the 20
 consecutive real bills this table is officially measured against — a strong signal that the cost
 model and moat argument (`01-PRD.md` §"Compounding fast-path coverage") rest on real ground, not an
 assumption, but not yet the pilot-validated number. Revisit once real bills exist.

@@ -80,7 +80,7 @@ at 0% fast-path coverage and cannot buy past it. Coverage is earned per shop, pe
 
 **STT provider:** Groq Whisper large-v3 (not turbo — 22.3% vs 15.7% WER).
 **Phrase biasing:** every call carries the shop's top ~40 product names, ranked by `use_count`,
-capped at 600 characters (Whisper's prompt window is ~224 tokens).
+capped at 600 characters (Whisper's prompt window is ~224 tokens). **Built and sent, but empty today:** `BillingScreen` builds the list (`buildVocabularyPrompt`) and `/voice` passes it as the Whisper prompt; the list is empty because nothing writes `use_count` and `recentFrequency` is never supplied (`KB-321`). Turning it on is a `KB-321` decision, with a measured before/after.
 **Confidence:** Groq's real response carries no usable per-utterance confidence score in any response
 format — verified against the live API in `KB-204`. `TranscriptionProvider.transcribe()`'s
 `confidence?` is permanently unset for this provider. See `07-DECISIONS.md` D25.
@@ -168,7 +168,7 @@ sanity-check behind it.
 ### Instrumentation
 
 Log `fastPathHit` / `fastPathMiss` with a reason on every utterance. **Fast-path coverage is a
-tracked product metric**, target ≥60%.
+tracked product metric**, target ≥60%. **Not built (10 Oct 2026 audit):** only the dev server logs it; the runtime log is `KB-404`. The lab figure is `coverage:probe` (D69).
 
 ---
 
@@ -182,7 +182,7 @@ tracked product metric**, target ≥60%.
 | Catalog slice | Top 30 relevant products, down from the predecessor's 80 — measure whether accuracy drops before assuming it does |
 | Caching | ~~Cache the static grammar block; it is byte-identical on every call and ~43% of the prompt~~ **Not currently achievable — verified against the real API in `KB-205`.** Gemini's explicit context caching requires 2,048 minimum tokens; the actual grammar prompt tokenizes to 1,233. See `07-DECISIONS.md` D26. |
 | Temperature | 0.1 |
-| Retries | 3 with exponential backoff, then a fallback model |
+| Retries | **None** - one attempt, cut at 6 s server / 8 s client, no fallback model; on failure the transcript stays and the shopkeeper adds by hand or taps Retry (D50, `KB-319`) |
 | Output | Strict JSON array of proposed items |
 
 **A parse response is a proposal, never financial truth.** It always passes through Layer 3.
@@ -211,7 +211,7 @@ after the previous line's (NI-26).
 | **Length-scaled thresholds** | A 4-character word needs ~0.98 score; a multi-word phrase ~0.74. Short words are dangerous. |
 | **Phonetic variants** | ph↔f, w↔v swapping so "phorchune"/"fortune" both land |
 | **Unit conversion with rate-basis inference** | "500 gram" with a rate ≥10× the gram default infers a per-kg rate and converts |
-| **Review reason codes** | 11 codes surfaced as badges with explanations |
+| **Review reason codes** | 17 codes surfaced as badges with explanations |
 
 ### Number safety — the differentiating claim
 
@@ -227,7 +227,7 @@ and printed **₹300 for a ₹150 bill** on an invoice that looked perfect. Noth
 | Number in transcript, absent from items | **HIGH** | Flag: "did you mean…?" Pilloo silently lost "15 किलो". |
 | Two numbers in an utterance, one consumed | **HIGH** | Flag the line |
 | Qty parsed then dropped | **HIGH** | Flag |
-| `price_type: 'unknown'` (Rule 5) | MEDIUM | REVIEW badge, line editable, **bill still finalisable** |
+| `price_type: 'unknown'` (Rule 5) | MEDIUM | REVIEW badge, line editable, **finalisable once a price is typed** (an unpriced custom line is one pending check, never a question - owner decision 2, `finalise.test.tsx`) |
 | Product matched below confidence | MEDIUM | REVIEW badge |
 | Product not in catalog | LOW | Add anyway, flag, keep going. **Never block.** |
 
@@ -262,9 +262,7 @@ These exist because Pilloo violates 1, 2 and 4, and that is why it needs four tu
 The eval is not optional infrastructure — it is how the differentiator is defended.
 
 ### Current state
-0 pass · 10 warn · 3 fail · 12 never run. Fixtures hardcode prices the catalog has since changed
-(VC001 expects chini at ₹43, catalog says ₹45) and expect display names that no longer exist
-(`कनकी`, `Ganesh Poha`).
+**Replaced by D69 (10 Oct 2026).** The baseline is `npm run eval:real` (25 hits / 25 correct / 0 wrong of 39 real transcripts), `npm run bench:numbers` (129/129, 0 wrong) and `npm run coverage:probe` (145/154 = 94.2%); "no regression" means none of the three gets worse. `npm run eval` (`run-eval.ts`: 0 pass · 10 warn · 3 fail · 12 never run when last wired) is retired.
 
 ### Required rebuild
 
@@ -277,7 +275,7 @@ The eval is not optional infrastructure — it is how the differentiator is defe
 
 ### The number benchmark — new, and the important one
 
-100 utterances built specifically to stress numbers, because number accuracy is the product claim
+129 utterances (`eval/number-benchmark.json`) built specifically to stress numbers, because number accuracy is the product claim
 and **no ASR vendor publishes it**:
 
 - Hindi numerals: `ek do teen … das bees pachas sau`

@@ -75,9 +75,11 @@ glance · tap to fix anything wrong
 | Transcribing | Spinner + "सुन रहे हैं…" |
 | Transcript ready | **Show the transcript text immediately** |
 | Resolving | Items append as they resolve |
-| Done | Items in table, focus on the first flagged line |
-| Failed | Inline message + "Add manually" — never a dead end |
+| Done | Items in table; the newest line scrolls into view. Nothing takes focus - **Bill Banao** focuses the first flagged line |
+| Failed | Inline message + **"Add by hand"** on every failure, the heard transcript prefilled when there is one — never a dead end (built today for "Couldn't find an item" only; every failure: `KB-331`) |
 | Offline | Mic disabled, one-line reason |
+
+**Why "Done" does not move focus (owner, 11 Oct 2026, audit Part 2 correction 17):** the shopkeeper may still be speaking the next item, or reading the transcript; a focus jump (and the keyboard it can raise) while they are mid-thought would interrupt them. The list scrolls the newest line into view and the flags are visible where they are; the one deliberate focus move is **Bill Banao**, which the shopkeeper has just tapped, and which takes them to the first thing that still needs a check (`pendingFocus.test.tsx`).
 
 ### Layout behaviour on long bills
 
@@ -175,7 +177,7 @@ One screen, two options, no wrong answer:
 ```
   ┌────────────────────────────────┐   ┌────────────────────────────────┐
   │  Use the ready catalog          │   │  Start empty                   │
-  │  482 common grocery products    │   │  Add your own products as you  │
+  │  Common grocery products        │   │  Add your own products as you  │
   │  with Hindi names. Edit prices  │   │  bill. Products you speak are  │
   │  any time.                      │   │  learned automatically.        │
   │            [ Choose ]           │   │           [ Choose ]           │
@@ -193,7 +195,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 - Edit price inline
 - Filter: All · Custom · Learned · From base catalog
 - **"Add from ready catalog"** — browse and import base products at any time
-- **Learning suggestions panel** — price drift, unit drift, provisional products awaiting promotion.
+- **Learning suggestions panel** — price drift (built; **Ignore** and its saved state: `KB-329`), unit drift (`KB-322`), provisional products awaiting promotion (`KB-320`).
   Suggestions appear **only here**, never during billing.
 
 ### Implementation notes — Catalog (`KB-311`, 8 Oct 2026; D62)
@@ -393,7 +395,7 @@ Shop details, receipt language, developer mode.
 1. **No modal ever stands between the mic and the receipt.**
 2. **No question is asked mid-bill.** Customer defaults to "Cash".
 3. **Unknown products are added and flagged**, never refused.
-4. **Voice failure always falls back to search**, never to a dead end.
+4. **Voice failure always falls back to search**, never to a dead end. (Today the mic stays usable and Add item is always on screen; the "Add by hand" button is on the failure message for "Couldn't find an item" only - every failure: `KB-331`.)
 5. **Numbers are the loudest thing on a flagged line** — inline sentences, not icons.
 6. **A half-built bill survives** a network drop, a tab switch, and an app backgrounding.
 

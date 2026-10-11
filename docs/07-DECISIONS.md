@@ -1890,6 +1890,14 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 3. **So, before the pilot — `KB-407`:** a scheduled `supabase db dump --linked` kept **off this machine**, plus **one restore rehearsal into the local stack**. The rehearsal must also prove what a dump leaves out by default (the `auth` users) and how a restored shop is linked back to its owner — a backup that cannot be restored is not a backup.
 4. **Not covered:** Storage objects (none are used yet); the phones are a second copy only of their own unsynced bills (`KB-324`/`KB-326` pull a wiped phone back, but one phone is no backup of another's). **A paused project:** bills keep being made offline and sync on resume, but `/voice` checks the session against Supabase — expect voice to fail while paused (not tested).
 
+### D71 — The Catalog edits name, aliases and archive - never a hard delete, never a unit change 🟢
+
+**Owner decision, 11 Oct 2026, audit Part 2 (decision 22).** (01 F3 promised list, search, add, edit, delete, set price; the Catalog today edits price only.)
+1. **Rename (display name) and aliases edit** - built as `KB-330`, before the pilot. Alias rules are the import's (D68): 3+ characters, not equal to another product's name or alias.
+2. **Archive, not delete.** `is_active = false`. A hard delete is refused because bills refer to products (and a finalised bill is immutable, hard rule 2); the bill keeps its `display_name` snapshot (16 §9).
+3. **No unit change for now.** A product's unit sets what its price means (₹45 per kg is not ₹45 per packet); changing it in place would silently change the meaning of the stored price and of every later bill (hard rule 7: never auto-change a price or unit - this is the manual version of the same danger). **The remedy is archive + add again** with the right unit and price.
+4. Writes stay online (D62). Unit learning (`KB-322`) still only *suggests*.
+
 ---
 
 ## Superseded

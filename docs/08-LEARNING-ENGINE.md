@@ -102,7 +102,7 @@ seen_count reaches 3                    Shopkeeper taps "Save to catalog"
 - **Manual, one tap** — instant, for when the shopkeeper knows they'll sell it again
 
 **Why provisional products are excluded from fuzzy search until promoted:** a single mishearing
-would otherwise pollute matching immediately. Provisional entries match on **exact alias only**. The
+would otherwise pollute matching immediately. Provisional products are **invisible to the parser until promoted** (they are not in the matcher's catalog at all). The
 three-sighting threshold is the app watching before it trusts.
 
 ---
@@ -224,6 +224,8 @@ Every learning decision appends to `learning_events`:
   }
 }
 ```
+
+*Event kinds written today: `alias_confirmed`, `alias_suppressed`, `price_observed`, `product_sighted`. `alias_promoted` (above) arrives with `KB-320` / `KB-323`, when promotion exists.*
 
 This makes *"why did it learn that?"* answerable, and lets a bad learning run be inspected and
 reversed. A learning system you cannot audit is one you cannot trust with money.

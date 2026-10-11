@@ -55,7 +55,7 @@ sequenceDiagram
     App->>Supabase: Create user session
     Supabase-->>App: JWT
 
-    App->>Shopkeeper: Shop name, phone, logo
+    App->>Shopkeeper: Shop name, phone (logo later - KB-327)
     Shopkeeper->>App: Fills details
     App->>Supabase: INSERT shops, shop_members(owner)
 
@@ -108,7 +108,7 @@ sequenceDiagram
     Shopkeeper->>UI: "do kilo chini, teen Parle-G das wala"
     Shopkeeper->>UI: Taps stop
 
-    UI->>Domain: buildShopVocabulary()
+    UI->>Domain: buildVocabularyPrompt()
     Domain-->>UI: top 40 product names
     UI->>Voice: POST audio (binary) + vocabulary
     Voice->>Groq: transcribe with phrase bias
@@ -281,10 +281,8 @@ they'll sell it again.
 flowchart LR
     subgraph Writes
       A1[Catalog screen] --> W
-      A2[Excel bulk import] --> W
-      A3[Added mid-bill] --> W
-      W[Local write<br/>pending] --> S[Sync worker]
-      S --> DB[(Postgres<br/>shop_products)]
+      A2[File import] --> W
+      W[Online write<br/>D62] --> DB[(Postgres<br/>shop_products)]
     end
 
     subgraph Reads
@@ -299,9 +297,7 @@ flowchart LR
     style DB fill:#2C3E7B,color:#fff
 ```
 
-**Postgres is the source of truth.** All three write paths are the same database write. The cache
-exists so search is instant and works offline — above 10,000 products it falls back to server-side
-search.
+**Postgres is the source of truth.** Catalog writes are **online** (D62): the Catalog screen and the file import (`KB-314`, D68) write to Postgres, then the phone pulls them; `shop_products` on the phone is a pull-only cache. A product added mid-bill is **bill-only** - it does not create a catalog product until promotion (`KB-320`). The cache exists so search is instant and works offline; a shop's catalog is capped at 10,000 products (D7) - there is no server-side search.
 
 ---
 
@@ -309,11 +305,11 @@ search.
 
 | Situation | Behaviour |
 |---|---|
-| Voice fails (network, STT error) | Inline message + "Add manually". Never a dead end. |
-| Gemini fails after retries | Keep the transcript on screen, offer manual add. The transcript is not lost. |
+| Voice fails (network, STT error) | Inline message + "Add by hand" (transcript prefilled). Never a dead end. (Button on every failure: `KB-331`; today only for "Couldn't find an item", though Add item is always on screen.) |
+| Gemini fails (one attempt, 6 s - D50) | Keep the transcript on screen, offer manual add and Retry. The transcript is not lost. |
 | Unknown product | Added with a REVIEW flag. **Never blocks, never asks.** |
 | HIGH number flag | Finalise blocked until fixed or acknowledged |
-| Receipt number block exhausted offline | Device-prefixed fallback number, flagged, reconciled on sync |
+| Receipt number block exhausted offline | Full-device-UUID fallback number (D23), marked `receipt_number_source = 'fallback'`; never renumbered |
 | Sync fails repeatedly | Amber chip, tap for detail. **Billing continues.** |
 | App backgrounded mid-bill | Draft in IndexedDB. Returns exactly as left. |
 | Two devices, same shop | Out of MVP scope. One device per shop. |
