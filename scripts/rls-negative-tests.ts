@@ -322,11 +322,44 @@ async function main(): Promise<void> {
       }
     );
 
+    // KB-330 (D71): the Catalog renames, edits aliases and archives - plain UPDATEs - and never hard-deletes.
+    await check(client, "write isolation (KB-330): shop A's RENAME of shop B's product affects zero rows", async () => {
+      const res = await client.query(`update shop_products set display_name = 'Hijacked' where id = $1`, [shopProductB]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows affected, got ${res.rowCount}`);
+      return "0 rows affected, as expected";
+    });
+    await check(client, "write isolation (KB-330): shop A's ARCHIVE (is_active = false) of shop B's product affects zero rows", async () => {
+      const res = await client.query(`update shop_products set is_active = false, aliases = '["x"]'::jsonb where id = $1`, [shopProductB]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows affected, got ${res.rowCount}`);
+      return "0 rows affected, as expected";
+    });
+    await check(client, "write control (KB-330): shop A CAN rename and archive-flag its OWN product (1 row) - the checks above are not vacuous", async () => {
+      const res = await client.query(`update shop_products set display_name = display_name, is_active = is_active where id = $1`, [shopProductA]);
+      if (res.rowCount !== 1) throw new Error(`expected 1 row affected, got ${res.rowCount}`);
+      return "1 row affected, as expected";
+    });
+    await check(client, "no hard delete (KB-330): shop A's DELETE of its OWN shop_products row affects zero rows", async () => {
+      const res = await client.query(`delete from shop_products where id = $1`, [shopProductA]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows deleted, got ${res.rowCount}`);
+      return "0 rows deleted, as expected";
+    });
+    await check(client, "no hard delete (KB-330): shop A's DELETE of shop B's shop_products row affects zero rows", async () => {
+      const res = await client.query(`delete from shop_products where id = $1`, [shopProductB]);
+      if (res.rowCount !== 0) throw new Error(`expected 0 rows deleted, got ${res.rowCount}`);
+      return "0 rows deleted, as expected";
+    });
+
     await asSuperuser(client);
     await check(client, "write isolation sanity: shop B's product price is unchanged (5000)", async () => {
       const res = await client.query(`select price_paise from shop_products where id = $1`, [shopProductB]);
       if (Number(res.rows[0]?.price_paise) !== 5000) throw new Error(`expected 5000, got ${res.rows[0]?.price_paise}`);
       return "5000, as expected";
+    });
+    await check(client, "no hard delete sanity (KB-330): both products still exist, shop B's still named and active", async () => {
+      const res = await client.query(`select id, display_name, is_active from shop_products where id = any($1)`, [[shopProductA, shopProductB]]);
+      const b = res.rows.find((r: { id: string }) => r.id === shopProductB);
+      if (res.rowCount !== 2 || b?.display_name === "Hijacked" || b?.is_active !== true) throw new Error(`unexpected state: ${JSON.stringify(res.rows)}`);
+      return "both rows present, B untouched";
     });
     await asUser(client, ownerA);
 

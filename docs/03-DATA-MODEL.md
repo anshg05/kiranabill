@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 9 Oct 2026 (rev 12) · **Status:** Final for MVP
+**Last updated:** 11 Oct 2026 (rev 13) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -165,7 +165,7 @@ writable by none.
 | `source` | `text` | `'base'` \| `'custom'` \| `'learned'` |
 | `use_count` | `int` | Drives match boost and STT vocabulary rank |
 | `sku` / `barcode` | `text` NULL | Reserved. Not used in MVP — see `12-PARKED.md` NI-11. |
-| `is_active` | `boolean` | Soft delete — never hard-delete a product referenced by a bill |
+| `is_active` | `boolean` | Soft delete — never hard-delete a product referenced by a bill. The Catalog archives and restores it (`KB-330`, D71); an archived row still holds its `display_name` in the unique index, so its name is free only after it is renamed |
 | `local_id`, `device_id`, `updated_at` | | Sync fields. **`updated_at` is set by the server** (trigger, D62, migration `20261008090000`) on every insert and update — the catalog migration's "client-set, no server trigger" comment is superseded |
 
 **Unique:** `(shop_id, lower(display_name))`
@@ -327,6 +327,7 @@ create policy <t>_update on <t> for update
 ```
 
 `base_products`: `select` for `authenticated`; no insert/update/delete policy at all.
+`shop_products` has **no delete policy**: a hard delete by a member affects zero rows (`test:rls`, `KB-330`). Rename, aliases and archive are plain UPDATEs by a member of the shop.
 
 **Mandatory negative test:** two shops, authenticated as each, asserting zero rows visible from the
 other on every table. This is the single most important test in the suite.

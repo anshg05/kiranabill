@@ -289,7 +289,7 @@ describe("in the Catalog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Import from file" }));
     await pick(csv("Name,Price,Unit\nOld Soap,30,piece\n"));
     const list = await screen.findByRole("list", { name: "Already in your shop" });
-    expect(list.textContent).toMatch(/hidden/i);
+    expect(list.textContent).toMatch(/archived/i); // KB-330: "hidden" is now "archived"
   });
 
   it("after an import the Catalog shows the new products and the billing catalog is told to reload", async () => {

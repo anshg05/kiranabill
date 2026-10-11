@@ -87,7 +87,7 @@ adoption friction.
 |---|---|---|
 | F1 | Google sign-in | One method only. Phone OTP deferred — needs DLT/TRAI registration, which needs a registered business entity. |
 | F2 | Shop setup | Name, phone, logo. Choose starting catalog: prebuilt base, or empty. |
-| F3 | Catalog management | List, search, add, edit, delete, set price. Per-shop prices always. |
+| F3 | Catalog management | List, search, add, edit (name, other names), **archive (never delete - bills refer to products; `KB-330`, D71)**, set price. Per-shop prices always. |
 | F4 | **Voice billing** | The product. 5-layer pipeline. See `04-VOICE-PIPELINE.md`. |
 | F5 | Manual add with type-ahead | The floor. When voice fails, this keeps the shopkeeper in the app. |
 | F6 | Editable bill table | Qty, rate, total, remove, per-line review flags |

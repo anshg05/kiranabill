@@ -223,7 +223,10 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
     ]);
     const byId = new Map(products.map((p) => [p.id, p]));
     setLearning({
-      aliases: [...aliases].sort((a, b) => b.hitCount - a.hitCount).map((row) => ({ row, product: byId.get(row.shopProductId)?.displayName ?? "(removed product)" })),
+      aliases: [...aliases].sort((a, b) => b.hitCount - a.hitCount).map((row) => {
+        const p = byId.get(row.shopProductId);
+        return { row, product: p ? (p.isActive ? p.displayName : `${p.displayName} (archived)`) : "(removed product)" }; // KB-330: archived = dormant, not removed
+      }),
       provisional: provisional.filter((p) => p.promotedAt === null),
       suggestions: suggestions.flatMap((s) => {
         const p = byId.get(s.catalogId);

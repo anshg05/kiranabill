@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 11 Oct 2026 (rev 49) · Supersedes rev 40
+**Last updated:** 11 Oct 2026 (rev 50) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1897,6 +1897,7 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 2. **Archive, not delete.** `is_active = false`. A hard delete is refused because bills refer to products (and a finalised bill is immutable, hard rule 2); the bill keeps its `display_name` snapshot (16 §9).
 3. **No unit change for now.** A product's unit sets what its price means (₹45 per kg is not ₹45 per packet); changing it in place would silently change the meaning of the stored price and of every later bill (hard rule 7: never auto-change a price or unit - this is the manual version of the same danger). **The remedy is archive + add again** with the right unit and price.
 4. Writes stay online (D62). Unit learning (`KB-322`) still only *suggests*.
+5. **Built as `KB-330` (D77)**, with an "Add product" form added by the owner so "archive + add again" is possible without a file.
 
 ### D72 — Hard rule 5 reworded: nothing stops the shopkeeper, but a line with no price is priced before Bill Banao 🟢
 
@@ -1948,6 +1949,17 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 3. **D50 intact:** an utterance that failed is still never silently lost - "Not added" entries, Retry and ✕ work as before, and **adding by hand does not dismiss an entry** (nothing can know the added item is what was said; the shopkeeper taps ✕ or Retry succeeds). Not-added entries still block Bill Banao.
 4. **Offline keeps its plain reason line** (it is not a failure view; Add item sits right under it). **No Retry for a transcription failure** - the audio is not kept. On the saved screen the button starts the next bill first, like Add item and the mic.
 5. English wording only; the strings for `KB-332` are listed on that ticket's row in `06`.
+
+### D77 — Catalog rename, other names, archive / restore and "Add product" (built as `KB-330`) 🟢
+
+**Owner decisions, 11 Oct 2026, `KB-330`** (plan approved; decision 1 changed; decisions 2-9 accepted). Builds D71.
+1. **Add product (the owner's change):** a small Catalog form - **name, unit, price** - using the KB-314 import's normalisation, unit and price rules and its insert path (one import row, `source = 'custom'`), online only (D62). Why: a shop could not put a new product into its catalog without a file, so anything outside the Ready catalog stayed bill-only and priced by hand every time. It is also the clean "archive + add again" remedy for a wrong unit (D71 §3). **Every field starts empty and stays what the shopkeeper typed - the app never picks a unit or a price** (hard rule 7).
+2. **One Edit sheet** per product: Name, Other names, the unit as read-only text, Save, Archive. **Save sends only the changed columns**, and the aliases only when their text was edited; a unit or a price cannot be in the write. Last write wins per column (D74); two phones adding different aliases at once keep the later list - accepted.
+3. **Name checks include archived products** (the unique index covers every row); a rename onto a taken name is refused before any write, and again on the server's 23505. The alias rules are the import's (3-60 characters, not another product's name or alias - archived ones too, no repeats); **a dropped alias is listed before Save**. A pure rename never rewrites untouched aliases.
+4. **No auto-keeping of the old name:** the note "“Old” will stop matching when spoken." offers **Keep as another name**, which only edits the field.
+5. **Archive** = `is_active = false`, one tap, **no confirm dialog**, an Undo line and an **Archived** list with Restore (an archived product can still be renamed, which frees its name). It leaves Add item, search, Layer 1, the Layer 2 slice and the vocabulary (all read `loadShopCatalog`, which filters inactive products - proven by a test per consumer) and stays on old bills, receipts and History (own `display_name` snapshots - proven end to end). Learned aliases go dormant and return on Restore; Settings > Developer mode shows "(archived)".
+6. **No hard delete, ever:** `shop_products` has no delete policy; `test:rls` now proves a member's DELETE (own or another shop's) affects zero rows, with a plant that adds the policy. **No unit-change trigger** in the database: the UI has no unit field and a test pins the write's columns.
+7. **Found while building:** the import derives a row's `local_id` from its name (so a file re-run can only be refused), which made a name that was renamed away impossible to re-add. "Add product" therefore passes a fresh `local_id`; the **file import keeps the name-derived one** - re-importing a name that was once renamed away is reported "already there" (`NI-48`).
 
 ---
 

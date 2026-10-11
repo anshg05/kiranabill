@@ -168,6 +168,17 @@ describe("KB-312 - S7 Settings", () => {
   });
 });
 
+describe("KB-330 - an archived product in Developer mode", () => {
+  it("a learned alias of an archived product says '(archived)' - it is dormant, not removed", async () => {
+    await seedLearning();
+    const sugarId = (await db.shopProducts.toArray()).find((p) => p.displayName === "Sugar")!.id;
+    await db.shopProducts.update(sugarId, { isActive: false });
+    await open();
+    const dev = within(await openDeveloper());
+    expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("chini → Sugar (archived)");
+  });
+});
+
 describe("KB-312 - Developer mode", () => {
   it("is collapsed by default, and shows this shop's learning when opened: aliases, provisional products, price suggestions - read-only", async () => {
     await seedLearning();

@@ -13,9 +13,9 @@ export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 /** D7: a shop's catalog is bounded at 10,000 products (the client index falls back to the server above that). */
 export const MAX_SHOP_PRODUCTS = 10_000;
 export const MIN_ALIAS_CHARS = 3;
-const NAME_MAX_CHARS = 100;
-const UNIT_MAX_CHARS = 12;
-const ALIAS_MAX_CHARS = 60;
+export const NAME_MAX_CHARS = 100;
+export const UNIT_MAX_CHARS = 12;
+export const ALIAS_MAX_CHARS = 60;
 const CATEGORY_MAX_CHARS = 60;
 const CODE_MAX_CHARS = 40;
 
@@ -156,7 +156,7 @@ export interface ImportPreview {
 const EMPTY_COUNTS = { new: 0, exists: 0, problem: 0 };
 const ALIAS_SPLIT = /[,;|\n\r]+/;
 
-function splitAliases(text: string): string[] {
+export function splitAliases(text: string): string[] {
   return [...new Set(text.split(ALIAS_SPLIT).map(nameKey).filter((a) => a !== ""))];
 }
 

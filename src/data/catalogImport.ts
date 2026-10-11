@@ -25,6 +25,8 @@ export interface ImportRow {
   aliases: string[];
   sku: string | null;
   barcode: string | null;
+  /** The row's idempotency key. Omitted = derived from the name (a file re-run can only be refused, never doubled); "Add product" passes a fresh one, so a name that was renamed away can be used again (KB-330). */
+  localId?: string;
 }
 
 export interface ImportOutcome {
@@ -58,7 +60,7 @@ export async function importProducts(
     sku: r.sku,
     barcode: r.barcode,
     // the same name is always the same id: a repeated insert can only be refused, never doubled
-    local_id: deterministicUuid("catalog-import", shopId, nameKey(r.name)),
+    local_id: r.localId ?? deterministicUuid("catalog-import", shopId, nameKey(r.name)),
     device_id: deviceId,
   });
 

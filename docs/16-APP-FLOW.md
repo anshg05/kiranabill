@@ -314,6 +314,8 @@ flowchart LR
 | App backgrounded mid-bill | Draft in IndexedDB. Returns exactly as left. |
 | Two devices, same shop | **Supported (D73, D74).** Bills append and push idempotently; receipt-number blocks cannot overlap (an exclusion constraint, and the device that loses a race retries - `KB-334`); each device has its own draft; a settings push sends only the changed fields |
 | Product renamed after old bills exist | Old bills keep their `display_name` snapshot |
+| Product archived (Catalog, `KB-330`) | Leaves Add item, search, voice matching and the vocabulary; stays on its old bills; a bill in progress keeps its line; Restore brings it back |
+| New product not in the ready catalog | Catalog > Add product (name, unit, price - typed, never defaulted; online) - or a bill-only line until then (`KB-320` promotes after the pilot) |
 
 ---
 

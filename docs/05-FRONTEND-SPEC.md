@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 11 Oct 2026 (rev 17) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 11 Oct 2026 (rev 18) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -193,7 +193,8 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 - Search (same index as Add item)
 - Rows: name, unit, price, `use_count`
 - Edit price inline
-- Filter: All · Custom · Learned · From base catalog
+- Filter: All · Custom · Learned · From base catalog · **Archived** (`KB-330`)
+- **Edit** on every row (`KB-330`): rename, other names, Archive. **"Add product"** (`KB-330`): name, unit, price.
 - **"Add from ready catalog"** — browse and import base products at any time
 - **Learning suggestions panel** — price drift (built; **Ignore** and its saved state: `KB-329`), unit drift (`KB-322`), provisional products awaiting promotion (`KB-320`).
   Suggestions appear **only here**, never during billing.
@@ -221,6 +222,18 @@ Either way, base products can be pulled in later from Catalog → "Add from read
   bills (now ₹90)" and **Use ₹95**, applied only by that tap, through the same save. Provisional products are shown
   read-only ("“kurkure” — said 2 times, not in the catalog"; `KB-320` saves them). No unit drift (nothing records
   it yet).
+
+### Implementation notes — Edit, Archive, Add product (`KB-330`, 11 Oct 2026; D71, D77)
+
+- **All three are online only**, like the price edit (D62): offline, Edit, Add product and Restore are disabled with the same "Needs internet to change the catalog"; nothing opens.
+- **Edit** opens an overlay (Android back closes it; an update never reloads under it): **Name**, **Other names** (aliases, one per line or comma-separated), the **unit as plain text** ("Unit: kg. A unit can't be changed here - it decides what the price means. To change it, archive this product and add it again with the right unit."), **Save** and **Archive**.
+  - **Rename:** the name is normalised as in the import (NFC, controls dropped, whitespace collapsed, trimmed), 1-100 characters, and refused - before any write - when another product has it (case-insensitive; **an archived product's name counts**: the database index covers every row): "Another product is already called “x”" (+ " (archived)"). When the old name is no longer a name or an alias, a note says "“Old” will stop matching when spoken." with **Keep as another name**, which only puts it in the field (nothing is saved until Save).
+  - **Other names:** the import's rules - at least 3 and at most 60 characters, not another product's name or alias (archived ones included), no repeats; the product's own name is skipped as redundant. **A dropped one is listed before Save** ("These will not be saved: “ab” - shorter than 3 characters"), only once the field has been edited.
+  - **Save sends only the changed columns**, and the aliases only if their text was edited - so a pure rename never rewrites a list the shopkeeper did not open, and a rename on one phone and an alias edit on another both survive (last write wins per column, D74). A unit or a price cannot be in the write (type-limited, tested).
+  - A name the server refuses (another phone took it): "Another product is already called “x”" and the sheet stays; any other failure: "Couldn't save - check the internet and try again", the typing kept.
+- **Archive** (`is_active = false`; **never a delete** - no delete policy exists, and a test proves a hard delete affects zero rows): one tap, **no confirm dialog** (hard rule 6 spirit; it is reversible); a status line "“x” archived - Undo". The product leaves Add item, the Catalog list, search, the Layer 1 parser, the Layer 2 slice and the Whisper vocabulary (all read the active products), but **stays on every old bill, receipt and History row** (they keep their own `display_name`); a bill in progress keeps its line. Its learned aliases go dormant and return on Restore; Settings > Developer mode shows "(archived)" beside it.
+- **Archived** filter: archived products (alphabetical; search works), price as text, **Restore** and **Edit** (so an archived name can be renamed to free it). Empty: "No archived products."
+- **Add product** (D77): **Name, Unit, Price per unit - all empty, none defaulted** (unit chips kg / gm / liter / ml / piece are taps by the shopkeeper; an unusual unit is allowed with "it is saved as typed"). The import's rules and insert path: price as integer paise (never a float), more than 0, "45,50" is never guessed; unit in the app's spelling; the catalog's 10,000 cap. Errors are shown together ("Name needed", "Unit needed", "Price needed"). Written as one import row (`source = 'custom'`), then the status line "x added - ₹62.50 / kg". This is also the "archive + add again" remedy for a wrong unit - after renaming the archived one if the name is the same.
 
 ### Implementation notes — Import from file (`KB-314`, 10 Oct 2026; D68)
 

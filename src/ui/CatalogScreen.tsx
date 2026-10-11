@@ -3,13 +3,17 @@ import { ArrowLeft } from "lucide-react";
 import type { KiranaBillDB, LocalBaseProduct, LocalProvisionalProduct, LocalShopProduct } from "@/data/db";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
 import type { ImportOutcome, ImportRow } from "@/data/catalogImport";
+import type { NewProduct, OtherProduct, ProductPatch } from "@/domain/catalogEdit";
 import { listPendingPriceSuggestions, listProvisionalProducts } from "@/data/learningAudit";
 import { loadShopCatalog } from "@/data/shopCatalog";
 import { MAX_RATE_PAISE, parseMoneyInput } from "@/domain/billEdit";
+import { nameKey } from "@/domain/catalogImport";
 import { prepareParserCatalog, searchCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { PriceSuggestion } from "@/domain/learning";
 import { formatRupees } from "@/domain/money";
 import { CatalogImportSheet } from "./CatalogImportSheet";
+import { AddProductSheet } from "./AddProductSheet";
+import { EditProductSheet, SAVE_FAILED_TEXT } from "./EditProductSheet";
 import { EditableValue } from "./EditableValue";
 import { useBackEntry } from "./useBackEntry";
 import { priceDriftText } from "./priceDriftText";
@@ -21,20 +25,23 @@ import { useBrowserOnline } from "./useBrowserOnline";
 // - Edits are ONLINE only (Q1): a price edit and "Add from ready catalog" go
 //   through `save` / `add` (data/catalogEdit.ts - Postgres, then the re-pull).
 //   This screen never writes Dexie; it re-reads it after a write.
+// - KB-330 (D71, D77): Edit (rename, other names, Archive), an "Archived" list with Restore, and "Add product" - all
+//   ONLINE like the price edit, through injected writers; absent writers = no button (like importRows).
 // - Suggestions (only here, never in billing): a price paid on 3 bills,
 //   applied only by a tap through the same save; provisional products are
 //   read-only (KB-320 saves them).
 
-type Filter = "all" | LocalShopProduct["source"];
+type Filter = "all" | "archived" | LocalShopProduct["source"];
 const FILTERS: readonly { value: Filter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "custom", label: "Custom" },
   { value: "learned", label: "Learned" },
   { value: "base", label: "From base catalog" },
+  { value: "archived", label: "Archived" },
 ];
 const READY_SHOWN = 100;
 const OFFLINE = "Needs internet to change the catalog";
-const SAVE_FAILED = "Couldn't save — check the internet and try again";
+const SAVE_FAILED = SAVE_FAILED_TEXT;
 
 const priceText = (paise: number, unit: string) => `${formatRupees(paise)} / ${unit}`;
 const usedText = (n: number) => (n === 0 ? "Not used yet" : n === 1 ? "Used once" : `Used ${n} times`);
@@ -47,6 +54,10 @@ interface CatalogScreenProps {
   add: (base: LocalBaseProduct) => Promise<CatalogWriteResult>;
   /** KB-314: bulk import from a file (data/catalogImport.ts). Absent = no "Import from file". */
   importRows?: (rows: ImportRow[], onProgress: (done: number, total: number) => void) => Promise<ImportOutcome>;
+  /** KB-330: rename / other names (only the changed columns), archive-restore, and a new product. Absent = no button. */
+  saveDetails?: (productId: string, patch: ProductPatch) => Promise<CatalogWriteResult>;
+  setActive?: (productId: string, active: boolean) => Promise<CatalogWriteResult>;
+  create?: (product: NewProduct) => Promise<CatalogWriteResult>;
   /** After a write the server accepted - billing reloads its catalog (new lines use it). */
   onChanged: () => void;
   onClose: () => void;
@@ -60,7 +71,7 @@ interface Loaded {
   provisional: LocalProvisionalProduct[];
 }
 
-export function CatalogScreen({ localDb, shopId, save, add, importRows, onChanged, onClose }: CatalogScreenProps) {
+export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, onChanged, onClose }: CatalogScreenProps) {
   useBackEntry("kbCatalog", onClose);
   const online = useBrowserOnline();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -70,6 +81,10 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
   const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
   const [readyOpen, setReadyOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [editing, setEditing] = useState<LocalShopProduct | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  // One status line: "“X” archived — Undo", or "X added — ₹.. / unit".
+  const [note, setNote] = useState<{ text: string; undoId?: string } | null>(null);
 
   const reload = useCallback(async () => {
     const [all, catalog, suggestions, provisional] = await Promise.all([
@@ -104,9 +119,32 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
       .finally(() => setSaving((s) => without(s, p.id)));
   };
 
+  const others = (except?: string): OtherProduct[] =>
+    (loaded?.all ?? []).filter((p) => p.id !== except).map((p) => ({ id: p.id, displayName: p.displayName, aliases: p.aliases, isActive: p.isActive }));
+  /** After a write the server accepted: re-read Dexie (the writer re-pulled) and tell billing to reload its catalog. */
+  const wrote = async () => {
+    await reload();
+    onChanged();
+  };
+  const restore = (p: LocalShopProduct) => {
+    if (!setActive) return;
+    setSaving((s) => new Set(s).add(p.id));
+    setFailed((s) => without(s, p.id));
+    setActive(p.id, true)
+      .then(async (r) => (r.ok ? wrote() : setFailed((s) => new Set(s).add(p.id))))
+      .catch(() => setFailed((s) => new Set(s).add(p.id)))
+      .finally(() => setSaving((s) => without(s, p.id)));
+  };
+
   const typed = query.trim();
   const shown = useMemo(() => {
     if (!loaded) return [];
+    if (filter === "archived") {
+      const q = nameKey(typed);
+      return loaded.all
+        .filter((p) => !p.isActive && (q === "" || [p.displayName, ...p.aliases].some((a) => nameKey(a).includes(q))))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+    }
     const byId = new Map(loaded.products.map((p) => [p.id, p]));
     const usage = Object.fromEntries(loaded.products.map((p) => [p.id, { useCount: p.useCount }]));
     const list = [...typed].length >= 2
@@ -124,7 +162,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
 
   return (
     <section aria-label="Catalog" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
-      <div inert={readyOpen || importOpen} aria-hidden={readyOpen || importOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
+      <div inert={readyOpen || importOpen || editing !== null || addOpen} aria-hidden={readyOpen || importOpen || editing !== null || addOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
@@ -158,6 +196,16 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
             >
               Add from ready catalog
             </button>
+            {create && (
+              <button
+                type="button"
+                aria-disabled={!online}
+                onClick={online ? () => setAddOpen(true) : undefined}
+                className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
+              >
+                Add product
+              </button>
+            )}
             {importRows && (
               <button
                 type="button"
@@ -172,7 +220,27 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {hasSuggestions && loaded && (
+          {note && (
+            <p role="status" className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-4 py-2 text-[13px]">
+              <span className="[overflow-wrap:anywhere]">{note.text}</span>
+              {note.undoId && setActive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = note.undoId!;
+                    setNote(null);
+                    void setActive(id, true)
+                      .then((r) => (r.ok ? wrote() : setFailed((s) => new Set(s).add(id))))
+                      .catch(() => setFailed((s) => new Set(s).add(id)));
+                  }}
+                  className="min-h-11 px-3 font-medium text-indigo"
+                >
+                  Undo
+                </button>
+              )}
+            </p>
+          )}
+          {hasSuggestions && loaded && filter !== "archived" && (
             <section aria-label="Suggestions" className="border-b border-line px-4 py-3">
               <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Suggestions</h3>
               <ul className="mt-1 flex flex-col gap-2">
@@ -200,10 +268,13 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
               </ul>
             </section>
           )}
-          {loaded && loaded.products.length > 0 && shown.length === 0 && (
+          {loaded && filter === "archived" && shown.length === 0 && (
+            <p className="px-4 py-6 text-center">{typed ? "No products found." : "No archived products."}</p>
+          )}
+          {loaded && filter !== "archived" && loaded.products.length > 0 && shown.length === 0 && (
             <p className="px-4 py-6 text-center">{typed ? "No products found." : "No products of this kind."}</p>
           )}
-          {loaded && loaded.products.length === 0 && !typed && (
+          {loaded && filter !== "archived" && loaded.products.length === 0 && !typed && (
             <p className="px-4 py-6 text-center">No products yet — add them from the ready catalog or import a file.</p>
           )}
           {loaded && (
@@ -215,7 +286,9 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
                     <span className="block text-[13px] text-ink-soft">{usedText(p.useCount)}</span>
                   </span>
                   <span className="flex flex-col items-end">
-                    {online && !saving.has(p.id) ? (
+                    {!p.isActive ? (
+                      <span className="tabular-nums">{priceText(p.pricePaise, p.unit)}</span>
+                    ) : online && !saving.has(p.id) ? (
                       <EditableValue
                         label={`Price of ${p.displayName}`}
                         fieldId={`price-${p.id}`}
@@ -238,12 +311,82 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, onChange
                       </span>
                     )}
                   </span>
+                  {saveDetails && (
+                    <span className="flex items-center gap-1">
+                      {!p.isActive && setActive && (
+                        <button
+                          type="button"
+                          aria-label={`Restore ${p.displayName}`}
+                          aria-disabled={!online || saving.has(p.id)}
+                          onClick={online && !saving.has(p.id) ? () => restore(p) : undefined}
+                          className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium aria-disabled:opacity-50"
+                        >
+                          Restore
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`Edit ${p.displayName}`}
+                        aria-disabled={!online}
+                        onClick={online ? () => setEditing(p) : undefined}
+                        className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium aria-disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </div>
       </div>
+      {editing && loaded && saveDetails && (
+        <EditProductSheet
+          key={editing.id}
+          product={editing}
+          others={others(editing.id)}
+          online={online}
+          onSave={async (patch) => {
+            const r = await saveDetails(editing.id, patch);
+            if (r.ok) {
+              await wrote();
+              setEditing(null);
+            }
+            return r;
+          }}
+          onArchive={
+            editing.isActive && setActive
+              ? async () => {
+                  const r = await setActive(editing.id, false);
+                  if (r.ok) {
+                    await wrote();
+                    setEditing(null);
+                    setNote({ text: `“${editing.displayName}” archived`, undoId: editing.id });
+                  }
+                  return r;
+                }
+              : undefined
+          }
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {addOpen && loaded && create && (
+        <AddProductSheet
+          existing={others()}
+          online={online}
+          onCreate={async (product) => {
+            const r = await create(product);
+            if (r.ok) {
+              await wrote();
+              setAddOpen(false);
+              setNote({ text: `${product.name} added — ${priceText(product.pricePaise, product.unit)}` });
+            } else if (r.reason === "duplicate") await reload(); // the other phone's row was just re-pulled
+            return r;
+          }}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
       {importOpen && loaded && importRows && (
         <CatalogImportSheet
           existing={loaded.all}

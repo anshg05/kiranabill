@@ -257,7 +257,7 @@ function Preview({ fileName, headers, mapping, preview, error, online, onMapping
                   {r.status.kind === "exists" && (
                     <span className="text-ink-soft">
                       {" "}— your shop has {priceUnit(r.status.existingPricePaise, r.status.existingUnit)}; the file says {priceUnit(r.status.filePricePaise, r.unit)}. Not changed.
-                      {r.status.hidden ? " (a hidden product)" : ""}
+                      {r.status.hidden ? " (an archived product)" : ""}
                     </span>
                   )}
                 </li>

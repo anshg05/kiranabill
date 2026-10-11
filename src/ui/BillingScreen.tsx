@@ -21,7 +21,7 @@ import { ShareBar } from "./ShareBar";
 import { HistoryScreen } from "./HistoryScreen";
 import { CatalogScreen } from "./CatalogScreen";
 import { SettingsScreen } from "./SettingsScreen";
-import { addFromReadyCatalog, saveProductPrice } from "@/data/catalogEdit";
+import { addCustomProduct, addFromReadyCatalog, saveProductDetails, saveProductPrice, setProductActive } from "@/data/catalogEdit";
 import { importProducts } from "@/data/catalogImport";
 import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
@@ -250,6 +250,9 @@ export function BillingScreen() {
         save={(id, pricePaise) => saveProductPrice(supabase, localDb, shop.id, id, pricePaise)}
         add={(base) => addFromReadyCatalog(supabase, localDb, shop.id, deviceId, base)}
         importRows={(rows, onProgress) => importProducts(supabase, localDb, shop.id, deviceId, rows, onProgress)}
+        saveDetails={(id, patch) => saveProductDetails(supabase, localDb, shop.id, id, patch)}
+        setActive={(id, active) => setProductActive(supabase, localDb, shop.id, id, active)}
+        create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
         onChanged={() => setCatalogVersion((v) => v + 1)}
         onClose={() => setCatalogOpen(false)}
       />
