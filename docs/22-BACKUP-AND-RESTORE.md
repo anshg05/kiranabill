@@ -94,7 +94,7 @@ When: the production project is gone, wiped or corrupted. You need: the repo on 
 | 11 Oct 2026 | The pipeline against the **local stack** with a throwaway key: backup → decrypt → scratch database → counts | 23 tables, 97,137 rows, **every count equal** to the manifest **and** to the live local database |
 | 11 Oct 2026 | One **real production** backup (`--source linked`), encrypted with a throwaway key, restored into the scratch database | 15 tables, 553 rows, **every count equal** to the manifest |
 | 11 Oct 2026 | The same pipeline as `scripts/backup/backupPipeline.e2e.test.ts` (8 tests; in `npm run test:e2e`) | green, twice |
-| *(owner, pending)* | The first real backup, decrypted with the **real** key | see the tracker |
+| 11 Oct 2026 | **The first real backup** (`20261011T145844Z`, uploaded to Drive), opened by the owner with the **REAL** key and passphrase from Bitwarden in a temporary keyring (deleted afterwards), then `backup:rehearse --interactive` | manifest decrypted; 15 tables, 553 rows, **every count equal** |
 
 ### Not yet proven
 
