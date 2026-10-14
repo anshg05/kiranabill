@@ -23,6 +23,7 @@ import { CatalogScreen } from "./CatalogScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { addCustomProduct, addFromReadyCatalog, saveProductDetails, saveProductPrice, setProductActive } from "@/data/catalogEdit";
 import { importProducts } from "@/data/catalogImport";
+import { ignorePriceSuggestionFor } from "@/data/learningAudit";
 import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
@@ -253,6 +254,7 @@ export function BillingScreen() {
         saveDetails={(id, patch) => saveProductDetails(supabase, localDb, shop.id, id, patch)}
         setActive={(id, active) => setProductActive(supabase, localDb, shop.id, id, active)}
         create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
+        ignoreSuggestion={(id) => ignorePriceSuggestionFor(localDb, shop.id, id, deviceId, Date.now())}
         onChanged={() => setCatalogVersion((v) => v + 1)}
         onClose={() => setCatalogOpen(false)}
       />

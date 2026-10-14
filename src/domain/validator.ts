@@ -3,15 +3,13 @@
  * grammar.ts's exact-match stopgap - not yet wired in, see the ticket
  * handoff). Scope is deliberately the matcher only: category guards,
  * length-scaled thresholds, phonetic variants, KI-20 duplicate handling,
- * and unit rate-basis inference. The broader "Layer 3 confidence gate" in
+ * (a legacy "rate-basis inference" that rounded a spoken rate was deleted in KB-329 - it was never wired in, and rounding breaks hard rule 1). The broader "Layer 3 confidence gate" in
  * docs/04-VOICE-PIPELINE.md section 5 (11+ review-reason codes,
  * "cannot finalise unacknowledged") is explicitly OUT of scope here - it
  * needs bill/UI state that doesn't exist in Phase 0, and would be pure
  * functions with no caller. See docs/07-DECISIONS.md for that call.
  */
 
-import type { CatalogEntry } from "./catalog.js";
-import type { Paise } from "./money.js";
 import { lookupCandidates, type CatalogIndex } from "./catalogIndex.js";
 
 /**
@@ -134,20 +132,4 @@ export function matchProduct(spokenPhrase: string, opts: MatchOptions): MatchOut
   }
 
   return { kind: "matched", catalogId: best.catalogId, score: best.score };
-}
-
-/**
- * If a rate is spoken in gm but is >=10x the catalog's actual per-gram
- * price, the speaker almost certainly meant a per-kg rate ("500 gram, 60
- * rupay wala" - 60 is obviously Rs.60/kg, not Rs.60/gm).
- * docs/14-LEGACY-REFERENCE.md section 8. Distinct from grammar.ts's plain
- * SI unit conversion (docs/07-DECISIONS.md D13/D14) - this is about a
- * RATE that looks like the wrong magnitude for its stated unit, not a
- * qty/unit mismatch.
- */
-export function inferRateBasis(catalogEntry: CatalogEntry, spokenUnit: string, spokenRatePaise: Paise): Paise {
-  if (spokenUnit !== "gm" || catalogEntry.unit !== "kg") return spokenRatePaise;
-  const perGramCatalogRate = catalogEntry.suggestedPricePaise / 1000;
-  if (perGramCatalogRate <= 0 || spokenRatePaise < perGramCatalogRate * 10) return spokenRatePaise;
-  return Math.round(spokenRatePaise / 1000);
 }

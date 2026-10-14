@@ -10,6 +10,7 @@
 
 import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct } from "./db.js";
 import {
+  PRICE_SUGGESTION_IGNORE_MS,
   getPriceSuggestions,
   type LearningState,
   type PriceSuggestion,
@@ -27,21 +28,52 @@ export async function listProvisionalProducts(
   return db.provisionalProducts.where("shopId").equals(shopId).toArray();
 }
 
+/** KB-329 (D78): the learning event a tap on [Ignore] writes. Append-only, so it syncs like the rest of the learning state. */
+export const PRICE_IGNORE_EVENT = "price_suggestion_ignored";
+
+/**
+ * product id -> the LATEST ignoredUntil (ms) among this shop's ignore events, local and pulled. Every ignore is "tap + 90
+ * days", so the latest end date is the latest tap: last-write-wins (D74) from an append-only log - a second phone's later
+ * tap extends it and nothing can shorten it. A malformed payload is skipped.
+ */
+async function ignoredUntilByProduct(db: KiranaBillDB, shopId: string): Promise<Map<string, number>> {
+  const events = await db.learningEvents.where("shopId").equals(shopId).filter((e) => e.eventType === PRICE_IGNORE_EVENT).toArray();
+  const until = new Map<string, number>();
+  for (const e of events) {
+    const { shopProductId, ignoredUntil } = e.payload;
+    const ms = typeof ignoredUntil === "string" ? Date.parse(ignoredUntil) : NaN;
+    if (typeof shopProductId !== "string" || !Number.isFinite(ms)) continue;
+    if (ms > (until.get(shopProductId) ?? -Infinity)) until.set(shopProductId, ms);
+  }
+  return until;
+}
+
+/** [Ignore]: hide this product's price suggestion for 90 days. Writes one pending event; never touches a price (hard rule 7). */
+export async function ignorePriceSuggestionFor(db: KiranaBillDB, shopId: string, shopProductId: string, deviceId: string, nowMs: number): Promise<void> {
+  const nowIso = new Date(nowMs).toISOString();
+  await db.learningEvents.add({
+    localId: crypto.randomUUID(),
+    shopId,
+    syncStatus: "pending",
+    billLocalId: "",
+    eventType: PRICE_IGNORE_EVENT,
+    payload: { shopProductId, ignoredUntil: new Date(nowMs + PRICE_SUGGESTION_IGNORE_MS).toISOString() },
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    deviceId,
+  });
+}
+
 /**
  * Marshals this shop's LocalPriceObservation rows into the
  * LearningState.priceObservations shape learning.ts's real
  * getPriceSuggestions() already expects, then calls it - no duplicate
- * suggestion logic. ignoredUntilMs is always null: LocalPriceObservation
- * has no persisted ignore-state field today, and nothing writes one yet
- * either (KB-208's real-data check confirmed this is a real, permanent
- * gap in the current schema, not an oversight in this function).
+ * suggestion logic. ignoredUntilMs comes from the shop's `price_suggestion_ignored`
+ * learning events (KB-329, D78) - LocalPriceObservation itself is append-only.
  */
-export async function listPendingPriceSuggestions(
-  db: KiranaBillDB,
-  shopId: string,
-  nowMs: number,
-): Promise<readonly PriceSuggestion[]> {
+async function priceState(db: KiranaBillDB, shopId: string, withIgnores: boolean): Promise<LearningState> {
   const rows = await db.priceObservations.where("shopId").equals(shopId).toArray();
+  const ignored = withIgnores ? await ignoredUntilByProduct(db, shopId) : new Map<string, number>();
 
   const byProduct: Record<string, PriceTrackedProduct> = {};
   for (const row of rows) {
@@ -50,17 +82,33 @@ export async function listPendingPriceSuggestions(
     byProduct[row.shopProductId] = {
       catalogId: row.shopProductId,
       observations: existing ? [...existing.observations, observation] : [observation],
-      ignoredUntilMs: null,
+      ignoredUntilMs: ignored.get(row.shopProductId) ?? null,
     };
   }
+  return { provisionalProducts: {}, learnedAliases: {}, priceObservations: byProduct };
+}
 
-  const state: LearningState = {
-    provisionalProducts: {},
-    learnedAliases: {},
-    priceObservations: byProduct,
-  };
+export async function listPendingPriceSuggestions(
+  db: KiranaBillDB,
+  shopId: string,
+  nowMs: number,
+): Promise<readonly PriceSuggestion[]> {
+  return getPriceSuggestions(await priceState(db, shopId, true), nowMs);
+}
 
-  return getPriceSuggestions(state, nowMs);
+/** Developer mode: the suggestions hidden by [Ignore] right now, with the end of each ignore. */
+export async function listIgnoredPriceSuggestions(
+  db: KiranaBillDB,
+  shopId: string,
+  nowMs: number,
+): Promise<readonly { suggestion: PriceSuggestion; ignoredUntilMs: number }[]> {
+  const ignored = await ignoredUntilByProduct(db, shopId);
+  const pending = new Set((await listPendingPriceSuggestions(db, shopId, nowMs)).map((s) => s.catalogId));
+  const all = getPriceSuggestions(await priceState(db, shopId, false), nowMs);
+  return all.flatMap((suggestion) => {
+    const until = ignored.get(suggestion.catalogId);
+    return until !== undefined && until > nowMs && !pending.has(suggestion.catalogId) ? [{ suggestion, ignoredUntilMs: until }] : [];
+  });
 }
 
 export interface ResetLearningResult {
@@ -110,6 +158,8 @@ export async function resetLearning(
     db.learnedAliases.where("shopId").equals(shopId).delete(),
     db.provisionalProducts.where("shopId").equals(shopId).delete(),
     db.priceObservations.where("shopId").equals(shopId).delete(),
+    // KB-329: the ignores are cleared like the rest. The bill_learned markers stay - they stop bills being learned twice.
+    db.learningEvents.where("shopId").equals(shopId).filter((e) => e.eventType === PRICE_IGNORE_EVENT).delete(),
   ]);
 
   const clearedCounts = {

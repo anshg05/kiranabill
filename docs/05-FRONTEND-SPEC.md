@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 11 Oct 2026 (rev 18) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 14 Oct 2026 (rev 19) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -196,7 +196,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 - Filter: All · Custom · Learned · From base catalog · **Archived** (`KB-330`)
 - **Edit** on every row (`KB-330`): rename, other names, Archive. **"Add product"** (`KB-330`): name, unit, price.
 - **"Add from ready catalog"** — browse and import base products at any time
-- **Learning suggestions panel** — price drift (built; **Ignore** and its saved state: `KB-329`), unit drift (`KB-322`), provisional products awaiting promotion (`KB-320`).
+- **Learning suggestions panel** — price drift (built: **Use ₹X** and **Ignore**, `KB-329`), unit drift (`KB-322`), provisional products awaiting promotion (`KB-320`).
   Suggestions appear **only here**, never during billing.
 
 ### Implementation notes — Catalog (`KB-311`, 8 Oct 2026; D62)
@@ -234,6 +234,12 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 - **Archive** (`is_active = false`; **never a delete** - no delete policy exists, and a test proves a hard delete affects zero rows): one tap, **no confirm dialog** (hard rule 6 spirit; it is reversible); a status line "“x” archived - Undo". The product leaves Add item, the Catalog list, search, the Layer 1 parser, the Layer 2 slice and the Whisper vocabulary (all read the active products), but **stays on every old bill, receipt and History row** (they keep their own `display_name`); a bill in progress keeps its line. Its learned aliases go dormant and return on Restore; Settings > Developer mode shows "(archived)" beside it.
 - **Archived** filter: archived products (alphabetical; search works), price as text, **Restore** and **Edit** (so an archived name can be renamed to free it). Empty: "No archived products."
 - **Add product** (D77): **Name, Unit, Price per unit - all empty, none defaulted** (unit chips kg / gm / liter / ml / piece are taps by the shopkeeper; an unusual unit is allowed with "it is saved as typed"). The import's rules and insert path: price as integer paise (never a float), more than 0, "45,50" is never guessed; unit in the app's spelling; the catalog's 10,000 cap. Errors are shown together ("Name needed", "Unit needed", "Price needed"). Written as one import row (`source = 'custom'`), then the status line "x added - ₹62.50 / kg". This is also the "archive + add again" remedy for a wrong unit - after renaming the archived one if the name is the same.
+
+### Implementation notes — price-suggestion Ignore (`KB-329`, 14 Oct 2026; D78)
+
+- Each suggestion row: **Use ₹X** (online, writes the price - unchanged) and **Ignore** (44 px, "Ignore the suggestion for Sugar"). Ignore is a **local learning write**, so it works offline; the row disappears at once and a status line says "Suggestion for Sugar hidden for 90 days". It never touches the price. If the write fails: "Couldn't hide that suggestion - try again" and the row stays.
+- No Undo: the ignore is append-only; Developer mode lists it with its end date ("Sugar: ₹55 / kg on 3 bills (now ₹48) - ignored until 12 Jan 2027") and Reset learning clears it.
+- A gram / ml product's suggestion is shown in the product's own unit ("₹0.52 / gm"), like the Catalog row beneath it.
 
 ### Implementation notes — Import from file (`KB-314`, 10 Oct 2026; D68)
 

@@ -7,8 +7,10 @@ import { deterministicUuid } from "./ids";
 import {
   EMPTY_LEARNING_STATE,
   learnFromBill,
+  rateInShopUnit,
   recordAliasConfirmation,
   recordProductSighting,
+  getPriceSuggestions,
   type LearnLine,
   type LearningState,
 } from "./learning";
@@ -138,6 +140,75 @@ describe("learnFromBill - L3 price observations (08 §5: suggest, never apply)",
 
   it("the shop's own price is not drift; a total-only line has no rate to compare", () => {
     expect(kinds(learnFromBill(EMPTY_LEARNING_STATE, { lines: items({ transcript: "2 kilo cheeni" }, { transcript: "sabun 180 rupay" }), discarded: [] }, catalog, NOW))).toEqual([]);
+  });
+});
+
+// KI-63 (D78): the most common edit on loose goods - "ajwain 520 per kilo" on a per-gm product - is stored per kg (SG-09),
+// so it was never compared with the shop's per-gm price. It is now converted INTO THE SHOP'S UNIT, and only when that is an
+// exact integer: 52000 paise/kg -> 52 paise/gm. Anything else (51250 -> 51.25) is skipped - never rounded, never a float.
+describe("rateInShopUnit - KI-63: exact integer conversion into the shop's unit, or nothing", () => {
+  it("the same unit is returned as is", () => {
+    expect(rateInShopUnit(4800, "kg", "kg")).toBe(4800);
+    expect(rateInShopUnit(12, "piece", "piece")).toBe(12);
+  });
+  it("a per-kg rate on a per-gm product, and a per-liter rate on a per-ml product, convert when exact", () => {
+    expect(rateInShopUnit(52_000, "kg", "gm")).toBe(52);
+    expect(rateInShopUnit(1_000, "kg", "gm")).toBe(1);
+    expect(rateInShopUnit(12_000, "liter", "ml")).toBe(12);
+  });
+  it("an inexact one is skipped - never rounded: 51250 / 1000 would be 51.25, 500 would be 0.5", () => {
+    expect(rateInShopUnit(51_250, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(51_999, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(500, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(12_345, "liter", "ml")).toBeNull();
+  });
+  it("zero, negative and unsafe numbers give nothing; the result is always a safe positive integer", () => {
+    expect(rateInShopUnit(0, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(-52_000, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(Number.MAX_SAFE_INTEGER + 1, "kg", "gm")).toBeNull();
+    expect(rateInShopUnit(Number.MAX_SAFE_INTEGER - (Number.MAX_SAFE_INTEGER % 1000), "kg", "gm")).toSatisfy((n: number) => Number.isSafeInteger(n) && n > 0);
+  });
+  it("any other pairing is not a conversion: packet vs piece, a gm rate on a kg product, kg on a piece product, liter on a gm product", () => {
+    expect(rateInShopUnit(6_000, "packet", "piece")).toBeNull();
+    expect(rateInShopUnit(52, "gm", "kg")).toBeNull();
+    expect(rateInShopUnit(52_000, "kg", "piece")).toBeNull();
+    expect(rateInShopUnit(52_000, "liter", "gm")).toBeNull();
+    expect(rateInShopUnit(52_000, null, "gm")).toBeNull();
+  });
+});
+
+describe("learnFromBill - KI-63 price observations on loose goods (the real ajwain line)", () => {
+  const ajwain = catalog.find((e) => e.displayName === "Ajwain")!;
+  it("the seed's Ajwain is a per-gm product at 50 paise (₹500/kg)", () => {
+    expect([ajwain.unit, ajwain.suggestedPricePaise]).toEqual(["gm", 50]);
+  });
+  const bill = (rate: string) => ({ lines: items({ transcript: "1 kilo ajwain", edit: (i: FinalLine["item"]) => ok(editRate(i, rate)) }), discarded: [] });
+
+  it("₹520/kg is observed as 52 paise/gm against the shop's 50 - stored in the shop's unit", () => {
+    const line = bill("520").lines[0]!;
+    expect([line.ratePaise, line.rateUnit]).toEqual([52_000, "kg"]); // stored per kg (SG-09)
+    const r = learnFromBill(EMPTY_LEARNING_STATE, bill("520"), catalog, NOW);
+    expect(r.decisions).toEqual([{ kind: "price_observed", lineNo: 1, shopProductId: ajwain.id, observedPricePaise: 52, shopPricePaise: 50 }]);
+    expect(r.state.priceObservations[ajwain.id]!.observations.map((o) => o.pricePaise)).toEqual([52]);
+  });
+  it("₹500/kg is the shop's own price - nothing; ₹512.50/kg is not a whole paise per gm - skipped, not rounded", () => {
+    expect(kinds(learnFromBill(EMPTY_LEARNING_STATE, bill("500"), catalog, NOW))).toEqual([]);
+    expect(kinds(learnFromBill(EMPTY_LEARNING_STATE, bill("512.50"), catalog, NOW))).toEqual([]);
+  });
+  it("three such bills make a suggestion in the shop's own unit", () => {
+    let state = EMPTY_LEARNING_STATE;
+    for (let i = 0; i < 3; i++) state = learnFromBill(state, bill("520"), catalog, NOW).state;
+    expect(getPriceSuggestions(state, NOW)).toEqual([{ catalogId: ajwain.id, suggestedPricePaise: 52, observationCount: 3 }]);
+  });
+  it("a kg product is unchanged: the same-unit path still observes ₹48/kg on Chini", () => {
+    const r = learnFromBill(EMPTY_LEARNING_STATE, { lines: items({ transcript: "2 kilo cheeni", edit: (i) => ok(editRate(i, "48")) }), discarded: [] }, catalog, NOW);
+    expect(r.decisions).toEqual([{ kind: "price_observed", lineNo: 1, shopProductId: "27", observedPricePaise: 4800, shopPricePaise: 4500 }]);
+  });
+  it("a per-liter rate on a per-ml product (a hand-built line, no ml product in the seed)", () => {
+    const oil: (typeof catalog)[number] = { ...ajwain, id: "ml-1", displayName: "Syrup", unit: "ml", suggestedPricePaise: 10 };
+    const line: LearnLine = { lineNo: 1, shopProductId: "ml-1", spokenName: "syrup", displayName: "Syrup", unit: "ml", ratePaise: 12_000, rateUnit: "liter", source: "manual", wasEdited: true };
+    const r = learnFromBill(EMPTY_LEARNING_STATE, { lines: [line], discarded: [] }, [oil], NOW);
+    expect(r.decisions).toEqual([{ kind: "price_observed", lineNo: 1, shopProductId: "ml-1", observedPricePaise: 12, shopPricePaise: 10 }]);
   });
 });
 

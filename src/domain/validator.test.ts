@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { matchProduct, inferRateBasis } from "./validator";
+import { matchProduct } from "./validator";
 import { settleLayer2Items } from "./layer2";
 import type { ParsedItem } from "./grammar";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { buildCatalogIndex, lookupCandidates, prepareParserCatalog } from "./catalogIndex";
-import { getCatalogEntryById, type CatalogEntry } from "./catalog";
+import type { CatalogEntry } from "./catalog";
 
 function syntheticEntry(id: string, name: string, guardCategory: CatalogEntry["guardCategory"]): CatalogEntry {
   return {
@@ -130,27 +130,6 @@ describe("matchProduct - learned-use boost (inert hook for KB-008, formula from 
     // 6 uses -> under the cap (0.06 < 0.08) - the formula, not just the cap.
     const partiallyBoosted = matchProduct("sunflower oil bottle", { index, useCountById: { B: 6 } });
     expect(partiallyBoosted.kind === "matched" && partiallyBoosted.score).toBeCloseTo(baseScore + 0.06, 10);
-  });
-});
-
-describe("inferRateBasis (docs/14-LEGACY-REFERENCE.md section 8 - the subtle rate-basis rule, KB-005b's job)", () => {
-  it("infers a per-kg rate when a gm-spoken rate is implausibly large - '500 gram, 60 rupay wala'", () => {
-    const besan = getCatalogEntryById("4")!; // Besan, kg, 9000 paise/kg -> 9 paise/gm
-    expect(besan.unit).toBe("kg");
-    const inferred = inferRateBasis(besan, "gm", 6000); // spoken as if 6000 paise/gm - absurd
-    expect(inferred).toBe(6); // they meant 6000 paise/kg = 6 paise/gm
-  });
-
-  it("leaves a plausible gm rate unchanged", () => {
-    const besan = getCatalogEntryById("4")!;
-    const inferred = inferRateBasis(besan, "gm", 9); // already a sane per-gm rate
-    expect(inferred).toBe(9);
-  });
-
-  it("does nothing when units already agree", () => {
-    const besan = getCatalogEntryById("4")!;
-    const inferred = inferRateBasis(besan, "kg", 9000);
-    expect(inferred).toBe(9000);
   });
 });
 

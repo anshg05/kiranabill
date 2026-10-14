@@ -309,7 +309,7 @@ describe("KB-005f - cross-unit default price, exact (KI-30)", () => {
     expect(item.rateUnit).toBeNull();
   });
 
-  it("rateUnit semantics: a spoken wala rate is read literally, per the spoken unit - '500 gram jeera 600 wala' is unchanged (Rs.3,00,000, HIGH-flagged; inferRateBasis is unwired, a separate KI)", () => {
+  it("rateUnit semantics: a spoken wala rate is read literally, per the spoken unit - '500 gram jeera 600 wala' is unchanged (Rs.3,00,000, HIGH-flagged; KI-35: the legacy per-kg inference was deleted, never wired)", () => {
     const item = parseOne("500 gram jeera 600 wala");
     expect(item.qty).toBe(500);
     expect(item.unit).toBe("gm");

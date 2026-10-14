@@ -3,7 +3,7 @@ import { liveQuery } from "dexie";
 import { ArrowLeft } from "lucide-react";
 import type { DeviceDB } from "@/data/device";
 import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct, LocalShop } from "@/data/db";
-import { listLearnedAliases, listPendingPriceSuggestions, listProvisionalProducts, resetLearning } from "@/data/learningAudit";
+import { listIgnoredPriceSuggestions, listLearnedAliases, listPendingPriceSuggestions, listProvisionalProducts, resetLearning } from "@/data/learningAudit";
 import { updateShopSettings } from "@/data/shopSettings";
 import { readStorageStatus, storageStatusText, type StorageStatus } from "@/data/storagePersist";
 import { BUILD_ID } from "@/pwa/buildId";
@@ -205,6 +205,8 @@ interface Learning {
   aliases: { row: LocalLearnedAlias; product: string }[];
   provisional: LocalProvisionalProduct[];
   suggestions: { s: PriceSuggestion; name: string; unit: string; nowPaise: number }[];
+  /** KB-329: suggestions hidden by [Ignore], with the end of each ignore. */
+  ignored: { s: PriceSuggestion; name: string; unit: string; nowPaise: number; untilMs: number }[];
 }
 
 /** 08 section 9 - learned aliases with confidence, provisional products with counts, pending price suggestions, a reset. Read-only, this shop only. */
@@ -215,10 +217,11 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [aliases, provisional, suggestions, products] = await Promise.all([
+    const [aliases, provisional, suggestions, ignored, products] = await Promise.all([
       listLearnedAliases(localDb, shopId),
       listProvisionalProducts(localDb, shopId),
       listPendingPriceSuggestions(localDb, shopId, Date.now()),
+      listIgnoredPriceSuggestions(localDb, shopId, Date.now()),
       localDb.shopProducts.where("shopId").equals(shopId).toArray(),
     ]);
     const byId = new Map(products.map((p) => [p.id, p]));
@@ -232,6 +235,10 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
         const p = byId.get(s.catalogId);
         return p && p.pricePaise !== s.suggestedPricePaise ? [{ s, name: p.displayName, unit: p.unit, nowPaise: p.pricePaise }] : [];
       }),
+      ignored: ignored.flatMap(({ suggestion: s, ignoredUntilMs: untilMs }) => {
+        const p = byId.get(s.catalogId);
+        return p && p.pricePaise !== s.suggestedPricePaise ? [{ s, name: p.displayName, unit: p.unit, nowPaise: p.pricePaise, untilMs }] : [];
+      }),
     });
   }, [localDb, shopId]);
 
@@ -242,14 +249,14 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
   const reset = async () => {
     const r = await resetLearning(localDb, shopId, Date.now(), deviceId);
     const c = r.clearedCounts;
+    await load(); // the lists first, so the message never appears over lists that are still full
     setConfirming(false);
     setResetMessage(
       `Cleared on this phone: ${c.learnedAliases} learned aliases, ${c.provisionalProducts} provisional products, ${c.priceObservations} price records. The server's copy was not deleted.`,
     );
-    await load();
   };
 
-  const empty = learning !== null && learning.aliases.length === 0 && learning.provisional.length === 0 && learning.suggestions.length === 0;
+  const empty = learning !== null && learning.aliases.length === 0 && learning.provisional.length === 0 && learning.suggestions.length === 0 && learning.ignored.length === 0;
 
   return (
     <details className="mt-8 border-t border-line pt-4" onToggle={(e) => setOpened((e.currentTarget as HTMLDetailsElement).open)}>
@@ -290,6 +297,19 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
                   {learning.suggestions.map(({ s, name, unit, nowPaise }) => (
                     <li key={s.catalogId} className="[overflow-wrap:anywhere]">
                       {priceDriftText(name, unit, s.suggestedPricePaise, s.observationCount, nowPaise)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {learning.ignored.length > 0 && (
+              <div>
+                <h4 className={heading}>Ignored price suggestions</h4>
+                <ul className="mt-1 flex flex-col gap-1">
+                  {learning.ignored.map(({ s, name, unit, nowPaise, untilMs }) => (
+                    <li key={s.catalogId} className="[overflow-wrap:anywhere]">
+                      {priceDriftText(name, unit, s.suggestedPricePaise, s.observationCount, nowPaise)} — ignored until{" "}
+                      {new Date(untilMs).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </li>
                   ))}
                 </ul>

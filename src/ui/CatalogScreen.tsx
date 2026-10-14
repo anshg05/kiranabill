@@ -58,6 +58,8 @@ interface CatalogScreenProps {
   saveDetails?: (productId: string, patch: ProductPatch) => Promise<CatalogWriteResult>;
   setActive?: (productId: string, active: boolean) => Promise<CatalogWriteResult>;
   create?: (product: NewProduct) => Promise<CatalogWriteResult>;
+  /** KB-329 (D78): [Ignore] on a price suggestion - a local, append-only learning write (works offline). Absent = no button. */
+  ignoreSuggestion?: (shopProductId: string) => Promise<void>;
   /** After a write the server accepted - billing reloads its catalog (new lines use it). */
   onChanged: () => void;
   onClose: () => void;
@@ -71,7 +73,7 @@ interface Loaded {
   provisional: LocalProvisionalProduct[];
 }
 
-export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, onChanged, onClose }: CatalogScreenProps) {
+export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, ignoreSuggestion, onChanged, onClose }: CatalogScreenProps) {
   useBackEntry("kbCatalog", onClose);
   const online = useBrowserOnline();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -125,6 +127,17 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
   const wrote = async () => {
     await reload();
     onChanged();
+  };
+  const [ignoreFailed, setIgnoreFailed] = useState(false);
+  const ignore = (p: LocalShopProduct) => {
+    if (!ignoreSuggestion) return;
+    setIgnoreFailed(false);
+    ignoreSuggestion(p.id)
+      .then(async () => {
+        await reload();
+        setNote({ text: `Suggestion for ${p.displayName} hidden for 90 days` });
+      })
+      .catch(() => setIgnoreFailed(true));
   };
   const restore = (p: LocalShopProduct) => {
     if (!setActive) return;
@@ -240,6 +253,11 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
               )}
             </p>
           )}
+          {ignoreFailed && (
+            <p role="alert" className="border-b border-line px-4 py-2 text-[13px] text-danger">
+              Couldn't hide that suggestion — try again
+            </p>
+          )}
           {hasSuggestions && loaded && filter !== "archived" && (
             <section aria-label="Suggestions" className="border-b border-line px-4 py-3">
               <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Suggestions</h3>
@@ -258,6 +276,16 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                     >
                       Use {formatRupees(s.suggestedPricePaise)}
                     </button>
+                    {ignoreSuggestion && (
+                      <button
+                        type="button"
+                        aria-label={`Ignore the suggestion for ${p.displayName}`}
+                        onClick={() => ignore(p)}
+                        className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
+                      >
+                        Ignore
+                      </button>
+                    )}
                   </li>
                 ))}
                 {loaded.provisional.map((p) => (

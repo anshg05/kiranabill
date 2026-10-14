@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 11 Oct 2026 (rev 50) · Supersedes rev 40
+**Last updated:** 14 Oct 2026 (rev 51) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1961,12 +1961,24 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 6. **No hard delete, ever:** `shop_products` has no delete policy; `test:rls` now proves a member's DELETE (own or another shop's) affects zero rows, with a plant that adds the policy. **No unit-change trigger** in the database: the UI has no unit field and a test pins the write's columns.
 7. **Found while building:** the import derives a row's `local_id` from its name (so a file re-run can only be refused), which made a name that was renamed away impossible to re-add. "Add product" therefore passes a fresh `local_id`; the **file import keeps the name-derived one** - re-importing a name that was once renamed away is reported "already there" (`NI-48`).
 
+### D78 — Price-suggestion Ignore is an append-only learning event; a per-kg rate on a per-gm product is observed when it divides exactly (built as `KB-329`, with KI-63) 🟢
+
+**Owner decisions, 14 Oct 2026, `KB-329`** (plan approved, decisions 1-7 accepted; the KI-63 wording corrected by the owner).
+1. **Ignore** hides one product's price suggestion for **90 days from the tap**. It is stored as a `learning_events` row, type `price_suggestion_ignored`, payload `{ shopProductId, ignoredUntil }` - **no migration** (the table already takes inserts from a shop member, bill-less, and only those; `test:rls` now proves that for this type, and that no update or delete exists). It is pushed by the existing sync and **pulled** (a fourth entry in the KB-326 learning pull, only this event type, last 100 days, the same reset cutoff) - never the `bill_learned` markers.
+2. **Merge across devices (D73/D74):** the effective ignore of a product is the **latest `ignoredUntil` among the shop's events**. Every ignore is tap + 90 days, so that is last-write-wins by tap time, reached from an append-only log: a second phone's later tap extends it, nothing can shorten it, nothing is overwritten. A device-clock skew only moves the end date.
+3. **Ignore changes no price** (hard rule 7) and works **offline** (a local learning write). **No Undo** (append-only): Developer mode lists ignored suggestions with their end date; **Reset learning clears this phone's ignores** (the server copies stay, NI-27, and the reset cutoff drops them on pull); the bill markers are kept. After the 90 days a suggestion returns only when 3 observations of the same price fall inside the last 30 days.
+4. **KI-63:** a bill line's rate is compared with the shop's price **in the shop's unit**. The same unit, as before; a per-kg rate on a per-gm product (per-liter on per-ml, SG-09) is converted **only when `rate % 1000 === 0`** - an exact integer division (52000 paise/kg = 52 paise/gm), allowed by hard rule 1 because the result is never a float. **It is never rounded**: 51250 paise/kg would be 51.25 paise/gm, so it is skipped. The result is asserted to be a safe positive integer. Any other unit pairing is not a conversion. (The plan called this "multiplication only"; the owner corrected the wording - it is an exact integer division.)
+5. **Suggestion text stays in the product's own unit** ("₹0.52 / gm"), matching the Catalog row.
+6. **Dead code deleted:** `validator.ts` `inferRateBasis` had `Math.round(spokenRatePaise / 1000)` - a rounding that would silently turn ₹65.50/kg into ₹70/kg - and no caller. It and its tests are gone (KI-35 stays: a spoken per-kg rate on a gram quantity is still read literally and HIGH-flagged).
+7. **Found while building:** `SettingsScreen` showed the "Cleared on this phone" message before the lists had reloaded (a latent race that the extra read exposed); it now reloads first.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 14 Oct 2026 | D56 §3: "a rate in another unit (SG-09) is skipped rather than converted with a division" | **A per-kg / per-liter rate on a per-gm / per-ml product is observed when `rate % 1000 === 0` (an exact integer division); otherwise skipped (D78)** | Owner, `KB-329` (KI-63): the most common edit on loose goods taught nothing. |
 | 11 Oct 2026 | D22: `reserveBlock` is a plain SELECT-then-INSERT, the race accepted because only one device reserves | **The database refuses overlapping ranges (exclusion constraint) and the client retries (D74)** | Owner: a shop may use several devices (D73). |
 | 11 Oct 2026 | D64 §5 / NI-40: `pushShop` sends the whole shop row, the later arrival overwrites the other's fields | **Only the fields Save changed are sent, stored with the pending row (D74)** | Owner, `KB-334` Q3. |
 | 11 Oct 2026 | D66 §7: "a shop is one device in the MVP" (NI-41's limit) | Several devices (D73); the limit is **accepted and documented** (D74 §7) | Owner. |

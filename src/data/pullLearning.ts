@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { KiranaBillDB, LocalLearnedAlias, LocalPriceObservation, LocalProvisionalProduct } from "./db";
+import type { KiranaBillDB, LocalLearnedAlias, LocalLearningEvent, LocalPriceObservation, LocalProvisionalProduct } from "./db";
+import { PRICE_IGNORE_EVENT } from "./learningAudit";
 
 // KB-326 (docs/07-DECISIONS.md D66): learned aliases, provisional products and price observations are pushed
 // by the device that learned them - and now PULLED, so a wiped or new phone keeps its Catalog suggestions (and,
@@ -19,13 +20,15 @@ import type { KiranaBillDB, LocalLearnedAlias, LocalPriceObservation, LocalProvi
 
 /** Owner, D66: the suggestion rule reads 30 days; 35 gives it margin. Revisit if a later feature reads further back. */
 export const LEARNING_OBSERVATION_WINDOW_DAYS = 35;
+/** KB-329 (D78): an ignore lasts 90 days; 100 gives margin. Only ignore events are pulled - never the bill_learned markers. */
+export const IGNORE_EVENT_WINDOW_DAYS = 100;
 /** The same re-read window as D62 / D63. */
 const OVERLAP_MS = 60_000;
 const PAGE = 500;
 const DAY_MS = 86_400_000;
 
 export interface PullLearningResult {
-  /** All three tables were pulled up to date (and the learning gate is open). */
+  /** All the learning tables were pulled up to date (and the learning gate is open). */
   done: boolean;
   skipped?: "reset-not-pushed" | "error";
 }
@@ -52,9 +55,11 @@ export async function hasUnsyncedReset(db: KiranaBillDB, shopId: string): Promis
 type Row = Record<string, unknown>;
 
 interface TableSpec {
-  table: "learned_aliases" | "provisional_products" | "price_observations";
+  table: "learned_aliases" | "provisional_products" | "price_observations" | "learning_events";
   /** Only rows whose occurred_at is inside the window (price observations). */
   windowed?: boolean;
+  /** KB-329: only this event type, and only the last IGNORE_EVENT_WINDOW_DAYS of it (by created_at). */
+  eventType?: string;
   write: (db: KiranaBillDB, rows: Row[]) => Promise<void>;
 }
 
@@ -123,6 +128,28 @@ const SPECS: TableSpec[] = [
         await db.priceObservations.bulkAdd(observations.filter((_, i) => !existing[i])); // append-only: never changed
       }),
   },
+  {
+    // KB-329 (D78): the ignore of a price suggestion. Append-only; a row already here (this phone pushed it) is left as it is.
+    table: "learning_events",
+    eventType: PRICE_IGNORE_EVENT,
+    write: (db, rows) =>
+      db.transaction("rw", db.learningEvents, async () => {
+        const events = rows.map((r): LocalLearningEvent => ({
+          localId: r.local_id as string,
+          serverId: r.id as string,
+          shopId: r.shop_id as string,
+          syncStatus: "synced",
+          billLocalId: "",
+          eventType: r.event_type as string,
+          payload: (r.payload as Record<string, unknown> | null) ?? {},
+          createdAt: new Date(r.created_at as string).toISOString(),
+          updatedAt: r.updated_at as string,
+          deviceId: r.device_id as string,
+        }));
+        const existing = await db.learningEvents.bulkGet(events.map((e) => e.localId));
+        await db.learningEvents.bulkAdd(events.filter((_, i) => !existing[i]));
+      }),
+  },
 ];
 
 /** The newer of two server stamps (same producer, same format - compared as written; Date only to order). */
@@ -154,12 +181,14 @@ async function pullTable(client: SupabaseClient, db: KiranaBillDB, shopId: strin
   // Rows stamped at or before the shop's latest reset are never pulled: the lower bound is the later of the two.
   const lower = cutoff && (!overlapFrom || new Date(cutoff).getTime() >= new Date(overlapFrom).getTime()) ? cutoff : overlapFrom;
   const windowStart = new Date(Date.now() - LEARNING_OBSERVATION_WINDOW_DAYS * DAY_MS).toISOString();
+  const ignoreWindowStart = new Date(Date.now() - IGNORE_EVENT_WINDOW_DAYS * DAY_MS).toISOString();
 
   let newest = cursor;
   let after: { at: string; id: string } | null = null;
   for (;;) {
     let query = client.from(spec.table).select("*").eq("shop_id", shopId).order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(PAGE);
     if (spec.windowed) query = query.gte("occurred_at", windowStart);
+    if (spec.eventType) query = query.eq("event_type", spec.eventType).gte("created_at", ignoreWindowStart);
     if (after) query = query.or(`updated_at.gt.${after.at},and(updated_at.eq.${after.at},id.gt.${after.id})`);
     else if (lower) query = query.gt("updated_at", lower);
     const { data, error } = await query;

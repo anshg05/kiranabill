@@ -253,7 +253,8 @@ export function suppressAlias(state: LearningState, spokenName: string): Learnin
 const PRICE_SUGGESTION_MIN_OBSERVATIONS = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRICE_SUGGESTION_WINDOW_MS = 30 * DAY_MS;
-const PRICE_SUGGESTION_IGNORE_MS = 90 * DAY_MS;
+/** [Ignore] hides a product's price suggestion for this long (08 §5). */
+export const PRICE_SUGGESTION_IGNORE_MS = 90 * DAY_MS;
 
 export interface PriceObservationResult {
   readonly state: LearningState;
@@ -429,6 +430,25 @@ export type LearningDecision =
       readonly promotionDue: boolean;
     };
 
+/** The coarser unit a gram / millilitre product's rate is stored in (SG-09), and its factor. */
+const COARSER: Readonly<Record<string, { unit: string; factor: number }>> = { gm: { unit: "kg", factor: 1000 }, ml: { unit: "liter", factor: 1000 } };
+
+/**
+ * KI-63 (D78): a bill line's rate in the SHOP's unit, or null. Same unit -> as is. A per-kg rate on a per-gm product (or
+ * per-liter on per-ml) is converted ONLY when it divides exactly: rate % 1000 === 0, so 52000 paise/kg -> 52 paise/gm.
+ * That is an exact integer division (hard rule 1: never a float) - it is never rounded: 51250/kg would be 51.25 paise/gm,
+ * which is not a price a shop can store, so it is skipped, exactly as before this fix. The result is asserted to be a
+ * safe positive integer (price_observations.observed_price_paise > 0). Any other unit pairing is not a conversion.
+ */
+export function rateInShopUnit(ratePaise: Paise, rateUnit: string | null, shopUnit: string): Paise | null {
+  if (!Number.isSafeInteger(ratePaise) || ratePaise <= 0) return null;
+  if (rateUnit === shopUnit) return ratePaise;
+  const coarser = COARSER[shopUnit];
+  if (!coarser || rateUnit !== coarser.unit || ratePaise % coarser.factor !== 0) return null;
+  const converted = ratePaise / coarser.factor;
+  return Number.isSafeInteger(converted) && converted > 0 ? converted : null;
+}
+
 const isExactAlias = (spoken: string, entry: CatalogEntry) =>
   [entry.displayName, ...entry.aliases].some((a) => normalizeKey(a) === normalizeKey(spoken));
 
@@ -441,8 +461,9 @@ const isExactAlias = (spoken: string, entry: CatalogEntry) =>
  *    isn't speech. A removed voice line whose words are a LEARNED alias
  *    suppresses it (08 §4, safety rule 5).
  *  - L3: any matched line whose rate, in the shop's own unit, differs from
- *    the shop's price is observed (never applied - safety rule 3). A rate in
- *    another unit (SG-09) is skipped rather than converted with a division.
+ *    the shop's price is observed (never applied - safety rule 3). A per-kg /
+ *    per-liter rate on a per-gm / per-ml product (SG-09) is converted only when
+ *    it divides exactly (rateInShopUnit, KI-63); otherwise it is skipped.
  *  - L1: a line with no product is a provisional sighting; its rate is the
  *    observed price, a total-only line gives none. Reaching 3 sightings is
  *    "promotion due" - creating the shop_product is KB-320.
@@ -497,9 +518,10 @@ export function learnFromBill(
       });
     }
 
-    if (line.ratePaise !== null && line.rateUnit === entry.unit && line.ratePaise !== entry.suggestedPricePaise) {
-      next = recordPriceObservation(next, entry.id, entry.suggestedPricePaise, line.ratePaise, nowMs).state;
-      decisions.push({ kind: "price_observed", lineNo: line.lineNo, shopProductId: entry.id, observedPricePaise: line.ratePaise, shopPricePaise: entry.suggestedPricePaise });
+    const observed = line.ratePaise === null ? null : rateInShopUnit(line.ratePaise, line.rateUnit, entry.unit);
+    if (observed !== null && observed !== entry.suggestedPricePaise) {
+      next = recordPriceObservation(next, entry.id, entry.suggestedPricePaise, observed, nowMs).state;
+      decisions.push({ kind: "price_observed", lineNo: line.lineNo, shopProductId: entry.id, observedPricePaise: observed, shopPricePaise: entry.suggestedPricePaise });
     }
   }
 

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { KiranaBillDB, type LocalShop, type LocalShopProduct } from "@/data/db";
 import { DeviceDB } from "@/data/device";
+import { ignorePriceSuggestionFor } from "@/data/learningAudit";
 import { requestPersistentStorage } from "@/data/storagePersist";
 import { BUILD_ID } from "@/pwa/buildId";
 import { BillView } from "./BillingScreen";
@@ -176,6 +177,20 @@ describe("KB-330 - an archived product in Developer mode", () => {
     await open();
     const dev = within(await openDeveloper());
     expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("chini → Sugar (archived)");
+  });
+});
+
+describe("KB-329 - ignored price suggestions in Developer mode", () => {
+  it("lists a suggestion hidden by Ignore with its end date, and no longer under 'Price suggestions'", async () => {
+    await seedLearning();
+    await ignorePriceSuggestionFor(db, shopId, sugar.id, deviceId, Date.now());
+    await open();
+    const dev = within(await openDeveloper());
+    const until = new Date(Date.now() + 90 * 86_400_000).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const ignored = await dev.findByText(/ignored until/);
+    expect(ignored.textContent).toBe(`Sugar: ₹55 / kg on 3 bills (now ₹48) — ignored until ${until}`);
+    expect(dev.getByRole("heading", { name: "Ignored price suggestions" })).toBeTruthy();
+    expect(dev.queryByText("Sugar: ₹55 / kg on 3 bills (now ₹48)")).toBeNull(); // not under the active list any more
   });
 });
 

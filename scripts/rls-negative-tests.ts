@@ -672,6 +672,26 @@ async function main(): Promise<void> {
       return "accepted";
     });
 
+    // KB-329 (D78): the ignore of a price suggestion is a bill-less learning event - no schema or policy change, so the
+    // existing rules must already hold for it: own shop only, append-only (no update, no delete).
+    await checkRejects(client, "KB-329: owner A cannot insert a price_suggestion_ignored event into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into learning_events (shop_id, bill_id, event_type, payload, local_id, device_id) values ($1, null, 'price_suggestion_ignored', '{"shopProductId":"x","ignoredUntil":"2027-01-01T00:00:00Z"}', gen_random_uuid(), 'test-device')`, [shopB]);
+    });
+    await check(client, "KB-329 sanity: owner A can insert a price_suggestion_ignored event into their OWN shop", async () => {
+      await asUser(client, ownerA);
+      const res = await client.query(`insert into learning_events (shop_id, bill_id, event_type, payload, local_id, device_id) values ($1, null, 'price_suggestion_ignored', '{"shopProductId":"x","ignoredUntil":"2027-01-01T00:00:00Z"}', gen_random_uuid(), 'test-device')`, [shopA]);
+      if (res.rowCount !== 1) throw new Error(`expected 1 row inserted, got ${res.rowCount}`);
+      return "accepted";
+    });
+    await check(client, "KB-329: owner A cannot UPDATE or DELETE their own ignore event (append-only: zero rows each)", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update learning_events set payload = '{}' where shop_id = $1 and event_type = 'price_suggestion_ignored'`, [shopA]);
+      const del = await client.query(`delete from learning_events where shop_id = $1 and event_type = 'price_suggestion_ignored'`, [shopA]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`expected 0 / 0 rows, got ${upd.rowCount} / ${del.rowCount}`);
+      return "0 rows updated, 0 rows deleted";
+    });
+
     await check(client, "learning write isolation (KB-307): owner A's UPDATE of shop B's learned alias / provisional product affects zero rows", async () => {
       await asUser(client, ownerB);
       await client.query(`insert into learned_aliases (shop_id, alias, shop_product_id, confidence, source, local_id, device_id) values ($1, 'b-alias', $2, 0.5, 'confirmation', gen_random_uuid(), 'test-device')`, [shopB, shopProductB]);

@@ -383,6 +383,8 @@ Conversions: `1 kg = 1000 gm`, `1 liter = 1000 ml`.
 spoken unit is `gm` but the rate is **≥ 10× the per-gram catalog price**, infer the speaker meant a
 per-kg rate and convert. Handles "500 gram, 60 rupay wala" where 60 is obviously ₹60/kg.
 
+> **14 Oct 2026:** the port was **deleted** (`KB-329`) - it rounded a spoken rate, which hard rule 1 forbids. The legacy rule above stays reference only.
+>
 > **26 Sep 2026:** ported as `validator.ts`'s `inferRateBasis()` in `KB-005b` but **never wired in** — a spoken
 > per-kg rate on a gram quantity is read literally (`12-PARKED.md` KI-35). Plain SI conversion of a *catalog*
 > price is a different thing and is exact since `KB-005f` (`07-DECISIONS.md` D36: the rate carries its own unit).

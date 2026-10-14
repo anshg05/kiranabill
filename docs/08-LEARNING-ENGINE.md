@@ -1,6 +1,6 @@
 # 08 — Learning Engine
 
-**Last updated:** 9 Oct 2026 (rev 3) · **Status:** Final for MVP
+**Last updated:** 14 Oct 2026 (rev 4) · **Status:** Final for MVP
 
 **Principle:** every bill makes the next bill better, for this shop specifically.
 
@@ -155,6 +155,18 @@ Non-blocking suggestion in Catalog:
 
 `[Ignore]` suppresses that suggestion for 90 days. Suggestions never appear during billing — only in
 the Catalog screen, where the shopkeeper is already thinking about prices.
+
+**Built (`KB-329`, D78).** The Catalog row has **Use ₹X** and **Ignore** (the "Update" above is "Use"). Ignore writes one append-only
+`learning_events` row, `price_suggestion_ignored`, payload `{ shopProductId, ignoredUntil }` (tap + 90 days) - saved on the phone,
+pushed and pulled like the rest of the learning state (no migration; `learning_events` already has select + insert only). The
+effective ignore of a product is the **latest `ignoredUntil` among the shop's events**, so a second phone's later tap extends it and
+nothing can shorten or undo it. After the 90 days the usual rule applies: the suggestion returns only when 3 observations of the
+same price fall inside the last 30 days. Ignore never changes a price (hard rule 7). Developer mode lists the ignored ones with
+their end date; Reset learning clears this phone's ignores like the rest.
+
+**Which rates are observed (KI-63, D78).** A rate in the shop's own unit, or a per-kg / per-liter rate on a per-gm / per-ml product
+(SG-09) when it converts to a whole number of paise: `rate % 1000 === 0` (52000 paise/kg = 52 paise/gm). It is never rounded - 51250
+paise/kg would be 51.25 paise/gm, which is not a price a shop can store, so that line teaches nothing.
 
 ---
 
