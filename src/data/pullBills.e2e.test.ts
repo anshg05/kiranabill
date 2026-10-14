@@ -219,14 +219,14 @@ describe("KB-324 pull bills - real local stack", () => {
     expect((await localIds(dbE)).sort()).toEqual(all.sort());
   });
 
-  it("8. a bill that arrives already cancelled is stored but not listed or searchable", async () => {
+  it("8. a bill that arrives already cancelled is stored AND listed, flagged cancelled (KB-325, D79 - it was 'not listed' before)", async () => {
     const cancelled = await makeBill({ status: "cancelled", customer: "Radd Wala" });
     const dbF = newDevice();
     await pull(dbF);
     expect((await dbF.bills.get(cancelled))?.status).toBe("cancelled");
     expect(await dbF.billItems.where("billLocalId").equals(cancelled).count()).toBe(3);
-    expect((await loadRecentRows(dbF, shopId, 500)).some((r) => r.localId === cancelled)).toBe(false);
-    expect(await dbF.billSearch.where("localId").equals(cancelled).count()).toBe(0);
+    expect((await loadRecentRows(dbF, shopId, 500)).find((r) => r.localId === cancelled)?.cancelled).toBe(true);
+    expect(await dbF.billSearch.get(cancelled)).toMatchObject({ cancelled: true });
   });
 
   it("10. a steady-state pull (nothing new) never downloads bill items - only ids; a new bill downloads just itself", async () => {

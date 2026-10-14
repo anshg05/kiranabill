@@ -38,6 +38,12 @@ export function Receipt({ receipt }: { receipt: ReceiptModel }) {
         <p className="text-[1.4em] font-bold uppercase leading-tight [overflow-wrap:anywhere]">{r.shopName}</p>
         {r.shopPhone && <p className="mt-1 text-[0.85em] text-ink-soft tabular-nums">{r.shopPhone}</p>}
         <p className="mt-1 text-[0.85em] text-ink-soft tabular-nums">{r.dateTime}</p>
+        {/* KB-325 (D79): text, not colour alone. */}
+        {r.cancelled && (
+          <p data-testid="receipt-cancelled" role="note" className="mt-2 border-y-2 border-danger py-1 text-[1.15em] font-bold tracking-wide text-danger">
+            {r.cancelled}
+          </p>
+        )}
       </header>
       <hr className={rule} />
       {/* Q1 A: the number breaks only after a hyphen and is one selectable string. */}

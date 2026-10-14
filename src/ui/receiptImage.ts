@@ -19,7 +19,7 @@ const cssFont = (f: FontSpec) => `${f.weight} ${f.size}px ${FAMILY}`;
 async function loadFonts(receipt: Receipt): Promise<void> {
   const r = receipt;
   const strings = [r.shopName.toUpperCase(), r.shopPhone ?? "", r.dateTime, r.billNoLabel, r.receiptNumber, r.customerLabel, r.customer ?? "",
-    ...Object.values(r.headers), ...r.rows.flatMap((x) => [x.name, x.qty, x.rate, x.amount]), r.totalLabel, r.total, r.thanks];
+    ...Object.values(r.headers), ...r.rows.flatMap((x) => [x.name, x.qty, x.rate, x.amount]), r.totalLabel, r.total, r.thanks, r.cancelled ?? ""];
   const sample = [...new Set(strings.join(""))].join("");
   await Promise.all([400, 600].flatMap((w) => [`${w} 14px "IBM Plex Mono"`, `${w} 14px Mukta`].map((font) => document.fonts.load(font, sample))));
 }

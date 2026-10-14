@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { KiranaBillDB } from "@/data/db";
+import type { KiranaBillDB, LocalBill } from "@/data/db";
+import { cancelBillLocal, loadCancellationInfo, type CancellationInfo } from "@/data/cancelBill";
 import { loadRecentRows, loadSearchIndex, type HistoryRow } from "@/data/history";
 import type { SyncStatus } from "@/data/db";
 import { loadReceipt } from "@/data/receipt";
 import { billDateKey, compileQuery, type BillSearchRow } from "@/domain/billSearch";
+import { REASON_LABEL, type CancelReason } from "@/domain/cancelBill";
 import { formatRupees } from "@/domain/money";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { subscribeBillsPull } from "@/data/billsPullStatus";
+import { CancelBillSheet } from "./CancelBillSheet";
 import { Receipt, ReceiptNumberText } from "./Receipt";
 import { ShareBar } from "./ShareBar";
 import { useBackEntry } from "./useBackEntry";
@@ -43,10 +46,16 @@ interface HistoryScreenProps {
   localDb: KiranaBillDB;
   shopId: string;
   render: RenderReceiptFiles;
+  /** KB-325: needed to cancel a bill (the cancellation records which device made it). Absent = no Cancel button. */
+  deviceId?: string;
+  /** KB-325: a bill is being built - "Cancel and make a new bill" waits (it would have to replace it). */
+  billInProgress?: boolean;
+  /** KB-325: the bill was cancelled for a replacement - the billing screen builds its draft from the stored bill. */
+  onReissue?: (billLocalId: string, replacementLocalId: string) => void;
   onClose: () => void;
 }
 
-export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScreenProps) {
+export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgress = false, onReissue, onClose }: HistoryScreenProps) {
   useBackEntry("kbHistory", onClose);
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
   const [recent, setRecent] = useState<BillSearchRow[] | null>(null);
@@ -54,7 +63,8 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
   const [loadingAll, setLoadingAll] = useState(false);
   const [query, setQuery] = useState("");
   const [shown, setShown] = useState(PAGE);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // KB-325: opened bills, stacked - "Replaced by Bill 143" opens that bill over this one.
+  const [openIds, setOpenIds] = useState<readonly string[]>([]);
   const [syncOf, setSyncOf] = useState<ReadonlyMap<string, SyncStatus>>(new Map());
   // KB-324: bills pulled from the server land while this is open - re-read; and say so while the first pull runs.
   const [pulled, setPulled] = useState(0);
@@ -129,7 +139,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
   }, [localDb, shownMatches]);
 
   const visible: HistoryRow[] = shownMatches
-    ? shownMatches.map((r) => ({ localId: r.localId, receiptNumber: r.receiptNumber, customerName: r.customerName, totalPaise: r.totalPaise, at: r.finalizedAt, syncStatus: syncOf.get(r.localId) ?? "synced" }))
+    ? shownMatches.map((r) => ({ localId: r.localId, receiptNumber: r.receiptNumber, customerName: r.customerName, totalPaise: r.totalPaise, at: r.finalizedAt, syncStatus: syncOf.get(r.localId) ?? "synced", cancelled: r.cancelled === true }))
     : (rows ?? []);
   // More to show: more matches, or - with no search - the newest `shown` rows came back full.
   const more = matches ? matches.length > shown : rows !== null && rows.length >= shown;
@@ -146,7 +156,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
   return (
     <section aria-label="History" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
       {/* Under an open bill: hidden from screen readers and out of the tab order. */}
-      <div inert={openId !== null} aria-hidden={openId !== null || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
+      <div inert={openIds.length > 0} aria-hidden={openIds.length > 0 || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
@@ -189,7 +199,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
                   <ul>
                     {g.bills.map((b) => (
                       <li key={b.localId}>
-                        <button type="button" onClick={() => setOpenId(b.localId)} className="flex min-h-12 w-full items-center gap-3 border-b border-line bg-surface px-4 py-2 text-left">
+                        <button type="button" onClick={() => setOpenIds([b.localId])} className="flex min-h-12 w-full items-center gap-3 border-b border-line bg-surface px-4 py-2 text-left">
                           <span className="min-w-0 flex-1">
                             <span className="block font-medium [overflow-wrap:anywhere]">
                               <ReceiptNumberText value={b.receiptNumber} />
@@ -199,6 +209,7 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
                               {b.customerName !== "Cash" && <> · {b.customerName}</>}
                             </span>
                           </span>
+                          {b.cancelled && <span className="rounded-[6px] border border-danger px-2 py-0.5 text-[12px] text-danger">Cancelled</span>}
                           {b.syncStatus !== "synced" && <span className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">Not synced</span>}
                           <span className="font-semibold tabular-nums">{formatRupees(b.totalPaise)}</span>
                         </button>
@@ -224,29 +235,92 @@ export function HistoryScreen({ localDb, shopId, render, onClose }: HistoryScree
           </div>
         </div>
       </div>
-      {openId && <BillDetail localDb={localDb} localId={openId} render={render} onClose={() => setOpenId(null)} />}
+      {openIds.map((id, i) => (
+        <BillDetail
+          key={id}
+          localDb={localDb}
+          shopId={shopId}
+          localId={id}
+          render={render}
+          deviceId={deviceId}
+          billInProgress={billInProgress}
+          covered={i < openIds.length - 1}
+          onOpen={(next) => setOpenIds((ids) => [...ids, next])}
+          onChanged={() => setPulled((n) => n + 1)}
+          onReissue={onReissue}
+          onClose={() => setOpenIds((ids) => ids.slice(0, -1))}
+        />
+      ))}
     </section>
   );
 }
 
-/** S6: the saved bill, read-only - the receipt and the four share buttons. */
-function BillDetail({ localDb, localId, render, onClose }: { localDb: KiranaBillDB; localId: string; render: RenderReceiptFiles; onClose: () => void }) {
+/** S6: the saved bill, read-only - the receipt and the four share buttons; KB-325: Cancel bill, and what a cancellation says. */
+function BillDetail({
+  localDb,
+  shopId,
+  localId,
+  render,
+  deviceId,
+  billInProgress,
+  covered,
+  onOpen,
+  onChanged,
+  onReissue,
+  onClose,
+}: {
+  localDb: KiranaBillDB;
+  shopId: string;
+  localId: string;
+  render: RenderReceiptFiles;
+  deviceId?: string;
+  billInProgress: boolean;
+  covered: boolean;
+  onOpen: (localId: string) => void;
+  onChanged: () => void;
+  onReissue?: (billLocalId: string, replacementLocalId: string) => void;
+  onClose: () => void;
+}) {
   useBackEntry("kbBillDetail", onClose);
   const [receipt, setReceipt] = useState<ReceiptModel | null>(null);
+  const [bill, setBill] = useState<LocalBill | null>(null);
+  const [info, setInfo] = useState<CancellationInfo | null>(null);
+  const [version, setVersion] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
   useEffect(() => {
     let live = true;
-    loadReceipt(localDb, localId)
-      .then((r) => live && setReceipt(r))
+    Promise.all([loadReceipt(localDb, localId), localDb.bills.get(localId), loadCancellationInfo(localDb, localId)])
+      .then(([r, b, i]) => {
+        if (!live) return;
+        setReceipt(r);
+        setBill(b ?? null);
+        setInfo(i);
+      })
       .catch((err: unknown) => console.warn("[history] receipt read failed:", err instanceof Error ? err.message : err));
     return () => {
       live = false;
     };
-  }, [localDb, localId]);
+  }, [localDb, localId, version]);
   const saved = useMemo(() => (receipt ? { localId, receiptNumber: receipt.receiptNumber, receipt } : null), [localId, receipt]);
   const share = useReceiptShare({ localDb, saved, render });
+
+  const cancel = async (reason: CancelReason, withReplacement: boolean): Promise<string | null> => {
+    if (!deviceId) return "Couldn't cancel the bill — try again";
+    const replacementLocalId = withReplacement ? crypto.randomUUID() : null;
+    const r = await cancelBillLocal(localDb, { shopId, billLocalId: localId, reason, deviceId, replacementLocalId });
+    if (!r.ok) return r.error;
+    setCancelling(false);
+    setVersion((v) => v + 1);
+    onChanged();
+    if (replacementLocalId) onReissue?.(localId, replacementLocalId);
+    return null;
+  };
+
+  const c = info?.cancellation ?? null;
+  const day = c ? new Date(c.cancelledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
   return (
     <section aria-label="Bill" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
-      <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
+      <div inert={covered || cancelling} aria-hidden={covered || cancelling || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
@@ -255,9 +329,40 @@ function BillDetail({ localDb, localId, render, onClose }: { localDb: KiranaBill
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {receipt && <Receipt receipt={receipt} />}
+          {c && (
+            <section aria-label="Cancellation" className="mx-auto mt-4 w-full max-w-[384px] rounded-[6px] border border-line bg-surface px-4 py-3 text-[13px]">
+              <p className="font-semibold">Cancelled — {REASON_LABEL[c.reason]}</p>
+              <p className="text-ink-soft">{day}</p>
+              {info?.replacedBy ? (
+                <button type="button" onClick={() => onOpen(info.replacedBy!.localId)} className="mt-1 min-h-11 text-left font-medium text-indigo">
+                  Replaced by Bill {info.replacedBy.receiptNumber}
+                </button>
+              ) : (
+                <p className="mt-1 text-ink-soft">No replacement bill made</p>
+              )}
+              {bill?.syncStatus === "conflict" ? (
+                <p className="mt-1 text-danger">This bill couldn&apos;t be saved to the server, so its cancellation is on this phone only.</p>
+              ) : (
+                c.syncStatus !== "synced" && <p className="mt-1 text-ink-soft">Will reach your other phones when this one is online</p>
+              )}
+            </section>
+          )}
+          {info?.replaces && (
+            <button type="button" onClick={() => onOpen(info.replaces!.localId)} className="mx-auto mt-3 block min-h-11 w-full max-w-[384px] text-left text-[13px] font-medium text-indigo">
+              Replaces Bill {info.replaces.receiptNumber}
+            </button>
+          )}
           {share && <ShareBar share={share} />}
+          {bill?.status === "final" && deviceId && (
+            <div className="mx-auto mt-4 w-full max-w-[384px]">
+              <button type="button" onClick={() => setCancelling(true)} className="min-h-11 w-full rounded-[6px] border border-danger bg-transparent px-4 font-medium text-danger">
+                Cancel bill
+              </button>
+            </div>
+          )}
         </div>
       </div>
+      {cancelling && receipt && <CancelBillSheet receiptNumber={receipt.receiptNumber} billInProgress={billInProgress} onCancel={cancel} onClose={() => setCancelling(false)} />}
     </section>
   );
 }

@@ -63,9 +63,11 @@ export interface BillSearchRow {
   readonly customerName: string;
   /** Customer name, then every item's display and spoken names - lowercased, one per line. */
   readonly text: string;
+  /** KB-325 (D79): the bill was cancelled - History still lists and finds it, marked. Absent = not cancelled. */
+  readonly cancelled?: true;
 }
 
-export function toBillSearchRow(bill: SearchableBill & { readonly localId: string; readonly shopId: string }): BillSearchRow {
+export function toBillSearchRow(bill: SearchableBill & { readonly localId: string; readonly shopId: string; readonly cancelled?: boolean }): BillSearchRow {
   const names = bill.items.flatMap((i) => (i.spokenName ? [i.displayName, i.spokenName] : [i.displayName]));
   return {
     localId: bill.localId,
@@ -77,6 +79,7 @@ export function toBillSearchRow(bill: SearchableBill & { readonly localId: strin
     receiptNumber: bill.receiptNumber,
     customerName: bill.customerName,
     text: [bill.customerName, ...names].join("\n").toLowerCase(),
+    ...(bill.cancelled ? { cancelled: true as const } : {}),
   };
 }
 

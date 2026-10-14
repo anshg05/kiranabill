@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 11 Oct 2026 (rev 13) · **Status:** Final for MVP
+**Last updated:** 14 Oct 2026 (rev 14) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 
@@ -201,7 +201,15 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 
 **Unique:** `(shop_id, local_id)` · `(shop_id, receipt_number)` · `(id, shop_id)` (target of `bill_items`' composite FK, `KB-110b`)
 `local_id` is a client-generated **UUID** (`crypto.randomUUID()`) — `push_bill` casts it; anything else is a permanent `22P02`.
-**Immutable once `status = 'final'`.** Enforced by a trigger, not by convention.
+**Immutable once `status = 'final'`.** Enforced by a trigger, not by convention. The one legal change is `final` -> `cancelled`, and then **only `status` may change** (D18) - which is why a cancellation's reason and time are not columns here: see `bill_cancellations`.
+
+### `bill_cancellations` (`KB-325`, D79)
+`(id, shop_id, bill_id, bill_local_id, reason, replacement_local_id, cancelled_at, local_id, device_id, updated_at)` - one row per cancelled bill, **append-only**.
+- `reason` is one of five presets (`wrong_item`, `wrong_price`, `wrong_quantity`, `customer_cancelled`, `other`) - a CHECK, nothing typed.
+- `replacement_local_id` is the draft the shopkeeper started to replace the bill with (null for "Cancel only"). **The replacement finds its predecessor by looking up the row whose `replacement_local_id` is its own `local_id`** - there is no column on `bills`. A cancelled bill whose replacement was never made reads "No replacement bill made".
+- `updated_at` is set by the server (the same trigger as the learning tables); it is the pull cursor - a cancel changes `bills.status` only, and `bills.synced_at` is set on insert only.
+- **Unique** `(shop_id, bill_id)` and `(shop_id, local_id)`; **composite FK** `(bill_id, shop_id) -> bills (id, shop_id)` (a cancellation belongs to a bill of its own shop).
+- **RLS:** select and insert for a member of the shop; **no update, no delete policy**. Written only through `cancel_bill(...)` (SECURITY INVOKER like `push_bill`, execute revoked from `public` / `anon`): one transaction - inserts the row, flips `final` -> `cancelled` if it still is, and is idempotent (a retry, or another device, returns the existing row; an unknown or another shop's bill is `KB404`, a draft `KB400`).
 
 ### `bill_items`
 | Column | Type | Notes |
@@ -284,6 +292,7 @@ different roles hiding under "mirror the server tables":
   no-op, a divergent one is `KB409`. **Only `final`/`cancelled` bills are pushed; drafts stay on the device.**
   `bill_items` rows reference their bill through a composite FK `(bill_id, shop_id) → bills (id, shop_id)`, so an
   item can only belong to a bill of its own shop.
+- **Cancellations (`KB-325`, D79)**: written on the device (`billCancellations`, local-first, one Dexie transaction that changes the bill's status only and flags its search row); **pushed after the bills** through `cancel_bill()` - only for a bill whose own push succeeded (a bill in permanent conflict never reached the server, so its cancellation stays on the phone and the bill stays in conflict); **pulled** from `bill_cancellations` (cursor = the server `updated_at`, 60 s overlap) and applied to the local bill (status only, sync state untouched). Sync state `cancellations:<shopId>`.
 - **Pulled, then read-only**: `bills` and their items (`KB-324`, D63) — pushed from the device that made them, pulled by the others
   (and by a cleared phone); `bills.synced_at` is set by the server (trigger), a pulled bill is stored synced with a local-only
   `pulledAt` and never teaches. Sync state `bills:<shopId>`. Learning tables (aliases, provisional products, price observations) are pushed by the phone that learned them and pulled by a wiped or new phone (`KB-326`, D66): the server's `updated_at` (triggers on all four learning tables) is the cursor and the `learning_reset` cutoff; observations from the last 35 days only.
@@ -327,6 +336,7 @@ create policy <t>_update on <t> for update
 ```
 
 `base_products`: `select` for `authenticated`; no insert/update/delete policy at all.
+`bill_cancellations`: select and insert for a member of the shop; no update or delete policy (`test:rls`, `KB-325`).
 `shop_products` has **no delete policy**: a hard delete by a member affects zero rows (`test:rls`, `KB-330`). Rename, aliases and archive are plain UPDATEs by a member of the shop.
 
 **Mandatory negative test:** two shops, authenticated as each, asserting zero rows visible from the

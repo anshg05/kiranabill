@@ -780,6 +780,102 @@ async function main(): Promise<void> {
       await client.query(`update bills set status = 'cancelled' where id = $1`, [id]);
     });
 
+    // --- KB-325 (D79): bill_cancellations + cancel_bill() -------------------------------------------------------
+    // Select and insert for a member of the shop only; no update, no delete; the bill must be the same shop's (composite
+    // FK); cancel_bill runs as the caller (RLS), so another shop's bill is "unknown" (KB404); anon cannot execute it.
+    async function finalBillFor(userId: string, shopId: string, label: string): Promise<{ id: string; localId: string }> {
+      await asUser(client, userId);
+      const id = randomUUID();
+      const localId = randomUUID();
+      await client.query(
+        `insert into bills (id, shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id) values ($1, $2, $3, $4, 1000, 1000, 'draft', 1, 'test-device')`,
+        [id, shopId, localId, label],
+      );
+      await client.query(`insert into bill_items (bill_id, shop_id, line_no, display_name, total_paise, price_type, source) values ($1, $2, 1, 'x', 1000, 'total', 'manual')`, [id, shopId]);
+      await client.query(`update bills set status = 'final', finalized_at = now() where id = $1`, [id]);
+      return { id, localId };
+    }
+    const cancelCall = (shopId: string, billLocalId: string, reason = "wrong_price") =>
+      client.query(`select cancel_bill($1, $2, $3, gen_random_uuid(), 'test-device', now(), null) as id`, [shopId, billLocalId, reason]);
+
+    const cancelA = await finalBillFor(ownerA, shopA, "A-CANCEL-1");
+    const cancelB = await finalBillFor(ownerB, shopB, "B-CANCEL-1");
+    const cancelA2 = await finalBillFor(ownerA, shopA, "A-CANCEL-2");
+
+    let cancelledId = "";
+    await check(client, "KB-325 sanity: owner A cancels their OWN final bill - one row, status 'cancelled'", async () => {
+      await asUser(client, ownerA);
+      const res = await cancelCall(shopA, cancelA.localId);
+      cancelledId = res.rows[0].id as string;
+      const bill = await client.query(`select status from bills where id = $1`, [cancelA.id]);
+      const rows = await client.query(`select 1 from bill_cancellations where bill_id = $1`, [cancelA.id]);
+      if (bill.rows[0]?.status !== "cancelled" || rows.rowCount !== 1) throw new Error(`status ${bill.rows[0]?.status}, rows ${rows.rowCount}`);
+      return "cancelled, 1 row";
+    });
+    await check(client, "KB-325: cancel_bill again (a retry, or another device) is a no-op success - the same id, still one row", async () => {
+      await asUser(client, ownerA);
+      const again = await cancelCall(shopA, cancelA.localId, "other");
+      const rows = await client.query(`select reason from bill_cancellations where bill_id = $1`, [cancelA.id]);
+      if (again.rows[0].id !== cancelledId || rows.rowCount !== 1 || rows.rows[0].reason !== "wrong_price") throw new Error("not idempotent");
+      return "same id, reason unchanged";
+    });
+    await checkRejects(client, "KB-325: owner A cannot cancel shop B's bill through cancel_bill - it is invisible under RLS (KB404)", "KB404", async () => {
+      await asUser(client, ownerA);
+      await cancelCall(shopB, cancelB.localId);
+    });
+    await checkRejects(client, "KB-325: owner A calling cancel_bill with shop B's id and A's bill is also unknown (KB404)", "KB404", async () => {
+      await asUser(client, ownerA);
+      await cancelCall(shopB, cancelA2.localId);
+    });
+    await checkRejects(client, "KB-325: the anon role cannot execute cancel_bill at all", "42501", async () => {
+      await asAnon(client);
+      await cancelCall(shopA, cancelA2.localId);
+    });
+    await checkRejects(client, "KB-325: a reason outside the five is refused by the CHECK (23514) and leaves the bill final", "23514", async () => {
+      await asUser(client, ownerA);
+      await cancelCall(shopA, cancelA2.localId, "because");
+    });
+    await check(client, "KB-325: ...and that failed call left the bill final", async () => {
+      await asUser(client, ownerA);
+      const st = await client.query(`select status from bills where id = $1`, [cancelA2.id]);
+      if (st.rows[0]?.status !== "final") throw new Error(`status ${st.rows[0]?.status}`);
+      return "still final";
+    });
+    await check(client, "KB-325 read isolation: shop B cancels its own bill; owner A reads zero of B's cancellations and one of their own", async () => {
+      await asUser(client, ownerB);
+      await cancelCall(shopB, cancelB.localId);
+      await asUser(client, ownerA);
+      const mine = await client.query(`select 1 from bill_cancellations where shop_id = $1`, [shopA]);
+      const theirs = await client.query(`select 1 from bill_cancellations where shop_id = $1`, [shopB]);
+      if (mine.rowCount !== 1 || theirs.rowCount !== 0) throw new Error(`own ${mine.rowCount}, other ${theirs.rowCount}`);
+      return "own 1, other 0";
+    });
+    await checkRejects(client, "KB-325: owner A cannot INSERT a bill_cancellations row into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into bill_cancellations (shop_id, bill_id, bill_local_id, reason, cancelled_at, local_id, device_id) values ($1, $2, $3, 'other', now(), gen_random_uuid(), 'test-device')`,
+        [shopB, cancelB.id, cancelB.localId],
+      );
+    });
+    await checkRejects(client, "KB-325 same-shop integrity: owner A cannot file a cancellation for shop B's bill under shop A (composite FK)", "23503", async () => {
+      await asUser(client, ownerA);
+      await client.query(
+        `insert into bill_cancellations (shop_id, bill_id, bill_local_id, reason, cancelled_at, local_id, device_id) values ($1, $2, $3, 'other', now(), gen_random_uuid(), 'test-device')`,
+        [shopA, cancelB.id, cancelB.localId],
+      );
+    });
+    await check(client, "KB-325 append-only: owner A's UPDATE and DELETE of their own cancellation affect zero rows", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update bill_cancellations set reason = 'other' where shop_id = $1`, [shopA]);
+      const del = await client.query(`delete from bill_cancellations where shop_id = $1`, [shopA]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`updated ${upd.rowCount}, deleted ${del.rowCount}`);
+      return "0 updated, 0 deleted";
+    });
+    await checkRejects(client, "KB-325: a cancelled bill can never be modified afterwards (bills_enforce_immutability, D18)", "P0001", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update bills set total_paise = 1 where id = $1`, [cancelA.id]);
+    });
+
     // --- KB-105b: the four things KB-105 left unproven ---------------------
     // (1) receipt_number_blocks  (2) base_products is read-only
     // (3) cross-shop READS of the four learning tables  (4) Storage `shop-logos`.

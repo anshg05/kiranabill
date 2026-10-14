@@ -6,6 +6,7 @@ import {
   AUTH_EXCLUDE,
   DumpScanner,
   EXPECTED_PUBLIC_TABLES,
+  PENDING_PUBLIC_TABLES,
   MIN_FREE_BYTES,
   assertSafeArgs,
   backupFileName,
@@ -301,15 +302,31 @@ describe("DumpScanner: proves the file holds rows, not just structure (KI-25 not
   });
 });
 
+describe("a table created by a migration not yet on production (KB-325: bill_cancellations)", () => {
+  const counts: Record<string, number> = { "auth.users": 1, "auth.identities": 1, ...Object.fromEntries(EXPECTED_PUBLIC_TABLES.map((t) => [t, 1])) };
+  const ok = { counts, sawReplicaRole: true };
+  it("a dump taken BEFORE the push (no such table) still passes - the nightly backup must not fail between the code and `db push`", () => {
+    expect(PENDING_PUBLIC_TABLES).toContain("public.bill_cancellations");
+    expect(evaluateScan(ok as never)).toEqual([]);
+  });
+  it("a dump taken AFTER the push, with the table, passes too", () => {
+    expect(evaluateScan({ ...ok, counts: { ...ok.counts, "public.bill_cancellations": 3 } } as never)).toEqual([]);
+  });
+  it("an EXPECTED table missing is still a fault", () => {
+    const { "public.bills": _gone, ...rest } = ok.counts;
+    expect(evaluateScan({ ...ok, counts: rest } as never).join(" ")).toMatch(/public\.bills is missing/);
+  });
+});
+
 describe("the list of public tables cannot drift from the migrations", () => {
-  it("EXPECTED_PUBLIC_TABLES equals every `create table` in supabase/migrations", () => {
+  it("EXPECTED_PUBLIC_TABLES + PENDING_PUBLIC_TABLES equal every `create table` in supabase/migrations", () => {
     const dir = join(__dirname, "..", "..", "supabase", "migrations");
     const created = new Set<string>();
     for (const f of readdirSync(dir).filter((x) => x.endsWith(".sql"))) {
       const sql = readFileSync(join(dir, f), "utf8");
       for (const m of sql.matchAll(/^\s*create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?"?([a-z_]+)"?\s*\(/gim)) created.add(`public.${m[1]}`);
     }
-    expect([...EXPECTED_PUBLIC_TABLES].sort()).toEqual([...created].sort());
+    expect([...EXPECTED_PUBLIC_TABLES, ...PENDING_PUBLIC_TABLES].sort()).toEqual([...created].sort());
   });
 });
 

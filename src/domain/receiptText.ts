@@ -1,5 +1,6 @@
 import { UNKNOWN_CELL, type Receipt } from "./receipt.js";
 
+// KB-325: a cancelled bill carries its CANCELLED line first.
 // KB-309 (owner, 4 Oct 2026, Q2/Q5): the receipt as a WhatsApp message - the
 // same buildReceipt pieces and bill_language labels, plain text (WhatsApp's
 // *bold* on the shop name and total). Names are sent as typed (a "*" in one
@@ -15,6 +16,7 @@ export function receiptText(r: Receipt): string {
   return [
     `*${r.shopName.toUpperCase()}*`,
     ...(r.shopPhone ? [r.shopPhone] : []),
+    ...(r.cancelled ? [`*${r.cancelled}*`] : []),
     `${r.billNoLabel} ${r.receiptNumber} · ${r.dateTime}`,
     ...(r.customer ? [`${r.customerLabel} ${r.customer}`] : []),
     ...rows,
@@ -46,6 +48,7 @@ export function smsText(r: Receipt): string {
   return [
     r.shopName.toUpperCase(),
     ...(r.shopPhone ? [r.shopPhone] : []),
+    ...(r.cancelled ? [r.cancelled] : []),
     `${r.billNoLabel} ${r.receiptNumber} - ${r.dateTime}`,
     ...(r.customer ? [`${r.customerLabel} ${r.customer}`] : []),
     ...rows,

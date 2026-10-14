@@ -1,12 +1,13 @@
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
-import type { KiranaBillDB, LocalBill, LocalBillItem, LocalShop, ShopField, SyncStatus } from "@/data/db";
+import type { KiranaBillDB, LocalBill, LocalBillCancellation, LocalBillItem, LocalShop, ShopField, SyncStatus } from "@/data/db";
 import { billSearchRowOf } from "@/data/db";
 import type { BillSearchRow } from "@/domain/billSearch";
 import { emitBillsPull, noteBillsWritten } from "@/data/billsPullStatus";
 import { cycleEnded, cycleStarted, cycleThrew, resetSyncStatus } from "@/data/syncStatus";
 import { hasUnsyncedReset, isLearningPullDone, pullLearningState } from "@/data/pullLearning";
 import { learnPendingBills } from "@/data/learnBill";
+import { applyCancellations } from "@/data/cancelBill";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -42,7 +43,8 @@ const MAX_BACKOFF_MS = 5 * 60_000;
  * DECISIONS.md D37). Unknown codes are logged so they can be classified.
  * No code at all = a network-layer failure = transient.
  */
-const PERMANENT_CODES = new Set(["42501", "P0001", "KB400", "KB409", "KB422"]);
+// KB404 (KB-325): cancel_bill found no such bill for this shop - the same request fails the same way.
+const PERMANENT_CODES = new Set(["42501", "P0001", "KB400", "KB404", "KB409", "KB422"]);
 const KNOWN_TRANSIENT_PREFIXES = ["08", "40", "53", "57"];
 
 export function isPermanentError(error: PostgrestError | null): boolean {
@@ -251,6 +253,104 @@ export async function pushLearningEvents(client: SupabaseClient, localDb: Kirana
   }
 
   return { anyTransientFailure };
+}
+
+// ---------------------------------------------------------------------
+// KB-325 (D79): cancellations. After the bills (phase 1) - cancel_bill() needs the bill on the server. Only for a bill
+// whose OWN push succeeded: a bill in permanent conflict never reached the server, so there is nothing to cancel there -
+// its cancellation stays on this phone (pending), and the bill stays in conflict, still counted by the sync chip.
+// cancel_bill is idempotent (a retry, or another device cancelling the same bill, returns the existing row).
+// ---------------------------------------------------------------------
+
+export async function pushCancellations(client: SupabaseClient, localDb: KiranaBillDB): Promise<PushResult> {
+  const pending = await localDb.billCancellations.where("syncStatus").equals("pending").sortBy("cancelledAt");
+  let anyTransientFailure = false;
+  for (const c of pending) {
+    const bill = await localDb.bills.get(c.billLocalId);
+    if (!bill?.serverId || bill.syncStatus !== "synced") continue; // its push has not succeeded (yet, or ever)
+    const { data, error } = await client.rpc("cancel_bill", {
+      p_shop_id: c.shopId,
+      p_bill_local_id: c.billLocalId,
+      p_reason: c.reason,
+      p_local_id: c.localId,
+      p_device_id: c.deviceId,
+      p_cancelled_at: c.cancelledAt,
+      p_replacement_local_id: c.replacementLocalId,
+    });
+    if (error || typeof data !== "string") {
+      if (isPermanentError(error)) {
+        await localDb.billCancellations.update(c.billLocalId, { syncStatus: "conflict" as SyncStatus });
+        console.warn(`[sync] cancellations: permanent failure for localId=${c.localId}: ${error?.code ?? "no code"}`); // only the code
+      } else {
+        anyTransientFailure = true;
+      }
+      continue;
+    }
+    await localDb.billCancellations.update(c.billLocalId, { syncStatus: "synced" as SyncStatus, serverId: data, updatedAt: new Date().toISOString() });
+  }
+  return { anyTransientFailure };
+}
+
+/**
+ * KB-325: cancellations made on other devices. The server stamps each row (updated_at, a trigger), so the cursor is the
+ * server's clock (D62), re-reading the last 60 s. A row for a bill this phone already has cancels it (status only); for
+ * one it lacks, the bills pull brings the bill and the next cycle applies the cancellation. A row this phone already
+ * has (it pushed it, or cancelled the same bill itself) is left as it is.
+ */
+export async function pullCancellations(client: SupabaseClient, localDb: KiranaBillDB, shopId: string): Promise<void> {
+  try {
+    await pullCancellationsOnce(client, localDb, shopId);
+  } catch (err) {
+    // Only a name, never a message - it can echo a row. The next cycle asks again.
+    console.warn(`[sync] cancellations pull stopped: ${err instanceof Error ? err.name : "error"}`);
+  }
+}
+
+async function pullCancellationsOnce(client: SupabaseClient, localDb: KiranaBillDB, shopId: string): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+  const key = `cancellations:${shopId}`;
+  let newest = (await localDb.syncState.get(key))?.lastSyncedAt ?? null;
+  const from = newest ? new Date(new Date(newest).getTime() - SHOP_PRODUCTS_PULL_OVERLAP_MS).toISOString() : null;
+  let after: { at: string; id: string } | null = null;
+  let arrived = 0;
+  for (;;) {
+    let query = client.from("bill_cancellations").select("*").eq("shop_id", shopId).order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(500);
+    if (after) query = query.or(`updated_at.gt.${after.at},and(updated_at.eq.${after.at},id.gt.${after.id})`);
+    else if (from) query = query.gt("updated_at", from);
+    const { data, error } = await query;
+    if (error || !data) {
+      console.warn(`[sync] cancellations pull failed: ${error?.code ?? "no data"}`);
+      return;
+    }
+    const have = await localDb.billCancellations.bulkGet(data.map((r) => r.bill_local_id as string));
+    const fresh = data.flatMap((r, i): LocalBillCancellation[] =>
+      have[i]
+        ? []
+        : [{
+            localId: r.local_id as string,
+            serverId: r.id as string,
+            shopId,
+            billLocalId: r.bill_local_id as string,
+            reason: r.reason as LocalBillCancellation["reason"],
+            replacementLocalId: (r.replacement_local_id as string | null) ?? null,
+            cancelledAt: new Date(r.cancelled_at as string).toISOString(),
+            deviceId: r.device_id as string,
+            syncStatus: "synced",
+            updatedAt: r.updated_at as string,
+          }],
+    );
+    if (fresh.length > 0) await localDb.billCancellations.bulkAdd(fresh);
+    arrived += fresh.length;
+    const last = data[data.length - 1];
+    if (last) {
+      after = { at: last.updated_at as string, id: last.id as string };
+      if (!newest || new Date(last.updated_at as string) > new Date(newest)) newest = last.updated_at as string;
+    }
+    if (data.length < 500 || !last) break;
+  }
+  await localDb.syncState.put({ tableName: key, lastSyncedAt: newest, cursor: null, pendingCount: 0 });
+  const changed = await applyCancellations(localDb, shopId);
+  if (changed > 0 || arrived > 0) noteBillsWritten(localDb.name);
 }
 
 // ---------------------------------------------------------------------
@@ -592,8 +692,8 @@ async function writePulledBills(localDb: KiranaBillDB, shopId: string, rows: any
         }));
       newBills.push(bill);
       newItems.push(...items);
-      // D61: one search row per FINAL bill - a bill that arrives already cancelled is stored, not listed.
-      if (bill.status === "final") newSearch.push(billSearchRowOf(bill, items));
+      // D61: one search row per final bill. KB-325 (D79): a bill that arrives already cancelled is listed too, flagged.
+      if (bill.status === "final" || bill.status === "cancelled") newSearch.push(billSearchRowOf(bill, items));
     }
     // One bulk write per table - a page of 200 bills is ~1,400 rows.
     await localDb.bills.bulkAdd(newBills);
@@ -1034,6 +1134,8 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   // every bill that could sync this cycle already has (or doesn't have) a
   // serverId written to localDb.
   const learningEventsResult = await pushLearningEvents(client, localDb);
+  // KB-325: cancellations, after the bills - cancel_bill() needs the bill on the server.
+  const cancellationsResult = await pushCancellations(client, localDb);
 
   // KB-326 rule B (D66): while a learning_reset of this phone is not on the server, no learning row goes up - one
   // pushed before its reset event would carry an older stamp than the reset, and a pull would then drop it.
@@ -1051,6 +1153,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
   await pullShop(client, localDb, shopId);
   await pullBills(client, localDb, shopId);
+  await pullCancellations(client, localDb, shopId);
   // KB-326: learning state (aliases, provisional products, the last 35 days of price observations), honouring
   // learning_reset. Once it is in, bills that were waiting at the learning gate are learned (idempotent).
   // Only when the gate opens in THIS cycle - a steady-state cycle must not rescan every bill (the app learns after each save).
@@ -1059,7 +1162,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
     await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
   }
 
-  return mergeResults([billsResult, learningEventsResult, ...otherPushResults]);
+  return mergeResults([billsResult, learningEventsResult, cancellationsResult, ...otherPushResults]);
 }
 
 // ---------------------------------------------------------------------

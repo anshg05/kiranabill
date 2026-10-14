@@ -137,6 +137,11 @@ export function layoutReceipt(r: Receipt, measure: Measure, width = 384): Receip
   }
   y += 4;
   paragraph(plain(r.dateTime, SMALL, "date-time"), "center", LEADING, true);
+  // KB-325 (D79): a cancelled bill is marked on the image / PDF too - never shared as if it were valid.
+  if (r.cancelled) {
+    y += GAP;
+    paragraph(plain(r.cancelled, TOTAL, "cancelled"), "center", LEADING);
+  }
   dashed();
 
   // Bill No. <number> - the number breaks only after a hyphen.

@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from "dexie";
 import type { StoredReviewFlag } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
 import { toBillSearchRow, type BillSearchRow } from "@/domain/billSearch";
+import type { CancelReason } from "@/domain/cancelBill";
 
 // KB-109: the local IndexedDB layer. Three genuinely different roles
 // hide under "mirror the server tables" (docs/03-DATA-MODEL.md section 6):
@@ -89,6 +90,26 @@ export interface LocalBillItem {
    * survives finalise. bill_items.review_flags (jsonb). */
   reviewFlags: StoredReviewFlag[];
   wasEdited: boolean;
+}
+
+/**
+ * KB-325 (D79): a cancellation - the reason, the time and the link to the replacement draft. Keyed by the CANCELLED bill's
+ * local id (one per bill). Pushed through cancel_bill() after the bill's own push; pulled from bill_cancellations.
+ * The bill row itself changes only its status (hard rule 2).
+ */
+export interface LocalBillCancellation {
+  /** The cancellation's own idempotency key (bill_cancellations.local_id). */
+  localId: string;
+  serverId?: string;
+  shopId: string;
+  billLocalId: string;
+  reason: CancelReason;
+  /** The draft started to replace it; the replacement finds its predecessor by looking THIS up (no bills column). */
+  replacementLocalId: string | null;
+  cancelledAt: string;
+  deviceId: string;
+  syncStatus: SyncStatus;
+  updatedAt: string;
 }
 
 export interface LocalLearnedAlias {
@@ -241,6 +262,8 @@ export class KiranaBillDB extends Dexie {
   meta!: EntityTable<LocalMeta, "key">;
   /** D61: device-only search rows - never synced. */
   billSearch!: EntityTable<BillSearchRow, "localId">;
+  /** KB-325 (D79): one row per cancelled bill, keyed by that bill's local id. */
+  billCancellations!: EntityTable<LocalBillCancellation, "billLocalId">;
 
   constructor(name: string) {
     super(name);
@@ -315,6 +338,9 @@ export class KiranaBillDB extends Dexie {
         });
         await tx.table("billSearch").bulkPut([...wanted.values()].map((b) => billSearchRowOf(b, byBill.get(b.localId) ?? [])));
       });
+
+    // KB-325 (D79): cancellations. A new store, additive - no upgrade needed (the billSearch `cancelled` flag is not indexed).
+    this.version(5).stores({ billCancellations: "&billLocalId, shopId, replacementLocalId, syncStatus" });
   }
 }
 
@@ -328,6 +354,7 @@ export function billSearchRowOf(bill: LocalBill, items: readonly LocalBillItem[]
     totalPaise: bill.totalPaise,
     at: bill.finalizedAt ?? bill.createdAt,
     items: [...items].sort((a, b) => a.lineNo - b.lineNo).map((i) => ({ displayName: i.displayName, spokenName: i.spokenName })),
+    cancelled: bill.status === "cancelled",
   });
 }
 

@@ -19,20 +19,22 @@ export interface HistoryRow {
   /** When it was finalised (ISO). */
   readonly at: string;
   readonly syncStatus: SyncStatus;
+  /** KB-325 (D79): a cancelled bill is still listed, marked. */
+  readonly cancelled: boolean;
 }
 
 const byNewest = (x: { at: string }, y: { at: string }) => (x.at < y.at ? 1 : x.at > y.at ? -1 : 0);
 
 function row(b: LocalBill): HistoryRow {
-  return { localId: b.localId, receiptNumber: b.receiptNumber, customerName: b.customerName, totalPaise: b.totalPaise, at: b.finalizedAt ?? b.createdAt, syncStatus: b.syncStatus };
+  return { localId: b.localId, receiptNumber: b.receiptNumber, customerName: b.customerName, totalPaise: b.totalPaise, at: b.finalizedAt ?? b.createdAt, syncStatus: b.syncStatus, cancelled: b.status === "cancelled" };
 }
 
-/** What History opens with: this shop's newest final bills, from the createdAt index, without items. */
+/** What History opens with: this shop's newest final (and cancelled, KB-325) bills, from the createdAt index, without items. */
 export async function loadRecentRows(localDb: KiranaBillDB, shopId: string, limit: number): Promise<HistoryRow[]> {
   const bills = await localDb.bills
     .orderBy("createdAt")
     .reverse()
-    .filter((b) => b.shopId === shopId && b.status === "final")
+    .filter((b) => b.shopId === shopId && (b.status === "final" || b.status === "cancelled"))
     .limit(limit)
     .toArray();
   return bills.map(row).sort(byNewest);

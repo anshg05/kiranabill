@@ -220,6 +220,8 @@ export interface BillLines {
   readonly ready: boolean;
   discardDraft: () => Promise<void>;
   clearBill: () => Promise<void>;
+  /** KB-325: load the replacement draft of a cancelled bill (only onto an empty bill). */
+  startFrom: (state: BillState) => void;
   /** KB-307: everything data/finalise.ts needs, as the screen holds it now. */
   readonly draft: BillDraft;
   /** KB-319: heard, not on the bill yet - Retry or dismiss. */
@@ -402,6 +404,8 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     frozen.current = true;
     if (db && shopId) await clearDraft(db, shopId);
   }, [db, shopId]);
+  /** KB-325: the replacement draft of a cancelled bill - only onto an EMPTY bill (the reducer's "restore" rule). */
+  const startFrom = useCallback((state: BillState) => dispatch({ type: "restore", state }), []);
   /** "Clear bill": the bill is thrown away - nothing is saved, nothing is learned (hard rule 8). */
   const clearBill = useCallback(async () => {
     frozen.current = false;
@@ -419,6 +423,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     ready,
     discardDraft,
     clearBill,
+    startFrom,
     draft,
     notAdded: state.notAdded,
     focusLineId: state.focusLineId,

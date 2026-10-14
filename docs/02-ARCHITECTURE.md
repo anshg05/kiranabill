@@ -1,6 +1,6 @@
 # 02 — System Architecture
 
-**Last updated:** 8 Oct 2026 (rev 5) · **Status:** Final for MVP
+**Last updated:** 14 Oct 2026 (rev 6) · **Status:** Final for MVP
 **Read `07-DECISIONS.md` before changing anything here.**
 
 ---
@@ -72,7 +72,7 @@ two write paths and that is where the bugs live.
 
 Immutable bills are what make this a weekend problem instead of a distributed-systems problem.
 **Never make a finalised bill editable.** If a bill is wrong, it is cancelled and a new one issued —
-exactly as paper works.
+exactly as paper works. **Built (`KB-325`, D79):** the cancel changes `bills.status` only; its reason, time and the link to the replacement live in the append-only `bill_cancellations` table (pushed by `cancel_bill()`, pulled by the other devices), so the trigger that guards this rule is never loosened.
 
 ### Sync protocol
 

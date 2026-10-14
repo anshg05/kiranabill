@@ -19,6 +19,7 @@ import { Receipt, ReceiptNumberText } from "./Receipt";
 import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
 import { ShareBar } from "./ShareBar";
 import { HistoryScreen } from "./HistoryScreen";
+import { reissueState } from "./reissueDraft";
 import { CatalogScreen } from "./CatalogScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { addCustomProduct, addFromReadyCatalog, saveProductDetails, saveProductPrice, setProductActive } from "@/data/catalogEdit";
@@ -189,6 +190,24 @@ export function BillingScreen() {
     resetBill();
     clearSaved();
   }, [clearSaved, resetBill]);
+  // KB-325 (D79): a bill is "in progress" while it has lines, a not-added utterance or a customer - and is not the one just saved.
+  const billInProgress = !finaliser.saved && (bill.rows.length > 0 || bill.notAdded.length > 0 || bill.customer.name !== CASH || bill.customer.mobile !== null);
+  // "Cancel and make a new bill": the cancelled bill's stored lines become the replacement's draft, under the id its cancellation points to.
+  const { startFrom } = bill;
+  const onReissue = useCallback(
+    (billLocalId: string, replacementLocalId: string) => {
+      if (!localDb) return;
+      void Promise.all([localDb.bills.get(billLocalId), localDb.billItems.where("billLocalId").equals(billLocalId).sortBy("lineNo")])
+        .then(([stored, items]) => {
+          if (!stored) return;
+          onNewBill();
+          startFrom(reissueState(stored, items, replacementLocalId, new Date().toISOString()));
+          setHistoryOpen(false);
+        })
+        .catch((err: unknown) => console.warn("[reissue] could not build the new bill:", err instanceof Error ? err.message : err));
+    },
+    [localDb, onNewBill, startFrom],
+  );
 
   const onSignOut = () => {
     voice.releaseMic(); // the warm mic goes off before anything else (D45)
@@ -239,7 +258,15 @@ export function BillingScreen() {
       onClearBill={() => void bill.clearBill()}
     />
     {historyOpen && localDb && shop && (
-      <HistoryScreen localDb={localDb} shopId={shop.id} render={renderReceiptFiles} onClose={() => setHistoryOpen(false)} />
+      <HistoryScreen
+        localDb={localDb}
+        shopId={shop.id}
+        deviceId={deviceId ?? undefined}
+        billInProgress={billInProgress}
+        onReissue={onReissue}
+        render={renderReceiptFiles}
+        onClose={() => setHistoryOpen(false)}
+      />
     )}
     {settingsOpen && localDb && shop && deviceId && (
       <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} deviceDb={deviceDb} onClose={() => setSettingsOpen(false)} />

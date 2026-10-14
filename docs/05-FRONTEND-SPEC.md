@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 14 Oct 2026 (rev 19) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 14 Oct 2026 (rev 20) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -280,10 +280,16 @@ Each row shows a sync chip when not yet synced. Never alarming; just information
 - **Search** (`domain/billSearch.ts`): every word must match the customer name, the receipt's sequence number ("142" →
   `KB-000142`, "14" doesn't), the exact total in paise ("112.50", "112.5"), a date `dd-mm` / `dd-mm-yyyy` with `-` `/`
   or `.` and single digits ("4/10"), or an item name; Devanagari digits read as 0–9. **Never the customer's mobile.**
-- **Row:** receipt number, time, the name unless Cash, the total, "Not synced" while pending. Grouped Today /
+- **Row:** receipt number, time, the name unless Cash, the total, "Not synced" while pending, and a text tag **"Cancelled"** (`KB-325`; never colour alone). Grouped Today /
   Yesterday / `dd-mm-yyyy`. No item count (owner: no schema change).
-- **S6 bill detail:** the read-only receipt (`Receipt.tsx`) and the four share buttons (`ShareBar.tsx`, D58). Cancel
-  and reissue is `KB-325` (parked).
+- **S6 bill detail:** the read-only receipt (`Receipt.tsx`) and the four share buttons (`ShareBar.tsx`, D58); **Cancel bill** below them (`KB-325`, next section).
+
+### Implementation notes - cancel and reissue (`KB-325`, 14 Oct 2026; D79)
+
+- **Cancel bill** (a saved bill, 44 px) opens a sheet: **"Cancel Bill KB-000142?"**, "The bill stays in History, marked Cancelled. Its number is not used again. This cannot be undone.", **five reason chips** (Wrong item - Wrong price - Wrong quantity - Customer cancelled - Other; nothing to type), and **Cancel and make a new bill** / **Cancel only** (both wait for a reason) / **Keep the bill**. It is irreversible and not mid-bill, so a confirm step is right (hard rule 6 is about questions *during* a bill). Works offline - it only writes this phone's database - and reaches the other phones on the next sync cycle.
+- **Cancel and make a new bill:** the stored bill's lines (qty, unit, rate with its own unit, total, price type - exactly as stored, nothing re-priced or filled in) and its customer become a **new draft** under the id the cancellation points to; History closes and the billing screen opens on it. It goes through the ordinary Bill Banao (flags re-derived; a line with no price still says "Price needed"). It takes the **next receipt number**; a cancelled number is never reused. Every reissued line is a manual line, so it teaches no alias a second time. **Off while a bill is in progress** ("A bill is in progress - finish it or clear it first to make the new bill.") - it would have to replace it; Cancel only still works. If the draft is abandoned the cancelled bill reads "No replacement bill made".
+- **A cancelled bill:** the receipt carries a **CANCELLED** line on the screen, the image / PDF and the WhatsApp / SMS text (hi: "रद्द", both: "रद्द / CANCELLED"), with the same lines and total - it is never shown or shared as if valid; the four share buttons stay. Below it a card: "Cancelled - Wrong price", the date, and **"Replaced by Bill KB-000143"** (tap to open) or "No replacement bill made". The new bill says **"Replaces Bill KB-000142"** (tap to open) - found by looking the cancellations up by its own id; no bills column. The reason is internal: not printed on the receipt, shown only as the preset label.
+- **Sync honesty:** while the cancellation has not reached the server the card says "Will reach your other phones when this one is online". For a bill whose own push is in permanent conflict (the server refused it, so it is not there to cancel) it says **"This bill couldn't be saved to the server, so its cancellation is on this phone only."** - the bill stays in conflict, still counted by the sync chip.
 
 ---
 
