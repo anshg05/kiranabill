@@ -1,4 +1,5 @@
 import { buildReceipt, type Receipt } from "@/domain/receipt";
+import { loadCancellationInfo } from "./cancelBill";
 import type { KiranaBillDB } from "./db";
 
 /**
@@ -13,5 +14,7 @@ export async function loadReceipt(localDb: KiranaBillDB, billLocalId: string): P
   const shop = await localDb.shops.get(bill.shopId);
   if (!shop) return null;
   const items = await localDb.billItems.where("billLocalId").equals(billLocalId).sortBy("lineNo");
-  return buildReceipt(bill, items, shop);
+  // SG-13: the replacement says which bill it replaces (the cancellation that points at it; no bills column).
+  const replaces = (await loadCancellationInfo(localDb, billLocalId)).replaces?.receiptNumber ?? null;
+  return buildReceipt(bill, items, shop, replaces);
 }

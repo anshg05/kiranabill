@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 14 Oct 2026 (rev 63)
+**Last updated:** 16 Oct 2026 (rev 64)
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -194,7 +194,7 @@ Unvalidated. Recorded so they aren't lost, **not** commitments.
 | SG-11 | **Bill-level round-off / discount — "₹88 kar do".** A shopkeeper often settles a ₹89.50 bill at ₹88 or ₹90. That is one adjustment on the whole bill, not an edit to any line: editing a line's amount to force the total would put a false price into the learning data. | Owner, `KB-303` plan (1 Oct 2026) | A bill-level adjustment line (signed paise, labelled "Round-off" / "Discount"), shown above TOTAL, never feeding learning. Needs a spot in `bills` (03). **Trigger:** first pilot feedback asking for it, or `KB-307` finalise. |
 | ~~SG-10~~ | ~~**A TypeScript-aware lint rule set**~~ (`typescript-eslint` recommended, with type information — e.g. floating promises, misused promises, unsafe `any`). `KB-316` deliberately added only five ESLint core rules and no dependency (owner). | Owner, `KB-316` | Worth it before the sync worker and UI grow much further — floating promises are a real risk in `src/data/sync.ts`-style code. New dev dependency (`typescript-eslint`) → justify against `09` §B6. Expect existing findings; list before fixing. **Trigger: before `KB-307` (finalise + learning writes), or any time lint would have caught a shipped bug.** **Done 3 Oct 2026, `KB-307` commit 1** (D53): three rules on `src/data`, `src/ui`, `netlify/`; a planted floating promise in `src/data` fails lint. Existing findings → KI-61. |
 | SG-12 | **A Retry for a failed transcription** - keep the last recording for a few minutes so "Couldn't hear that" can be retried without speaking again. | `KB-331` plan, decision g (11 Oct 2026) | D50 keeps text only, so today the shopkeeper speaks again or taps Add by hand. Needs a storage and privacy decision (audio on the phone); not before the pilot shows it is wanted. |
-| SG-13 | **Print "Replaces Bill KB-..." on the replacement's receipt.** One small muted line under the bill number, in every rendering (screen, image, PDF, WhatsApp, SMS). | `KB-325` plan (14 Oct 2026) | **Recommended yes:** the customer who still holds the cancelled receipt sees which bill supersedes it, and an auditor sees the chain. Not built: it changes the owner-approved parchi layout (D57) everywhere, so it waits for the owner's word. The data is already local (the predecessor lookup). |
+| ~~SG-13~~ | ~~**Print "Replaces Bill KB-..." on the replacement's receipt.**~~ **Built 16 Oct 2026 (owner: yes; part of `KB-325`; recorded against D57).** | `KB-325` plan | Done - one small muted line under the bill number in every rendering. Its Hindi wording awaits the owner's review (`KB-332`). |
 
 ---
 

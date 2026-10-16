@@ -207,6 +207,18 @@ describe("History and the receipt show a cancelled bill", () => {
     expect(rows.map((r) => [r.localId, r.cancelled]).sort()).toEqual([[a, true], [b, false]].sort());
   });
 
+  it("loadReceipt: the replacement's receipt says 'Replaces Bill <the cancelled number>'; the cancelled one and an ordinary bill do not (SG-13)", async () => {
+    const original = await finalBill("2 kilo chini");
+    const ordinary = await finalBill("1 kilo besan");
+    const replacement = crypto.randomUUID();
+    await cancel(original, { replacementLocalId: replacement });
+    await finaliseBill(db, { localId: replacement, shopId, deviceId, startedAt: "2026-10-14T06:10:00.000Z", customer: { name: "Cash", mobile: null }, lines: lines("2 kilo cheeni 48 wala"), flags: [], now: new Date(NOW + 60_000) });
+    const number = (await db.bills.get(original))!.receiptNumber;
+    expect((await loadReceipt(db, replacement))!.replaces).toBe(`Replaces Bill ${number}`);
+    expect((await loadReceipt(db, original))!.replaces).toBeNull();
+    expect((await loadReceipt(db, ordinary))!.replaces).toBeNull();
+  });
+
   it("loadReceipt carries the CANCELLED line only for a cancelled bill", async () => {
     const a = await finalBill("2 kilo chini");
     const b = await finalBill("1 kilo besan");

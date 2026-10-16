@@ -1,6 +1,6 @@
 # 22 — Backup and Restore
 
-**Last updated:** 14 Oct 2026 (rev 2) · **Status:** built (`KB-407`, `07-DECISIONS.md` D75); the owner's setup steps and the first real run are tracked in `10-TRACKER.md` "Before deployment".
+**Last updated:** 16 Oct 2026 (rev 3) · **Status:** built (`KB-407`, `07-DECISIONS.md` D75); the owner's setup steps and the first real run are tracked in `10-TRACKER.md` "Before deployment".
 
 KiranaBill runs on the **Supabase Free plan**, which has **no backups** (D70). This is the backup: every day an **encrypted** copy of the production database goes to the owner's Google Drive, and a restore has been rehearsed. If you are reading this because something is broken: jump to **§8 Emergency restore**.
 
@@ -24,7 +24,7 @@ Three files per run, all encrypted, named `kb-backup-<UTC stamp>-<kind>.gz.gpg`:
 
 **Checked on every run, and the run FAILS (with a popup) if not:** every `public` table is present; `shops`, `shop_members`, `auth.users`, `auth.identities` have rows; no `auth` table other than `users` / `identities` / `instances` and no `storage` table other than `objects` appears (so a table a platform upgrade adds is judged, not silently stored); **`storage.objects` is empty** (Storage files are *not* in the backup — only their metadata; today there are none, and if one ever appears the backup says so instead of passing); the file really is encrypted to the owner's key.
 
-**A table whose migration is not on production yet** (`PENDING_PUBLIC_TABLES` in `scripts/backup/backupCore.ts`; today `public.bill_cancellations`, `KB-325`): the data dump takes every public table anyway, but a dump WITHOUT it still passes, so the nightly backup does not fail between the code and the owner's `db push`. **Right after that push the name moves to `EXPECTED_PUBLIC_TABLES`** (then a dump missing it is a real fault; a test fails until the two lists match the migrations).
+**A table whose migration is not on production yet** (`PENDING_PUBLIC_TABLES` in `scripts/backup/backupCore.ts`; empty since 16 Oct 2026 - `public.bill_cancellations`, `KB-325`, moved to the expected list after the owner's push, and the first backup after it showed 16 tables): the data dump takes every public table anyway, but a dump WITHOUT it still passes, so the nightly backup does not fail between the code and the owner's `db push`. **Right after that push the name moves to `EXPECTED_PUBLIC_TABLES`** (then a dump missing it is a real fault; a test fails until the two lists match the migrations).
 
 **Deliberately NOT stored:** sessions and refresh tokens (`auth.sessions`, `auth.refresh_tokens`, …) — a refresh token is a live login, so after a restore everyone signs in with Google again. Storage's own bookkeeping tables (platform-versioned; the bucket is recreated by a migration).
 

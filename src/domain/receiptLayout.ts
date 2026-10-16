@@ -146,6 +146,7 @@ export function layoutReceipt(r: Receipt, measure: Measure, width = 384): Receip
 
   // Bill No. <number> - the number breaks only after a hyphen.
   paragraph([...plain(`${r.billNoLabel} `, BASE, "bill-no-label"), ...numberChunks(r.receiptNumber).map((c): Token => ({ text: c, font: BOLD, role: "number" }))], "left");
+  if (r.replaces) paragraph(plain(r.replaces, SMALL, "replaces"), "left", LEADING, true);
   if (r.customer) paragraph(plain(`${r.customerLabel} ${r.customer}`, BASE, "customer"), "left");
   dashed();
 

@@ -87,8 +87,8 @@ describe("buildReceipt - what the parchi shows", () => {
 describe("bill_language - the CUSTOMER's receipt (not KI-59's screen language)", () => {
   it("one table of strings, en / hi / both", () => {
     expect(RECEIPT_TEXT).toEqual({
-      en: { cancelled: "CANCELLED", billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
-      hi: { cancelled: "रद्द", billNo: "बिल नं.", customer: "ग्राहक:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
+      en: { cancelled: "CANCELLED", replaces: "Replaces Bill {n}", billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
+      hi: { cancelled: "रद्द", replaces: "बिल नं. {n} की जगह", billNo: "बिल नं.", customer: "ग्राहक:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
     });
   });
 

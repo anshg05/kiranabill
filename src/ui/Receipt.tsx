@@ -53,6 +53,11 @@ export function Receipt({ receipt }: { receipt: ReceiptModel }) {
           <ReceiptNumberText value={r.receiptNumber} />
         </span>
       </p>
+      {r.replaces && (
+        <p data-testid="receipt-replaces" className="text-[0.85em] text-ink-soft [overflow-wrap:anywhere]">
+          {r.replaces}
+        </p>
+      )}
       {r.customer && (
         <p data-testid="receipt-customer" className="[overflow-wrap:anywhere]">
           {r.customerLabel} {r.customer}

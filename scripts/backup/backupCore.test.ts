@@ -302,19 +302,16 @@ describe("DumpScanner: proves the file holds rows, not just structure (KI-25 not
   });
 });
 
-describe("a table created by a migration not yet on production (KB-325: bill_cancellations)", () => {
+describe("public tables the backup insists on (KB-325: bill_cancellations is expected since the db push)", () => {
   const counts: Record<string, number> = { "auth.users": 1, "auth.identities": 1, ...Object.fromEntries(EXPECTED_PUBLIC_TABLES.map((t) => [t, 1])) };
   const ok = { counts, sawReplicaRole: true };
-  it("a dump taken BEFORE the push (no such table) still passes - the nightly backup must not fail between the code and `db push`", () => {
-    expect(PENDING_PUBLIC_TABLES).toContain("public.bill_cancellations");
+  it("every expected table present: passes; bill_cancellations is among them", () => {
+    expect(EXPECTED_PUBLIC_TABLES).toContain("public.bill_cancellations");
     expect(evaluateScan(ok as never)).toEqual([]);
   });
-  it("a dump taken AFTER the push, with the table, passes too", () => {
-    expect(evaluateScan({ ...ok, counts: { ...ok.counts, "public.bill_cancellations": 3 } } as never)).toEqual([]);
-  });
-  it("an EXPECTED table missing is still a fault", () => {
-    const { "public.bills": _gone, ...rest } = ok.counts;
-    expect(evaluateScan({ ...ok, counts: rest } as never).join(" ")).toMatch(/public\.bills is missing/);
+  it("a dump missing bill_cancellations (or any expected table) is a fault", () => {
+    const { "public.bill_cancellations": _gone, ...rest } = counts;
+    expect(evaluateScan({ ...ok, counts: rest } as never).join(" ")).toMatch(/public\.bill_cancellations is missing/);
   });
 });
 

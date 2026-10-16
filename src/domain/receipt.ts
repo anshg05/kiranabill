@@ -13,8 +13,8 @@ export const UNKNOWN_CELL = "—";
 
 /** Owner-approved strings (D57, 4 Oct 2026) - one table, easy to change. */
 export const RECEIPT_TEXT = {
-  en: { cancelled: "CANCELLED", billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
-  hi: { cancelled: "रद्द", billNo: "बिल नं.", customer: "ग्राहक:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
+  en: { cancelled: "CANCELLED", replaces: "Replaces Bill {n}", billNo: "Bill No.", customer: "Customer:", total: "TOTAL", thanks: "Thank You!", item: "Item", qty: "Qty", rate: "Rate", amount: "Amt" },
+  hi: { cancelled: "रद्द", replaces: "बिल नं. {n} की जगह", billNo: "बिल नं.", customer: "ग्राहक:", total: "कुल", thanks: "धन्यवाद!", item: "सामान", qty: "मात्रा", rate: "दर", amount: "रकम" },
 } as const;
 
 /** Units as printed. A unit missing here prints as stored. "both" uses Hindi. */
@@ -76,6 +76,8 @@ export interface Receipt {
   readonly thanks: string;
   /** KB-325: "CANCELLED" (hi: "रद्द", both: "रद्द / CANCELLED") for a cancelled bill, else null. */
   readonly cancelled: string | null;
+  /** SG-13 (D57): "Replaces Bill KB-000142" on the replacement's receipt, else null. One small muted line under the bill number. */
+  readonly replaces: string | null;
 }
 
 /** "KB-6f1c...-3" -> ["KB-", "6f1c...-", ..., "3"]: a break is allowed only after a hyphen. */
@@ -98,10 +100,11 @@ function formatPhone(phone: string | null): string | null {
   return /^\d{10}$/.test(phone) ? `${phone.slice(0, 5)} ${phone.slice(5)}` : phone;
 }
 
-export function buildReceipt(bill: ReceiptBill, items: readonly ReceiptItem[], shop: ReceiptShop): Receipt {
+export function buildReceipt(bill: ReceiptBill, items: readonly ReceiptItem[], shop: ReceiptShop, replacesNumber: string | null = null): Receipt {
   const lang = shop.billLanguage;
   const label = (key: keyof typeof RECEIPT_TEXT.en) =>
     lang === "both" ? `${RECEIPT_TEXT.hi[key].replace(/:$/, "")} / ${RECEIPT_TEXT.en[key]}` : RECEIPT_TEXT[lang][key];
+  const replaceLabel = (n: string) => (lang === "both" ? `${RECEIPT_TEXT.hi.replaces.replace("{n}", n)} / ${RECEIPT_TEXT.en.replaces.replace("{n}", n)}` : RECEIPT_TEXT[lang].replaces.replace("{n}", n));
   const units = UNIT_TEXT[lang === "en" ? "en" : "hi"];
   const unitText = (unit: string) => units[unit] ?? unit;
 
@@ -134,6 +137,7 @@ export function buildReceipt(bill: ReceiptBill, items: readonly ReceiptItem[], s
     total: formatRupees(bill.totalPaise),
     // "both": one line, legacy's two-space gap (a no-break space keeps it from collapsing).
     cancelled: bill.status === "cancelled" ? label("cancelled") : null,
+    replaces: replacesNumber === null ? null : replaceLabel(replacesNumber),
     thanks: lang === "both" ? `${RECEIPT_TEXT.hi.thanks}  ${RECEIPT_TEXT.en.thanks}` : RECEIPT_TEXT[lang].thanks,
   };
 }

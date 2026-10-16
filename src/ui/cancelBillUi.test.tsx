@@ -82,6 +82,7 @@ describe("the bill detail - Cancel bill", () => {
     expect(await (await openBill(a.number)).findByRole("button", { name: "Cancel bill" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Bill" })).toBeNull());
+    await new Promise((r) => setTimeout(r, 30)); // the closed detail takes its history entry off on the next tick - let it land before the next opens
     const cancelledDetail = await openBill(b.number);
     await cancelledDetail.findByRole("region", { name: "Cancellation" }); // loaded
     expect(cancelledDetail.queryByRole("button", { name: "Cancel bill" })).toBeNull();
@@ -217,6 +218,7 @@ describe("Cancel and make a new bill - the reissue", () => {
     const second = within(screen.getAllByRole("region", { name: "Bill" }).at(-1)!);
     expect(await second.findByRole("button", { name: `Replaces Bill ${a.number}` })).toBeTruthy();
     expect(second.queryByRole("region", { name: "Cancellation" })).toBeNull(); // the new bill is a normal bill
+    expect((await second.findByTestId("receipt-replaces")).textContent).toBe(`Replaces Bill ${a.number}`); // printed on the receipt too (SG-13)
   });
 });
 

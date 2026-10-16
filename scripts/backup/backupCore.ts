@@ -23,6 +23,7 @@ export const MIN_FREE_BYTES = 2 * 1024 ** 3;
 /** Every table the migrations create in `public`. A test keeps this equal to supabase/migrations. */
 export const EXPECTED_PUBLIC_TABLES = [
   "public.base_products",
+  "public.bill_cancellations",
   "public.bill_items",
   "public.bills",
   "public.learned_aliases",
@@ -39,9 +40,8 @@ export const EXPECTED_PUBLIC_TABLES = [
  * Created by a migration that may not be on PRODUCTION yet (the owner's `db push` comes after the code). A backup taken
  * before the push has no such table and must still pass; once it is pushed, move the name into EXPECTED_PUBLIC_TABLES
  * (a dump then missing it is a real fault). The data dump takes every public table - this list only decides what is checked.
- * KB-325: bill_cancellations.
  */
-export const PENDING_PUBLIC_TABLES = ["public.bill_cancellations"];
+export const PENDING_PUBLIC_TABLES: string[] = []; // empty again: bill_cancellations moved to EXPECTED after the owner's db push (14 Oct 2026)
 
 /** The only `auth` tables a backup keeps: who the users are, and which Google account each one is. */
 export const ALLOWED_AUTH_TABLES = ["auth.users", "auth.identities", "auth.instances"];

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 14 Oct 2026 (rev 52) · Supersedes rev 40
+**Last updated:** 16 Oct 2026 (rev 53) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -1476,6 +1476,8 @@ was built and checked; it amends that mockup, the Q3 strings and two display rul
 5. **Unchanged:** unknown qty "—" (D47), SG-09 rate units, the fallback number breaking only after hyphens and copying
    whole (Q1 A), the customer's mobile nowhere in the page.
 
+**Amended 16 Oct 2026 (owner, `KB-325`, SG-13):** the layout gains two optional lines, each only when it applies and in every rendering (screen, image / PDF, WhatsApp text, SMS): **CANCELLED** (a cancelled bill: a centred bold line under the date; first line after the shop name in the texts) and **"Replaces Bill KB-000142"** (the replacement bill: one small muted line directly under the bill number; en "Replaces Bill {n}", hi "बिल नं. {n} की जगह", both "hi / en"). Bill language strings `cancelled` (CANCELLED / रद्द) and `replaces` joined the table. **The Hindi wording of both is mine - for the owner's wording review with `KB-332`.** Nothing else on the receipt changes (a test compares the receipts).
+
 ### D58 — Sharing the receipt, the legacy way: Image and PDF download, WhatsApp sends the image, SMS sends text 🟢
 
 **Owner decisions, 4 Oct 2026, `KB-309`** (plan Q1–Q5 and additions; then commit 3: the owner's desktop check asked for
@@ -1984,8 +1986,8 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 7. **The back-link has no `bills` column (owner, decision 9):** the replacement finds its predecessor by looking up `bill_cancellations` where `replacement_local_id` = its own `local_id` (local copy and pulled rows) and shows **"Replaces Bill KB-..."**; the cancelled bill shows "Replaced by Bill ..." or "No replacement bill made".
 8. **Cancelled bills stay in History** (a text "Cancelled" tag, still searchable) and their receipts carry a **CANCELLED line** in every rendering; the four shares stay available, always with that mark. **A bill that arrives already cancelled is now listed too** (supersedes D61's "stored, not listed").
 9. **Learning is not undone (decision 6, `NI-50`):** a cancelled bill already taught, and learning rows are append-only with no delete sync (NI-27). The replacement's lines are manual, so they re-teach no alias, but an edited rate on them can add a price observation. **`KB-323`'s scope now includes:** aliases learned from a bill that was later cancelled must not count toward parser matches (or must be discounted) before learned aliases reach the parser - `learning_events` (`alias_confirmed`, with the bill) and `bill_cancellations` give the provenance.
-10. **Backup (D75):** the new table is in every backup (the dump takes every public table). Until the owner's `db push`, `bill_cancellations` is `PENDING_PUBLIC_TABLES` in `scripts/backup/backupCore.ts` - a dump without it passes, so the nightly backup does not fail between the code and the push - and **moves to `EXPECTED_PUBLIC_TABLES` right after the push**.
-11. **Not built (asked):** whether "Replaces Bill KB-..." should also PRINT on the replacement's receipt - recommended yes, as one small muted line under the bill number (the customer who still holds the cancelled receipt sees which bill supersedes it; an auditor sees the chain), but it changes the owner-approved parchi layout (D57) in every rendering, so it waits for the owner (`SG-13`).
+10. **Backup (D75):** the new table is in every backup (the dump takes every public table). Until the owner's `db push` (done 16 Oct 2026), `bill_cancellations` was `PENDING_PUBLIC_TABLES` in `scripts/backup/backupCore.ts` - a dump without it passes, so the nightly backup does not fail between the code and the push - and **moved to `EXPECTED_PUBLIC_TABLES` right after the push**.
+11. **"Replaces Bill KB-..." is also PRINTED on the replacement's receipt (owner, 16 Oct 2026, SG-13):** one small muted line under the bill number, in every rendering - the customer who still holds the cancelled receipt sees which bill supersedes it, and an auditor sees the chain. Recorded against D57 (amended). It is read from the same lookup as the on-screen link (the cancellation that points at the bill), so there is still no `bills` column.
 
 ---
 
