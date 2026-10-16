@@ -144,6 +144,46 @@ describe("useVoiceBilling", () => {
     expect(onTranscript).not.toHaveBeenCalled();
   });
 
+  // KB-404 (D80): a TURN is a recording that reached transcription - success or failure. A mic that never started is not one.
+  it("onTurn fires once per recording that reaches transcription: a transcript, a failed upload and an empty transcript all count", async () => {
+    reply(200, { transcript: "do kilo chini" });
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    reply(200, { transcript: "   " });
+    const onTurn = vi.fn();
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTurn }));
+    await speak(result);
+    expect(onTurn).toHaveBeenCalledTimes(1);
+    await speak(result);
+    expect(onTurn).toHaveBeenCalledTimes(2);
+    await speak(result);
+    expect(onTurn).toHaveBeenCalledTimes(3);
+  });
+
+  it("onTurn does NOT fire when the mic never started (permission denied)", async () => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: vi.fn(async () => { throw new DOMException("denied", "NotAllowedError"); }) },
+    });
+    const onTurn = vi.fn();
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTurn }));
+    await act(async () => result.current.onMicTap());
+    await waitFor(() => expect(result.current.view.phase).toBe("failed"));
+    expect(onTurn).not.toHaveBeenCalled();
+  });
+
+  it("onTranscribed reports stop -> transcript in whole ms, before the transcript is handed on; not for an empty transcript", async () => {
+    reply(200, { transcript: "do kilo chini" });
+    reply(200, { transcript: "  " });
+    const order: string[] = [];
+    const onTranscribed = vi.fn((ms: number) => order.push(`ms:${Number.isInteger(ms) && ms >= 0}`));
+    const onTranscript = vi.fn(async () => void order.push("transcript"));
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscribed, onTranscript }));
+    await speak(result);
+    expect(order).toEqual(["ms:true", "transcript"]);
+    await speak(result);
+    expect(onTranscribed).toHaveBeenCalledTimes(1);
+  });
+
   it("mic permission denied -> failed with the permission message", async () => {
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,

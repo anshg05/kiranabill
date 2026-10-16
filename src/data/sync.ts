@@ -8,6 +8,7 @@ import { cycleEnded, cycleStarted, cycleThrew, resetSyncStatus } from "@/data/sy
 import { hasUnsyncedReset, isLearningPullDone, pullLearningState } from "@/data/pullLearning";
 import { learnPendingBills } from "@/data/learnBill";
 import { applyCancellations } from "@/data/cancelBill";
+import { pullBillMetrics, pushBillMetrics } from "@/data/billMetrics";
 
 // KB-110: the sync worker. Not a literal Web Worker - a main-thread async
 // loop (setInterval + online/offline listeners + a manual syncNow()).
@@ -1136,6 +1137,8 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   const learningEventsResult = await pushLearningEvents(client, localDb);
   // KB-325: cancellations, after the bills - cancel_bill() needs the bill on the server.
   const cancellationsResult = await pushCancellations(client, localDb);
+  // KB-404: the per-bill measurements, also after the bills (a row needs its bill on the server).
+  const metricsResult = await pushBillMetrics(client, localDb);
 
   // KB-326 rule B (D66): while a learning_reset of this phone is not on the server, no learning row goes up - one
   // pushed before its reset event would carry an older stamp than the reset, and a pull would then drop it.
@@ -1154,6 +1157,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   await pullShop(client, localDb, shopId);
   await pullBills(client, localDb, shopId);
   await pullCancellations(client, localDb, shopId);
+  await pullBillMetrics(client, localDb, shopId);
   // KB-326: learning state (aliases, provisional products, the last 35 days of price observations), honouring
   // learning_reset. Once it is in, bills that were waiting at the learning gate are learned (idempotent).
   // Only when the gate opens in THIS cycle - a steady-state cycle must not rescan every bill (the app learns after each save).
@@ -1162,7 +1166,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
     await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
   }
 
-  return mergeResults([billsResult, learningEventsResult, cancellationsResult, ...otherPushResults]);
+  return mergeResults([billsResult, learningEventsResult, cancellationsResult, metricsResult, ...otherPushResults]);
 }
 
 // ---------------------------------------------------------------------

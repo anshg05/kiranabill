@@ -207,7 +207,7 @@ describe("KB-312 - Developer mode", () => {
     expect(dev.queryByText(/other/)).toBeNull(); // another shop's learning never shows
     expect(dev.getByText(/“kurkure” — said 2 times/)).toBeTruthy();
     expect(dev.getByText("Sugar: ₹55 / kg on 3 bills (now ₹48)")).toBeTruthy();
-    expect(dev.getAllByRole("button").map((b) => b.textContent)).toEqual(["Reset learning"]); // nothing here applies anything
+    expect(dev.getAllByRole("button").map((b) => b.textContent)).toEqual(["Clear now", "Reset learning"]); // nothing here applies anything (KB-404 adds "Clear now" for the review capture)
   });
 
   it("Reset learning asks first - the dialog says what is and is not cleared; Cancel changes nothing", async () => {

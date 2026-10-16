@@ -20,6 +20,10 @@ import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
 import { ShareBar } from "./ShareBar";
 import { HistoryScreen } from "./HistoryScreen";
 import { reissueState } from "./reissueDraft";
+import { useMetricsWiring } from "./useMetricsWiring";
+import { afterPaint } from "./afterPaint";
+import { reconcileBills, recordColdStart } from "@/data/billMetrics";
+import { clearThenSignOut } from "@/data/reviewCapture";
 import { CatalogScreen } from "./CatalogScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { addCustomProduct, addFromReadyCatalog, saveProductDetails, saveProductPrice, setProductActive } from "@/data/catalogEdit";
@@ -123,6 +127,9 @@ export function BillingScreen() {
   // KB-313: the half-built bill is kept in this user's own database and comes back after a reload.
   const bill = useBillLines(parser?.entries ?? NO_ENTRIES, localDb && shop ? { db: localDb, shopId: shop.id } : undefined);
   const { add: addToBill, rows } = bill;
+  // KB-404 (D80): the bill's measurements - a write-only sink (the bill never reads from it). The hook itself is called after the
+  // finaliser exists (it needs the saved bill); the voice and resolver hooks reach it through this ref.
+  const wiringRef = useRef<ReturnType<typeof useMetricsWiring> | null>(null);
   useEffect(() => {
     if (parser && bill.ready && rows.length === 0) {
       for (const u of devTryUtterances(parser)) addToBill(u.lines, u.flags, u.transcript);
@@ -147,13 +154,15 @@ export function BillingScreen() {
     [accessToken, devFetch],
   );
   // KB-319: transcript -> lines; a failed parse stays on the bill as "Not added".
-  const { onTranscript, retry } = useOrderResolver({ shop: parser, bill, parse });
+  const { onTranscript, retry } = useOrderResolver({ shop: parser, bill, parse, onUtterance: (r) => wiringRef.current?.onUtterance(r) });
 
   // Voice needs a LIVE session (offline-session mode has none - D38).
   const voice = useVoiceBilling({
     accessToken,
     vocabulary,
     onTranscript,
+    onTurn: () => wiringRef.current?.onTurn(),
+    onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, top the
@@ -185,7 +194,32 @@ export function BillingScreen() {
   const share = useReceiptShare({ localDb, saved: finaliser.saved, render: renderReceiptFiles });
   const { finalise, clear: clearSaved } = finaliser;
   const { reset: resetBill, draft } = bill;
-  const onFinalise = useCallback(() => void finalise(draft), [draft, finalise]);
+  // KB-404: the measurement wiring (after the finaliser: it writes the bill's row once the receipt is on screen).
+  const wiring = useMetricsWiring({
+    localDb: localDb ?? null,
+    shopId: shop?.id ?? null,
+    deviceId: deviceId ?? null,
+    billLocalId: bill.localId,
+    ready: bill.ready,
+    rows: bill.rows,
+    flags: bill.flags,
+    removed: draft.discarded.length,
+    saved: finaliser.saved,
+  });
+  wiringRef.current = wiring;
+  const onFinalise = useCallback(() => {
+    wiring.beforeFinalise();
+    void finalise(draft);
+  }, [draft, finalise, wiring]);
+  // App cold start (budget < 2 s): once per page load - process start to the billing screen interactive with the mic enabled.
+  const coldStartDone = useRef(false);
+  useEffect(() => {
+    if (!localDb || !parser || !bill.ready || coldStartDone.current) return;
+    coldStartDone.current = true;
+    const nav = typeof performance.getEntriesByType === "function" ? (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined) : undefined;
+    if (!nav || (nav.type !== "navigate" && nav.type !== "reload")) return; // a back/forward restore is not a cold start
+    afterPaint(() => void recordColdStart(localDb, performance.now()));
+  }, [localDb, parser, bill.ready]);
   const onNewBill = useCallback(() => {
     resetBill();
     clearSaved();
@@ -211,7 +245,8 @@ export function BillingScreen() {
 
   const onSignOut = () => {
     voice.releaseMic(); // the warm mic goes off before anything else (D45)
-    void signOut();
+    // KB-404 (D80): the review capture (heard / billed pairs) is cleared when the shopkeeper signs out.
+    void clearThenSignOut(localDb ?? null, shop?.id ?? null, signOut);
   };
   // KB-310: History opens over the bill - the bill in progress stays as it is.
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -224,25 +259,26 @@ export function BillingScreen() {
       lines={bill.rows}
       onSignOut={onSignOut}
       voice={voice.view}
-      onMicTap={voice.onMicTap}
+      onMicTap={() => (wiring.touch(), voice.onMicTap())}
       onMicPointerDown={voice.onMicPointerDown}
-      onEdit={bill.edit}
-      onRemove={bill.remove}
+      onEdit={(id, field, value) => (wiring.touch(), bill.edit(id, field, value))}
+      onRemove={(id) => (wiring.touch(), bill.remove(id))}
       removed={bill.removed}
       onUndo={bill.undo}
       flags={bill.flags}
       pending={bill.pending}
-      onAcknowledge={bill.acknowledge}
+      onAcknowledge={(key) => (wiring.touch(), bill.acknowledge(key))}
       notAdded={bill.notAdded}
       onRetry={retry}
       onDismiss={bill.dismiss}
       catalog={parser}
       usage={shopCatalog?.usageById}
-      onAddByHand={bill.addByHand}
+      onAddByHand={(item, name) => (wiring.touch(), bill.addByHand(item, name))}
       focusLineId={bill.focusLineId}
       customer={bill.customer}
-      onCustomerName={bill.setCustomerName}
-      onCustomerMobile={bill.setCustomerMobile}
+      onCustomerName={(t) => (wiring.touch(), bill.setCustomerName(t))}
+      onCustomerMobile={(t) => (wiring.touch(), bill.setCustomerMobile(t))}
+      reviewMode={wiring.reviewOn}
       onFinalise={onFinalise}
       saving={finaliser.phase === "saving"}
       saved={finaliser.saved}
@@ -269,7 +305,7 @@ export function BillingScreen() {
       />
     )}
     {settingsOpen && localDb && shop && deviceId && (
-      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} deviceDb={deviceDb} onClose={() => setSettingsOpen(false)} />
+      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} deviceDb={deviceDb} reconcile={() => reconcileBills(supabase, localDb, shop.id)} onClose={() => setSettingsOpen(false)} />
     )}
     {catalogOpen && localDb && shop && deviceId && (
       <CatalogScreen
@@ -338,6 +374,8 @@ interface BillViewProps {
   /** KB-312: the ≡ menu's Settings. */
   onOpenSettings?: () => void;
   /** KB-313: the header chip (05 §7) and what its detail says. A status only - it never blocks billing. */
+  /** KB-404 (D80): the review capture is on - a visible badge while it is. */
+  reviewMode?: boolean;
   syncChip?: SyncChip | null;
   syncDetail?: { readonly pending: number; readonly conflict: number; readonly lastAttemptAt: string | null };
   /** KB-313: bills that haven't reached the server (pending) or never will on their own (conflict) - the sign-out warning. */
@@ -676,6 +714,7 @@ export function BillView({
   onOpenSettings,
   syncChip = null,
   syncDetail,
+  reviewMode,
   unsynced,
   onClearBill,
 }: BillViewProps) {
@@ -848,6 +887,11 @@ export function BillView({
           <div className="flex min-w-0 items-center gap-2">
             <h1 className="text-[20px] font-semibold">KiranaBill</h1>
             <SyncChipView chip={syncChip} detail={syncDetail} />
+            {reviewMode && (
+              <span data-testid="review-badge" className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">
+                Review mode
+              </span>
+            )}
           </div>
           <details className="relative">
             <summary

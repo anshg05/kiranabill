@@ -289,6 +289,8 @@ right is safer than one with 7% WER that doesn't.
 
 ### Release gate
 
+**How the lines are measured (`KB-404`, D80):** Developer mode > Pilot numbers on the phone, and `scripts/pilot/gate.sql` from the server - the same definitions, so the two can be compared. Silent number errors are read from the Review mode heard/billed pairs, not by the app.
+
 **Zero silent number errors across 20 consecutive real bills in the pilot shop.**
 Non-negotiable. A billing app that is silently wrong about money is not shippable.
 

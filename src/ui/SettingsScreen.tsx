@@ -12,6 +12,8 @@ import type { PriceSuggestion } from "@/domain/learning";
 import type { BillLanguage } from "@/domain/receipt";
 import { parseShopName, parseShopPhone } from "@/domain/shopSettings";
 import { priceDriftText } from "./priceDriftText";
+import { PilotNumbers } from "./PilotNumbers";
+import type { ReconcileResult } from "@/data/billMetrics";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
 
@@ -40,10 +42,12 @@ interface SettingsScreenProps {
   deviceId: string;
   /** KB-401: where "is this phone's storage protected?" is recorded (D67). */
   deviceDb?: DeviceDB;
+  /** KB-404: asks the server about this phone's bills ("no bill lost or corrupted"). Absent = no button. */
+  reconcile?: () => Promise<ReconcileResult>;
   onClose: () => void;
 }
 
-export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, onClose }: SettingsScreenProps) {
+export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile, onClose }: SettingsScreenProps) {
   useBackEntry("kbSettings", onClose);
   const online = useBrowserOnline();
   const [shop, setShop] = useState<LocalShop | null>(null);
@@ -182,7 +186,7 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, onClose }:
                 A receipt opened from History shows today's shop name, phone and language, not the ones it was first printed with.
               </p>
 
-              <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} />
+              <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} />
               <p className="mt-6 text-[13px] text-ink-soft">Version {BUILD_ID}</p>
             </>
           )}
@@ -210,7 +214,7 @@ interface Learning {
 }
 
 /** 08 section 9 - learned aliases with confidence, provisional products with counts, pending price suggestions, a reset. Read-only, this shop only. */
-function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: KiranaBillDB; shopId: string; deviceId: string; deviceDb?: DeviceDB }) {
+function DeveloperMode({ localDb, shopId, deviceId, deviceDb, reconcile }: { localDb: KiranaBillDB; shopId: string; deviceId: string; deviceDb?: DeviceDB; reconcile?: () => Promise<ReconcileResult> }) {
   const [opened, setOpened] = useState(false);
   const [learning, setLearning] = useState<Learning | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -318,6 +322,8 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb }: { localDb: Kiran
             {empty && <p>Nothing learned on this phone yet.</p>}
           </>
         )}
+
+        {opened && <PilotNumbers localDb={localDb} shopId={shopId} reconcile={reconcile} />}
 
         {resetMessage && (
           <p role="status" className="text-[13px] text-ink-soft">

@@ -101,6 +101,10 @@ export interface UseVoiceBillingOptions {
   vocabulary?: readonly string[];
   /** Called with each transcript; resolves when its lines are on the bill (commit b). */
   onTranscript?: (transcript: string) => Promise<void>;
+  /** KB-404 (D80): a recording reached transcription (success or failure) - one TURN. Never fires for a mic that did not start. */
+  onTurn?: () => void;
+  /** KB-404: stop -> transcript in whole ms, just before the transcript is handed on (not for an empty transcript). */
+  onTranscribed?: (stopToTranscriptMs: number) => void;
   /** Set while voice can't run yet for a non-network reason (the shop's
    * catalog still loading) - shown as the disabled reason. */
   notReadyReason?: string | null;
@@ -152,6 +156,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
           return;
         }
         setPhase("transcribing");
+        opts.onTurn?.();
         const language = devLanguage();
         let text: string;
         try {
@@ -203,6 +208,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
         }
         setTranscript(text);
         setMessage(null);
+        opts.onTranscribed?.(Math.round(performance.now() - stoppedAt));
         if (!opts.onTranscript) {
           save("transcript only");
           setPhase("done");

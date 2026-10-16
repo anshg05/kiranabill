@@ -876,6 +876,68 @@ async function main(): Promise<void> {
       await client.query(`update bills set total_paise = 1 where id = $1`, [cancelA.id]);
     });
 
+    // --- KB-404 (D80): bill_metrics - numbers and enums only, append-only, a member's own shop ------------------------
+    const metricsInsert = (shopId: string, billId: string, billLocalId: string, over: { turns?: number } = {}) =>
+      client.query(
+        `insert into bill_metrics (shop_id, bill_id, bill_local_id, device_id, local_id, receipt_number, total_paise, line_count, turns, seconds_to_bill, utterances, voice_lines, edited_lines, manual_lines, removed_lines, not_added, flags_raised, flags_acknowledged, recorded_at)
+         values ($1, $2, $3, 'test-device', gen_random_uuid(), 'R-1', 1000, 1, $4, 10, '[]'::jsonb, 1, 0, 0, 0, 0, 0, 0, now())`,
+        [shopId, billId, billLocalId, over.turns ?? 1],
+      );
+    await check(client, "KB-404 sanity: owner A can insert a bill_metrics row for their OWN final bill", async () => {
+      await asUser(client, ownerA);
+      const res = await metricsInsert(shopA, cancelA2.id, cancelA2.localId);
+      if (res.rowCount !== 1) throw new Error(`expected 1 row, got ${res.rowCount}`);
+      return "accepted";
+    });
+    await checkRejects(client, "KB-404: a second metrics row for the same bill is refused (unique per bill)", "23505", async () => {
+      await asUser(client, ownerA);
+      await metricsInsert(shopA, cancelA2.id, cancelA2.localId);
+    });
+    await checkRejects(client, "KB-404: owner A cannot insert a bill_metrics row into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await metricsInsert(shopB, cancelB.id, cancelB.localId);
+    });
+    await checkRejects(client, "KB-404 same-shop integrity: owner A cannot file metrics for shop B's bill under shop A (composite FK)", "23503", async () => {
+      await asUser(client, ownerA);
+      await metricsInsert(shopA, cancelB.id, cancelB.localId);
+    });
+    await checkRejects(client, "KB-404: a negative count is refused by the CHECK", "23514", async () => {
+      await asUser(client, ownerA);
+      await metricsInsert(shopA, cancelA.id, cancelA.localId, { turns: -1 });
+    });
+    await check(client, "KB-404 read isolation: shop B files its own; owner A reads one row (their own) and zero of B's", async () => {
+      await asUser(client, ownerB);
+      await metricsInsert(shopB, cancelB.id, cancelB.localId);
+      await asUser(client, ownerA);
+      const mine = await client.query(`select 1 from bill_metrics where shop_id = $1`, [shopA]);
+      const theirs = await client.query(`select 1 from bill_metrics where shop_id = $1`, [shopB]);
+      if (mine.rowCount !== 1 || theirs.rowCount !== 0) throw new Error(`own ${mine.rowCount}, other ${theirs.rowCount}`);
+      return "own 1, other 0";
+    });
+    await check(client, "KB-404 append-only: owner A's UPDATE and DELETE of their own metrics row affect zero rows", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update bill_metrics set turns = 9 where shop_id = $1`, [shopA]);
+      const del = await client.query(`delete from bill_metrics where shop_id = $1`, [shopA]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`updated ${upd.rowCount}, deleted ${del.rowCount}`);
+      return "0 updated, 0 deleted";
+    });
+    await checkRejects(client, "KB-404: the anon role cannot insert a bill_metrics row", "42501", async () => {
+      await asAnon(client);
+      await metricsInsert(shopA, cancelA.id, cancelA.localId);
+    });
+    await check(client, "KB-404: the server stamps updated_at - a client-sent value is ignored", async () => {
+      await asUser(client, ownerB);
+      const id = await finalBillFor(ownerB, shopB, "B-METRICS-2");
+      await client.query(
+        `insert into bill_metrics (shop_id, bill_id, bill_local_id, device_id, local_id, receipt_number, total_paise, line_count, turns, seconds_to_bill, voice_lines, edited_lines, manual_lines, removed_lines, not_added, flags_raised, flags_acknowledged, recorded_at, updated_at)
+         values ($1, $2, $3, 'd', gen_random_uuid(), 'R-2', 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, now(), '2020-01-01')`,
+        [shopB, id.id, id.localId],
+      );
+      const r = await client.query(`select updated_at from bill_metrics where bill_id = $1`, [id.id]);
+      if (new Date(r.rows[0].updated_at).getFullYear() < 2026) throw new Error("a forged updated_at was kept");
+      return "stamped by the server";
+    });
+
     // --- KB-105b: the four things KB-105 left unproven ---------------------
     // (1) receipt_number_blocks  (2) base_products is read-only
     // (3) cross-shop READS of the four learning tables  (4) Storage `shop-logos`.

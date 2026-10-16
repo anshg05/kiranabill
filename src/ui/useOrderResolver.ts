@@ -3,6 +3,7 @@ import type { ParserCatalog } from "@/domain/catalogIndex";
 import { extractSpokenNumbers } from "@/domain/grammar";
 import { resolveUtterance, type ResolveDeps } from "@/data/voiceBilling";
 import { VoiceApiError } from "@/data/voiceApi";
+import { afterPaint } from "./afterPaint";
 import { PARSE_FAILED, type BillLines } from "./useBillLines";
 import { messageFor, NO_ITEM_FOUND, VoiceUserError } from "./useVoiceBilling";
 
@@ -27,23 +28,52 @@ export interface OrderResolver {
   retry: (id: string) => void;
 }
 
+/**
+ * KB-404 (D80): what one utterance came to - reported once, when its first attempt ends. `path` is the layer that produced
+ * the lines, or "failed" when nothing reached the bill. A write-only sink: the bill is the same with or without a listener,
+ * and a listener that throws changes nothing.
+ */
+export interface UtteranceReport {
+  readonly path: "fastpath" | "voice" | "failed";
+  readonly transcript: string;
+  /** Transcript received -> the lines painted (two animation frames after they were added); null when none were. */
+  readonly transcriptToItemsMs: number | null;
+  readonly lines: readonly { name: string; qty: number | null; unit: string; rate: number | null; total: number | null }[];
+}
+
 export interface UseOrderResolverOptions {
   /** THIS shop's catalog; null while it loads. */
   shop: ParserCatalog | null;
   bill: Pick<BillLines, "add" | "fail" | "retrying" | "retryFailed" | "notAdded">;
   parse: ResolveDeps["parse"];
+  /** KB-404: told once per utterance how it ended (see UtteranceReport). */
+  onUtterance?: (report: UtteranceReport) => void;
 }
 
-export function useOrderResolver({ shop, bill, parse }: UseOrderResolverOptions): OrderResolver {
+export function useOrderResolver({ shop, bill, parse, onUtterance }: UseOrderResolverOptions): OrderResolver {
   const { add, fail, retrying, retryFailed, notAdded } = bill;
+
+  const report = useCallback(
+    (r: UtteranceReport) => {
+      try {
+        onUtterance?.(r);
+      } catch (err) {
+        console.warn("[metrics] utterance listener failed:", err instanceof Error ? err.name : "error"); // never touches the bill
+      }
+    },
+    [onUtterance],
+  );
 
   const onTranscript = useCallback(
     async (transcript: string) => {
+      const started = performance.now();
+      const failed = (): UtteranceReport => ({ path: "failed", transcript, transcriptToItemsMs: null, lines: [] });
       if (!shop) throw new VoiceUserError("Couldn't hear that — try again");
       let resolved;
       try {
         resolved = await resolveUtterance(transcript, { shop, parse });
       } catch (err) {
+        report(failed());
         if (!isRetryable(err)) throw err;
         fail(transcript);
         throw new VoiceUserError(NOT_ADDED);
@@ -59,10 +89,15 @@ export function useOrderResolver({ shop, bill, parse }: UseOrderResolverOptions)
         });
       }
       // KB-317 commit 5: nothing usable in the transcript - it stays on screen, with this under it.
-      if (resolved.lines.length === 0) throw new VoiceUserError(NO_ITEM_FOUND);
+      if (resolved.lines.length === 0) {
+        report(failed());
+        throw new VoiceUserError(NO_ITEM_FOUND);
+      }
       add(resolved.lines, resolved.flags, transcript);
+      const lines = resolved.lines.map((l) => ({ name: l.displayName, qty: l.item.qty, unit: l.item.unit, rate: l.item.rate, total: l.item.total }));
+      afterPaint(() => report({ path: resolved.layer, transcript, transcriptToItemsMs: Math.max(0, Math.round(performance.now() - started)), lines }));
     },
-    [add, fail, parse, shop],
+    [add, fail, parse, report, shop],
   );
 
   const retry = useCallback(

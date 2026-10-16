@@ -3,6 +3,7 @@ import type { StoredReviewFlag } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
 import { toBillSearchRow, type BillSearchRow } from "@/domain/billSearch";
 import type { CancelReason } from "@/domain/cancelBill";
+import type { BillMetricsRow } from "@/domain/billMetrics";
 
 // KB-109: the local IndexedDB layer. Three genuinely different roles
 // hide under "mirror the server tables" (docs/03-DATA-MODEL.md section 6):
@@ -110,6 +111,36 @@ export interface LocalBillCancellation {
   deviceId: string;
   syncStatus: SyncStatus;
   updatedAt: string;
+}
+
+/**
+ * KB-404 (D80): one finalised bill's measurements. Numbers and enums only - no customer field, no transcript, no item name.
+ * Pushed after the bills (append-only on the server); pulled for the shop's other devices.
+ */
+export interface LocalBillMetrics extends BillMetricsRow {
+  shopId: string;
+  /** The row's idempotency key (bill_metrics.local_id). */
+  localId: string;
+  serverId?: string;
+  syncStatus: SyncStatus;
+  updatedAt: string;
+}
+
+/**
+ * KB-404 (D80), S2: the "review capture" - what was HEARD and what was BILLED, per utterance, for the owner to read side by side.
+ * DEVICE-ONLY: never pushed, never in the backup or any export; off by default; purged after 30 days and on sign-out.
+ * A transcript can hold a customer's spoken name or number - that is why it never leaves the shop's own phone.
+ */
+export interface LocalReviewCapture {
+  id?: number;
+  shopId: string;
+  /** The bill's local id (the draft's id). */
+  billLocalId: string;
+  capturedAt: string;
+  transcript: string;
+  path: "fastpath" | "voice" | "failed";
+  /** The lines the utterance added, as billed. */
+  lines: { name: string; qty: number | null; unit: string; rate: number | null; total: number | null }[];
 }
 
 export interface LocalLearnedAlias {
@@ -264,6 +295,10 @@ export class KiranaBillDB extends Dexie {
   billSearch!: EntityTable<BillSearchRow, "localId">;
   /** KB-325 (D79): one row per cancelled bill, keyed by that bill's local id. */
   billCancellations!: EntityTable<LocalBillCancellation, "billLocalId">;
+  /** KB-404 (D80): one row per finalised bill. */
+  billMetrics!: EntityTable<LocalBillMetrics, "billLocalId">;
+  /** KB-404 (D80), S2: device-only heard / billed pairs. Never synced. */
+  reviewCapture!: EntityTable<LocalReviewCapture, "id">;
 
   constructor(name: string) {
     super(name);
@@ -341,6 +376,9 @@ export class KiranaBillDB extends Dexie {
 
     // KB-325 (D79): cancellations. A new store, additive - no upgrade needed (the billSearch `cancelled` flag is not indexed).
     this.version(5).stores({ billCancellations: "&billLocalId, shopId, replacementLocalId, syncStatus" });
+
+    // KB-404 (D80): the per-bill measurements, and the device-only review capture. New stores, additive.
+    this.version(6).stores({ billMetrics: "&billLocalId, shopId, syncStatus", reviewCapture: "++id, shopId, billLocalId, capturedAt" });
   }
 }
 

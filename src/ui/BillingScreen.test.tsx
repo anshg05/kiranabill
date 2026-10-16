@@ -65,6 +65,13 @@ function renderBill(lines: ParsedItem[]) {
 }
 
 describe("BillView", () => {
+  it("KB-404 (S2): the Review mode badge shows only while review capture is on", () => {
+    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} {...editing} />);
+    expect(screen.queryByTestId("review-badge")).toBeNull();
+    rerender(<BillView lines={[]} onSignOut={() => {}} {...editing} reviewMode />);
+    expect(screen.getByTestId("review-badge").textContent).toBe("Review mode");
+  });
+
   it("an empty bill totals ₹0 (genuinely zero, 13-DESIGN §6c)", () => {
     renderBill([]);
     expect(screen.getByTestId("bill-total").textContent).toBe("₹0");

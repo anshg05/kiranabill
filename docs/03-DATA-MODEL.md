@@ -203,6 +203,9 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 `local_id` is a client-generated **UUID** (`crypto.randomUUID()`) — `push_bill` casts it; anything else is a permanent `22P02`.
 **Immutable once `status = 'final'`.** Enforced by a trigger, not by convention. The one legal change is `final` -> `cancelled`, and then **only `status` may change** (D18) - which is why a cancellation's reason and time are not columns here: see `bill_cancellations`.
 
+### `bill_metrics` (`KB-404`, D80)
+`(id, shop_id, bill_id, bill_local_id, device_id, local_id, receipt_number, total_paise, line_count, turns, seconds_to_bill, utterances jsonb, finalise_to_receipt_ms, voice_lines, edited_lines, manual_lines, removed_lines, not_added, flags_raised, flags_acknowledged, recorded_at, updated_at)` - one row per finalised bill, **numbers and enums only** (`utterances` is an array of `{path, stop_to_transcript_ms, transcript_to_items_ms}`; no transcript, name or item). Unique `(shop_id, bill_id)` and `(shop_id, local_id)`; composite FK `(bill_id, shop_id) -> bills (id, shop_id)`; CHECKs keep every count >= 0. **RLS:** select and insert for a member; no update or delete policy. `updated_at` is server-stamped (the pull cursor). The device-only review capture (`reviewCapture` in Dexie, local version 6) is **not** a server table and never syncs.
+
 ### `bill_cancellations` (`KB-325`, D79)
 `(id, shop_id, bill_id, bill_local_id, reason, replacement_local_id, cancelled_at, local_id, device_id, updated_at)` - one row per cancelled bill, **append-only**.
 - `reason` is one of five presets (`wrong_item`, `wrong_price`, `wrong_quantity`, `customer_cancelled`, `other`) - a CHECK, nothing typed.
@@ -337,6 +340,7 @@ create policy <t>_update on <t> for update
 
 `base_products`: `select` for `authenticated`; no insert/update/delete policy at all.
 `bill_cancellations`: select and insert for a member of the shop; no update or delete policy (`test:rls`, `KB-325`).
+`bill_metrics`: select and insert for a member; no update or delete policy; a cross-shop insert is 42501 and a mismatched bill 23503 (`test:rls`, `KB-404`).
 `shop_products` has **no delete policy**: a hard delete by a member affects zero rows (`test:rls`, `KB-330`). Rename, aliases and archive are plain UPDATEs by a member of the shop.
 
 **Mandatory negative test:** two shops, authenticated as each, asserting zero rows visible from the
