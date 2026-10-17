@@ -163,7 +163,11 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
             role="switch"
             aria-label="Review mode"
             checked={reviewOn}
-            onChange={(e) => void setReviewCapture(localDb, shopId, e.target.checked).then(load)}
+            onChange={(e) =>
+              void setReviewCapture(localDb, shopId, e.target.checked)
+                .then(load)
+                .catch((err: unknown) => console.warn("[pilot] could not switch Review mode:", err instanceof Error ? err.name : "error"))
+            }
             className="size-5"
           />
           <span>{reviewOn ? "On" : "Off"}</span>

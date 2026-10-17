@@ -192,6 +192,21 @@ describe("Review mode (S2): device-only, off by default", () => {
     expect(within(panel).getByText("No heard / billed pairs yet")).toBeTruthy();
   });
 
+  it("a switch write that ends after the database closed (a sign-out, a closed test) is not an unhandled rejection", async () => {
+    const seen: unknown[] = [];
+    const on = (e: unknown) => void seen.push(e);
+    process.on("unhandledRejection", on);
+    try {
+      const panel = await open();
+      fireEvent.click(within(panel).getByRole("switch", { name: "Review mode" }));
+      db.close(); // the write is still in flight
+      await new Promise((r) => setTimeout(r, 250));
+    } finally {
+      process.off("unhandledRejection", on);
+    }
+    expect(seen).toEqual([]);
+  });
+
   it("says what it keeps and for how long, in plain words", async () => {
     const panel = await open();
     expect(within(panel).getByText(/kept on this phone only, never sent or backed up, deleted after 30 days and when you sign out/i)).toBeTruthy();

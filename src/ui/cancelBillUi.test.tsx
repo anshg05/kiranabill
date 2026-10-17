@@ -128,6 +128,25 @@ describe("the bill detail - Cancel bill", () => {
     expect(within(screen.getByRole("region", { name: "Bill" })).queryByRole("button", { name: "Cancel bill" })).toBeNull();
   });
 
+  it("Cancel only: the shopkeeper STAYS on the cancelled bill, CANCELLED showing, with History still underneath (also after the history entries settle)", async () => {
+    const a = await save();
+    await open();
+    const detail = await openBill(a.number);
+    tap(await detail.findByRole("button", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    tap(sheet.getByRole("radio", { name: "Wrong item" }));
+    tap(sheet.getByRole("button", { name: "Cancel only" }));
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Cancel bill" })).toBeNull());
+    await new Promise((r) => setTimeout(r, 150)); // the closed sheet takes its history entry off on the next tick - in a browser that is what used to close everything
+    expect(screen.getByRole("region", { name: "Bill" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "History" })).toBeTruthy();
+    expect(await within(screen.getByRole("region", { name: "Bill" })).findByTestId("receipt-cancelled")).toBeTruthy();
+    // Back goes to History (one step), then closes it - never skips a level.
+    fireEvent.click(within(screen.getByRole("region", { name: "Bill" })).getByRole("button", { name: "Back" }));
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Bill" })).toBeNull());
+    expect(screen.getByRole("region", { name: "History" })).toBeTruthy();
+  });
+
   it("the cancelled receipt carries CANCELLED and the share buttons stay (always with that mark)", async () => {
     const a = await save();
     await cancelBillLocal(db, { shopId, billLocalId: a.localId, reason: "other", deviceId, replacementLocalId: null });
