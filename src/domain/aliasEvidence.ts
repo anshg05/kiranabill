@@ -7,6 +7,7 @@
 const BASE = 30;
 const FAST = 20;
 const GEMINI = 10;
+const CORRECTION = 40; // KB-336: the shopkeeper changed the product himself - one alone (0.7) never promotes
 const SUPPRESS = 20;
 const REMOVE = 100;
 const PROMOTE = 80;
@@ -22,7 +23,7 @@ export interface AliasEvent {
   readonly eventType: "alias_confirmed" | "alias_suppressed" | "alias_removed";
   readonly alias: string;
   readonly shopProductId: string;
-  /** Where the line came from: fastpath, manual or gemini. Anything else (or none) is treated as Gemini - the cautious side. */
+  /** Where the line came from: fastpath, manual, gemini or correction (KB-336). Anything else (or none) is treated as Gemini - the cautious side. */
   readonly sourceLayer: string | null;
   readonly createdAt: string;
   /** The bill that taught this was cancelled afterwards: it counts for nothing, in either direction. */
@@ -51,6 +52,7 @@ export const aliasKeyOf = (text: string): string => text.trim().toLowerCase();
 const weightOf = (e: AliasEvent): number => {
   if (e.eventType === "alias_suppressed") return -SUPPRESS;
   if (e.eventType === "alias_removed") return -REMOVE;
+  if (e.sourceLayer === "correction") return CORRECTION;
   return e.sourceLayer === "fastpath" || e.sourceLayer === "manual" ? FAST : GEMINI;
 };
 

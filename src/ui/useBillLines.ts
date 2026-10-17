@@ -7,6 +7,7 @@ import {
   editQty,
   editRate,
   editUnit,
+  changeProduct as changeProductOf,
   isEdited,
   pendingChecks,
   type BillEntry,
@@ -245,6 +246,8 @@ export interface BillLines {
   dismiss: (id: string) => void;
   /** Commits a typed value; returns the message to show, or null when applied. */
   edit: (id: string, field: EditField, value: string) => string | null;
+  /** KB-336: another product for a line (null = done, a message = refused). */
+  changeProduct: (id: string, entry: CatalogEntry) => string | null;
   remove: (id: string) => void;
   undo: () => void;
   acknowledge: (key: string) => void;
@@ -370,6 +373,18 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     [catalog, state.rows],
   );
 
+  // KB-336 (D83): tap the name -> pick another product. The line keeps its quantity; flags are recomputed (billFlags sees an edit).
+  const changeProduct = useCallback(
+    (id: string, entry: CatalogEntry): string | null => {
+      const row = state.rows.find((r) => r.id === id);
+      if (!row) return null;
+      const result = changeProductOf(row.item, entry);
+      if (!result.ok) return result.error;
+      dispatch({ type: "replace", id, row: { ...row, item: result.item, displayName: entry.displayName } });
+      return null;
+    },
+    [state.rows],
+  );
   const remove = useCallback((id: string) => dispatch({ type: "remove", id }), []);
   const undo = useCallback(() => dispatch({ type: "undo" }), []);
   const acknowledge = useCallback((key: string) => dispatch({ type: "acknowledge", key }), []);
@@ -434,6 +449,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     add,
     edit,
     remove,
+    changeProduct,
     undo,
     acknowledge,
     addByHand,

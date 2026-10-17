@@ -37,11 +37,13 @@ export interface AddItemSheetProps {
   billTotal: Paise;
   billCount: number;
   onPick: (entry: CatalogEntry) => void;
-  onCustom: (name: string) => void;
+  onCustom?: (name: string) => void;
   onClose: () => void;
+  /** KB-336 (D83): choosing ANOTHER product for the line called `name` - catalog products only, no "new product". */
+  change?: { name: string };
 }
 
-export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, billCount, onPick, onCustom, onClose }: AddItemSheetProps) {
+export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, billCount, onPick, onCustom, onClose, change }: AddItemSheetProps) {
   const [query, setQuery] = useState(initialQuery);
   const results = useMemo(() => searchCatalog(catalog, query, usage), [catalog, query, usage]);
 
@@ -51,14 +53,14 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
   const typed = query.trim();
   return (
     <section
-      aria-label="Add item"
+      aria-label={change ? "Change item" : "Add item"}
       className="absolute inset-0 z-10 flex flex-col border-t border-line bg-surface shadow-[0_-1px_0_var(--color-line),0_-8px_24px_rgb(0_0_0/0.08)]"
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4">
-        <span className="text-[13px] text-ink-soft tabular-nums">
-          Bill so far · {formatAmount(billTotal)} · {billCount} {billCount === 1 ? "item" : "items"}
+        <span className="text-[13px] text-ink-soft tabular-nums [overflow-wrap:anywhere]">
+          {change ? `Change “${change.name}” to…` : `Bill so far · ${formatAmount(billTotal)} · ${billCount} ${billCount === 1 ? "item" : "items"}`}
         </span>
-        <button type="button" aria-label="Close add item" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+        <button type="button" aria-label={change ? "Close change item" : "Close add item"} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
           <X size={18} strokeWidth={1.5} aria-hidden />
         </button>
       </div>
@@ -95,7 +97,7 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
             </li>
           ))}
         </ul>
-        {typed && (
+        {typed && !change && onCustom && (
           <button type="button" onClick={() => onCustom(typed)} className="min-h-11 w-full px-4 text-left font-medium text-indigo">
             + Add “{typed}” as a new product
           </button>

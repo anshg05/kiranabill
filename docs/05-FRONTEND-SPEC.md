@@ -192,6 +192,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 
 - Search (same index as Add item)
 - Rows: name, unit, price, and how often it was billed in the last 30 days (`KB-321`; most used first). **Learned names** (`KB-323`): each phrase the app has learned, its product, "In use" / "Still learning", and Remove.
+- On the billing screen, **the item name on a draft line is a button (a pencil marks it): tap -> "Change item" -> search -> pick another product** (`KB-336`, D83: quantity kept when the unit fits, else "Quantity needed"; a price the shopkeeper said stays; catalog products only).
 - On the billing screen, a line the parser read through a learned alias carries "Learned: 'x' -> Product" and **Not this** (`KB-323`; visible, never blocking).
 - Edit price inline
 - Filter: All · Custom · Learned · From base catalog · **Archived** (`KB-330`)

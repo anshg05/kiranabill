@@ -33,7 +33,7 @@ export interface LearnResult {
 function payloadOf(d: LearningDecision): Record<string, unknown> {
   switch (d.kind) {
     case "alias_confirmed":
-      return { alias: d.alias, shop_product_id: d.shopProductId, source_layer: d.sourceLayer, confidence_before: d.confidenceBefore, confidence_after: d.confidenceAfter, hit_count: d.hitCount, promoted: d.promoted, trigger: "confirmed_without_edit" };
+      return { alias: d.alias, shop_product_id: d.shopProductId, source_layer: d.sourceLayer, confidence_before: d.confidenceBefore, confidence_after: d.confidenceAfter, hit_count: d.hitCount, promoted: d.promoted, ...(d.correctedFrom !== undefined ? { corrected_from: d.correctedFrom } : {}), trigger: d.correctedFrom !== undefined ? "product_changed" : "confirmed_without_edit" };
     case "alias_suppressed":
       return { alias: d.alias, shop_product_id: d.shopProductId, source_layer: d.sourceLayer, confidence_before: d.confidenceBefore, confidence_after: d.confidenceAfter, retired: d.retired, trigger: "line_deleted" };
     case "price_observed":
@@ -82,7 +82,7 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
 
     const lines: LearnLine[] = items.map((i) => ({
       lineNo: i.lineNo, shopProductId: i.shopProductId, spokenName: i.spokenName, displayName: i.displayName,
-      unit: i.unit, ratePaise: i.ratePaise, rateUnit: i.rateUnit, source: i.source, wasEdited: i.wasEdited,
+      unit: i.unit, ratePaise: i.ratePaise, rateUnit: i.rateUnit, source: i.source, wasEdited: i.wasEdited, ...(i.originalProductId !== undefined ? { originalProductId: i.originalProductId } : {}),
     }));
     const { decisions } = learnFromBill(state, { lines, discarded: bill.discardedLines ?? [] }, catalog, nowMs);
 
@@ -94,6 +94,11 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
     const owner = new Map(deriveAliases(await loadAliasEvents(localDb, shopId)).filter((a) => a.active).map((a) => [a.aliasKey, a.catalogId]));
 
     for (const d of decisions) {
+      // KB-336: a correction AWAY from a product this phrase was learned for is the "Not this" case - that mapping gets -0.2
+      // (D83; the shopkeeper's own word against the learned one). Only when the evidence really holds the phrase for it.
+      if (d.kind === "alias_confirmed" && d.correctedFrom && owner.get(key(d.alias)) === d.correctedFrom) {
+        event("alias_suppressed", `corrected-${d.lineNo}`, { alias: d.alias, shop_product_id: d.correctedFrom, source_layer: "correction", trigger: "product_changed" });
+      }
       if (d.kind === "alias_confirmed" && owner.has(key(d.alias)) && owner.get(key(d.alias)) !== d.shopProductId) {
         event("alias_conflict", positionOf(d), { alias: d.alias, from_product: owner.get(key(d.alias)), to_product: d.shopProductId, source_layer: d.sourceLayer });
       }

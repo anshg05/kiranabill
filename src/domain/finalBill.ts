@@ -64,6 +64,8 @@ export interface FinalItem {
   readonly source: FinalLine["source"];
   readonly reviewFlags: readonly StoredReviewFlag[];
   readonly wasEdited: boolean;
+  /** KB-336 (D83): the product the line was FIRST read as, only when the shopkeeper changed it (null = it had none). Local-only. */
+  readonly originalProductId?: string | null;
 }
 
 export type BuildResult = { readonly ok: true; readonly items: readonly FinalItem[]; readonly totalPaise: Paise } | { readonly ok: false; readonly error: string };
@@ -96,6 +98,7 @@ export function buildFinalBill(lines: readonly FinalLine[], flags: readonly Fina
         .filter((f) => (f.lineId ?? f.anchorLineId) === line.id)
         .map((f) => ({ code: f.code, severity: f.severity, acknowledged: f.acknowledged })),
       wasEdited: isEdited(item, line.original),
+      ...(line.original.catalogId !== item.catalogId ? { originalProductId: line.original.catalogId } : {}),
     };
   });
   return { ok: true, items, totalPaise: sumPaise(items.map((i) => i.totalPaise)) };

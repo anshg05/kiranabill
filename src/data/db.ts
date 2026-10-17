@@ -91,6 +91,9 @@ export interface LocalBillItem {
    * survives finalise. bill_items.review_flags (jsonb). */
   reviewFlags: StoredReviewFlag[];
   wasEdited: boolean;
+  /** KB-336 (D83): the product the line was first read as, set only when the shopkeeper CHANGED it (null = it had none). Local-only: learning
+   * runs on the device that made the bill, so the server never needs it (no migration). */
+  originalProductId?: string | null;
 }
 
 /**

@@ -93,6 +93,7 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
           source: item.source,
           reviewFlags: [...item.reviewFlags],
           wasEdited: item.wasEdited,
+          ...(item.originalProductId !== undefined ? { originalProductId: item.originalProductId } : {}),
         }));
       await localDb.billItems.bulkAdd(items);
       // D61: the bill's device-only search row, in the same transaction - a

@@ -372,9 +372,9 @@ export function ignorePriceSuggestion(state: LearningState, catalogId: string, n
 /** The layer a line came from - recorded on every alias event (owner): a
  * Gemini guess (KI-47, KI-52) must not become trusted as easily as a Layer 1
  * match (KB-323 sets the thresholds). */
-export type SourceLayer = "fastpath" | "gemini" | "manual";
+export type SourceLayer = "fastpath" | "gemini" | "manual" | "correction";
 
-const LAYER: Record<LearnLine["source"], SourceLayer> = { fastpath: "fastpath", voice: "gemini", manual: "manual" };
+const LAYER: Record<LearnLine["source"], Exclude<SourceLayer, "correction">> = { fastpath: "fastpath", voice: "gemini", manual: "manual" };
 
 /** A finalised bill line, as stored (bill_items). */
 export interface LearnLine {
@@ -387,6 +387,8 @@ export interface LearnLine {
   readonly rateUnit: string | null;
   readonly source: "fastpath" | "voice" | "manual";
   readonly wasEdited: boolean;
+  /** KB-336: set only when the shopkeeper CHANGED the line's product - the one it was first read as (null = it had none). */
+  readonly originalProductId?: string | null;
 }
 
 /** A voice line the shopkeeper removed before finalising (08 §2: "deleted a line entirely"). */
@@ -407,6 +409,8 @@ export type LearningDecision =
       readonly confidenceAfter: number;
       readonly hitCount: number;
       readonly promoted: boolean;
+      /** KB-336: the product the shopkeeper moved this line AWAY from (a correction); undefined for a plain confirmation. */
+      readonly correctedFrom?: string | null;
     }
   | {
       readonly kind: "alias_suppressed";
@@ -500,7 +504,10 @@ export function learnFromBill(
     }
     if (!entry) continue; // a product no longer in this shop's catalog - nothing to compare against
 
-    if (line.source !== "manual" && !line.wasEdited && spoken && !isExactAlias(spoken, entry)) {
+    // KB-336 (D83): an UNEDITED line confirms (KB-307 decision 4); a line whose PRODUCT was changed is a strong correction and
+    // teaches spoken name -> the chosen product even when its quantity was edited too. A hand-added line never teaches.
+    const correction = line.originalProductId !== undefined;
+    if (line.source !== "manual" && (correction || !line.wasEdited) && spoken && !isExactAlias(spoken, entry)) {
       const before = next.learnedAliases[normalizeKey(spoken)];
       const result = recordAliasConfirmation(next, { spokenName: spoken, catalogId: entry.id });
       next = result.state;
@@ -510,11 +517,12 @@ export function learnFromBill(
         lineNo: line.lineNo,
         alias: spoken,
         shopProductId: entry.id,
-        sourceLayer: LAYER[line.source],
+        sourceLayer: correction ? "correction" : LAYER[line.source],
         confidenceBefore: before?.confidence ?? null,
         confidenceAfter: after.confidence,
         hitCount: after.hitCount,
         promoted: result.promoted,
+        ...(correction ? { correctedFrom: line.originalProductId } : {}),
       });
     }
 

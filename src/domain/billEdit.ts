@@ -173,6 +173,34 @@ export function editUnit(item: ParsedItem, unit: string): EditResult {
   return { ok: true, item: next };
 }
 
+/**
+ * KB-336 (D83; owner, 17 Oct 2026): the line is now another product. The rule, exactly:
+ *  - What was HEARD (spokenName) stays - it is what learning teaches. The line keeps its quantity and unit when the new
+ *    product's unit is compatible (gm <-> kg, ml <-> liter, count <-> count).
+ *  - Units that do not fit (or a line with no unit yet): the quantity is CLEARED and the unit becomes the product's -
+ *    "Quantity needed". Never a conversion between unlike units (2 packets does not become 2 kg).
+ *  - A rate or total the shopkeeper SAID or typed stays (hard rule 7). Only a catalog-derived rate follows the new product;
+ *    with no catalog price the line has none ("Price needed") - nothing is invented (rule 5).
+ *  - A rate said per the OLD unit cannot price a different unit: when the units do not fit it too follows the catalog.
+ *  - The same product again changes nothing.
+ */
+export function changeProduct(item: ParsedItem, entry: CatalogEntry): EditResult {
+  if (item.catalogId === entry.id) return { ok: true, item };
+  const fits = item.unit !== "" && unitsAreCompatible(item.unit, entry.unit);
+  let next: ParsedItem = { ...item, catalogId: entry.id, isCustom: false, matchStatus: "matched" };
+  if (!fits) next = { ...next, qty: null, unit: isBillUnit(entry.unit) ? entry.unit : "" };
+  const keepsSaidPrice = item.priceType === "total" || (item.priceType === "rate" && fits);
+  if (!keepsSaidPrice) {
+    next =
+      entry.suggestedPricePaise > 0
+        ? { ...next, rate: entry.suggestedPricePaise, rateUnit: entry.unit, total: null, priceType: "default" }
+        : { ...next, rate: null, rateUnit: null, total: null, priceType: "unknown" };
+  }
+  const priced = withDerivedTotal(next);
+  if (!priced) return { ok: false, error: `Can't use ${next.unit} with a rate per ${next.rateUnit}` };
+  return { ok: true, item: priced };
+}
+
 /** The units the picker offers: compatible ones; a line with no unit may take any. */
 export function unitChoices(item: ParsedItem): string[] {
   return BILL_UNITS.filter((u) => !item.unit || unitsAreCompatible(item.unit, u));
@@ -188,7 +216,8 @@ export function isEdited(item: ParsedItem, original: ParsedItem): boolean {
   const a = displayRate(item);
   const b = displayRate(original);
   const sameRate = a === null || b === null ? a === b : a.paise === b.paise && a.unit === b.unit;
-  return item.qty !== original.qty || item.unit !== original.unit || item.total !== original.total || !sameRate;
+  // KB-336 (D83): a changed PRODUCT is an edit too (and the strongest correction there is).
+  return item.qty !== original.qty || item.unit !== original.unit || item.total !== original.total || !sameRate || item.catalogId !== original.catalogId;
 }
 
 /** A line on the bill, with the utterance it came from and what was spoken. */

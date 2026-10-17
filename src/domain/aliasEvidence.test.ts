@@ -66,6 +66,23 @@ describe("Gemini-sourced confirmations count +0.1 (owner, 17 Oct 2026)", () => {
   });
 });
 
+describe("a correction counts +0.4 (owner, 17 Oct 2026, KB-336)", () => {
+  const corr = (over: Partial<AliasEvent> = {}) => confirm({ sourceLayer: "correction", ...over });
+  it("one correction alone gives 0.7 and NEVER promotes", () => {
+    expect(one([corr()])!.confidence).toBe(0.7);
+    expect(promotedAliases(deriveAliases([corr()]))).toEqual([]);
+  });
+  it("a correction plus one clean confirmation, or two corrections, promote", () => {
+    expect(promotedAliases(deriveAliases([corr(), confirm()]))).toHaveLength(1);
+    expect(promotedAliases(deriveAliases([corr(), corr()]))).toHaveLength(1);
+  });
+  it("a correction for another product moves the phrase only once it out-weighs the old evidence", () => {
+    const rival = { shopProductId: "parle-g-big" };
+    expect(one([confirm(), confirm(), confirm(), corr(rival)])!.catalogId).toBe("parle-g"); // 0.9 against 0.7
+    expect(one([confirm(), corr(rival)])!.catalogId).toBe("parle-g-big"); // 0.5 against 0.7
+  });
+});
+
 describe("a cancelled bill's lessons do not count (NI-50, owner 14 Oct 2026)", () => {
   it("events of a cancelled bill are ignored - both the confirmations and the suppressions", () => {
     const events = [confirm(), confirm(), confirm({ cancelled: true }), suppress({ cancelled: true })];

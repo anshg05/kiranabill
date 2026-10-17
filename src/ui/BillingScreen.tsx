@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Check, Loader2, Menu, Mic, Plus, Square, TriangleAlert, X } from "lucide-react";
+import { Check, Loader2, Menu, Mic, Pencil, Plus, Square, TriangleAlert, X } from "lucide-react";
+import type { CatalogEntry } from "@/domain/catalog";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
 import { parseUtterance } from "@/domain/grammar";
@@ -276,6 +277,7 @@ export function BillingScreen() {
       catalog={parser}
       usage={shopCatalog?.usageById}
       learned={shopCatalog?.learned}
+      onChangeProduct={bill.changeProduct}
       onNotThis={localDb && shop && deviceId ? (alias, catalogId) => void removeLearnedAlias(localDb, shop.id, deviceId, alias, catalogId).then(() => setCatalogVersion((v) => v + 1)).catch((err: unknown) => console.warn("[learning] could not remove the alias:", err)) : undefined}
       onAddByHand={(item, name) => (wiring.touch(), bill.addByHand(item, name))}
       focusLineId={bill.focusLineId}
@@ -360,6 +362,8 @@ interface BillViewProps {
   learned?: LearnedMap;
   onNotThis?: (alias: string, catalogId: string) => void;
   onAddByHand?: (item: ParsedItem, displayName: string) => void;
+  /** KB-336 (D83): tap a line's name -> pick another product (null = done, a message = refused). Needs `catalog`. */
+  onChangeProduct?: (id: string, entry: CatalogEntry) => string | null | void;
   /** KB-305: the hand-added line whose qty editor opens on arrival. */
   focusLineId?: string | null;
   /** KB-306: who the bill is for, and the editors' commits (message or null). */
@@ -709,6 +713,7 @@ export function BillView({
   learned,
   onNotThis,
   onAddByHand,
+  onChangeProduct,
   focusLineId = null,
   customer = NO_CUSTOMER,
   onCustomerName,
@@ -732,6 +737,7 @@ export function BillView({
   const readOnly = saved !== null;
   // KB-305: the add-item panel, and what its search starts with.
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
+  const [changing, setChanging] = useState<string | null>(null); // KB-336: the line whose product is being changed
   const [confirm, setConfirm] = useState<"signout" | "clear" | null>(null);
   const canAdd = catalog !== null && onAddByHand !== undefined;
   // KB-401 (D67): a waiting app update may reload the page only while NOTHING here would be lost: an empty bill, no
@@ -767,6 +773,16 @@ export function BillView({
     setAnnouncement(`Checked. ${checksText(pending - 1)}.`);
   };
   // KB-323 (D81): a line the parser read through a learned alias says so, with one tap to undo it - visible, never blocking.
+  // KB-336 (D83): on a draft the item name is a button (a pencil marks it) that opens "Change item"; a saved bill shows plain text.
+  const nameOf = (id: string, name: string) =>
+    readOnly || !onChangeProduct || !catalog ? (
+      name
+    ) : (
+      <button type="button" aria-label={`Change item ${name}`} onClick={() => setChanging(id)} className="inline-flex min-h-11 items-center gap-1.5 text-left capitalize">
+        {name}
+        <Pencil size={13} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-soft" />
+      </button>
+    );
   const [notThis, setNotThis] = useState<ReadonlySet<string>>(new Set());
   const noteOf = (id: string) => {
     const row = lines.find((l) => l.id === id);
@@ -1050,7 +1066,7 @@ export function BillView({
             {lines.map(({ item: line, displayName, id }) => (
               <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="capitalize">{displayName}</span>
+                  <span className="capitalize">{nameOf(id, displayName)}</span>
                   <span className="ml-auto font-semibold tabular-nums">{amountOf("card", id, line, displayName)}</span>
                   {removeOf(id, displayName)}
                 </div>
@@ -1083,7 +1099,7 @@ export function BillView({
             <tbody>
               {lines.map(({ item: line, displayName, id }) => [
                 <tr key={id} className="h-12 border-b border-line bg-surface">
-                  <td className={`px-4 capitalize ${edge(id)}`}>{displayName}</td>
+                  <td className={`px-4 capitalize ${edge(id)}`}>{nameOf(id, displayName)}</td>
                   <td className="px-2 text-right tabular-nums">{qtyOf("table", id, line, displayName)}</td>
                   <td className="px-2">{unitOf("table", id, line, displayName)}</td>
                   <td className="px-2 text-right tabular-nums">{rateOf("table", id, line, displayName)}</td>
@@ -1112,6 +1128,20 @@ export function BillView({
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
           <div ref={endRef} />
         </div>
+        {changing && catalog && onChangeProduct && lines.some((l) => l.id === changing) && (
+          <AddItemSheet
+            catalog={catalog}
+            usage={usage}
+            billTotal={total}
+            billCount={lines.length}
+            change={{ name: lines.find((l) => l.id === changing)!.displayName }}
+            onPick={(entry) => {
+              onChangeProduct(changing, entry);
+              setChanging(null);
+            }}
+            onClose={() => setChanging(null)}
+          />
+        )}
         {addItem && canAdd && (
           <AddItemSheet
             catalog={catalog}
