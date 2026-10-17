@@ -9,6 +9,9 @@ import { requestPersistentStorage } from "@/data/storagePersist";
 import { BUILD_ID } from "@/pwa/buildId";
 import { BillView } from "./BillingScreen";
 import { SettingsScreen } from "./SettingsScreen";
+import { render as say } from "@/domain/messages";
+import { getScreenLanguage, setScreenLanguage } from "./screenLanguage";
+import { stubLocalStorage } from "./testStorage";
 
 // KB-312 (owner, 8 Oct 2026): S7 Settings - shop name and phone, the customer's receipt language, and a
 // collapsed Developer mode (learned aliases, provisional products, price suggestions, reset learning).
@@ -93,7 +96,7 @@ describe("KB-312 - S7 Settings", () => {
     const { onClose } = await open();
     expect(nameBox().value).toBe("Sharma Kirana");
     expect(phoneBox().value).toBe("98765 43210");
-    expect((screen.getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
+    expect((within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -146,7 +149,7 @@ describe("KB-312 - S7 Settings", () => {
 
   it("choosing a receipt language saves at once, through the same path", async () => {
     await open();
-    fireEvent.click(screen.getByRole("radio", { name: "हिन्दी" }));
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }));
     await waitFor(async () => expect(await row()).toMatchObject({ billLanguage: "hi", syncStatus: "pending" }));
     fireEvent.click(screen.getByRole("radio", { name: "Both" }));
     await waitFor(async () => expect((await row())?.billLanguage).toBe("both"));
@@ -156,7 +159,7 @@ describe("KB-312 - S7 Settings", () => {
     await open();
     await db.shops.update(shopId, { name: "Edited Elsewhere", billLanguage: "hi", updatedAt: "2026-10-08T11:00:00.000000+00:00" }); // a pull landed
     await waitFor(() => expect(nameBox().value).toBe("Edited Elsewhere"));
-    expect((screen.getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
+    expect((within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
     type(phoneBox(), "98765"); // mid-typing
     await db.shops.update(shopId, { name: "Edited Again", phone: "9123456789", updatedAt: "2026-10-08T12:00:00.000000+00:00" });
     await waitFor(() => expect(nameBox().value).toBe("Edited Again")); // the untouched field follows
@@ -289,5 +292,47 @@ describe("KB-401 - version and storage", () => {
     const dev = within(await openDeveloper());
     await dev.findByText("Nothing learned on this phone yet.");
     expect(dev.queryByText(/Storage:/)).toBeNull();
+  });
+});
+
+describe("KB-332 - Screen language (a per-device choice, separate from the receipt language)", () => {
+  let store: Map<string, string>;
+  beforeEach(() => {
+    store = stubLocalStorage();
+  });
+  afterEach(() => {
+    setScreenLanguage("en");
+    vi.unstubAllGlobals();
+  });
+
+  it("three choices, English selected until one is made; the receipt language is its own group", async () => {
+    await open();
+    const group = screen.getByRole("radiogroup", { name: "Screen language" });
+    expect(within(group).getAllByRole("radio").map((r) => (r as HTMLInputElement).getAttribute("aria-label"))).toEqual(["English", "हिन्दी", "Hinglish"]);
+    expect((within(group).getByRole("radio", { name: "English" }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("radiogroup", { name: "Receipt language" })).toBeTruthy();
+  });
+
+  it("choosing हिन्दी changes this screen at once, is kept on this device - and touches nothing of the shop", async () => {
+    await open();
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Screen language" })).getByRole("radio", { name: "हिन्दी" }));
+    expect(screen.getByRole("heading", { name: say("menu.settings", {}, "hi") })).toBeTruthy();
+    expect(getScreenLanguage()).toBe("hi");
+    expect(store.get("kb.screenLanguage")).toBe("hi");
+    const row = (await db.shops.get(shopId))!;
+    expect(row).toMatchObject({ billLanguage: "en", syncStatus: "synced", updatedAt: shop().updatedAt }); // not shop-wide, nothing pending to sync
+  });
+
+  it("the three labels are never translated, whatever the language", async () => {
+    setScreenLanguage("hl");
+    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} onClose={() => {}} />);
+    const group = await screen.findByRole("radiogroup", { name: say("settings.screenLanguage", {}, "hl") });
+    expect(within(group).getAllByRole("radio").map((r) => r.getAttribute("aria-label"))).toEqual(["English", "हिन्दी", "Hinglish"]);
+  });
+
+  it("the Developer mode section stays English in every language", async () => {
+    setScreenLanguage("hi");
+    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} onClose={() => {}} />);
+    expect(await screen.findByText("Developer mode")).toBeTruthy();
   });
 });

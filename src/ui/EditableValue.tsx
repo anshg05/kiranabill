@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "./useT";
 
 /**
  * KB-303: a tappable value (44px) that becomes an inline number input - the
@@ -29,6 +30,7 @@ export function EditableValue({
   pendingTarget?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
+  const { tx } = useT();
   const [error, setError] = useState<string | null>(null);
   if (draft === null) {
     return (
@@ -90,7 +92,7 @@ export function EditableValue({
       />
       {error && (
         <span role="alert" className="text-[13px] text-danger">
-          {error}
+          {tx(error)}
         </span>
       )}
     </span>

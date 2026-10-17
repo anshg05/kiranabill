@@ -90,7 +90,7 @@ describe("KB-305 - the panel", () => {
     expect(panel()).not.toBeNull();
     expect(document.activeElement).toBe(search());
     expect(document.querySelector("[aria-modal]")).toBeNull();
-    expect((screen.getByRole("button", { name: /बोलने के लिए दबाएं/ }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("button", { name: /Tap to speak/ }) as HTMLButtonElement).disabled).toBe(false);
     expect(screen.getByTestId("bill-total")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Bill Banao" })).toBeTruthy();
   });

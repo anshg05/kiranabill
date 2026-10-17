@@ -18,6 +18,9 @@ import { PilotNumbers } from "./PilotNumbers";
 import type { ReconcileResult } from "@/data/billMetrics";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
+import { useT } from "./useT";
+import { setScreenLanguage } from "./screenLanguage";
+import type { Language } from "@/domain/messages";
 
 // KB-312 (owner, 8 Oct 2026): S7 Settings, over the bill in progress.
 // - Shop details: name and phone (both print on every receipt). Written to this phone first and pushed by the
@@ -31,6 +34,13 @@ const LANGUAGES: readonly { value: BillLanguage; label: string }[] = [
   { value: "en", label: "English" },
   { value: "hi", label: "हिन्दी" },
   { value: "both", label: "Both" },
+];
+
+// KB-332 (D84): the Screen language - three fixed labels, never translated (a shopkeeper who cannot read the current language must still find his own).
+const SCREEN_LANGUAGES: readonly { value: Language; label: string }[] = [
+  { value: "en", label: "English" },
+  { value: "hi", label: "हिन्दी" },
+  { value: "hl", label: "Hinglish" },
 ];
 
 const showPhone = (phone: string | null) => (phone === null ? "" : /^\d{10}$/.test(phone) ? formatMobile(phone) : phone);
@@ -52,6 +62,7 @@ interface SettingsScreenProps {
 export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile, onClose }: SettingsScreenProps) {
   useBackEntry("kbSettings", onClose);
   const online = useBrowserOnline();
+  const { t, tx, lang } = useT();
   const [shop, setShop] = useState<LocalShop | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -96,25 +107,25 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
   };
 
   return (
-    <section aria-label="Settings" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("menu.settings")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">Settings</h2>
+          <h2 className="text-[20px] font-semibold">{t("menu.settings")}</h2>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {shop && (
             <>
-              <h3 className={heading}>Shop details</h3>
+              <h3 className={heading}>{t("settings.shopDetails")}</h3>
               <div className="mt-2 flex flex-col gap-3">
                 <label className="flex flex-col gap-1">
-                  <span>Shop name</span>
+                  <span>{t("settings.shopName")}</span>
                   <input
                     type="text"
-                    aria-label="Shop name"
+                    aria-label={t("settings.shopName")}
                     value={name}
                     autoComplete="off"
                     onChange={(e) => {
@@ -125,16 +136,16 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                   />
                   {errors.name && (
                     <span role="alert" className="text-[13px] text-danger">
-                      {errors.name}
+                      {tx(errors.name)}
                     </span>
                   )}
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span>Shop phone (optional)</span>
+                  <span>{t("settings.shopPhone")}</span>
                   <input
                     type="tel"
                     inputMode="tel"
-                    aria-label="Shop phone"
+                    aria-label={t("settings.shopPhoneLabel")}
                     value={phone}
                     autoComplete="off"
                     onChange={(e) => {
@@ -145,7 +156,7 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                   />
                   {errors.phone && (
                     <span role="alert" className="text-[13px] text-danger">
-                      {errors.phone}
+                      {tx(errors.phone)}
                     </span>
                   )}
                 </label>
@@ -156,19 +167,38 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                     onClick={dirty ? () => void saveDetails() : undefined}
                     className="min-h-11 rounded-[6px] border border-line bg-surface px-5 font-medium aria-disabled:opacity-50"
                   >
-                    Save
+                    {t("settings.save")}
                   </button>
                   {saved && (
                     <span role="status" className="text-[13px] text-ink-soft">
-                      {online ? "Saved" : "Saved on this phone — it will sync when you're online"}
+                      {online ? t("settings.saved") : t("settings.savedOffline")}
                     </span>
                   )}
                 </div>
               </div>
 
-              <h3 className={`${heading} mt-6`}>Receipt language</h3>
-              <p className="mt-1 text-[13px] text-ink-soft">What your customer's receipt is printed in.</p>
-              <div role="radiogroup" aria-label="Receipt language" className="mt-2 flex flex-wrap gap-2">
+              <h3 className={`${heading} mt-6`}>{t("settings.screenLanguage")}</h3>
+              <p className="mt-1 text-[13px] text-ink-soft">{t("settings.screenLanguageHelp")}</p>
+              <div role="radiogroup" aria-label={t("settings.screenLanguage")} className="mt-2 flex flex-wrap gap-2">
+                {SCREEN_LANGUAGES.map((l) => (
+                  <label key={l.value} className="flex min-h-11 cursor-pointer items-center rounded-[6px] border border-line px-4 has-checked:border-ink has-checked:bg-ink has-checked:text-paper">
+                    <input
+                      type="radio"
+                      name="screen-language"
+                      value={l.value}
+                      checked={lang === l.value}
+                      onChange={() => setScreenLanguage(l.value)}
+                      aria-label={l.label}
+                      className="sr-only"
+                    />
+                    {l.label}
+                  </label>
+                ))}
+              </div>
+
+              <h3 className={`${heading} mt-6`}>{t("settings.receiptLanguage")}</h3>
+              <p className="mt-1 text-[13px] text-ink-soft">{t("settings.receiptLanguageHelp")}</p>
+              <div role="radiogroup" aria-label={t("settings.receiptLanguage")} className="mt-2 flex flex-wrap gap-2">
                 {LANGUAGES.map((l) => (
                   <label key={l.value} className="flex min-h-11 cursor-pointer items-center rounded-[6px] border border-line px-4 has-checked:border-ink has-checked:bg-ink has-checked:text-paper">
                     <input
@@ -177,16 +207,14 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                       value={l.value}
                       checked={shop.billLanguage === l.value}
                       onChange={() => void chooseLanguage(l.value)}
-                      aria-label={l.label}
+                      aria-label={l.value === "both" ? t("settings.receiptBoth") : l.label}
                       className="sr-only"
                     />
-                    {l.label}
+                    {l.value === "both" ? t("settings.receiptBoth") : l.label}
                   </label>
                 ))}
               </div>
-              <p className="mt-3 text-[13px] text-ink-soft">
-                A receipt opened from History shows today's shop name, phone and language, not the ones it was first printed with.
-              </p>
+              <p className="mt-3 text-[13px] text-ink-soft">{t("settings.receiptNote")}</p>
 
               <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} />
               <p className="mt-6 text-[13px] text-ink-soft">Version {BUILD_ID}</p>

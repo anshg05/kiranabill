@@ -155,7 +155,7 @@ describe("BillView voice states", () => {
 
   it("idle: the mic is enabled and tapping it calls onMicTap", () => {
     const onMicTap = renderVoice({});
-    expect(mic().textContent).toBe("बोलने के लिए दबाएं");
+    expect(mic().textContent).toBe("Tap to speak"); // English mode is fully English (KB-332); the Hindi wording is हिन्दी mode's
     expect(mic().disabled).toBe(false);
     act(() => mic().click());
     expect(onMicTap).toHaveBeenCalledOnce();
@@ -176,7 +176,7 @@ describe("BillView voice states", () => {
   it("listening: the mic becomes a pulsing stop button, with the elapsed timer", () => {
     renderVoice({ phase: "listening", elapsedMs: 65_400 });
     expect(screen.getByRole("button", { name: "Stop recording" }).className).toContain("animate-pulse");
-    expect(screen.getByText("सुन रहे हैं… 1:05")).toBeTruthy();
+    expect(screen.getByText("Listening… 1:05")).toBeTruthy();
   });
 
   it("transcribing: spinner, mic disabled", () => {

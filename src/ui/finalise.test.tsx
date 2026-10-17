@@ -195,7 +195,7 @@ describe("KB-307 - finalise and the saved screen", () => {
     render(<Harness api={api} pre={[spoken("1 kilo besan")]} onMicTap={onMicTap} />);
     await tapBillBanao();
     await waitFor(() => screen.getByRole("button", { name: "New bill" }));
-    act(() => screen.getByRole("button", { name: /बोलने के लिए दबाएं/ }).click());
+    act(() => screen.getByRole("button", { name: /Tap to speak/ }).click());
     expect(onMicTap).toHaveBeenCalledTimes(1);
     expect(api.current!.rows).toHaveLength(0);
     expect(screen.queryByRole("status", { name: "Bill saved" })).toBeNull();

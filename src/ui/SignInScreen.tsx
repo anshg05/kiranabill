@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
+import { useT } from "./useT";
 import { useAuth } from "@/providers/AuthProvider";
 import { useUpdateGate } from "@/pwa/updateGate";
 import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
@@ -8,6 +9,7 @@ import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
  * appears against a LOCAL Supabase stack - DevEmailSignIn.tsx.) */
 export function SignInScreen() {
   const { signInWithGoogle } = useAuth();
+  const { t } = useT();
   // KB-335 (D82): the marks of a refused or failed sign-in in the address bar - one plain sentence, then cleared.
   const [error, setError] = useState<string | null>(() => {
     const returned = readOAuthReturn(window.location.href);
@@ -34,9 +36,9 @@ export function SignInScreen() {
         onClick={handleClick}
         className="rounded-lg bg-indigo px-6 py-3 text-white font-medium"
       >
-        Sign in with Google
+        {t("signin.google")}
       </button>
-      {error && <p role="alert" className="text-danger text-sm">{error}</p>}
+      {error && <p role="alert" className="text-danger text-sm">{error === REFUSED_TEXT ? t("signin.refused") : error === FAILED_TEXT ? t("signin.unfinished") : error}</p>}
       {import.meta.env.DEV && isLocalSupabaseUrl(import.meta.env.VITE_SUPABASE_URL) && <DevEmailSignIn />}
     </div>
   );

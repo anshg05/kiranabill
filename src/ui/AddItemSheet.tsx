@@ -6,6 +6,7 @@ import { displayRate } from "@/domain/billEdit";
 import { formatRupees, type Paise } from "@/domain/money";
 import { formatAmount } from "./billFormat";
 import { useBackEntry } from "./useBackEntry";
+import { useT } from "./useT";
 
 // KB-305 (05 S3a; owner, 2 Oct 2026): add an item by hand. A NON-modal panel
 // over the item list - TOTAL, the mic and Bill Banao stay visible and usable
@@ -44,6 +45,7 @@ export interface AddItemSheetProps {
 }
 
 export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, billCount, onPick, onCustom, onClose, change }: AddItemSheetProps) {
+  const { t } = useT();
   const [query, setQuery] = useState(initialQuery);
   const results = useMemo(() => searchCatalog(catalog, query, usage), [catalog, query, usage]);
 
@@ -53,14 +55,14 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
   const typed = query.trim();
   return (
     <section
-      aria-label={change ? "Change item" : "Add item"}
+      aria-label={change ? t("change.title") : t("add.title")}
       className="absolute inset-0 z-10 flex flex-col border-t border-line bg-surface shadow-[0_-1px_0_var(--color-line),0_-8px_24px_rgb(0_0_0/0.08)]"
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4">
         <span className="text-[13px] text-ink-soft tabular-nums [overflow-wrap:anywhere]">
-          {change ? `Change “${change.name}” to…` : `Bill so far · ${formatAmount(billTotal)} · ${billCount} ${billCount === 1 ? "item" : "items"}`}
+          {change ? t("change.to", { name: change.name }) : t(billCount === 1 ? "add.billSoFar.one" : "add.billSoFar.many", { total: formatAmount(billTotal), n: billCount })}
         </span>
-        <button type="button" aria-label={change ? "Close change item" : "Close add item"} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+        <button type="button" aria-label={change ? t("change.close") : t("add.close")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
           <X size={18} strokeWidth={1.5} aria-hidden />
         </button>
       </div>
@@ -69,8 +71,8 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
           type="search"
           id="add-item-search"
           name="add-item-search"
-          aria-label="Search products"
-          placeholder="Search — chini, चीनी…"
+          aria-label={t("add.search")}
+          placeholder={t("add.placeholder")}
           autoFocus
           autoComplete="off"
           enterKeyHint="search"
@@ -84,7 +86,7 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <ul aria-label="Products">
+        <ul aria-label={t("add.products")}>
           {results.map(({ entry, alias }) => (
             <li key={entry.id}>
               <button type="button" onClick={() => onPick(entry)} className="flex min-h-11 w-full items-center justify-between gap-3 border-b border-line px-4 text-left">
@@ -99,7 +101,7 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
         </ul>
         {typed && !change && onCustom && (
           <button type="button" onClick={() => onCustom(typed)} className="min-h-11 w-full px-4 text-left font-medium text-indigo">
-            + Add “{typed}” as a new product
+            {t("add.new", { typed })}
           </button>
         )}
       </div>

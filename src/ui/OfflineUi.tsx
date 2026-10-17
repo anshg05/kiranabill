@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import type { SyncChip, Unsynced } from "./syncChip";
+import { useT } from "./useT";
 
 // KB-313 (05 §7, 16 §2): the header chip, and the two inline confirmations (sign out with unsynced bills,
 // Clear bill). A chip is a status - plain text, tappable only when amber - never a dialog in billing's way.
 
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+export const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 const CHIP_STYLE: Record<SyncChip["kind"], string> = {
   offline: "border-line text-ink-soft",
@@ -15,39 +16,36 @@ const CHIP_STYLE: Record<SyncChip["kind"], string> = {
 
 export function SyncChipView({ chip, detail }: { chip: SyncChip | null; detail?: { pending: number; conflict: number; lastAttemptAt: string | null } }) {
   const [open, setOpen] = useState(false);
+  const { t, tx } = useT();
   if (!chip) return null;
   const style = `min-w-0 rounded-[6px] border px-2 py-0.5 text-[13px] leading-tight ${CHIP_STYLE[chip.kind]}`;
   if (chip.kind !== "failing") {
     return (
       <span data-testid="sync-chip" className={style}>
-        {chip.label}
+        {tx(chip.label)}
       </span>
     );
   }
   return (
     <>
       <button type="button" data-testid="sync-chip" aria-haspopup="dialog" onClick={() => setOpen(true)} className={`${style} min-h-11`}>
-        {chip.label}
+        {tx(chip.label)}
       </button>
       {open && (
-        <Overlay label="Sync details" role="dialog">
+        <Overlay label={t("sync.label")} role="dialog">
           <div className="flex flex-col gap-2">
             {detail && detail.pending > 0 && (
-              <p>
-                {detail.pending} {plural(detail.pending, "bill hasn't", "bills haven't")} reached the server yet.
-              </p>
+              <p>{t(detail.pending === 1 ? "sync.pending.one" : "sync.pending.many", { n: detail.pending })}</p>
             )}
             {detail && detail.conflict > 0 && (
-              <p>
-                {detail.conflict} {plural(detail.conflict, "bill couldn't", "bills couldn't")} be saved to the server. {plural(detail.conflict, "It stays", "They stay")} on this phone.
-              </p>
+              <p>{t(detail.conflict === 1 ? "sync.conflict.one" : "sync.conflict.many", { n: detail.conflict })}</p>
             )}
-            {detail?.lastAttemptAt && <p className="text-[13px] text-ink-soft">Last tried at {timeOf(detail.lastAttemptAt)}.</p>}
-            <p className="font-medium">Billing continues.</p>
+            {detail?.lastAttemptAt && <p className="text-[13px] text-ink-soft">{t("sync.lastTried", { time: timeOf(detail.lastAttemptAt) })}</p>}
+            <p className="font-medium">{t("sync.continues")}</p>
           </div>
           <div className="mt-3 flex justify-end">
             <button type="button" onClick={() => setOpen(false)} className="min-h-11 rounded-[6px] border border-line bg-paper px-4 font-medium">
-              Close
+              {t("common.close")}
             </button>
           </div>
         </Overlay>
@@ -98,17 +96,18 @@ export function clearBillWarning(lineCount: number): Confirmation {
 }
 
 export function ConfirmDialog({ title, lines, confirmLabel, onCancel, onConfirm }: Confirmation & { confirmLabel: string; onCancel: () => void; onConfirm: () => void }) {
+  const { t, tx } = useT();
   return (
-    <Overlay label={title} role="alertdialog">
-      <h2 className="text-[17px] font-semibold">{title}</h2>
+    <Overlay label={tx(title)} role="alertdialog">
+      <h2 className="text-[17px] font-semibold">{tx(title)}</h2>
       <div className="mt-2 flex flex-col gap-2">
         {lines.map((l) => (
-          <p key={l}>{l}</p>
+          <p key={l}>{tx(l)}</p>
         ))}
       </div>
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <button type="button" onClick={onCancel} className="min-h-11 rounded-[6px] border border-line bg-paper px-4 font-medium">
-          Cancel
+          {t("common.cancel")}
         </button>
         <button type="button" onClick={onConfirm} className="min-h-11 rounded-[6px] border border-danger px-4 font-medium text-danger">
           {confirmLabel}

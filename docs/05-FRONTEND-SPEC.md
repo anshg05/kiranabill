@@ -191,6 +191,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 ## 4. S4 — Catalog
 
 - Search (same index as Add item)
+- **Screen language** (`KB-332`, D84): Settings has a per-device choice - English / हिन्दी / Hinglish - above the Receipt language; it repaints the open screen at once. "Bill Banao", "Theek hai" and "Cash" never change.
 - Rows: name, unit, price, and how often it was billed in the last 30 days (`KB-321`; most used first). **Learned names** (`KB-323`): each phrase the app has learned, its product, "In use" / "Still learning", and Remove.
 - On the billing screen, **the item name on a draft line is a button (a pencil marks it): tap -> "Change item" -> search -> pick another product** (`KB-336`, D83: quantity kept when the unit fits, else "Quantity needed"; a price the shopkeeper said stays; catalog products only).
 - On the billing screen, a line the parser read through a learned alias carries "Learned: 'x' -> Product" and **Not this** (`KB-323`; visible, never blocking).

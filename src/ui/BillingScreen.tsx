@@ -43,6 +43,7 @@ import { topUpReceiptBlock } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
 import { learnPendingBills, learnThenReload } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
+import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
 import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
 import type { SyncChip, Unsynced } from "./syncChip";
@@ -431,39 +432,40 @@ function NotAddedList({
   /** KB-331: opens the add panel with this entry's words. The entry stays until Retry works or ✕ (D50). */
   onAddByHand?: (query: string) => void;
 }) {
+  const { t, tx } = useT();
   if (entries.length === 0) return null;
   return (
-    <ul aria-label="Not added">
+    <ul aria-label={t("notadded.list")}>
       {entries.map((n) => (
         <li key={n.id} data-severity="HIGH" className="flex flex-wrap items-center gap-x-2 border-b border-line border-l-[3px] border-l-danger bg-surface px-4 py-1 text-[13px] text-danger">
           <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
-          <span className="sr-only">Must check: </span>
-          <span className="text-ink">Not added: “{n.transcript}”</span>
-          <span>{n.message}</span>
+          <span className="sr-only">{t("flag.mustCheck")} </span>
+          <span className="text-ink">{t("notadded.line", { text: n.transcript })}</span>
+          <span>{tx(n.message)}</span>
           <span className="ml-auto flex items-center gap-1">
             <button
               type="button"
               data-pending-target
-              aria-label={`Retry “${n.transcript}”`}
+              aria-label={t("retry.label", { text: n.transcript })}
               disabled={n.retrying}
               onClick={() => onRetry?.(n.id)}
               className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger disabled:opacity-50"
             >
-              {n.retrying ? "Reading…" : "Retry"}
+              {n.retrying ? t("retry.reading") : t("retry.button")}
             </button>
             {onAddByHand && (
               <button
                 type="button"
-                aria-label={`Add by hand “${n.transcript}”`}
+                aria-label={t("byhand.label", { text: n.transcript })}
                 onClick={() => onAddByHand(n.transcript)}
                 className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
               >
-                Add by hand
+                {t("byhand.button")}
               </button>
             )}
             <button
               type="button"
-              aria-label={`Dismiss “${n.transcript}”`}
+              aria-label={t("dismiss.label", { text: n.transcript })}
               onClick={() => onDismiss?.(n.id)}
               className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft"
             >
@@ -477,8 +479,8 @@ function NotAddedList({
 }
 
 /** "1 check pending", "3 checks pending". */
-function checksText(n: number): string {
-  return `${n} ${n === 1 ? "check" : "checks"} pending`;
+function checksText(n: number, t: Translate): string {
+  return t(n === 1 ? "checks.one" : "checks.many", { n });
 }
 
 /**
@@ -486,11 +488,12 @@ function checksText(n: number): string {
  * Shown like a HIGH flag but with no "Theek hai" - only a value clears it.
  */
 function AmountNeeded({ need }: { need: "price" | "quantity" }) {
+  const { t } = useT();
   return (
     <div data-severity="HIGH" className="flex items-center gap-x-2 py-1 text-[13px] text-danger">
       <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
-      <span className="sr-only">Must check: </span>
-      <span>{need === "price" ? "Price needed" : "Quantity needed"}</span>
+      <span className="sr-only">{t("flag.mustCheck")} </span>
+      <span>{need === "price" ? t("need.price") : t("need.quantity")}</span>
     </div>
   );
 }
@@ -502,22 +505,24 @@ function AmountNeeded({ need }: { need: "price" | "quantity" }) {
  * Acknowledged, the sentence stays readable, muted, marked "✓ Theek hai".
  */
 function HighFlag({ flag, name, onAcknowledge }: { flag: ShownFlag; name: string | null; onAcknowledge: (flag: ShownFlag) => void }) {
+  const { t, tx } = useT();
+  const sentence = tx(flag.message);
   return (
     <div data-severity="HIGH" className={`flex flex-wrap items-center gap-x-2 text-[13px] ${flag.acknowledged ? "text-ink-soft" : "text-danger"}`}>
       <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
-      <span className="sr-only">Must check: </span>
-      <span>{flag.message}</span>
+      <span className="sr-only">{t("flag.mustCheck")} </span>
+      <span>{sentence}</span>
       {flag.acknowledged ? (
-        <span className="font-medium">✓ Theek hai</span>
+        <span className="font-medium">{t("flag.ok")}</span>
       ) : (
         <button
           type="button"
           data-pending-target
-          aria-label={`Theek hai — ${name ? `${name}: ` : ""}${flag.message}`}
+          aria-label={t("flag.okLabel", { text: `${name ? `${name}: ` : ""}${sentence}` })}
           onClick={() => onAcknowledge(flag)}
           className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger"
         >
-          Theek hai
+          {t("flag.okButton")}
         </button>
       )}
     </div>
@@ -530,6 +535,7 @@ function HighFlag({ flag, name, onAcknowledge }: { flag: ShownFlag; name: string
  * loudest thing on the line, 05 §8 rule 5); each carries an accessible name.
  */
 function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; name: string; messages: readonly string[] }) {
+  const { t, tx } = useT();
   const [open, setOpen] = useState(false);
   const medium = severity === "MEDIUM";
   return (
@@ -537,7 +543,7 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
       <button
         type="button"
         aria-expanded={open}
-        aria-label={`${medium ? "REVIEW" : "Note"} — ${name}`}
+        aria-label={medium ? t("flag.reviewLabel", { name }) : t("flag.noteLabel", { name })}
         onClick={() => setOpen((o) => !o)}
         className={
           medium
@@ -545,12 +551,12 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
             : "flex size-11 items-center justify-center rounded-[6px]"
         }
       >
-        {medium ? "REVIEW" : <span aria-hidden className="size-2 rounded-full bg-muted" />}
+        {medium ? t("flag.review") : <span aria-hidden className="size-2 rounded-full bg-muted" />}
       </button>
       {open && (
         <ul className={medium ? "text-warn" : "text-ink-soft"}>
           {messages.map((m) => (
-            <li key={m}>{m}</li>
+            <li key={m}>{tx(m)}</li>
           ))}
         </ul>
       )}
@@ -602,8 +608,9 @@ function mmss(ms: number): string {
 /** The one line above the buttons: offline reason, failure, listening
  * timer, or the transcript (05-FRONTEND-SPEC.md section 2 voice states). */
 function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (query: string) => void }) {
+  const { t, tx } = useT();
   const base = "min-h-6 px-4 pt-2 text-[13px]";
-  if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{voice.disabledReason}</p>;
+  if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{tx(voice.disabledReason)}</p>;
   if (voice.phase === "failed" && voice.message) {
     // KB-317 commit 5: a transcript that was heard stays visible above the failure.
     return (
@@ -614,16 +621,16 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
           </p>
         )}
         <p role="alert" className={`${base} text-danger`}>
-          {voice.message}
+          {tx(voice.message)}
           {/* KB-305 / KB-331: every failure opens the add panel - the heard words in the search, or empty. It adds nothing itself. */}
           {onAddByHand && (
             <button
               type="button"
-              aria-label={voice.transcript ? `Add “${voice.transcript}” by hand` : "Add by hand"}
+              aria-label={voice.transcript ? t("byhand.labelVoice", { text: voice.transcript }) : t("byhand.button")}
               onClick={() => onAddByHand(voice.transcript ?? "")}
               className="ml-2 min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
             >
-              Add by hand
+              {t("byhand.button")}
             </button>
           )}
         </p>
@@ -633,11 +640,11 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
   if (voice.phase === "listening") {
     return (
       <p className={`${base} text-indigo tabular-nums`}>
-        सुन रहे हैं… {mmss(voice.elapsedMs)}
+        {t("voice.listening")} {mmss(voice.elapsedMs)}
       </p>
     );
   }
-  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>सुन रहे हैं…</p>;
+  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>{t("voice.listening")}</p>;
   if (voice.transcript) {
     return (
       <p data-testid="voice-transcript" className={`${base} text-ink`}>
@@ -649,14 +656,15 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
 }
 
 function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; onMicTap?: () => void; onMicPointerDown?: () => void }) {
+  const { t } = useT();
   const cls =
     "flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-indigo px-3 font-medium text-surface disabled:opacity-50";
   const icon = { size: 20, strokeWidth: 1.5, "aria-hidden": true } as const;
   if (voice.phase === "listening") {
     return (
-      <button type="button" onClick={onMicTap} aria-label="Stop recording" className={`${cls} animate-pulse`}>
+      <button type="button" onClick={onMicTap} aria-label={t("mic.stopLabel")} className={`${cls} animate-pulse`}>
         <Square {...icon} />
-        रोकें
+        {t("mic.stop")}
       </button>
     );
   }
@@ -664,7 +672,7 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
     return (
       <button type="button" disabled className={cls}>
         <Mic {...icon} />
-        Mic permission…
+        {t("mic.permission")}
       </button>
     );
   }
@@ -672,7 +680,7 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
     return (
       <button type="button" disabled className={cls}>
         <Loader2 {...icon} className="animate-spin" />
-        सुन रहे हैं…
+        {t("voice.listening")}
       </button>
     );
   }
@@ -685,7 +693,7 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
       className={cls}
     >
       <Mic {...icon} />
-      बोलने के लिए दबाएं
+      {t("mic.idle")}
     </button>
   );
 }
@@ -733,6 +741,7 @@ export function BillView({
   unsynced,
   onClearBill,
 }: BillViewProps) {
+  const { t, tx } = useT();
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
   const readOnly = saved !== null;
   // KB-305: the add-item panel, and what its search starts with.
@@ -763,14 +772,14 @@ export function BillView({
     const fresh = flags.filter((f) => f.severity === "HIGH" && !f.acknowledged && !announced.current.has(f.key));
     for (const f of flags) announced.current.add(f.key);
     if (fresh.length) {
-      const said = fresh.map((f) => (f.lineId ? `${nameOfLine.get(f.lineId)}: ${f.message}` : f.message)).join(" ");
-      setAnnouncement(`${said} ${checksText(pending)}.`);
+      const said = fresh.map((f) => (f.lineId ? `${nameOfLine.get(f.lineId)}: ${tx(f.message)}` : tx(f.message))).join(" ");
+      setAnnouncement(`${said} ${checksText(pending, t)}.`);
     }
     // nameOfLine is derived from lines, which flags already follow
   }, [flags, pending]);
   const acknowledge = (flag: ShownFlag) => {
     onAcknowledge?.(flag.key);
-    setAnnouncement(`Checked. ${checksText(pending - 1)}.`);
+    setAnnouncement(`${t("checks.checked")} ${checksText(pending - 1, t)}.`);
   };
   // KB-323 (D81): a line the parser read through a learned alias says so, with one tap to undo it - visible, never blocking.
   // KB-336 (D83): on a draft the item name is a button (a pencil marks it) that opens "Change item"; a saved bill shows plain text.
@@ -778,7 +787,7 @@ export function BillView({
     readOnly || !onChangeProduct || !catalog ? (
       name
     ) : (
-      <button type="button" aria-label={`Change item ${name}`} onClick={() => setChanging(id)} className="inline-flex min-h-11 items-center gap-1.5 text-left capitalize">
+      <button type="button" aria-label={t("line.change", { name })} onClick={() => setChanging(id)} className="inline-flex min-h-11 items-center gap-1.5 text-left capitalize">
         {name}
         <Pencil size={13} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-soft" />
       </button>
@@ -800,22 +809,22 @@ export function BillView({
         {note && (
           <div data-testid="learned-note" className="flex flex-wrap items-center gap-2 py-1 text-[13px] text-ink-soft">
             <span>
-              Learned: “{note.alias}” → {name}
+              {t("learned.note", { alias: note.alias, name })}
             </span>
             <button
               type="button"
-              aria-label={`Not this — ${name}`}
+              aria-label={t("learned.notThisLabel", { name })}
               onClick={() => {
                 setNotThis((s) => new Set(s).add(id));
                 onNotThis?.(note.alias, note.catalogId);
               }}
               className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
             >
-              Not this
+              {t("learned.notThis")}
             </button>
           </div>
         )}
-        {!note && notThis.has(id) && <p className="py-1 text-[13px] text-ink-soft">Forgotten. Check that {name} is the right item.</p>}
+        {!note && notThis.has(id) && <p className="py-1 text-[13px] text-ink-soft">{t("learned.forgotten", { name })}</p>}
         {own.length > 0 && <FlagList flags={own} name={name} onAcknowledge={acknowledge} />}
       </>
     );
@@ -825,7 +834,7 @@ export function BillView({
     if (after.length === 0) return null;
     return (
       <div className="py-1">
-        <p className="text-[13px] text-ink-soft">Heard: “{after[0]!.transcript}”</p>
+        <p className="text-[13px] text-ink-soft">{t("flag.heard", { text: after[0]!.transcript })}</p>
         <FlagList flags={after} name={null} onAcknowledge={acknowledge} />
       </div>
     );
@@ -851,7 +860,7 @@ export function BillView({
       <span>{formatQty(line.qty)}</span>
     ) : (
     <EditableValue
-      label={`${name} quantity`}
+      label={t("line.quantity", { name })}
       fieldId={`${view}-${id}-qty`}
       text={formatQty(line.qty)}
       initial={line.qty === null ? "" : String(line.qty)}
@@ -864,19 +873,19 @@ export function BillView({
     readOnly ? (
       <span>{line.unit || "—"}</span>
     ) : (
-    <UnitPicker label={`${name} unit`} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
+    <UnitPicker label={t("line.unit", { name })} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
   );
   const rateOf = (view: View, id: string, line: BillLine["item"], name: string) =>
     readOnly ? (
       <span>{formatRate(line)}</span>
     ) : (
-    <EditableValue label={`${name} rate`} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
+    <EditableValue label={t("line.rate", { name })} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
   );
   // The amount is editable only where no rate exists (owner, decision 1).
   const amountOf = (view: View, id: string, line: BillLine["item"], name: string) =>
     line.rate === null && !readOnly ? (
       <EditableValue
-        label={`${name} amount`}
+        label={t("line.amount", { name })}
         fieldId={`${view}-${id}-amount`}
         text={formatAmount(line.total)}
         initial={paiseText(line.total || null)}
@@ -888,7 +897,7 @@ export function BillView({
     );
   const removeOf = (id: string, name: string) =>
     readOnly ? null : (
-    <button type="button" aria-label={`Remove ${name}`} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+    <button type="button" aria-label={t("line.remove", { name })} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
       <X size={18} strokeWidth={1.5} aria-hidden />
     </button>
   );
@@ -909,7 +918,7 @@ export function BillView({
     const target = targets.find((el) => el.getClientRects().length > 0) ?? targets[0];
     target?.focus({ preventScroll: true });
     target?.scrollIntoView?.({ block: "center" });
-    setAnnouncement(`${checksText(pending)}.`);
+    setAnnouncement(`${checksText(pending, t)}.`);
   };
   const tapBillBanao = () => {
     if (canFinalise) onFinalise?.();
@@ -942,13 +951,13 @@ export function BillView({
             <SyncChipView chip={syncChip} detail={syncDetail} />
             {reviewMode && (
               <span data-testid="review-badge" className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">
-                Review mode
+                {t("review.badge")}
               </span>
             )}
           </div>
           <details className="relative">
             <summary
-              aria-label="Menu"
+              aria-label={t("menu.label")}
               className="flex size-11 cursor-pointer list-none items-center justify-center rounded-[6px] text-ink-soft [&::-webkit-details-marker]:hidden"
             >
               <Menu size={20} strokeWidth={1.5} aria-hidden />
@@ -963,7 +972,7 @@ export function BillView({
                   }}
                   className="block min-h-11 w-full px-4 text-left"
                 >
-                  History
+                  {t("menu.history")}
                 </button>
               )}
               {onOpenCatalog && (
@@ -975,7 +984,7 @@ export function BillView({
                   }}
                   className="block min-h-11 w-full px-4 text-left"
                 >
-                  Catalog
+                  {t("menu.catalog")}
                 </button>
               )}
               {onOpenSettings && (
@@ -987,7 +996,7 @@ export function BillView({
                   }}
                   className="block min-h-11 w-full px-4 text-left"
                 >
-                  Settings
+                  {t("menu.settings")}
                 </button>
               )}
               {onClearBill && lines.length > 0 && !saved && (
@@ -999,7 +1008,7 @@ export function BillView({
                   }}
                   className="block min-h-11 w-full px-4 text-left"
                 >
-                  Clear bill
+                  {t("menu.clear")}
                 </button>
               )}
               <button
@@ -1012,17 +1021,17 @@ export function BillView({
                 }}
                 className="block min-h-11 w-full px-4 text-left"
               >
-                Sign out
+                {t("menu.signout")}
               </button>
             </div>
           </details>
         </header>
 
         {confirm === "signout" && unsynced && (
-          <ConfirmDialog {...signOutWarning(unsynced, lines.length > 0 && !saved)} confirmLabel="Sign out anyway" onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onSignOut(); }} />
+          <ConfirmDialog {...signOutWarning(unsynced, lines.length > 0 && !saved)} confirmLabel={t("signout.anyway")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onSignOut(); }} />
         )}
         {confirm === "clear" && (
-          <ConfirmDialog {...clearBillWarning(lines.length)} confirmLabel="Clear bill" onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onClearBill?.(); }} />
+          <ConfirmDialog {...clearBillWarning(lines.length)} confirmLabel={t("menu.clear")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onClearBill?.(); }} />
         )}
 
         {/* KB-306 (D6): the customer defaults to Cash, is editable any time and
@@ -1031,9 +1040,9 @@ export function BillView({
             prints the name, and the mobile is never on screen (D52). */}
         {!saved?.receipt && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-1">
-          <span className={label}>Customer</span>
+          <span className={label}>{t("customer.label")}</span>
           {onCustomerName && !readOnly ? (
-            <EditableValue kind="text" label="Customer name" fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
+            <EditableValue kind="text" label={t("customer.name")} fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
           ) : (
             <span>{customer.name}</span>
           )}
@@ -1041,9 +1050,9 @@ export function BillView({
           {onCustomerMobile && !readOnly && (
             <EditableValue
               kind="tel"
-              label="Customer mobile"
+              label={t("customer.mobile")}
               fieldId="customer-mobile"
-              text={customer.mobile ? formatMobile(customer.mobile) : "+ Mobile"}
+              text={customer.mobile ? formatMobile(customer.mobile) : t("customer.addMobile")}
               initial={customer.mobile ?? ""}
               onCommit={onCustomerMobile}
             />
@@ -1062,7 +1071,7 @@ export function BillView({
           ) : (
           <>
           {/* Mobile first: one card per line (05 §2). */}
-          <ul aria-label="Bill items" className="md:hidden">
+          <ul aria-label={t("bill.items")} className="md:hidden">
             {lines.map(({ item: line, displayName, id }) => (
               <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
@@ -1086,13 +1095,13 @@ export function BillView({
           <table className="hidden w-full border-collapse md:table">
             <thead>
               <tr className={`border-b border-line text-left ${label}`}>
-                <th className="px-4 py-2 font-medium">Item</th>
-                <th className="px-2 py-2 text-right font-medium">Qty</th>
-                <th className="px-2 py-2 font-medium">Unit</th>
-                <th className="px-2 py-2 text-right font-medium">Rate</th>
-                <th className="px-4 py-2 text-right font-medium">Amount</th>
+                <th className="px-4 py-2 font-medium">{t("col.item")}</th>
+                <th className="px-2 py-2 text-right font-medium">{t("col.qty")}</th>
+                <th className="px-2 py-2 font-medium">{t("col.unit")}</th>
+                <th className="px-2 py-2 text-right font-medium">{t("col.rate")}</th>
+                <th className="px-4 py-2 text-right font-medium">{t("col.amount")}</th>
                 <th className="w-11 px-1 py-2">
-                  <span className="sr-only">Remove</span>
+                  <span className="sr-only">{t("col.remove")}</span>
                 </th>
               </tr>
             </thead>
@@ -1164,7 +1173,7 @@ export function BillView({
 
         {/* Pinned: TOTAL and the actions never scroll away (05 §2). */}
         <div className="flex items-baseline justify-between border-t border-line px-4 py-3">
-          <span className={label}>TOTAL</span>
+          <span className={label}>{t("bill.total")}</span>
           <span data-testid="bill-total" className="text-[32px] font-bold tabular-nums">
             {formatAmount(total)}
           </span>
@@ -1173,19 +1182,19 @@ export function BillView({
         {/* KB-303: one-level undo for a removed line (owner) - never a confirm
             dialog, which would be a question mid-bill (hard rule 6). */}
         {saved && (
-          <div role="status" aria-label="Bill saved" className="flex items-center gap-2 border-t border-line bg-surface px-4 py-2 font-medium text-ok">
+          <div role="status" aria-label={t("bill.savedLabel")} className="flex items-center gap-2 border-t border-line bg-surface px-4 py-2 font-medium text-ok">
             <Check size={18} strokeWidth={1.5} aria-hidden />
             <span>
-              Bill <ReceiptNumberText value={saved.receiptNumber} /> saved
+              {t("bill.savedBefore")} <ReceiptNumberText value={saved.receiptNumber} /> {t("bill.savedAfter")}
             </span>
           </div>
         )}
 
         {removed && onUndo && !readOnly && (
           <div role="status" className="flex items-center justify-between border-t border-line px-4 text-[13px]">
-            <span>{removed.displayName} removed</span>
+            <span>{t("undo.removed", { name: removed.displayName })}</span>
             <button type="button" onClick={onUndo} className="min-h-11 px-3 font-medium text-indigo">
-              Undo
+              {t("undo.button")}
             </button>
           </div>
         )}
@@ -1203,7 +1212,7 @@ export function BillView({
               2026) - a disabled button fires no hover events, so the title sits
               on a wrapper. */}
           <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
-          <span title={canAdd ? undefined : "Loading your catalog…"}>
+          <span title={canAdd ? undefined : t("voice.loadingCatalog")}>
             <button
               type="button"
               disabled={!canAdd}
@@ -1211,23 +1220,23 @@ export function BillView({
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink disabled:opacity-50"
             >
               <Plus size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
-              Add item
+              {t("add.title")}
             </button>
           </span>
           {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
           {pending > 0 && !readOnly && (
             <p data-testid="checks-pending" className="col-span-2 text-center text-[13px] font-medium text-danger">
-              {checksText(pending)}
+              {checksText(pending, t)}
             </p>
           )}
           {saveError && (
             <p role="alert" className="col-span-2 text-center text-[13px] font-medium text-danger">
-              {saveError}
+              {tx(saveError)}
             </p>
           )}
           {readOnly ? (
             <button type="button" onClick={onNewBill} className="col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface">
-              New bill
+              {t("bill.new")}
             </button>
           ) : (
             // KB-307: aria-disabled, not disabled - a tap while checks are pending
@@ -1238,7 +1247,7 @@ export function BillView({
               onClick={tapBillBanao}
               className={`col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface ${canFinalise ? "" : "opacity-50"}`}
             >
-              Bill Banao
+              {t("bill.finalise")}
             </button>
           )}
         </div>
