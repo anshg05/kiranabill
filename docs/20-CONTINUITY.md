@@ -51,6 +51,8 @@ This file deliberately states no ticket numbers or dates beyond this line — th
 
 **PLAN → STOP → owner approves → tests first (shown red) → build → VERIFY (real output pasted, never summarised) →
 DOCUMENT → the agent's own real-browser check → the owner's browser check → commit → push.**
+
+**VERIFY runs `npm test` as it is configured: the unit suite is capped at 3 workers in `vite.config.ts` (owner, 17 Oct 2026) - that is the official run; there is no separate default-worker run to pass before a release.**
 Formats: `18-AGENT-CONTRACT.md` §3; Definition of Done: `09-WORKING-AGREEMENT.md` Part C. The agent commits locally after
 each verified step; it pushes only after the owner's check passes.
 

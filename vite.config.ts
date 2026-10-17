@@ -76,6 +76,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    // Owner, 17 Oct 2026: at most 3 workers - the official VERIFY run (docs 10, 19, 20). The default (one per core) times out
+    // UI tests on a busy machine. A root-level option: vitest has no per-project worker cap.
+    maxWorkers: 3,
     // docs/07-DECISIONS.md D35: perf tests run alone, after every other test
     // file. sequence.groupOrder runs groups one after another (each awaited
     // in turn), so "perf" never shares the CPU with "unit" - and it still

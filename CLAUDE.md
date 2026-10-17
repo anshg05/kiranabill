@@ -113,7 +113,7 @@ Full reasoning and rejected alternatives: `docs/11-STACK-DECISIONS.md`.
 ## Commands
 
 ```
-npm test              # Vitest - unit tests in parallel, then perf tests alone (D35); no Docker needed
+npm test              # Vitest - unit tests in parallel (capped at 3 workers in vite.config.ts - the official VERIFY run), then perf tests alone (D35); no Docker needed
 npm run test:e2e      # real local Docker stack - REQUIRED for any sync or schema ticket (D37)
 npm run test:rls      # RLS negative tests, real local Postgres
 npm run typecheck     # tsc -b: src/, netlify/, eval/, scripts/, vite.config.ts (D40) - NOT `npx tsc --noEmit`

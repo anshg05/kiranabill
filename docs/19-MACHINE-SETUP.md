@@ -242,7 +242,7 @@ Chrome keeps every site's IndexedDB in its profile on C:. With C: almost full (4
 `localhost:8888`'s storage was cleared from outside the app (KI-68 — Chrome's eviction under disk pressure or a cleanup):
 the device id and the local bills were gone. Keep at least 20 GB free on C:. Likely related but **unconfirmed**: the
 `npm test` out-of-memory runs (4 Oct — "JavaScript heap out of memory" with ~1 GB free commit) — the Windows page file
-can't grow on a full disk.
+can't grow on a full disk. **Workers (owner, 17 Oct 2026):** the unit suite is capped at 3 workers in `vite.config.ts` and that capped `npm test` is the official VERIFY run - with one worker per core the suite times out UI tests when the machine is busy.
 
 ### Never `netlify link` this folder (owner, 7 Oct 2026)
 
@@ -288,7 +288,7 @@ Run all of these before considering the machine "ready." Compare the numbers aga
 ```bash
 npm run lint            # clean
 npm run typecheck        # clean - tsc -b over every project (D40); `npx tsc --noEmit` checks nothing now
-npm test                 # should match the test count in docs/10-TRACKER.md; runs "unit" in parallel, then "perf" alone
+npm test                 # should match the test count in docs/10-TRACKER.md; "unit" in parallel at 3 workers (vite.config.ts - the OFFICIAL run), then "perf" alone
 npx vitest run --project perf   # the 16 ms perf test on its own (D35)
 npx supabase db reset    # all migrations apply cleanly, no errors
 ```
