@@ -124,7 +124,7 @@ a warning triangle is not.
   static "Cash" (`KB-306`); the ≡ menu later grew History (`KB-310`), Catalog (`KB-311`) and Settings (`KB-312`) above Sign out.
 - **Dev only:** `?try=<utterance>` fills the bill with real `parseUtterance()` output for browser checks;
   removed from production builds (D39).
-- **Shop load failure:** online, no cached shop, lookup failed → "Server se connect nahi ho paaya" + Retry, never
+- **Shop load failure:** online, no cached shop, lookup failed → "Couldn't reach the server" (हिन्दी "सर्वर से जुड़ नहीं पाए", Hinglish "Server se connect nahi ho paaya" - `KB-332`: English mode is English) + Retry, never
   onboarding (`12-PARKED.md` KI-42).
 
 ### Implementation notes — voice (`KB-302`, 27 Sep 2026)
@@ -192,6 +192,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 
 - Search (same index as Add item)
 - **Screen language** (`KB-332`, D84): Settings has a per-device choice - English / हिन्दी / Hinglish - above the Receipt language; it repaints the open screen at once. "Bill Banao", "Theek hai" and "Cash" never change.
+- **Screen language, Checkpoint B** (`KB-332`): History (list, search, bill detail, the cancellation card), Cancel bill, the Catalog and the ready catalog, Add product, Edit product, the first-time shop set-up and the shop-load error say the chosen language; the catalog **import** sheet, Developer mode, Pilot numbers and the receipt do not.
 - Rows: name, unit, price, and how often it was billed in the last 30 days (`KB-321`; most used first). **Learned names** (`KB-323`): each phrase the app has learned, its product, "In use" / "Still learning", and Remove.
 - On the billing screen, **the item name on a draft line is a button (a pencil marks it): tap -> "Change item" -> search -> pick another product** (`KB-336`, D83: quantity kept when the unit fits, else "Quantity needed"; a price the shopkeeper said stays; catalog products only).
 - On the billing screen, a line the parser read through a learned alias carries "Learned: 'x' -> Product" and **Not this** (`KB-323`; visible, never blocking).

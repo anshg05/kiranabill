@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useShop } from "@/providers/ShopProvider";
+import { useT } from "./useT";
 
 /**
  * S2 (05-FRONTEND-SPEC.md): shop name/phone, catalog choice. Logo upload
@@ -8,6 +9,7 @@ import { useShop } from "@/providers/ShopProvider";
  */
 export function OnboardingScreen() {
   const { createShop } = useShop();
+  const { t, tx } = useT();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -34,11 +36,11 @@ export function OnboardingScreen() {
 
   return (
     <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4">
-      <h1 className="text-2xl font-semibold">Set up your shop</h1>
+      <h1 className="text-2xl font-semibold">{t("onboard.title")}</h1>
 
       <input
         type="text"
-        placeholder="Shop name"
+        placeholder={t("settings.shopName")}
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={submitting}
@@ -46,14 +48,14 @@ export function OnboardingScreen() {
       />
       <input
         type="tel"
-        placeholder="Phone (optional)"
+        placeholder={t("onboard.phone")}
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         disabled={submitting}
         className="w-full max-w-sm rounded-lg border border-line px-4 py-2"
       />
 
-      <p className="text-ink-soft text-sm">Ready catalog, or start empty?</p>
+      <p className="text-ink-soft text-sm">{t("onboard.question")}</p>
       <div className="flex gap-3">
         <button
           type="button"
@@ -61,7 +63,7 @@ export function OnboardingScreen() {
           disabled={submitting}
           className="rounded-lg bg-indigo px-4 py-2 text-white font-medium"
         >
-          Use ready catalog
+          {t("onboard.ready")}
         </button>
         <button
           type="button"
@@ -69,11 +71,11 @@ export function OnboardingScreen() {
           disabled={submitting}
           className="rounded-lg border border-line px-4 py-2 font-medium"
         >
-          Start empty
+          {t("onboard.empty")}
         </button>
       </div>
 
-      {error && <p className="text-danger text-sm">{error}</p>}
+      {error && <p className="text-danger text-sm">{tx(error)}</p>}
     </div>
   );
 }

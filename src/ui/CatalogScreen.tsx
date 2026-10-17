@@ -18,8 +18,8 @@ import { AddProductSheet } from "./AddProductSheet";
 import { EditProductSheet, SAVE_FAILED_TEXT } from "./EditProductSheet";
 import { EditableValue } from "./EditableValue";
 import { useBackEntry } from "./useBackEntry";
-import { priceDriftText } from "./priceDriftText";
 import { useBrowserOnline } from "./useBrowserOnline";
+import { useT, type Translate } from "./useT";
 
 // KB-311 (owner, 8 Oct 2026): S4 Catalog, over the bill in progress.
 // - Rows: this shop's active products, most used first, then by name. Search
@@ -47,10 +47,10 @@ const SAVE_FAILED = SAVE_FAILED_TEXT;
 
 const priceText = (paise: number, unit: string) => `${formatRupees(paise)} / ${unit}`;
 // KB-321: "recent" is bills of the last 30 days from this shop's own bills; the server's use_count (nothing writes it yet) is the fallback.
-const usedText = (recent: number, useCount: number) =>
+const usedText = (t: Translate, recent: number, useCount: number) =>
   recent > 0
-    ? `Used ${recent === 1 ? "once" : `${recent} times`} in the last 30 days`
-    : useCount === 0 ? "Not used yet" : useCount === 1 ? "Used once" : `Used ${useCount} times`;
+    ? recent === 1 ? t("catalog.usedOnce30") : t("catalog.usedMany30", { n: recent })
+    : useCount === 0 ? t("catalog.notUsed") : useCount === 1 ? t("catalog.usedOnce") : t("catalog.usedMany", { n: useCount });
 const byUseThenName = (freq: Readonly<Record<string, number>>) => (a: LocalShopProduct, b: LocalShopProduct) =>
   (freq[b.id] ?? 0) - (freq[a.id] ?? 0) || b.useCount - a.useCount || a.displayName.localeCompare(b.displayName);
 
@@ -88,6 +88,7 @@ interface Loaded {
 
 export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, ignoreSuggestion, removeAlias, onChanged, onClose }: CatalogScreenProps) {
   useBackEntry("kbCatalog", onClose);
+  const { t, tx } = useT();
   const online = useBrowserOnline();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [query, setQuery] = useState("");
@@ -193,29 +194,29 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
   const hasSuggestions = priceSuggestions.length > 0 || (loaded?.provisional.length ?? 0) > 0;
 
   return (
-    <section aria-label="Catalog" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("menu.catalog")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
       <div inert={readyOpen || importOpen || editing !== null || addOpen} aria-hidden={readyOpen || importOpen || editing !== null || addOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">Catalog</h2>
+          <h2 className="text-[20px] font-semibold">{t("menu.catalog")}</h2>
         </header>
         <div className="flex flex-col gap-2 border-b border-line px-4 py-2">
-          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{OFFLINE}</p>}
+          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE)}</p>}
           <input
             type="search"
-            aria-label="Search products"
-            placeholder="Name or what customers say"
+            aria-label={t("add.search")}
+            placeholder={t("catalog.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="min-h-11 w-full rounded-[6px] border border-line bg-surface px-3"
           />
-          <div role="radiogroup" aria-label="Show" className="flex flex-wrap gap-2">
+          <div role="radiogroup" aria-label={t("catalog.show")} className="flex flex-wrap gap-2">
             {FILTERS.map((f) => (
               <label key={f.value} className="flex min-h-11 cursor-pointer items-center rounded-[6px] border border-line px-3 has-checked:border-ink has-checked:bg-ink has-checked:text-paper">
                 <input type="radio" name="catalog-filter" value={f.value} checked={filter === f.value} onChange={() => setFilter(f.value)} className="sr-only" />
-                {f.label}
+                {tx(f.label)}
               </label>
             ))}
           </div>
@@ -226,7 +227,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
               onClick={online ? () => setReadyOpen(true) : undefined}
               className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
             >
-              Add from ready catalog
+              {t("catalog.addReady")}
             </button>
             {create && (
               <button
@@ -235,7 +236,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                 onClick={online ? () => setAddOpen(true) : undefined}
                 className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
               >
-                Add product
+                {t("product.addTitle")}
               </button>
             )}
             {importRows && (
@@ -245,7 +246,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                 onClick={online ? () => setImportOpen(true) : undefined}
                 className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
               >
-                Import from file
+                {t("catalog.import")}
               </button>
             )}
           </div>
@@ -254,7 +255,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
         <div className="min-h-0 flex-1 overflow-y-auto">
           {note && (
             <p role="status" className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-4 py-2 text-[13px]">
-              <span className="[overflow-wrap:anywhere]">{note.text}</span>
+              <span className="[overflow-wrap:anywhere]">{tx(note.text)}</span>
               {note.undoId && setActive && (
                 <button
                   type="button"
@@ -267,33 +268,33 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                   }}
                   className="min-h-11 px-3 font-medium text-indigo"
                 >
-                  Undo
+                  {t("undo.button")}
                 </button>
               )}
             </p>
           )}
           {ignoreFailed && (
             <p role="alert" className="border-b border-line px-4 py-2 text-[13px] text-danger">
-              Couldn't hide that suggestion — try again
+              {t("catalog.hideFailed")}
             </p>
           )}
           {loaded && filter !== "archived" && loaded.learnedNames.length > 0 && (
-            <section aria-label="Learned names" className="border-b border-line px-4 py-3">
-              <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Learned names</h3>
+            <section aria-label={t("catalog.learnedNames")} className="border-b border-line px-4 py-3">
+              <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">{t("catalog.learnedNames")}</h3>
               <ul className="mt-1 flex flex-col gap-2">
                 {loaded.learnedNames.map((l) => (
                   <li key={l.alias.toLowerCase()} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-                      “{l.alias}” → {l.productName} · {l.inUse ? "In use" : "Still learning"} ({Math.round(l.confidence * 100)}%)
+                      {t("catalog.learnedRow", { alias: l.alias, name: l.productName, state: t(l.inUse ? "catalog.inUse" : "catalog.stillLearning"), pct: Math.round(l.confidence * 100) })}
                     </span>
                     {removeAlias && (
                       <button
                         type="button"
-                        aria-label={`Remove “${l.alias}” (${l.productName})`}
+                        aria-label={t("catalog.removeLabel", { alias: l.alias, name: l.productName })}
                         onClick={() => void removeAlias(l.alias, l.catalogId).then(wrote).catch((err: unknown) => console.warn("[catalog] could not remove the alias:", err))}
                         className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
                       >
-                        Remove
+                        {t("col.remove")}
                       </button>
                     )}
                   </li>
@@ -302,66 +303,66 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
             </section>
           )}
           {hasSuggestions && loaded && filter !== "archived" && (
-            <section aria-label="Suggestions" className="border-b border-line px-4 py-3">
-              <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Suggestions</h3>
+            <section aria-label={t("catalog.suggestions")} className="border-b border-line px-4 py-3">
+              <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">{t("catalog.suggestions")}</h3>
               <ul className="mt-1 flex flex-col gap-2">
                 {priceSuggestions.map(({ s, p }) => (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-                      {priceDriftText(p.displayName, p.unit, s.suggestedPricePaise, s.observationCount, p.pricePaise)}
+                      {t("catalog.priceDrift", { name: p.displayName, price: formatRupees(s.suggestedPricePaise), unit: p.unit, bills: s.observationCount, now: formatRupees(p.pricePaise) })}
                     </span>
                     <button
                       type="button"
-                      aria-label={`Use ${formatRupees(s.suggestedPricePaise)} for ${p.displayName}`}
+                      aria-label={t("catalog.useLabel", { price: formatRupees(s.suggestedPricePaise), name: p.displayName })}
                       aria-disabled={!online || saving.has(p.id)}
                       onClick={online && !saving.has(p.id) ? () => savePrice(p, s.suggestedPricePaise) : undefined}
                       className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium aria-disabled:opacity-50"
                     >
-                      Use {formatRupees(s.suggestedPricePaise)}
+                      {t("catalog.use", { price: formatRupees(s.suggestedPricePaise) })}
                     </button>
                     {ignoreSuggestion && (
                       <button
                         type="button"
-                        aria-label={`Ignore the suggestion for ${p.displayName}`}
+                        aria-label={t("catalog.ignoreLabel", { name: p.displayName })}
                         onClick={() => ignore(p)}
                         className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
                       >
-                        Ignore
+                        {t("catalog.ignore")}
                       </button>
                     )}
                   </li>
                 ))}
                 {loaded.provisional.map((p) => (
                   <li key={p.localId} className="text-ink-soft [overflow-wrap:anywhere]">
-                    “{p.spokenName}” — said {p.seenCount} times, not in the catalog
+                    {t("catalog.provisional", { name: p.spokenName, n: p.seenCount })}
                   </li>
                 ))}
               </ul>
             </section>
           )}
           {loaded && filter === "archived" && shown.length === 0 && (
-            <p className="px-4 py-6 text-center">{typed ? "No products found." : "No archived products."}</p>
+            <p className="px-4 py-6 text-center">{t(typed ? "catalog.noneFound" : "catalog.noneArchived")}</p>
           )}
           {loaded && filter !== "archived" && loaded.products.length > 0 && shown.length === 0 && (
-            <p className="px-4 py-6 text-center">{typed ? "No products found." : "No products of this kind."}</p>
+            <p className="px-4 py-6 text-center">{t(typed ? "catalog.noneFound" : "catalog.noneOfKind")}</p>
           )}
           {loaded && filter !== "archived" && loaded.products.length === 0 && !typed && (
-            <p className="px-4 py-6 text-center">No products yet — add them from the ready catalog or import a file.</p>
+            <p className="px-4 py-6 text-center">{t("catalog.noneYet")}</p>
           )}
           {loaded && (
-            <ul aria-label="Products">
+            <ul aria-label={t("add.products")}>
               {shown.map((p) => (
                 <li key={p.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2">
                   <span className="min-w-0 flex-1">
                     <span data-testid="name" className="block font-medium [overflow-wrap:anywhere]">{p.displayName}</span>
-                    <span className="block text-[13px] text-ink-soft">{usedText(loaded.freq[p.id] ?? 0, p.useCount)}</span>
+                    <span className="block text-[13px] text-ink-soft">{usedText(t, loaded.freq[p.id] ?? 0, p.useCount)}</span>
                   </span>
                   <span className="flex flex-col items-end">
                     {!p.isActive ? (
                       <span className="tabular-nums">{priceText(p.pricePaise, p.unit)}</span>
                     ) : online && !saving.has(p.id) ? (
                       <EditableValue
-                        label={`Price of ${p.displayName}`}
+                        label={t("catalog.priceOf", { name: p.displayName })}
                         fieldId={`price-${p.id}`}
                         text={priceText(p.pricePaise, p.unit)}
                         initial={formatRupees(p.pricePaise).slice(1)}
@@ -375,10 +376,10 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                     ) : (
                       <span className="tabular-nums">{priceText(p.pricePaise, p.unit)}</span>
                     )}
-                    {saving.has(p.id) && <span className="text-[13px] text-ink-soft">Saving…</span>}
+                    {saving.has(p.id) && <span className="text-[13px] text-ink-soft">{t("catalog.saving")}</span>}
                     {failed.has(p.id) && (
                       <span role="alert" className="text-[13px] text-danger">
-                        {SAVE_FAILED}
+                        {tx(SAVE_FAILED)}
                       </span>
                     )}
                   </span>
@@ -387,22 +388,22 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                       {!p.isActive && setActive && (
                         <button
                           type="button"
-                          aria-label={`Restore ${p.displayName}`}
+                          aria-label={t("catalog.restoreLabel", { name: p.displayName })}
                           aria-disabled={!online || saving.has(p.id)}
                           onClick={online && !saving.has(p.id) ? () => restore(p) : undefined}
                           className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium aria-disabled:opacity-50"
                         >
-                          Restore
+                          {t("catalog.restore")}
                         </button>
                       )}
                       <button
                         type="button"
-                        aria-label={`Edit ${p.displayName}`}
+                        aria-label={t("catalog.editLabel", { name: p.displayName })}
                         aria-disabled={!online}
                         onClick={online ? () => setEditing(p) : undefined}
                         className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium aria-disabled:opacity-50"
                       >
-                        Edit
+                        {t("catalog.edit")}
                       </button>
                     </span>
                   )}
@@ -504,6 +505,7 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
   onClose: () => void;
 }) {
   useBackEntry("kbReadyCatalog", onClose);
+  const { t, tx } = useT();
   const [bases, setBases] = useState<LocalBaseProduct[] | null>(null);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -545,42 +547,38 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
   };
 
   return (
-    <section aria-label="Ready catalog" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("ready.title")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">Ready catalog</h2>
+          <h2 className="text-[20px] font-semibold">{t("ready.title")}</h2>
         </header>
         <div className="flex flex-col gap-2 border-b border-line px-4 py-2">
-          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{OFFLINE}</p>}
+          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE)}</p>}
           <input
             type="search"
-            aria-label="Search ready catalog"
-            placeholder="Name"
+            aria-label={t("ready.search")}
+            placeholder={t("product.name")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="min-h-11 w-full rounded-[6px] border border-line bg-surface px-3"
           />
           {message && (
             <p role={message.error ? "alert" : "status"} className={`text-[13px] ${message.error ? "text-danger" : "text-ink-soft"}`}>
-              {message.text}
+              {tx(message.text)}
             </p>
           )}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {bases !== null && bases.length === 0 && <p className="px-4 py-6 text-center">The ready catalog isn't on this phone yet.</p>}
+          {bases !== null && bases.length === 0 && <p className="px-4 py-6 text-center">{t("ready.notOnPhone")}</p>}
           {bases !== null && bases.length > 0 && available.length === 0 && (
             <p className="px-4 py-6 text-center [overflow-wrap:anywhere]">
-              {!typed
-                ? "Your shop already has every product in the ready catalog."
-                : matched > 0
-                  ? `“${typed}” is already in your catalog.`
-                  : `No ready product matches “${typed}”. Add it from a bill: Add item → + Add “${typed}” as a new product.`}
+              {!typed ? t("ready.hasAll") : matched > 0 ? t("ready.alreadyQ", { q: typed }) : t("ready.noMatch", { q: typed })}
             </p>
           )}
-          <ul aria-label="Ready products">
+          <ul aria-label={t("ready.products")}>
             {available.slice(0, READY_SHOWN).map((b) => (
               <li key={b.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2">
                 <span className="min-w-0 flex-1">
@@ -589,19 +587,19 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
                 </span>
                 <button
                   type="button"
-                  aria-label={`Add ${b.displayName}`}
+                  aria-label={t("ready.addLabel", { name: b.displayName })}
                   aria-disabled={!online || busy !== null}
                   onClick={online && busy === null ? () => onAdd(b) : undefined}
                   className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
                 >
-                  {busy === b.id ? "Adding…" : "Add"}
+                  {busy === b.id ? t("ready.adding") : t("common.add")}
                 </button>
               </li>
             ))}
           </ul>
           {available.length > READY_SHOWN && (
             <p className="px-4 py-4 text-center text-[13px] text-ink-soft">
-              Showing {READY_SHOWN} of {available.length} — search to find more.
+              {t("ready.showing", { shown: READY_SHOWN, total: available.length })}
             </p>
           )}
         </div>

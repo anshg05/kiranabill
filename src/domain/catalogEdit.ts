@@ -33,7 +33,7 @@ export function checkName(raw: string, others: readonly OtherProduct[]): NameChe
   if (codePointLength(name) > NAME_MAX_CHARS) return { ok: false, error: `Name is longer than ${NAME_MAX_CHARS} characters` };
   const key = nameKey(name);
   const clash = others.find((o) => nameKey(o.displayName) === key);
-  if (clash) return { ok: false, error: `Another product is already called “${name}”${clash.isActive ? "" : " (archived)"}` };
+  if (clash) return { ok: false, error: clash.isActive ? `Another product is already called “${name}”` : `Another product is already called “${name}” (archived)` };
   return { ok: true, name };
 }
 

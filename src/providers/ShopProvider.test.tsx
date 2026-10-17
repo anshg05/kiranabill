@@ -129,7 +129,7 @@ describe("ShopProvider", () => {
       </ShopProvider>,
     );
 
-    expect(await screen.findByText("Server se connect nahi ho paaya")).toBeTruthy();
+    expect(await screen.findByText("Couldn't reach the server")).toBeTruthy();
     expect(screen.queryByText("Set up your shop")).toBeNull();
     expect(isSyncLoopRunning()).toBe(false);
   });

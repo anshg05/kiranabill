@@ -5,7 +5,11 @@ import { describe, expect, it } from "vitest";
 // KB-332 (D84): a screen that has been migrated to the catalog holds no English the shopkeeper reads. Two fixed lists: the
 // files a checkpoint has migrated (Checkpoint A below; B adds its own), and the few literals that are meant to stay.
 
-const MIGRATED = ["BillingScreen.tsx", "OfflineUi.tsx", "SignInScreen.tsx", "AddItemSheet.tsx", "ShareBar.tsx"];
+const MIGRATED = [
+  "BillingScreen.tsx", "OfflineUi.tsx", "SignInScreen.tsx", "AddItemSheet.tsx", "ShareBar.tsx",
+  // Checkpoint B
+  "HistoryScreen.tsx", "CancelBillSheet.tsx", "CatalogScreen.tsx", "AddProductSheet.tsx", "EditProductSheet.tsx", "OnboardingScreen.tsx", "../app/App.tsx",
+];
 // Words that stay as they are in every language (brand, units, the owner's fixed phrases, symbols).
 const STAYS = new Set(["KiranaBill", "Bill Banao", "Theek hai", "Cash", "WhatsApp", "PDF", "SMS", "REVIEW", "MEDIUM", "LOW", "HIGH", "Escape", "Enter", "Receipt", "Promise"]);
 

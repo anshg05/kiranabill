@@ -124,10 +124,20 @@ describe("every sentence the domain can build has a translation (drift guard - r
     ...literals(readFileSync(join(__dirname, "..", "ui", "useBillLines.ts"), "utf8"), /PARSE_FAILED = "([^"]+)"/g),
     ...literals(readFileSync(join(__dirname, "..", "ui", "useOrderResolver.ts"), "utf8"), /"(Couldn't read the items[^"]*)"/g),
     ...literals(readFileSync(join(__dirname, "..", "data", "finalise.ts"), "utf8"), /SAVE_FAILED = "([^"]+)"/g),
+    // Checkpoint B: the catalog rules, the import's reasons, the cancel reasons and refusals, the file-read errors, the set-up refusal.
+    ...literals(src("catalogEdit.ts"), /(?:error:|errors\.\w+ =|return)\s*(?:`([^`]*)`|"([^"]*)")/g),
+    // The import SHEET stays English (D84 §1); the price sentences are shared with Add product.
+    ...literals(src("catalogImport.ts"), /error: (?:`([^`]*)`|"([^"]*)")/g),
+    ...literals(src("catalogEdit.ts"), /\? (?:`([^`]*)`|"([^"]*)")\s*:/g),
+    ...literals(src("cancelBill.ts"), /(?:return|\w+:)\s*"([A-Z][^"]*)"/g),
+    ...literals(readFileSync(join(__dirname, "..", "data", "cancelBill.ts"), "utf8"), /error: "([^"]+)"/g),
+    ...literals(readFileSync(join(__dirname, "..", "providers", "ShopProvider.tsx"), "utf8"), /new Error\("(Setting up a shop[^"]*)"/g),
+    // The constants the Catalog screens pass through the translator.
+    ...literals(readFileSync(join(__dirname, "..", "ui", "EditProductSheet.tsx"), "utf8"), /(?:OFFLINE_NOTE|SAVE_FAILED_TEXT) = "([^"]+)"/g),
   ].filter((s) => s.length > 8);
 
   it("found the sentences to check (the scan itself works)", () => {
-    expect(sentences.length).toBeGreaterThan(45);
+    expect(sentences.length).toBeGreaterThan(75);
   });
   it("each one is found in the catalog and says something different in Hindi and in Hinglish", () => {
     const missing = sentences.filter((s) => translateEnglish(s, "hi") === s || translateEnglish(s, "hl") === s);

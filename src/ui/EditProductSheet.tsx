@@ -5,6 +5,7 @@ import type { LocalShopProduct } from "@/data/db";
 import { checkAliases, checkName, lostNameNote, productPatch, type OtherProduct, type ProductPatch } from "@/domain/catalogEdit";
 import { nameKey } from "@/domain/catalogImport";
 import { useBackEntry } from "./useBackEntry";
+import { useT } from "./useT";
 
 // KB-330 (D71, D77): rename, other names (aliases) and archive for ONE product. The unit is shown, never editable (a unit
 // sets what the price means - the remedy is archive + Add product). Save sends only the columns that changed, and the
@@ -27,6 +28,7 @@ interface Props {
 
 export function EditProductSheet({ product, others, online, onSave, onArchive, onClose }: Props) {
   useBackEntry("kbEditProduct", onClose);
+  const { t, tx } = useT();
   const initialAliases = product.aliases.join("\n");
   const [name, setName] = useState(product.displayName);
   const [aliasText, setAliasText] = useState(initialAliases);
@@ -61,22 +63,22 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
   };
 
   return (
-    <section aria-label="Edit product" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("product.editTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">Edit product</h2>
+          <h2 className="text-[20px] font-semibold">{t("product.editTitle")}</h2>
         </header>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{OFFLINE_NOTE}</p>}
+          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE_NOTE)}</p>}
 
           <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">Name</span>
+            <span className="text-[13px] font-medium text-ink-soft">{t("product.name")}</span>
             <input
               type="text"
-              aria-label="Name"
+              aria-label={t("product.name")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               aria-invalid={!nameCheck.ok}
@@ -85,41 +87,41 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
           </label>
           {!nameCheck.ok && (
             <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {nameCheck.error}
+              {tx(nameCheck.error)}
             </p>
           )}
           {lost && (
             <div className="flex flex-wrap items-center gap-2 text-[13px]">
-              <span>{lost}</span>
+              <span>{tx(lost)}</span>
               <button
                 type="button"
-                aria-label={`Keep “${product.displayName}” as another name`}
+                aria-label={t("product.keepNameLabel", { name: product.displayName })}
                 onClick={() => setAliasText((t) => (t.trim() === "" ? nameKey(product.displayName) : `${t.replace(/\s+$/, "")}\n${nameKey(product.displayName)}`))}
                 className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
               >
-                Keep as another name
+                {t("product.keepName")}
               </button>
             </div>
           )}
 
           <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">Other names</span>
+            <span className="text-[13px] font-medium text-ink-soft">{t("product.otherNames")}</span>
             <textarea
-              aria-label="Other names"
+              aria-label={t("product.otherNames")}
               rows={4}
               value={aliasText}
               onChange={(e) => setAliasText(e.target.value)}
-              placeholder="What customers call it - one per line, or separated by commas"
+              placeholder={t("product.otherNamesPlaceholder")}
               className="rounded-[6px] border border-line bg-surface px-3 py-2"
             />
           </label>
           {aliasesTouched && aliasCheck.dropped.length > 0 && (
             <div className="text-[13px]">
-              <p className="font-medium text-danger">These will not be saved:</p>
-              <ul aria-label="Not saved" className="mt-1 list-disc pl-5">
+              <p className="font-medium text-danger">{t("product.notSaved")}</p>
+              <ul aria-label={t("product.notSavedLabel")} className="mt-1 list-disc pl-5">
                 {aliasCheck.dropped.map((d) => (
                   <li key={d.alias} className="[overflow-wrap:anywhere]">
-                    “{d.alias}” — {d.why}
+                    {t("product.aliasRow", { alias: d.alias, why: tx(d.why) })}
                   </li>
                 ))}
               </ul>
@@ -127,12 +129,12 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
           )}
 
           <p className="text-[13px] text-ink-soft">
-            Unit: {product.unit}. A unit can't be changed here — it decides what the price means. To change it, archive this product and add it again with the right unit.
+            {t("product.unitFixed", { unit: product.unit })}
           </p>
 
           {error && (
             <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {error}
+              {tx(error)}
             </p>
           )}
         </div>
@@ -143,17 +145,17 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
             onClick={() => void run(() => onSave(patch), finalName)}
             className="min-h-11 rounded-[6px] bg-ink px-5 font-medium text-paper disabled:opacity-50"
           >
-            Save
+            {t("settings.save")}
           </button>
           {onArchive && (
             <button
               type="button"
-              aria-label="Archive product"
+              aria-label={t("product.archiveLabel")}
               disabled={!canWrite}
               onClick={() => void run(onArchive, product.displayName)}
               className="ml-auto min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium disabled:opacity-50"
             >
-              Archive
+              {t("product.archive")}
             </button>
           )}
         </div>

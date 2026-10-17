@@ -15,6 +15,7 @@ import { Receipt, ReceiptNumberText } from "./Receipt";
 import { ShareBar } from "./ShareBar";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
+import { useT } from "./useT";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
 // KB-310 (D60, D61): S5 History and S6 bill detail, this phone's bills only
@@ -57,6 +58,7 @@ interface HistoryScreenProps {
 
 export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgress = false, onReissue, onClose }: HistoryScreenProps) {
   useBackEntry("kbHistory", onClose);
+  const { t, tx } = useT();
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
   const [recent, setRecent] = useState<BillSearchRow[] | null>(null);
   const [all, setAll] = useState<BillSearchRow[] | null>(null);
@@ -151,23 +153,23 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
     if (last && last.label === label) last.bills.push(b);
     else groups.push({ label, bills: [b] });
   }
-  const scope = all ? "Searching all bills on this phone" : recent ? "Searching the last 90 days" : "Loading the last 90 days…";
+  const scope = t(all ? "history.scopeAll" : recent ? "history.scopeRecent" : "history.scopeLoading");
 
   return (
-    <section aria-label="History" className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("menu.history")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
       {/* Under an open bill: hidden from screen readers and out of the tab order. */}
       <div inert={openIds.length > 0} aria-hidden={openIds.length > 0 || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">History</h2>
+          <h2 className="text-[20px] font-semibold">{t("menu.history")}</h2>
         </header>
         <div className="border-b border-line px-4 py-2">
           <input
             type="search"
-            aria-label="Search bills"
-            placeholder="Name, amount, date (4/10), item, bill no."
+            aria-label={t("history.search")}
+            placeholder={t("history.placeholder")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -181,21 +183,21 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
         <div className="min-h-0 flex-1 overflow-y-auto">
           {loadingFromServer && (
             <p className="px-4 pt-3 text-[13px] text-ink-soft">
-              {online ? "Loading bills from the server…" : "Connect to the internet to load your earlier bills."}
+              {t(online ? "history.loadingServer" : "history.needInternet")}
             </p>
           )}
           {rows !== null && rows.length === 0 && pullDone === true && (
             <div className="px-4 py-6 text-center">
-              <p className="font-medium">No bills on this phone yet.</p>
-              <p className="mt-1 text-[13px] text-ink-soft">History shows the bills saved on this phone.</p>
+              <p className="font-medium">{t("history.empty")}</p>
+              <p className="mt-1 text-[13px] text-ink-soft">{t("history.emptyHelp")}</p>
             </div>
           )}
-          {matches !== null && (recent !== null || all !== null) && matches.length === 0 && <p className="px-4 py-6 text-center">No bills found.</p>}
+          {matches !== null && (recent !== null || all !== null) && matches.length === 0 && <p className="px-4 py-6 text-center">{t("history.none")}</p>}
           {visible.length > 0 && (
-            <ul aria-label="Bills">
+            <ul aria-label={t("history.billsLabel")}>
               {groups.map((g) => (
                 <li key={g.label}>
-                  <h3 className="bg-paper px-4 pb-1 pt-3 text-[13px] font-medium text-ink-soft">{g.label}</h3>
+                  <h3 className="bg-paper px-4 pb-1 pt-3 text-[13px] font-medium text-ink-soft">{tx(g.label)}</h3>
                   <ul>
                     {g.bills.map((b) => (
                       <li key={b.localId}>
@@ -209,8 +211,8 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
                               {b.customerName !== "Cash" && <> · {b.customerName}</>}
                             </span>
                           </span>
-                          {b.cancelled && <span className="rounded-[6px] border border-danger px-2 py-0.5 text-[12px] text-danger">Cancelled</span>}
-                          {b.syncStatus !== "synced" && <span className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">Not synced</span>}
+                          {b.cancelled && <span className="rounded-[6px] border border-danger px-2 py-0.5 text-[12px] text-danger">{t("history.cancelled")}</span>}
+                          {b.syncStatus !== "synced" && <span className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">{t("history.notSynced")}</span>}
                           <span className="font-semibold tabular-nums">{formatRupees(b.totalPaise)}</span>
                         </button>
                       </li>
@@ -223,15 +225,15 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
           <div className="flex flex-col items-center gap-2 px-4 py-4">
             {more && (
               <button type="button" onClick={() => setShown((n) => n + PAGE)} className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium">
-                Show more
+                {t("history.showMore")}
               </button>
             )}
             {typed && !all && (
               <button type="button" aria-disabled={loadingAll} onClick={loadingAll ? undefined : searchOlder} className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50">
-                Search older bills
+                {t("history.searchOlder")}
               </button>
             )}
-            {loadingAll && <p className="text-[13px] text-ink-soft">Loading older bills…</p>}
+            {loadingAll && <p className="text-[13px] text-ink-soft">{t("history.loadingOlder")}</p>}
           </div>
         </div>
       </div>
@@ -282,6 +284,7 @@ function BillDetail({
   onClose: () => void;
 }) {
   useBackEntry("kbBillDetail", onClose);
+  const { t, tx } = useT();
   const [receipt, setReceipt] = useState<ReceiptModel | null>(null);
   const [bill, setBill] = useState<LocalBill | null>(null);
   const [info, setInfo] = useState<CancellationInfo | null>(null);
@@ -319,44 +322,44 @@ function BillDetail({
   const c = info?.cancellation ?? null;
   const day = c ? new Date(c.cancelledAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
   return (
-    <section aria-label="Bill" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("bill.savedBefore")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div inert={covered || cancelling} aria-hidden={covered || cancelling || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">Bill</h2>
+          <h2 className="text-[20px] font-semibold">{t("bill.savedBefore")}</h2>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {receipt && <Receipt receipt={receipt} />}
           {c && (
-            <section aria-label="Cancellation" className="mx-auto mt-4 w-full max-w-[384px] rounded-[6px] border border-line bg-surface px-4 py-3 text-[13px]">
-              <p className="font-semibold">Cancelled — {REASON_LABEL[c.reason]}</p>
+            <section aria-label={t("history.cancellation")} className="mx-auto mt-4 w-full max-w-[384px] rounded-[6px] border border-line bg-surface px-4 py-3 text-[13px]">
+              <p className="font-semibold">{t("history.cancelledReason", { reason: tx(REASON_LABEL[c.reason]) })}</p>
               <p className="text-ink-soft">{day}</p>
               {info?.replacedBy ? (
                 <button type="button" onClick={() => onOpen(info.replacedBy!.localId)} className="mt-1 min-h-11 text-left font-medium text-indigo">
-                  Replaced by Bill {info.replacedBy.receiptNumber}
+                  {t("history.replacedBy", { n: info.replacedBy.receiptNumber })}
                 </button>
               ) : (
-                <p className="mt-1 text-ink-soft">No replacement bill made</p>
+                <p className="mt-1 text-ink-soft">{t("history.noReplacement")}</p>
               )}
               {bill?.syncStatus === "conflict" ? (
-                <p className="mt-1 text-danger">This bill couldn&apos;t be saved to the server, so its cancellation is on this phone only.</p>
+                <p className="mt-1 text-danger">{t("history.conflictNote")}</p>
               ) : (
-                c.syncStatus !== "synced" && <p className="mt-1 text-ink-soft">Will reach your other phones when this one is online</p>
+                c.syncStatus !== "synced" && <p className="mt-1 text-ink-soft">{t("history.willReach")}</p>
               )}
             </section>
           )}
           {info?.replaces && (
             <button type="button" onClick={() => onOpen(info.replaces!.localId)} className="mx-auto mt-3 block min-h-11 w-full max-w-[384px] text-left text-[13px] font-medium text-indigo">
-              Replaces Bill {info.replaces.receiptNumber}
+              {t("history.replaces", { n: info.replaces.receiptNumber })}
             </button>
           )}
           {share && <ShareBar share={share} />}
           {bill?.status === "final" && deviceId && (
             <div className="mx-auto mt-4 w-full max-w-[384px]">
               <button type="button" onClick={() => setCancelling(true)} className="min-h-11 w-full rounded-[6px] border border-danger bg-transparent px-4 font-medium text-danger">
-                Cancel bill
+                {t("history.cancelButton")}
               </button>
             </div>
           )}
