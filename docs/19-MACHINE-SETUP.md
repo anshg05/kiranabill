@@ -268,7 +268,7 @@ If `.netlify/state.json` ever holds a `siteId`, run `npx netlify unlink` before 
    `https://<deploy-id>--kiranabilling.netlify.app`.
 5. Rebuild `dist/` locally (`npm run build`) afterwards so it no longer holds production values.
 6. Google sign-in returns to the draft only because the Supabase Redirect URL `https://*--kiranabilling.netlify.app/**`
-   exists (single `*` — D58 §6).
+   exists (single `*` — D58 §6). **At pilot time, after the last draft, that entry and `https://kiranabilling.netlify.app/**` are removed, leaving the exact `https://kiranabilling.netlify.app/` (D82).**
 
 ---
 
