@@ -196,6 +196,8 @@ export interface LocalLearningEvent {
    * to exist at write time. KB-110 translates this when pushing.
    */
   billLocalId: string;
+  /** KB-323: a PULLED event knows its bill only by the server's id (billLocalId is ""); a cancellation finds it through this. */
+  billServerId?: string;
   eventType: string;
   payload: Record<string, unknown>;
   createdAt: string;
@@ -379,6 +381,10 @@ export class KiranaBillDB extends Dexie {
 
     // KB-404 (D80): the per-bill measurements, and the device-only review capture. New stores, additive.
     this.version(6).stores({ billMetrics: "&billLocalId, shopId, syncStatus", reviewCapture: "++id, shopId, billLocalId, capturedAt" });
+
+    // KB-323 (D81): alias confidence is derived from the alias events, so they are read by (shop, type) - a compound index,
+    // additive (Dexie builds it from the existing rows; nothing is rewritten).
+    this.version(7).stores({ learningEvents: "&localId, shopId, syncStatus, [shopId+eventType]" });
   }
 }
 

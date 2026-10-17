@@ -117,7 +117,7 @@ learned_aliases: (shop_id, "पाले जी") → Parle-G, hit_count = 1, co
 Confirmed again without edit → hit_count 2, confidence 0.7
                        ↓
 confidence ≥ 0.8 → treated as an exact alias
-                → added to shop_products.aliases
+                → joins the PARSER's in-memory catalog (never shop_products.aliases - D81)
                 → available to the deterministic fast path
 ```
 
@@ -127,7 +127,8 @@ confidence ≥ 0.8 → treated as an exact alias
 | Promotion | confidence ≥ 0.8 |
 | Suppression | If the user deletes a line that used a learned alias, **decrement confidence.** Two suppressions retire it. |
 | Scope | **Strictly per-shop.** Never global. |
-| Conflict | One alias may map to only one product per shop. A newer mapping with higher confidence wins; the event is logged. |
+| Conflict | One alias may map to only one product per shop. The product with the higher confidence wins, the newest event breaks a tie; a winner change is logged as `alias_conflict` (D81). |
+| Derived | Confidence is a **sum over the events** (D81): 0.3 + 0.2 per fast-path/manual confirmation, +0.1 per Gemini one, -0.2 per suppression, -1.0 per "Not this"; a cancelled bill's events count for nothing. It commutes, so devices agree. |
 
 **Suppression matters as much as promotion.** A learning system that only accumulates eventually
 learns something wrong and never unlearns it.
@@ -237,7 +238,7 @@ Every learning decision appends to `learning_events`:
 }
 ```
 
-*Event kinds written today: `alias_confirmed`, `alias_suppressed`, `price_observed`, `product_sighted`. `alias_promoted` (above) arrives with `KB-320` / `KB-323`, when promotion exists.*
+*Event kinds written today: `alias_confirmed`, `alias_suppressed`, `alias_removed` ("Not this", D81), `alias_conflict` (D81), `price_observed`, `product_sighted`. `alias_promoted` (above) is not written: promotion is derived, never an event.*
 
 This makes *"why did it learn that?"* answerable, and lets a bad learning run be inspected and
 reversed. A learning system you cannot audit is one you cannot trust with money.

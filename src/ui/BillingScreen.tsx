@@ -7,7 +7,9 @@ import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import { customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
 import { amountNeeded } from "@/domain/finalBill";
 import { sumPaise } from "@/domain/money";
-import { buildVocabularyPrompt } from "@/domain/vocabulary";
+import { recordingVocabulary } from "@/domain/vocabulary";
+import { learnedNoteFor, type LearnedMap } from "@/domain/aliasEvidence";
+import { removeLearnedAlias } from "@/data/aliasEvidence";
 import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
 import { parseTranscript } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
@@ -118,7 +120,7 @@ export function BillingScreen() {
   }, [localDb, shop, catalogVersion]);
   const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog]);
   const vocabulary = useMemo(
-    () => (shopCatalog ? buildVocabularyPrompt(shopCatalog.entries, shopCatalog.usageById).names : []),
+    () => (shopCatalog ? recordingVocabulary(shopCatalog.entries, shopCatalog.usageById) : []),
     [shopCatalog],
   );
 
@@ -183,7 +185,10 @@ export function BillingScreen() {
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     void learnPendingBills(localDb, shop.id)
       .catch((err: unknown) => console.warn("[learning] failed (the bill is saved; retried on next start):", err))
-      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
+      .finally(() => {
+        setCatalogVersion((v) => v + 1); // KB-323: an alias this bill just promoted reads from the next utterance on
+        void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err));
+      });
   }, [deviceId, discardDraft, localDb, protectStorage, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
@@ -273,6 +278,8 @@ export function BillingScreen() {
       onDismiss={bill.dismiss}
       catalog={parser}
       usage={shopCatalog?.usageById}
+      learned={shopCatalog?.learned}
+      onNotThis={localDb && shop && deviceId ? (alias, catalogId) => void removeLearnedAlias(localDb, shop.id, deviceId, alias, catalogId).then(() => setCatalogVersion((v) => v + 1)).catch((err: unknown) => console.warn("[learning] could not remove the alias:", err)) : undefined}
       onAddByHand={(item, name) => (wiring.touch(), bill.addByHand(item, name))}
       focusLineId={bill.focusLineId}
       customer={bill.customer}
@@ -318,6 +325,7 @@ export function BillingScreen() {
         setActive={(id, active) => setProductActive(supabase, localDb, shop.id, id, active)}
         create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
         ignoreSuggestion={(id) => ignorePriceSuggestionFor(localDb, shop.id, id, deviceId, Date.now())}
+        removeAlias={(alias, id) => removeLearnedAlias(localDb, shop.id, deviceId, alias, id)}
         onChanged={() => setCatalogVersion((v) => v + 1)}
         onClose={() => setCatalogOpen(false)}
       />
@@ -351,6 +359,9 @@ interface BillViewProps {
   /** KB-305: the SHOP's catalog to add from by hand (null while it loads), its use counts. */
   catalog?: ParserCatalog | null;
   usage?: Readonly<Record<string, { readonly useCount?: number }>>;
+  /** KB-323: promoted learned aliases, for the first-use note; "Not this" removes one (a local, append-only event). */
+  learned?: LearnedMap;
+  onNotThis?: (alias: string, catalogId: string) => void;
   onAddByHand?: (item: ParsedItem, displayName: string) => void;
   /** KB-305: the hand-added line whose qty editor opens on arrival. */
   focusLineId?: string | null;
@@ -698,6 +709,8 @@ export function BillView({
   onDismiss,
   catalog = null,
   usage,
+  learned,
+  onNotThis,
   onAddByHand,
   focusLineId = null,
   customer = NO_CUSTOMER,
@@ -756,13 +769,40 @@ export function BillView({
     onAcknowledge?.(flag.key);
     setAnnouncement(`Checked. ${checksText(pending - 1)}.`);
   };
+  // KB-323 (D81): a line the parser read through a learned alias says so, with one tap to undo it - visible, never blocking.
+  const [notThis, setNotThis] = useState<ReadonlySet<string>>(new Set());
+  const noteOf = (id: string) => {
+    const row = lines.find((l) => l.id === id);
+    return row && !readOnly && learned && !notThis.has(id) ? learnedNoteFor(row.item.spokenName, row.item.catalogId, learned) : null;
+  };
+  const hasBlock = (id: string) => lineFlags(id).length > 0 || !!needOf(id) || !!noteOf(id) || notThis.has(id);
   const flagsBlock = (id: string, name: string) => {
     const own = lineFlags(id);
     const need = needOf(id);
-    if (own.length === 0 && !need) return null;
+    const note = noteOf(id);
+    if (!hasBlock(id)) return null;
     return (
       <>
         {need && <AmountNeeded need={need} />}
+        {note && (
+          <div data-testid="learned-note" className="flex flex-wrap items-center gap-2 py-1 text-[13px] text-ink-soft">
+            <span>
+              Learned: “{note.alias}” → {name}
+            </span>
+            <button
+              type="button"
+              aria-label={`Not this — ${name}`}
+              onClick={() => {
+                setNotThis((s) => new Set(s).add(id));
+                onNotThis?.(note.alias, note.catalogId);
+              }}
+              className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
+            >
+              Not this
+            </button>
+          </div>
+        )}
+        {!note && notThis.has(id) && <p className="py-1 text-[13px] text-ink-soft">Forgotten. Check that {name} is the right item.</p>}
         {own.length > 0 && <FlagList flags={own} name={name} onAcknowledge={acknowledge} />}
       </>
     );
@@ -1053,7 +1093,7 @@ export function BillView({
                   <td className="px-4 text-right font-semibold tabular-nums">{amountOf("table", id, line, displayName)}</td>
                   <td className="px-1">{removeOf(id, displayName)}</td>
                 </tr>,
-                (lineFlags(id).length > 0 || needOf(id)) && (
+                hasBlock(id) && (
                   <tr key={`${id}-flags`} className="border-b border-line bg-surface">
                     <td colSpan={6} className={`px-4 ${edge(id)}`}>
                       {flagsBlock(id, displayName)}

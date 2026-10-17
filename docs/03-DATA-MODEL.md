@@ -275,6 +275,8 @@ Append-only. Feeds price-drift **suggestions**. Prices are **never auto-changed*
 Append-only audit of every learning decision. Makes "why did it learn that?" answerable, and lets a
 bad learning run be replayed or reversed.
 
+**Alias events are also the evidence (`KB-323`, D81):** `alias_confirmed`, `alias_suppressed`, `alias_removed` ("Not this", bill-less) and `alias_conflict` carry `alias`, `shop_product_id` and `source_layer` in `payload`; a learned alias's confidence is a sum over them, not the `learned_aliases` row (a cache). All four are pulled in full. Locally a pulled event holds `billServerId` (its `billLocalId` is empty) and Dexie version 7 indexes `[shopId+eventType]`.
+
 ---
 
 ## 6. Sync

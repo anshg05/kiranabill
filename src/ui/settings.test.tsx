@@ -195,6 +195,15 @@ describe("KB-329 - ignored price suggestions in Developer mode", () => {
 });
 
 describe("KB-312 - Developer mode", () => {
+  it("KB-323: the confidence shown is the one DERIVED from the alias events when they know the phrase (the row is only a cache)", async () => {
+    await seedLearning();
+    const ev = (i: number, type: string) => ({ localId: `ae${i}`, shopId, syncStatus: "synced" as const, billLocalId: "", eventType: type, payload: { alias: "chini", shop_product_id: sugar.id, source_layer: "fastpath" }, createdAt: `2026-10-0${i + 1}T10:00:00.000Z`, updatedAt: now, deviceId });
+    await db.learningEvents.bulkAdd([ev(1, "alias_confirmed"), ev(2, "alias_confirmed"), ev(3, "alias_confirmed"), ev(4, "alias_confirmed"), ev(5, "alias_confirmed")]); // the row says 80%; the evidence says 100%
+    await open();
+    const dev = within(await openDeveloper());
+    expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("100%");
+    expect(dev.getByText(/cheeni → Sugar/).textContent).toContain("50%"); // no events for this one: the row stands
+  });
   it("is collapsed by default, and shows this shop's learning when opened: aliases, provisional products, price suggestions - read-only", async () => {
     await seedLearning();
     await open();

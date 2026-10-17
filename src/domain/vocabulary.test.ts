@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildVocabularyPrompt, type UsageSignal } from "./vocabulary";
+import { WHISPER_PROMPT_ON, buildVocabularyPrompt, recordingVocabulary, type UsageSignal } from "./vocabulary";
 import { catalog as realCatalog, type CatalogEntry } from "./catalog";
 
 function entry(id: string, displayName: string): CatalogEntry {
@@ -124,5 +124,15 @@ describe("buildVocabularyPrompt - integration against the real catalog", () => {
     expect(result.names).toContain("Besan");
     expect(result.names).toContain("Chini");
     expect(result.names.indexOf("Chawal")).toBeLessThan(result.names.indexOf("Besan"));
+  });
+});
+
+describe("KB-321: usage is written, the Whisper prompt stays OFF (owner, 17 Oct 2026)", () => {
+  const entries = realCatalog.slice(0, 5);
+  const usage: Record<string, UsageSignal> = Object.fromEntries(entries.map((e, i) => [e.id, { recentFrequency: 10 - i, useCount: 3 }]));
+  it("with plenty of usage the ranking has names, but a recording is sent with none", () => {
+    expect(WHISPER_PROMPT_ON).toBe(false);
+    expect(buildVocabularyPrompt(entries, usage).names.length).toBeGreaterThan(0);
+    expect(recordingVocabulary(entries, usage)).toEqual([]);
   });
 });

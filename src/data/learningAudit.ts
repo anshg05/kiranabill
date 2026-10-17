@@ -8,6 +8,7 @@
  * domain/'s zero-I/O rule (hard rule 3).
  */
 
+import { ALIAS_PULL_TYPES } from "./aliasEvidence";
 import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct } from "./db.js";
 import {
   PRICE_SUGGESTION_IGNORE_MS,
@@ -160,6 +161,9 @@ export async function resetLearning(
     db.priceObservations.where("shopId").equals(shopId).delete(),
     // KB-329: the ignores are cleared like the rest. The bill_learned markers stay - they stop bills being learned twice.
     db.learningEvents.where("shopId").equals(shopId).filter((e) => e.eventType === PRICE_IGNORE_EVENT).delete(),
+    // KB-323 (D81): alias confidence is derived from the alias events, so a reset clears them - or the "cleared" aliases
+    // would be derived straight back. The server keeps its copy (NI-27); a pull never brings back what is older than the reset.
+    db.learningEvents.where("shopId").equals(shopId).filter((e) => (ALIAS_PULL_TYPES as readonly string[]).includes(e.eventType)).delete(),
   ]);
 
   const clearedCounts = {

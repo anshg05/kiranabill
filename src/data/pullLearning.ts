@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KiranaBillDB, LocalLearnedAlias, LocalLearningEvent, LocalPriceObservation, LocalProvisionalProduct } from "./db";
+import { ALIAS_PULL_TYPES } from "./aliasEvidence";
 import { PRICE_IGNORE_EVENT } from "./learningAudit";
 
 // KB-326 (docs/07-DECISIONS.md D66): learned aliases, provisional products and price observations are pushed
@@ -25,6 +26,9 @@ export const IGNORE_EVENT_WINDOW_DAYS = 100;
 /** The same re-read window as D62 / D63. */
 const OVERLAP_MS = 60_000;
 const PAGE = 500;
+// KB-323 (D81): the ALIAS events are pulled WITHOUT a time window - alias confidence is a sum over every event since the
+// shop's reset (the cutoff below), so a window would make two phones disagree. Paged, and the place is saved after every
+// page, so a pull cut off half way (a bad connection) resumes instead of starting over.
 const DAY_MS = 86_400_000;
 
 export interface PullLearningResult {
@@ -58,8 +62,12 @@ interface TableSpec {
   table: "learned_aliases" | "provisional_products" | "price_observations" | "learning_events";
   /** Only rows whose occurred_at is inside the window (price observations). */
   windowed?: boolean;
-  /** KB-329: only this event type, and only the last IGNORE_EVENT_WINDOW_DAYS of it (by created_at). */
-  eventType?: string;
+  /** The syncState key part when two specs read one table (the ignore events and the alias events both read learning_events). */
+  key?: string;
+  /** Only these event types of learning_events. */
+  eventTypes?: readonly string[];
+  /** KB-329: only the last IGNORE_EVENT_WINDOW_DAYS of them (by created_at). No window = every one since the reset cutoff. */
+  windowDays?: number;
   write: (db: KiranaBillDB, rows: Row[]) => Promise<void>;
 }
 
@@ -131,7 +139,8 @@ const SPECS: TableSpec[] = [
   {
     // KB-329 (D78): the ignore of a price suggestion. Append-only; a row already here (this phone pushed it) is left as it is.
     table: "learning_events",
-    eventType: PRICE_IGNORE_EVENT,
+    eventTypes: [PRICE_IGNORE_EVENT],
+    windowDays: IGNORE_EVENT_WINDOW_DAYS,
     write: (db, rows) =>
       db.transaction("rw", db.learningEvents, async () => {
         const events = rows.map((r): LocalLearningEvent => ({
@@ -140,6 +149,31 @@ const SPECS: TableSpec[] = [
           shopId: r.shop_id as string,
           syncStatus: "synced",
           billLocalId: "",
+          eventType: r.event_type as string,
+          payload: (r.payload as Record<string, unknown> | null) ?? {},
+          createdAt: new Date(r.created_at as string).toISOString(),
+          updatedAt: r.updated_at as string,
+          deviceId: r.device_id as string,
+        }));
+        const existing = await db.learningEvents.bulkGet(events.map((e) => e.localId));
+        await db.learningEvents.bulkAdd(events.filter((_, i) => !existing[i]));
+      }),
+  },
+  {
+    // KB-323 (D81): every alias_confirmed / alias_suppressed / alias_removed / alias_conflict event. A row already here (this
+    // phone pushed it) is left as it is. A pulled event knows its bill only by the server's id (billServerId).
+    table: "learning_events",
+    key: "learning_events_alias",
+    eventTypes: ALIAS_PULL_TYPES,
+    write: (db, rows) =>
+      db.transaction("rw", db.learningEvents, async () => {
+        const events = rows.map((r): LocalLearningEvent => ({
+          localId: r.local_id as string,
+          serverId: r.id as string,
+          shopId: r.shop_id as string,
+          syncStatus: "synced",
+          billLocalId: "",
+          billServerId: (r.bill_id as string | null) ?? undefined,
           eventType: r.event_type as string,
           payload: (r.payload as Record<string, unknown> | null) ?? {},
           createdAt: new Date(r.created_at as string).toISOString(),
@@ -174,21 +208,22 @@ async function refreshResetCutoff(client: SupabaseClient, db: KiranaBillDB, shop
   return cutoff;
 }
 
-async function pullTable(client: SupabaseClient, db: KiranaBillDB, shopId: string, spec: TableSpec, cutoff: string | null): Promise<void> {
-  const key = tableKey(spec.table, shopId);
+async function pullTable(client: SupabaseClient, db: KiranaBillDB, shopId: string, spec: TableSpec, cutoff: string | null, pageSize: number): Promise<void> {
+  const key = tableKey(spec.key ?? spec.table, shopId);
   const cursor = (await db.syncState.get(key))?.lastSyncedAt ?? null;
   const overlapFrom = cursor ? new Date(new Date(cursor).getTime() - OVERLAP_MS).toISOString() : null;
   // Rows stamped at or before the shop's latest reset are never pulled: the lower bound is the later of the two.
   const lower = cutoff && (!overlapFrom || new Date(cutoff).getTime() >= new Date(overlapFrom).getTime()) ? cutoff : overlapFrom;
   const windowStart = new Date(Date.now() - LEARNING_OBSERVATION_WINDOW_DAYS * DAY_MS).toISOString();
-  const ignoreWindowStart = new Date(Date.now() - IGNORE_EVENT_WINDOW_DAYS * DAY_MS).toISOString();
+  const eventWindowStart = spec.windowDays ? new Date(Date.now() - spec.windowDays * DAY_MS).toISOString() : null;
 
   let newest = cursor;
   let after: { at: string; id: string } | null = null;
   for (;;) {
-    let query = client.from(spec.table).select("*").eq("shop_id", shopId).order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(PAGE);
+    let query = client.from(spec.table).select("*").eq("shop_id", shopId).order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(pageSize);
     if (spec.windowed) query = query.gte("occurred_at", windowStart);
-    if (spec.eventType) query = query.eq("event_type", spec.eventType).gte("created_at", ignoreWindowStart);
+    if (spec.eventTypes) query = query.in("event_type", [...spec.eventTypes]);
+    if (eventWindowStart) query = query.gte("created_at", eventWindowStart);
     if (after) query = query.or(`updated_at.gt.${after.at},and(updated_at.eq.${after.at},id.gt.${after.id})`);
     else if (lower) query = query.gt("updated_at", lower);
     const { data, error } = await query;
@@ -199,18 +234,19 @@ async function pullTable(client: SupabaseClient, db: KiranaBillDB, shopId: strin
       after = { at: last.updated_at as string, id: last.id as string };
       newest = newerStamp(newest, last.updated_at as string);
     }
-    if (data.length < PAGE) break;
+    // The place is kept after every page: a pull cut off here resumes from it (the 60 s overlap re-reads, never skips).
+    await db.syncState.put({ tableName: key, lastSyncedAt: newest, cursor: null, pendingCount: 0 });
+    if (data.length < pageSize) break;
   }
-  await db.syncState.put({ tableName: key, lastSyncedAt: newest, cursor: null, pendingCount: 0 });
 }
 
-export async function pullLearningState(client: SupabaseClient, db: KiranaBillDB, shopId: string): Promise<PullLearningResult> {
+export async function pullLearningState(client: SupabaseClient, db: KiranaBillDB, shopId: string, opts: { pageSize?: number } = {}): Promise<PullLearningResult> {
   // Rule A: a reset the server does not know yet would be undone by this pull.
   if (await hasUnsyncedReset(db, shopId)) return { done: false, skipped: "reset-not-pushed" };
   if (typeof navigator !== "undefined" && navigator.onLine === false) return { done: false, skipped: "error" };
   try {
     const cutoff = await refreshResetCutoff(client, db, shopId);
-    for (const spec of SPECS) await pullTable(client, db, shopId, spec, cutoff);
+    for (const spec of SPECS) await pullTable(client, db, shopId, spec, cutoff, opts.pageSize ?? PAGE);
     await markLearningPullDone(db, shopId);
     return { done: true };
   } catch (err) {

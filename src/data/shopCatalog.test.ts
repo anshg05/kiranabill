@@ -32,7 +32,7 @@ describe("loadShopCatalog", () => {
     expect(entries.map((e) => e.id).sort()).toEqual(["p-chini", "p-custom"]);
     expect(entries.find((e) => e.id === "p-chini")).toMatchObject({ suggestedPricePaise: 5200, guardCategory: "sweet", unit: "kg" });
     expect(entries.find((e) => e.id === "p-custom")?.guardCategory).toBe("other");
-    expect(usageById["p-chini"]).toEqual({ useCount: 7 });
+    expect(usageById["p-chini"]).toEqual({ useCount: 7, recentFrequency: 0 });
 
     // End to end with Layer 1: the shop's price and the shop's product id reach the line.
     const [line] = parseUtterance("2 kilo chini", prepareParserCatalog(entries))!;

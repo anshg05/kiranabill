@@ -2,6 +2,8 @@ import type { CatalogEntry } from "@/domain/catalog";
 import { isLearningPullDone } from "./pullLearning";
 import { deterministicUuid } from "@/domain/ids";
 import { learnFromBill, type LearnLine, type LearningDecision, type LearningState, type PriceTrackedProduct, type ProvisionalProduct, type LearnedAlias } from "@/domain/learning";
+import { loadAliasEvents } from "./aliasEvidence";
+import { deriveAliases } from "@/domain/aliasEvidence";
 import type { KiranaBillDB, LocalLearnedAlias, LocalLearningEvent, LocalPriceObservation, LocalProvisionalProduct } from "./db";
 
 // KB-307 commit 3 (owner, 3 Oct 2026; docs/08-LEARNING-ENGINE.md §8): learning
@@ -45,7 +47,7 @@ const positionOf = (d: LearningDecision) => (d.kind === "alias_suppressed" ? `re
 
 /** Learns one finalised bill, once. Throws if the write fails - nothing is then written, and recovery tries again. */
 export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: string, nowMs: number = Date.now()): Promise<LearnResult> {
-  const tables = [localDb.learnedAliases, localDb.provisionalProducts, localDb.priceObservations, localDb.learningEvents, localDb.bills, localDb.billItems, localDb.shopProducts];
+  const tables = [localDb.learnedAliases, localDb.provisionalProducts, localDb.priceObservations, localDb.learningEvents, localDb.bills, localDb.billItems, localDb.shopProducts, localDb.billCancellations];
   return localDb.transaction("rw", tables, async () => {
     if (await localDb.learningEvents.get(markerId(billLocalId))) return { learned: false, decisions: 0 };
     const bill = await localDb.bills.get(billLocalId);
@@ -88,7 +90,13 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
     const event = (eventType: string, position: string, payload: Record<string, unknown>) =>
       events.push({ localId: deterministicUuid("learning_event", billLocalId, eventType, position), shopId, syncStatus: "pending", billLocalId, eventType, payload, createdAt: nowIso, updatedAt: nowIso, deviceId });
 
+    // KB-323 (D81): who owns each phrase NOW, from the evidence before this bill - a confirmation for another product is logged.
+    const owner = new Map(deriveAliases(await loadAliasEvents(localDb, shopId)).filter((a) => a.active).map((a) => [a.aliasKey, a.catalogId]));
+
     for (const d of decisions) {
+      if (d.kind === "alias_confirmed" && owner.has(key(d.alias)) && owner.get(key(d.alias)) !== d.shopProductId) {
+        event("alias_conflict", positionOf(d), { alias: d.alias, from_product: owner.get(key(d.alias)), to_product: d.shopProductId, source_layer: d.sourceLayer });
+      }
       if (d.kind === "alias_confirmed" || d.kind === "alias_suppressed") {
         const existing = aliasByKey.get(key(d.alias));
         const row: LocalLearnedAlias = {

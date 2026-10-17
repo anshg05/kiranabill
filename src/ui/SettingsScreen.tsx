@@ -1,3 +1,5 @@
+import { aliasKeyOf } from "@/domain/aliasEvidence";
+import { deriveShopAliases } from "@/data/aliasEvidence";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { liveQuery } from "dexie";
 import { ArrowLeft } from "lucide-react";
@@ -206,7 +208,8 @@ function StorageLine({ deviceDb }: { deviceDb: DeviceDB }) {
 }
 
 interface Learning {
-  aliases: { row: LocalLearnedAlias; product: string }[];
+  /** KB-323: `confidence` is the one DERIVED from the events when they know the phrase (the row is only this phone's cache). */
+  aliases: { row: LocalLearnedAlias; product: string; confidence: number }[];
   provisional: LocalProvisionalProduct[];
   suggestions: { s: PriceSuggestion; name: string; unit: string; nowPaise: number }[];
   /** KB-329: suggestions hidden by [Ignore], with the end of each ignore. */
@@ -221,18 +224,21 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb, reconcile }: { loc
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [aliases, provisional, suggestions, ignored, products] = await Promise.all([
+    const [aliases, derivedAliases, provisional, suggestions, ignored, products] = await Promise.all([
       listLearnedAliases(localDb, shopId),
+      deriveShopAliases(localDb, shopId),
       listProvisionalProducts(localDb, shopId),
       listPendingPriceSuggestions(localDb, shopId, Date.now()),
       listIgnoredPriceSuggestions(localDb, shopId, Date.now()),
       localDb.shopProducts.where("shopId").equals(shopId).toArray(),
     ]);
     const byId = new Map(products.map((p) => [p.id, p]));
+    const derived = new Map(derivedAliases.map((d) => [d.aliasKey, d]));
     setLearning({
       aliases: [...aliases].sort((a, b) => b.hitCount - a.hitCount).map((row) => {
-        const p = byId.get(row.shopProductId);
-        return { row, product: p ? (p.isActive ? p.displayName : `${p.displayName} (archived)`) : "(removed product)" }; // KB-330: archived = dormant, not removed
+        const d = derived.get(aliasKeyOf(row.alias));
+        const p = byId.get(d?.catalogId ?? row.shopProductId);
+        return { row, confidence: d ? (d.active ? d.confidence : 0) : row.confidence, product: p ? (p.isActive ? p.displayName : `${p.displayName} (archived)`) : "(removed product)" }; // KB-330: archived = dormant, not removed
       }),
       provisional: provisional.filter((p) => p.promotedAt === null),
       suggestions: suggestions.flatMap((s) => {
@@ -274,9 +280,9 @@ function DeveloperMode({ localDb, shopId, deviceId, deviceDb, reconcile }: { loc
               <div>
                 <h4 className={heading}>Learned aliases</h4>
                 <ul className="mt-1 flex flex-col gap-1">
-                  {learning.aliases.map(({ row, product }) => (
+                  {learning.aliases.map(({ row, product, confidence }) => (
                     <li key={row.localId} className="[overflow-wrap:anywhere]">
-                      {row.alias} → {product} · seen {times(row.hitCount)} · {Math.round(row.confidence * 100)}%
+                      {row.alias} → {product} · seen {times(row.hitCount)} · {Math.round(confidence * 100)}%
                     </li>
                   ))}
                 </ul>

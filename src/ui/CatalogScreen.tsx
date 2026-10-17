@@ -1,3 +1,5 @@
+import { deriveShopAliases } from "@/data/aliasEvidence";
+import { PROMOTE_AT } from "@/domain/aliasEvidence";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import type { KiranaBillDB, LocalBaseProduct, LocalProvisionalProduct, LocalShopProduct } from "@/data/db";
@@ -44,8 +46,13 @@ const OFFLINE = "Needs internet to change the catalog";
 const SAVE_FAILED = SAVE_FAILED_TEXT;
 
 const priceText = (paise: number, unit: string) => `${formatRupees(paise)} / ${unit}`;
-const usedText = (n: number) => (n === 0 ? "Not used yet" : n === 1 ? "Used once" : `Used ${n} times`);
-const byUseThenName = (a: LocalShopProduct, b: LocalShopProduct) => b.useCount - a.useCount || a.displayName.localeCompare(b.displayName);
+// KB-321: "recent" is bills of the last 30 days from this shop's own bills; the server's use_count (nothing writes it yet) is the fallback.
+const usedText = (recent: number, useCount: number) =>
+  recent > 0
+    ? `Used ${recent === 1 ? "once" : `${recent} times`} in the last 30 days`
+    : useCount === 0 ? "Not used yet" : useCount === 1 ? "Used once" : `Used ${useCount} times`;
+const byUseThenName = (freq: Readonly<Record<string, number>>) => (a: LocalShopProduct, b: LocalShopProduct) =>
+  (freq[b.id] ?? 0) - (freq[a.id] ?? 0) || b.useCount - a.useCount || a.displayName.localeCompare(b.displayName);
 
 interface CatalogScreenProps {
   localDb: KiranaBillDB;
@@ -60,6 +67,8 @@ interface CatalogScreenProps {
   create?: (product: NewProduct) => Promise<CatalogWriteResult>;
   /** KB-329 (D78): [Ignore] on a price suggestion - a local, append-only learning write (works offline). Absent = no button. */
   ignoreSuggestion?: (shopProductId: string) => Promise<void>;
+  /** KB-323 (D81): forget a learned phrase - a local, append-only event (works offline). Absent = no Remove button. */
+  removeAlias?: (alias: string, shopProductId: string) => Promise<void>;
   /** After a write the server accepted - billing reloads its catalog (new lines use it). */
   onChanged: () => void;
   onClose: () => void;
@@ -71,9 +80,13 @@ interface Loaded {
   parser: ParserCatalog;
   suggestions: readonly PriceSuggestion[];
   provisional: LocalProvisionalProduct[];
+  /** KB-321: bills of the last 30 days per product. */
+  freq: Readonly<Record<string, number>>;
+  /** KB-323: every alias the evidence still supports, with the product it maps to. */
+  learnedNames: readonly { alias: string; catalogId: string; productName: string; confidence: number; inUse: boolean }[];
 }
 
-export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, ignoreSuggestion, onChanged, onClose }: CatalogScreenProps) {
+export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDetails, setActive, create, ignoreSuggestion, removeAlias, onChanged, onClose }: CatalogScreenProps) {
   useBackEntry("kbCatalog", onClose);
   const online = useBrowserOnline();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -89,18 +102,24 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
   const [note, setNote] = useState<{ text: string; undoId?: string } | null>(null);
 
   const reload = useCallback(async () => {
-    const [all, catalog, suggestions, provisional] = await Promise.all([
+    const [all, catalog, suggestions, provisional, derived] = await Promise.all([
       localDb.shopProducts.where("shopId").equals(shopId).toArray(),
       loadShopCatalog(localDb, shopId),
       listPendingPriceSuggestions(localDb, shopId, Date.now()),
       listProvisionalProducts(localDb, shopId),
+      deriveShopAliases(localDb, shopId),
     ]);
+    const active = new Map(all.filter((p) => p.isActive).map((p) => [p.id, p.displayName]));
     setLoaded({
       all,
       products: all.filter((p) => p.isActive),
       parser: prepareParserCatalog(catalog.entries),
       suggestions,
       provisional: provisional.filter((p) => p.promotedAt === null),
+      freq: Object.fromEntries(Object.entries(catalog.usageById).map(([id, u]) => [id, u.recentFrequency ?? 0])),
+      learnedNames: derived.flatMap((a) =>
+        a.active && active.has(a.catalogId) ? [{ alias: a.alias, catalogId: a.catalogId, productName: active.get(a.catalogId)!, confidence: a.confidence, inUse: a.confidence >= PROMOTE_AT }] : [],
+      ),
     });
   }, [localDb, shopId]);
 
@@ -159,10 +178,10 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
         .sort((a, b) => a.displayName.localeCompare(b.displayName));
     }
     const byId = new Map(loaded.products.map((p) => [p.id, p]));
-    const usage = Object.fromEntries(loaded.products.map((p) => [p.id, { useCount: p.useCount }]));
+    const usage = Object.fromEntries(loaded.products.map((p) => [p.id, { useCount: p.useCount, recentFrequency: loaded.freq[p.id] ?? 0 }]));
     const list = [...typed].length >= 2
       ? searchCatalog(loaded.parser, typed, usage, loaded.products.length).flatMap((r) => byId.get(r.entry.id) ?? [])
-      : [...loaded.products].sort(byUseThenName);
+      : [...loaded.products].sort(byUseThenName(loaded.freq));
     return filter === "all" ? list : list.filter((p) => p.source === filter);
   }, [loaded, typed, filter]);
 
@@ -258,6 +277,30 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
               Couldn't hide that suggestion — try again
             </p>
           )}
+          {loaded && filter !== "archived" && loaded.learnedNames.length > 0 && (
+            <section aria-label="Learned names" className="border-b border-line px-4 py-3">
+              <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Learned names</h3>
+              <ul className="mt-1 flex flex-col gap-2">
+                {loaded.learnedNames.map((l) => (
+                  <li key={l.alias.toLowerCase()} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+                      “{l.alias}” → {l.productName} · {l.inUse ? "In use" : "Still learning"} ({Math.round(l.confidence * 100)}%)
+                    </span>
+                    {removeAlias && (
+                      <button
+                        type="button"
+                        aria-label={`Remove “${l.alias}” (${l.productName})`}
+                        onClick={() => void removeAlias(l.alias, l.catalogId).then(wrote).catch((err: unknown) => console.warn("[catalog] could not remove the alias:", err))}
+                        className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {hasSuggestions && loaded && filter !== "archived" && (
             <section aria-label="Suggestions" className="border-b border-line px-4 py-3">
               <h3 className="text-[13px] font-medium tracking-[0.02em] text-ink-soft">Suggestions</h3>
@@ -311,7 +354,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                 <li key={p.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2">
                   <span className="min-w-0 flex-1">
                     <span data-testid="name" className="block font-medium [overflow-wrap:anywhere]">{p.displayName}</span>
-                    <span className="block text-[13px] text-ink-soft">{usedText(p.useCount)}</span>
+                    <span className="block text-[13px] text-ink-soft">{usedText(loaded.freq[p.id] ?? 0, p.useCount)}</span>
                   </span>
                   <span className="flex flex-col items-end">
                     {!p.isActive ? (

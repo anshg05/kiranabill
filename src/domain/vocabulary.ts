@@ -75,6 +75,18 @@ function compareRank(a: RankedEntry, b: RankedEntry): number {
  * catalog Pilloo already does. Empty is the correct output for a fresh
  * shop, not a bug - see vocabulary.test.ts's dedicated test for this.
  */
+/**
+ * KB-321 (owner, 17 Oct 2026): usage is now WRITTEN (the Catalog's order, this ranking's input), but the Whisper prompt
+ * stays OFF. Turning it on is decided only after a measured before/after on the owner's recordings (`eval:audio`) - a
+ * prompt can also make Whisper hear the shop's names where there are none. Flip this ONLY with that evidence.
+ */
+export const WHISPER_PROMPT_ON = false;
+
+/** What the recording is sent with: the ranked names when the prompt is on, nothing while it is off. */
+export function recordingVocabulary(catalog: readonly CatalogEntry[], usageById: Readonly<Record<string, UsageSignal>>): readonly string[] {
+  return WHISPER_PROMPT_ON ? buildVocabularyPrompt(catalog, usageById).names : [];
+}
+
 export function buildVocabularyPrompt(
   catalog: readonly CatalogEntry[],
   usageById: Readonly<Record<string, UsageSignal>>,
