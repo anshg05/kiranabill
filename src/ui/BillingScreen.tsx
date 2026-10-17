@@ -40,7 +40,7 @@ import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
 import { topUpReceiptBlock } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
-import { learnPendingBills } from "@/data/learnBill";
+import { learnPendingBills, learnThenReload } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
 import { EditableValue } from "./EditableValue";
 import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
@@ -183,12 +183,9 @@ export function BillingScreen() {
     void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
     if (!localDb || !shop || !deviceId) return;
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
-    void learnPendingBills(localDb, shop.id)
-      .catch((err: unknown) => console.warn("[learning] failed (the bill is saved; retried on next start):", err))
-      .finally(() => {
-        setCatalogVersion((v) => v + 1); // KB-323: an alias this bill just promoted reads from the next utterance on
-        void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err));
-      });
+    // KB-323: an alias this bill just promoted reads from the next utterance on (learnThenReload reloads the catalog after learning).
+    void learnThenReload(localDb, shop.id, () => setCatalogVersion((v) => v + 1))
+      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
   }, [deviceId, discardDraft, localDb, protectStorage, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {

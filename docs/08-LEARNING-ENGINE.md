@@ -65,6 +65,8 @@ Every time the shopkeeper corrects something after voice, that is a **free label
 | Deleted a line entirely | Negative signal — **suppress** that alias mapping |
 | Accepted with no edits | Positive confirmation — raise alias confidence |
 
+**As built (`KB-307` decision 4, D81, found 17 Oct 2026):** only the last two rows teach an ALIAS today - a line Layer 1 or Gemini matched to a product, left UNEDITED, whose words are not already an exact alias, and a voice line the shopkeeper deleted. "Changed the product name on a voice line" has no screen (a line's quantity, unit and rate are editable, its product is not), and a line added by hand never teaches. So the way a phrase gets learned is a near-miss Layer 1 matches to the right product and the shopkeeper leaves alone.
+
 This is why `bill_items` carries **`spoken_name`** and **`was_edited`**. Without those two columns
 there is no learning signal, and adding them later means the data was never captured.
 
