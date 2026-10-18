@@ -111,9 +111,9 @@ describe("KB-303 - editing a line", () => {
     expect(total()).toBe("₹180");
   });
 
-  it("amount: not editable on a rate line; editable on a spoken-total line ('5 kg chawal 30 ka' -> ₹250)", () => {
+  it("amount: editable on a spoken-total line ('5 kg chawal 30 ka' -> ₹250) and, since KB-337 (D85), on a rate line too", () => {
     render(<Harness transcripts={["2 kilo chini", "5 kg chawal 30 ka"]} />);
-    expect(table().queryByRole("button", { name: "Chini amount" })).toBeNull();
+    expect(table().getByRole("button", { name: "Chini amount" })).toBeTruthy();
     type("Chawal amount", "250");
     expect(total()).toBe("₹340");
   });

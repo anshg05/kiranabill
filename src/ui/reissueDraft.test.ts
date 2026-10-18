@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
-import { editRate } from "@/domain/billEdit";
+import { editAmount, editQty, editRate } from "@/domain/billEdit";
 import { buildFinalBill, type FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "@/data/db";
 import { finaliseBill } from "@/data/finalise";
@@ -72,6 +72,31 @@ describe("reissueState", () => {
     if (!built.ok) throw new Error(built.error);
     expect(built.totalPaise).toBe(bill.totalPaise);
     expect(built.items.map((i) => [i.displayName, i.qty, i.unit, i.ratePaise, i.totalPaise])).toEqual(items.map((i) => [i.displayName, i.qty, i.unit, i.ratePaise, i.totalPaise]));
+  });
+
+  it("KB-337: a bill with a typed amount, a qty with no unit and a plain-number rate is stored as typed and reissues as the same lines - which can be edited again", async () => {
+    const localId = crypto.randomUUID();
+    const lines: FinalLine[] = [
+      ["2 kilo chini", (i: FinalLine["item"]) => ok(editAmount(i, "100"))],
+      ["sabun 180 rupay", (i: FinalLine["item"]) => ok(editQty(ok(editRate(i, "10")), "3"))],
+    ].flatMap(([t, edit], u) =>
+      parseUtterance(t as string, SEED_PARSER_CATALOG)!.map((item) => ({
+        id: `l${u}`, utteranceId: u, item: (edit as (i: FinalLine["item"]) => FinalLine["item"])(item), original: item,
+        displayName: SEED_PARSER_CATALOG.byId.get(item.catalogId!)!.displayName, source: "fastpath" as const,
+      })),
+    );
+    await finaliseBill(db, { localId, shopId, deviceId, startedAt: "2026-10-18T05:00:00.000Z", customer: { name: "Cash", mobile: null }, lines, flags: [] });
+    const bill = (await db.bills.get(localId))!;
+    const items = await db.billItems.where("billLocalId").equals(localId).sortBy("lineNo");
+    expect(items[0]).toMatchObject({ qty: 2, unit: "kg", ratePaise: null, rateUnit: null, totalPaise: 10_000, priceType: "total", wasEdited: true });
+    expect(items[1]).toMatchObject({ qty: 3, unit: null, ratePaise: 1000, rateUnit: "", totalPaise: 3000, priceType: "rate" });
+    expect(bill.totalPaise).toBe(13_000);
+    const state = reissueState(bill, items, crypto.randomUUID(), new Date().toISOString());
+    expect(state.rows[0]!.item).toMatchObject({ qty: 2, unit: "kg", rate: null, total: 10_000, priceType: "total" });
+    expect(state.rows[1]!.item).toMatchObject({ qty: 3, unit: "", rate: 1000, rateUnit: "", total: 3000 });
+    expect(ok(editAmount(state.rows[1]!.item, "40"))).toMatchObject({ rate: null, total: 4000 }); // and typed over again
+    const built = buildFinalBill(state.rows, []);
+    expect(built.ok && built.totalPaise).toBe(13_000);
   });
 
   it("restores onto an empty bill - and never onto one already started (a late call cannot wipe lines)", async () => {

@@ -222,4 +222,24 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     expect(rows[0]!.bill_items).toHaveLength(3);
     expect((await localDb.bills.get(bill6))?.syncStatus).toBe("synced");
   });
+
+  it("KB-337: a typed amount (rate '—'), a qty with no unit and a plain-number rate (rate_unit '') land as stored - the real push_bill accepts all three shapes", async () => {
+    const id = crypto.randomUUID();
+    await writeFinalisedBill(id, [
+      item(id, 1, { displayName: "Chini", qty: 2, unit: "kg", ratePaise: null, rateUnit: null, totalPaise: 10000, priceType: "total" }),
+      item(id, 2, { displayName: "Sabun", qty: 3, unit: null, ratePaise: 1000, rateUnit: "", totalPaise: 3000, priceType: "rate" }),
+      item(id, 3, { displayName: "Kuch naya", qty: 1, unit: null, ratePaise: null, rateUnit: null, totalPaise: 2500, priceType: "total" }),
+    ]);
+    const result = await syncNow({ client, localDb, shopId, deviceId });
+    expect(result.anyTransientFailure).toBe(false);
+    const server = (await serverBill(id))[0]!;
+    expect(server.total_paise).toBe(15500);
+    const items = [...server.bill_items].sort((a, b) => a.line_no - b.line_no);
+    expect(items.map((i) => [i.line_no, Number(i.qty), i.unit, i.rate_paise, i.rate_unit, i.total_paise])).toEqual([
+      [1, 2, "kg", null, null, 10000],
+      [2, 3, null, 1000, "", 3000],
+      [3, 1, null, null, null, 2500],
+    ]);
+    expect((await localDb.bills.get(id))?.syncStatus).toBe("synced");
+  });
 });

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 18 Oct 2026 (rev 54) · Supersedes rev 40
+**Last updated:** 18 Oct 2026 (rev 55) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2053,10 +2053,23 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 
 ---
 
+### D85 — The amount can be typed on every line; the rate can be cleared or typed on any line (built as `KB-337`) 🟢
+
+**Owner decisions, 18 Oct 2026** (research and plan first; the plan approved with decisions 1-3 below). **Reverses `KB-303` decision 1** ("amount only where there is no rate", owner, 1 Oct 2026), which lived only in the `billEdit.ts` header and `06`'s `KB-303` row - the owner wants the legacy behaviour (`legacy/billing-ui.js` `updateTotal`, `updateRate`, `updateQty`, `recalculateBillItemTotals`) on every line - a voice line, an Add item line, a custom line, a reissued line - before Bill Banao. No migration, no schema change: a typed amount is stored exactly as a spoken "ka" total already is (`rate` and `rate_unit` null, `price_type` total, qty and unit kept) - proved against the real `push_bill` (`sync.e2e.test.ts`).
+1. **The rule.** Editing the amount: total = what was typed (exact paise; more than 2 decimals refused; 0 refused; at most Rs.10,00,000), the rate becomes "—" (rate/rateUnit null, priceType "total"), qty and unit stay. Clearing the rate box: the rate becomes "—" and the amount stays. Typing a rate: amount = qty x rate (D36, exact); with no qty the line shows "Quantity needed" (never guessed). Changing the qty or the unit on a typed-amount line keeps the amount (owner answers 1 and 2; a typed rate recalculates, answer 3). An empty amount box leaves a line with no rate unpriced ("Price needed"); on a rate line it changes nothing (clear the rate to free it).
+2. **A quantity with no unit is allowed on a line with no rate** (owner decision 1 of the plan): the receipt prints e.g. "1", no flag, stored with `unit` null. A rate per a REAL unit still needs the unit with the qty.
+3. **No flag on a typed amount** (owner decision 2): a number the shopkeeper types is his own, like a spoken "ka" total; the unusual-total check stays off for total-priced lines, as before. **The trade-off, accepted:** a typing slip (₹4500 for 2 kg of chini) raises nothing - the TOTAL on the screen and the receipt are the check. "Theek hai" lapses on any edit as before (an acknowledgement's key includes qty, unit, rate and total).
+4. **A rate typed on a line with no unit is allowed** (owner decision 3): amount = qty x rate as plain numbers (`rateUnit` ""; `bill_items_rate_unit_iff_rate` holds). Such a line teaches no price observation (there is no unit to compare with); picking a unit afterwards makes it a rate per that unit - the numbers do not move. The "Choose a unit" refusal for this case is gone; so are the two sentences it replaced ("Enter the quantity first", "The amount follows qty × rate - change the rate instead").
+5. **What it touches, unchanged.** Change product (D83) keeps a typed amount (a total the shopkeeper typed stays - rule 7). A saved bill is never edited (rule 2): the edits exist only before Bill Banao; a reissue (D79) builds a new draft whose lines can be edited again. The half-built bill restores a typed amount, a unit-less qty and a plain rate exactly (`billDraft.test.tsx`). Receipt, PDF, WhatsApp and SMS print qty + "—" + the amount (a shape "ka" lines already had). Learning: a line with no rate gives no price observation (no rate is ever back-calculated) and, being edited, confirms no alias; `KB-404`'s `wasEdited` counts it as an edit (a typed amount equal to the computed total still counts - the rate it replaced is gone).
+6. **Owner answers, 18 Oct 2026, on the legacy comparison** (`21` Part 4): no change for free-text rename, merging duplicates, the one-form Add item, deleting a History bill, the learning backup file, toasts and the voice debug panel; **no dark theme**; "any unit on a line" stays as the new rule and is parked (`12` SG-14); the spoken commands and the small items wait for his answers.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 18 Oct 2026 | `KB-303` decision 1 (owner, 1 Oct 2026): "amount only where there is no rate" (`billEdit.ts` header, `06`'s `KB-303` row) | **The amount can be typed on every line; the rate can be cleared or typed on any line (D85, `KB-337`)** | Owner: the legacy behaviour, before Bill Banao. A typed amount is stored like a spoken "ka" total; no flag on it (the TOTAL is the check). |
 | 14 Oct 2026 | D61 / `pullBills`: "a bill that arrives already cancelled is stored, not listed" | **It is listed too, marked Cancelled, with a flagged search row (D79)**; and cancellations reach other devices (a separate pull of `bill_cancellations`) - D63 §5 "Not in this ticket: cancellations reaching other devices" is done | Owner, `KB-325`. |
 | 14 Oct 2026 | D56 §3: "a rate in another unit (SG-09) is skipped rather than converted with a division" | **A per-kg / per-liter rate on a per-gm / per-ml product is observed when `rate % 1000 === 0` (an exact integer division); otherwise skipped (D78)** | Owner, `KB-329` (KI-63): the most common edit on loose goods taught nothing. |
 | 11 Oct 2026 | D22: `reserveBlock` is a plain SELECT-then-INSERT, the race accepted because only one device reserves | **The database refuses overlapping ranges (exclusion constraint) and the client retries (D74)** | Owner: a shop may use several devices (D73). |

@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 18 Oct 2026 (rev 22) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 18 Oct 2026 (rev 23) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -169,6 +169,12 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - **Implementation notes (`KB-305`, 2 Oct 2026):** a **non-modal panel** over the item list — TOTAL, the mic and Bill Banao stay visible and usable (§8 rule 1); search from 2 characters, at most 8 results, equal scores by the shop's use count; the shop's catalog from Dexie, inactive products never shown; a catalog pick is named by the product, never the typed fragment (no false alias at finalise); Android back closes the panel (a history entry while open), never the app; "Couldn't find an item — add it manually" carries an **Add by hand** button that opens the panel with the heard words - since `KB-331` every voice failure does, and so does each "Not added" entry (empty search when nothing was heard).
 
 ---
+
+### Implementation notes — editing a line's numbers (`KB-337`, 18 Oct 2026; D85)
+
+- **The amount is editable on every line** (it was "only where no rate", `KB-303` decision 1). Typing one makes the line a total line: total = what was typed, the rate shows `—`, qty and unit stay. **An empty rate box** shows `—` and keeps the amount. **A typed rate** recalculates (qty x rate, exact, D36); with no qty the line says "Quantity needed". An empty amount box on a line with no rate leaves it "Price needed"; on a rate line it changes nothing.
+- **A quantity with no unit** is allowed on a line with no rate (receipt: `1`), and **a rate on a line with no unit** is a plain-number rate (no price is learned from it). A rate per a real unit still needs the unit with the qty.
+- **No check on a typed amount** (owner): it is his own number, like a spoken "ka" total - a typing slip raises nothing; the TOTAL and the receipt are the check.
 
 ## 3. S2 — Onboarding catalog choice
 

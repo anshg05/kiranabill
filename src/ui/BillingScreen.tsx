@@ -881,9 +881,9 @@ export function BillView({
     ) : (
     <EditableValue label={t("line.rate", { name })} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
   );
-  // The amount is editable only where no rate exists (owner, decision 1).
+  // KB-337 (D85): the amount is editable on EVERY line (it reversed KB-303 decision 1). Typing one makes it a total line.
   const amountOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    line.rate === null && !readOnly ? (
+    !readOnly ? (
       <EditableValue
         label={t("line.amount", { name })}
         fieldId={`${view}-${id}-amount`}

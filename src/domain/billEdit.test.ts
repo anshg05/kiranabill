@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { parseUtterance, type ParsedItem } from "./grammar";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
 import { evaluateReviewFlags, type ReviewFlag } from "./reviewFlags";
+import { amountNeeded } from "./finalBill";
 import {
   billFlags,
+  changeProduct,
   customItem,
   manualItem,
   displayRate,
@@ -142,10 +144,16 @@ describe("edit qty", () => {
     expect(ok(editQty(one("5 kg chawal 30 ka"), "6"))).toMatchObject({ qty: 6, rate: null, total: 3000, priceType: "total" });
   });
 
-  it("D47 line (qty '—'): a qty needs a unit - refused without one", () => {
+  it("KB-337 (D85): a line with no rate may carry a qty with NO unit - 'sabun 180 rupay' -> 1, the spoken total stays, the unit stays '—'", () => {
     const sabun = one("sabun 180 rupay");
-    expect(sabun).toMatchObject({ qty: null, unit: "" });
-    expect(editQty(sabun, "2")).toEqual({ ok: false, error: "Choose a unit" });
+    expect(sabun).toMatchObject({ qty: null, unit: "", rate: null });
+    expect(ok(editQty(sabun, "1"))).toMatchObject({ qty: 1, unit: "", rate: null, total: 18000, priceType: "total" });
+  });
+
+  it("a rate per a REAL unit still needs the unit with the qty (a catalog rate per kg, qty '—'): refused without one, taken with the product's", () => {
+    const perKg = { ...one("2 kilo chini"), qty: null, unit: "", total: null } as ParsedItem;
+    expect(editQty(perKg, "2")).toEqual({ ok: false, error: "Choose a unit" });
+    expect(ok(editQty(perKg, "2", "kg"))).toMatchObject({ qty: 2, unit: "kg", total: 9000 });
   });
 
   it("D47 line: qty + unit filled, the spoken total stays, no rate derived", () => {
@@ -181,8 +189,38 @@ describe("edit rate", () => {
     expect(ok(editRate(one("2 kilo chini"), "12.50"))).toMatchObject({ rate: 1250, total: 2500 });
   });
 
-  it("no qty yet (D47): refused - 'Enter the quantity first'", () => {
-    expect(editRate(one("sabun 180 rupay"), "10")).toEqual({ ok: false, error: "Enter the quantity first" });
+  it("KB-337 decision 3: a rate on a line with no unit and no qty is taken as a plain number - the amount waits for a qty ('Quantity needed')", () => {
+    const sabun = ok(editRate(one("sabun 180 rupay"), "10"));
+    expect(sabun).toMatchObject({ qty: null, unit: "", rate: 1000, rateUnit: "", total: null, priceType: "rate" });
+    expect(amountNeeded(sabun)).toBe("quantity");
+  });
+
+  it("... then a qty (no unit) gives amount = qty x rate as plain numbers: 3 x Rs.10 = Rs.30", () => {
+    const sabun = ok(editRate(one("sabun 180 rupay"), "10"));
+    expect(ok(editQty(sabun, "3"))).toMatchObject({ qty: 3, unit: "", rate: 1000, rateUnit: "", total: 3000, priceType: "rate" });
+  });
+
+  it("a rate on a line with a unit but no qty: stored per that unit, 'Quantity needed' (never a guessed qty)", () => {
+    const kg = ok(editUnit(customItem("kuch naya"), "kg"));
+    const priced = ok(editRate(kg, "60"));
+    expect(priced).toMatchObject({ qty: null, unit: "kg", rate: 6000, rateUnit: "kg", total: null });
+    expect(amountNeeded(priced)).toBe("quantity");
+  });
+
+  it("clearing the rate box (owner answer 2): the rate becomes '—' and the amount STAYS - 2 kilo chini keeps Rs.90, as a total line", () => {
+    expect(ok(editRate(one("2 kilo chini"), ""))).toMatchObject({ qty: 2, unit: "kg", rate: null, rateUnit: null, total: 9000, priceType: "total" });
+  });
+
+  it("clearing the rate of a line with no amount leaves it unpriced ('Price needed')", () => {
+    const priced = ok(editRate(ok(editUnit(customItem("kuch naya"), "kg")), "60"));
+    const cleared = ok(editRate(priced, "  "));
+    expect(cleared).toMatchObject({ rate: null, rateUnit: null, total: null, priceType: "unknown" });
+    expect(amountNeeded(cleared)).toBe("price");
+  });
+
+  it("a typed rate recalculates (owner answer 3): a typed-amount line, then Rs.40 on 2 kg = Rs.80 and a rate line again", () => {
+    const typed = ok(editAmount(one("2 kilo chini"), "100"));
+    expect(ok(editRate(typed, "40"))).toMatchObject({ qty: 2, rate: 4000, rateUnit: "kg", total: 8000, priceType: "rate" });
   });
 
   it("above ₹1,00,000: refused", () => {
@@ -194,8 +232,14 @@ describe("edit rate", () => {
 // Editing the amount - only where no rate exists (owner, decision 1).
 // ---------------------------------------------------------------------------
 describe("edit amount", () => {
-  it("a rate/default line's amount follows qty x rate - not editable", () => {
-    expect(editAmount(one("2 kilo chini"), "100")).toEqual({ ok: false, error: "The amount follows qty × rate — change the rate instead" });
+  it("KB-337 (D85, reverses KB-303 decision 1): a rate line's amount can be typed - total = what was typed, the rate becomes '—', qty and unit stay", () => {
+    expect(ok(editAmount(one("2 kilo chini"), "100"))).toMatchObject({ qty: 2, unit: "kg", rate: null, rateUnit: null, total: 10000, priceType: "total" });
+  });
+
+  it("on a catalog line added by hand, and on a 'wala' rate line", () => {
+    const manual = manualItem(SEED_PARSER_CATALOG.byId.get(one("2 kilo chini").catalogId!)!);
+    expect(ok(editAmount(manual, "40"))).toMatchObject({ qty: 1, rate: null, rateUnit: null, total: 4000, priceType: "total" });
+    expect(ok(editAmount(one("2 kilo rajma do sau wala"), "350"))).toMatchObject({ qty: 2, rate: null, total: 35000, priceType: "total" });
   });
 
   it("spoken-total line: the amount can be corrected", () => {
@@ -206,6 +250,52 @@ describe("edit amount", () => {
     const ajwain = one("ajwain");
     expect(ajwain).toMatchObject({ qty: null, rate: null, priceType: "unknown" }); // Rule 5b (its total is 0 - nothing added)
     expect(ok(editAmount(ajwain, "20"))).toMatchObject({ qty: null, rate: null, total: 2000, priceType: "total" });
+  });
+
+  it("paise are exact: 12.50 -> 1250, 12.5 -> 1250, 0.05 -> 5", () => {
+    for (const [text, paise] of [["12.50", 1250], ["12.5", 1250], ["0.05", 5], ["₹ 45", 4500], ["१२.५०", 1250]] as const) {
+      expect(ok(editAmount(one("2 kilo chini"), text)).total).toBe(paise);
+    }
+  });
+
+  it("refused, the line untouched: more than 2 decimals, zero, text, above Rs.10,00,000", () => {
+    const line = one("2 kilo chini");
+    expect(editAmount(line, "12.505")).toEqual({ ok: false, error: "At most 2 digits after the point" });
+    expect(editAmount(line, "0")).toEqual({ ok: false, error: "Must be more than ₹0" });
+    expect(editAmount(line, "0.00")).toEqual({ ok: false, error: "Must be more than ₹0" });
+    expect(editAmount(line, "abc")).toEqual({ ok: false, error: "Enter an amount like 45 or 12.50" });
+    expect(editAmount(line, "1000001")).toEqual({ ok: false, error: "Too large — at most ₹10,00,000" });
+  });
+
+  it("owner answer 1: changing the qty or the unit on a typed-amount line keeps the amount", () => {
+    const typed = ok(editAmount(one("2 kilo chini"), "100"));
+    expect(ok(editQty(typed, "3"))).toMatchObject({ qty: 3, total: 10000, rate: null, priceType: "total" });
+    expect(ok(editUnit(typed, "gm"))).toMatchObject({ unit: "gm", total: 10000, rate: null });
+  });
+
+  it("an empty amount on a line with no rate leaves it unpriced - 'Price needed'", () => {
+    const cleared = ok(editAmount(one("5 kg chawal 30 ka"), ""));
+    expect(cleared).toMatchObject({ qty: 5, rate: null, total: null, priceType: "unknown" });
+    expect(amountNeeded(cleared)).toBe("price");
+  });
+
+  it("an empty amount on a rate line changes nothing (the amount is qty x rate; clear the rate to free it)", () => {
+    const line = one("2 kilo chini");
+    expect(ok(editAmount(line, ""))).toEqual(line);
+  });
+
+  it("D83 change-product keeps a typed amount (a total the shopkeeper typed stays - rule 7); incompatible units clear the qty, not the amount", () => {
+    const typed = ok(editAmount(one("2 kilo chini"), "100"));
+    const atta = SEED_PARSER_CATALOG.entries.find((e) => e.unit === "kg" && e.id !== typed.catalogId)!;
+    expect(ok(changeProduct(typed, atta))).toMatchObject({ qty: 2, unit: "kg", rate: null, total: 10000, priceType: "total" });
+    const piece = SEED_PARSER_CATALOG.entries.find((e) => e.unit === "piece")!;
+    expect(ok(changeProduct(typed, piece))).toMatchObject({ qty: null, rate: null, total: 10000, priceType: "total" });
+  });
+
+  it("a typed amount is an edit (isEdited), even one equal to the computed total - the rate it replaced is gone", () => {
+    const line = one("2 kilo chini");
+    expect(isEdited(ok(editAmount(line, "100")), line)).toBe(true);
+    expect(isEdited(ok(editAmount(line, "90")), line)).toBe(true);
   });
 });
 
@@ -223,6 +313,12 @@ describe("edit unit", () => {
 
   it("an incompatible change (kg -> piece) is refused", () => {
     expect(editUnit(one("2 kilo chini"), "piece")).toEqual({ ok: false, error: "Can't change kg to piece" });
+  });
+
+  it("KB-337: a plain-number rate (no unit) takes the unit the shopkeeper then picks - 2 x Rs.10 stays Rs.20", () => {
+    const plain = ok(editQty(ok(editRate(one("sabun 180 rupay"), "10")), "2"));
+    expect(plain).toMatchObject({ unit: "", rateUnit: "", total: 2000 });
+    expect(ok(editUnit(plain, "piece"))).toMatchObject({ unit: "piece", rateUnit: "piece", rate: 1000, total: 2000 });
   });
 
   it("a spoken-total line keeps its total when the unit changes", () => {
@@ -304,6 +400,20 @@ describe("billFlags", () => {
     const u = utterance(1, "2 kilo chini", ["a"]);
     const edited = [{ ...u.entries[0]!, item: ok(editRate(u.entries[0]!.item, "5")) }];
     expect(codes(billFlags(edited, [u.record], SEED_PARSER_CATALOG.entries))).toEqual(["HIGH unusual_rate@0", "HIGH unusual_total@0"]);
+  });
+
+  it("KB-337 decision 2: a typed amount is the shopkeeper's own number - no unusual_total (and no unusual_rate, there is no rate); the flagged line is clear, its old 'Theek hai' key is gone", () => {
+    const text = "2 kilo chini";
+    const spoken = one(text);
+    const bad = ok(editRate(spoken, "5")); // Rs.5/kg: HIGH unusual_rate + unusual_total
+    const e: BillEntry = { id: "a", utteranceId: 1, item: bad, original: spoken };
+    const before = billFlags([e], [{ id: 1, lineIds: ["a"], flags: [], transcript: text }], SEED_PARSER_CATALOG.entries);
+    expect(before.map((f) => f.code)).toEqual(expect.arrayContaining(["unusual_rate", "unusual_total"]));
+    const typed = ok(editAmount(bad, "4500")); // a slip of two zeros - NOT flagged (the trade-off: the TOTAL and the receipt are the check)
+    const after = billFlags([{ ...e, item: typed }], [{ id: 1, lineIds: ["a"], flags: [], transcript: text }], SEED_PARSER_CATALOG.entries);
+    expect(after.filter((f) => f.severity === "HIGH")).toEqual([]);
+    expect(after.map((f) => f.code)).not.toContain("unusual_total");
+    expect(before.map((f) => f.key).some((k) => after.map((f) => f.key).includes(k))).toBe(false);
   });
 
   it("the same line said again in ANOTHER utterance -> MEDIUM already_on_bill on the later one (owner, decision 4)", () => {
@@ -398,9 +508,9 @@ describe("KB-305 - lines added by hand", () => {
     expect(flags.map((f) => [f.severity, f.code]).sort()).toEqual([["LOW", "unknown_product"], ["MEDIUM", "incomplete_item"]]);
   });
 
-  it("custom item: no qty without a unit (KB-303); unit, qty, rate -> incomplete_item clears", () => {
+  it("custom item: unit, qty, rate -> incomplete_item clears (a qty alone is allowed since KB-337 - it still needs a price)", () => {
     const item = customItem("kuch naya");
-    expect(editQty(item, "2")).toEqual({ ok: false, error: "Choose a unit" });
+    expect(ok(editQty(item, "2"))).toMatchObject({ qty: 2, unit: "", total: null });
     const kg = editUnit(item, "kg");
     if (!kg.ok) throw new Error(kg.error);
     const two = editQty(kg.item, "२"); // Devanagari digit

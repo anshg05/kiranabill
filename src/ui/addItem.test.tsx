@@ -186,9 +186,10 @@ describe("KB-305 - a custom item (owner: qty '—' AND unit '—')", () => {
     expect(screen.queryAllByRole("button", { name: "REVIEW — kuch naya" })).toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "Note — kuch naya" }).length).toBeGreaterThan(0);
 
-    commit("kuch naya quantity", "2"); // no unit yet - KB-303's own rule
-    expect(cards().getByRole("alert").textContent).toBe("Choose a unit");
-    fireEvent.keyDown(cards().getByRole("textbox", { name: "kuch naya quantity" }), { key: "Escape" });
+    commit("kuch naya quantity", "2"); // KB-337 (D85): a qty with no unit is taken on a line with no rate - it still needs a price
+    expect(cards().queryByRole("alert")).toBeNull();
+    expect(cards().getByRole("button", { name: "kuch naya quantity" }).textContent).toBe("2");
+    expect(cards().getByText("Price needed")).toBeTruthy();
     fireEvent.change(cards().getByRole("combobox", { name: "kuch naya unit" }), { target: { value: "kg" } });
     act(() => cards().getByRole("button", { name: "kuch naya quantity" }).click());
     commit("kuch naya quantity", "2");

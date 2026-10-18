@@ -148,7 +148,7 @@ describe("every sentence the domain can build has a translation (drift guard - r
   ].filter((s) => s.length > 8);
 
   it("found the sentences to check (the scan itself works)", () => {
-    expect(sentences.length).toBeGreaterThan(75);
+    expect(sentences.length).toBeGreaterThan(70);
   });
   it("each one is found in the catalog and says something different in Hindi and in Hinglish", () => {
     const missing = sentences.filter((s) => translateEnglish(s, "hi") === s || translateEnglish(s, "hl") === s);

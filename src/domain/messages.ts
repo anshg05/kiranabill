@@ -189,8 +189,6 @@ export const MESSAGES = {
   "err.qtyPositive": m("Must be more than 0", "0 से ज़्यादा होनी चाहिए", "0 se zyada honi chahiye"),
   "err.chooseUnit": m("Choose a unit", "इकाई चुनें", "Unit chunein"),
   "err.unitRate": m("Can't use {unit} with a rate per {rateUnit}", "{rateUnit} के भाव के साथ {unit} नहीं चल सकता", "{rateUnit} ke bhav ke saath {unit} nahi chal sakta"),
-  "err.qtyFirst": m("Enter the quantity first", "पहले मात्रा डालें", "Pehle matra daalein"),
-  "err.amountFollows": m("The amount follows qty × rate — change the rate instead", "रकम मात्रा × भाव से बनती है — भाव बदलें", "Rakam matra × bhav se banti hai — bhav badlein"),
   "err.notAUnit": m(`"{unit}" isn't a unit`, `“{unit}” कोई इकाई नहीं है`, `“{unit}” koi unit nahi hai`),
   "err.unitChange": m("Can't change {a} to {b}", "{a} को {b} में नहीं बदल सकते", "{a} ko {b} mein nahi badal sakte"),
   "err.nameLong": m("Name is too long — {max} characters at most", "नाम बहुत लंबा है — ज़्यादा से ज़्यादा {max} अक्षर", "Naam bahut lamba hai — zyada se zyada {max} akshar"),

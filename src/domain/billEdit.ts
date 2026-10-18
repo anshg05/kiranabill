@@ -16,13 +16,20 @@ import { evaluateReviewFlags, flagAcrossUtterances, type ReviewFlag } from "./re
  *
  * What is editable (owner, decisions 1-3):
  *  - qty, on every line. A rate/default line's total follows; a spoken-total
- *    ("ka") line keeps the total the shopkeeper SAID; a qty-less D47 line needs
- *    a unit with it.
- *  - rate, on every line with a qty. Typed per the unit it is SHOWN in - the
- *    coarser of the pair (SG-09: kg / liter) - and stored per it, so Rs.455/kg
- *    on a gm line never has to become 45.5 paise/gm. The line becomes a rate line.
- *  - amount, only where there is no rate (a spoken total or an unpriced line) -
- *    otherwise the amount is qty x rate, and two sources of truth would conflict.
+ *    ("ka") or typed-amount line keeps its total. KB-337 (D85): a line with no
+ *    rate - or a plain-number rate - may carry a qty with NO unit ("1"); a rate
+ *    per a real unit still needs that unit with the qty.
+ *  - rate, on every line (KB-337, D85: also a qty-less or unit-less one). Typed
+ *    per the unit it is SHOWN in - the coarser of the pair (SG-09: kg / liter) -
+ *    and stored per it, so Rs.455/kg on a gm line never has to become 45.5
+ *    paise/gm. A line with no unit takes a PLAIN-number rate (rateUnit "": qty x
+ *    rate as plain numbers); with no qty the total waits ("Quantity needed").
+ *    An empty rate box clears the rate and KEEPS the amount.
+ *  - amount, on EVERY line (KB-337, D85 - reverses KB-303 decision 1: the owner
+ *    wants the legacy behaviour): the total becomes what was typed, the rate
+ *    becomes "—" (priceType "total" - the shape a spoken "ka" line already has),
+ *    qty and unit stay. A typed number is the shopkeeper's own, like a spoken
+ *    total: no unusual-total check on it (the TOTAL and the receipt are the check).
  *  - unit, only between compatible units (gm<->kg, ml<->liter, count<->count).
  *    The qty number stays; the rate keeps its own unit; the total follows.
  */
@@ -137,30 +144,43 @@ function isBillUnit(unit: string): boolean {
 export function editQty(item: ParsedItem, text: string, unit?: string): EditResult {
   const qty = parseQtyInput(text);
   if (!qty.ok) return qty;
-  const lineUnit = item.unit || unit;
-  if (!lineUnit || !isBillUnit(lineUnit)) return { ok: false, error: "Choose a unit" };
+  const lineUnit = item.unit || unit || "";
+  // KB-337 (D85): no rate, or a plain-number rate (rateUnit ""), needs no unit - the qty is just a number ("1").
+  const needsUnit = item.rate !== null && item.rateUnit !== "";
+  if (lineUnit ? !isBillUnit(lineUnit) : needsUnit) return { ok: false, error: "Choose a unit" };
   const next = withDerivedTotal({ ...item, qty: qty.value, unit: lineUnit });
   if (!next) return { ok: false, error: `Can't use ${lineUnit} with a rate per ${item.rateUnit}` };
   return { ok: true, item: next };
 }
 
-/** Edit the rate - typed per the unit it is shown in (SG-09), stored per it. */
+/** Edit the rate - typed per the unit it is shown in (SG-09), stored per it. An empty box clears it and keeps the amount. */
 export function editRate(item: ParsedItem, text: string): EditResult {
+  if (text.trim() === "") {
+    // KB-337 (D85; owner answer 2): the rate becomes "—", the amount stays (no amount at all = still to be priced).
+    return { ok: true, item: { ...item, rate: null, rateUnit: null, priceType: item.total === null ? "unknown" : "total" } };
+  }
   const rate = parseMoneyInput(text, MAX_RATE_PAISE);
   if (!rate.ok) return rate;
-  if (item.qty === null || !item.unit) return { ok: false, error: "Enter the quantity first" };
+  // A line with no unit takes a plain-number rate (rateUnit ""); with no qty the total waits (withDerivedTotal).
   const rateUnit = coarserUnit(item.rateUnit ?? item.unit);
   const next = withDerivedTotal({ ...item, rate: rate.value, rateUnit, priceType: "rate" });
   if (!next) return { ok: false, error: `Can't use ${item.unit} with a rate per ${rateUnit}` };
   return { ok: true, item: next };
 }
 
-/** Edit the amount - only where no rate exists (owner, decision 1). */
+/**
+ * Edit the amount - on every line (KB-337, D85). Typed: the total is what was typed and the rate becomes "—"; qty and
+ * unit stay. Empty: a line with no rate is left unpriced ("Price needed"); a rate line's amount is qty x rate, so an
+ * empty box changes nothing there (clear the rate to free it).
+ */
 export function editAmount(item: ParsedItem, text: string): EditResult {
-  if (item.rate !== null) return { ok: false, error: "The amount follows qty × rate — change the rate instead" };
+  if (text.trim() === "") {
+    if (item.rate !== null) return { ok: true, item };
+    return { ok: true, item: { ...item, total: null, priceType: "unknown" } };
+  }
   const amount = parseMoneyInput(text, MAX_AMOUNT_PAISE);
   if (!amount.ok) return amount;
-  return { ok: true, item: { ...item, total: amount.value, priceType: "total" } };
+  return { ok: true, item: { ...item, total: amount.value, rate: null, rateUnit: null, priceType: "total" } };
 }
 
 /** Edit the unit - only between compatible units (owner, decision 3). */
@@ -168,7 +188,8 @@ export function editUnit(item: ParsedItem, unit: string): EditResult {
   if (!isBillUnit(unit)) return { ok: false, error: `"${unit}" isn't a unit` };
   if (unit === item.unit) return { ok: true, item };
   if (item.unit && !unitsAreCompatible(item.unit, unit)) return { ok: false, error: `Can't change ${item.unit} to ${unit}` };
-  const next = withDerivedTotal({ ...item, unit });
+  // KB-337: a plain-number rate (rateUnit "") becomes a rate per the unit now picked - the numbers do not move.
+  const next = withDerivedTotal({ ...item, unit, ...(item.rate !== null && item.rateUnit === "" ? { rateUnit: coarserUnit(unit) } : {}) });
   if (!next) return { ok: false, error: `Can't use ${unit} with a rate per ${item.rateUnit}` };
   return { ok: true, item: next };
 }

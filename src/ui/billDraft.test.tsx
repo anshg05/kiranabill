@@ -5,6 +5,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { KiranaBillDB } from "@/data/db";
 import type { CatalogEntry } from "@/domain/catalog";
 import { parseUtterance } from "@/domain/grammar";
+import { customItem } from "@/domain/billEdit";
 import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { BillLine } from "@/data/voiceBilling";
@@ -69,6 +70,25 @@ describe("the half-built bill survives", () => {
     expect(second.result.current.localId).toBe(before.localId);
     expect(second.result.current.startedAt).toBe(before.startedAt);
     expect(second.result.current.flags.length).toBe(before.flags.length); // flags are re-derived from the lines
+  });
+
+  it("KB-337: a typed amount, a qty with no unit and a plain-number rate come back exactly as typed", async () => {
+    const first = mount();
+    await waitFor(() => expect(first.result.current.ready).toBe(true));
+    addVoice(first, "2 kilo chini");
+    act(() => void first.result.current.edit(first.result.current.rows[0]!.id, "amount", "100"));
+    act(() => first.result.current.addByHand(customItem("Kuch naya"), "Kuch naya"));
+    const custom = first.result.current.rows[1]!.id;
+    act(() => void first.result.current.edit(custom, "rate", "10"));
+    act(() => void first.result.current.edit(custom, "qty", "3"));
+    const before = first.result.current.rows;
+    expect(before[0]!.item).toMatchObject({ rate: null, total: 10000, priceType: "total" });
+    expect(before[1]!.item).toMatchObject({ qty: 3, unit: "", rate: 1000, rateUnit: "", total: 3000 });
+    await waitFor(async () => expect((await loadDraft(db, shopId))?.rows).toHaveLength(2), { timeout: 2000 });
+    first.unmount();
+    const second = mount();
+    await waitFor(() => expect(second.result.current.ready).toBe(true));
+    expect(second.result.current.rows).toEqual(before);
   });
 
   it("closing the page right after a change still saves it (pagehide flushes the debounce)", async () => {
