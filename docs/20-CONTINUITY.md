@@ -1,6 +1,7 @@
 # 20 — Continuity: Handing Off This Chat's Role
 
 **Last updated:** 18 Oct 2026 · **Status:** Active
+> **A one-time handoff file (owner, 18 Oct 2026).** This refresh stays, but **it is not maintained in future DOCUMENT sweeps unless the owner asks**; its dated state line will go stale - the tracker (`10`) is the live state.
 **Purpose:** let a new Claude conversation, on a new account, pick up the role this chat has played — without duplicating the project's actual documentation, which already lives durably in the repo and would only drift out of sync if copied here.
 
 **The framing worth holding onto:** this is the same problem `09-WORKING-AGREEMENT.md §A0` already solved for Claude Code — a fresh session with no memory needs to become useful fast, without re-deriving decisions that are already settled. That pattern is being reused here, for a human-facing reviewer session instead of a code-writing one.
