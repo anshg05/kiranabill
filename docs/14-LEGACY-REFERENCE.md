@@ -1,6 +1,6 @@
 # 14 — Legacy Reference
 
-**Last updated:** 26 Sep 2026 (rev 8) · **Status:** Reference material, frozen
+**Last updated:** 14 Oct 2026 (rev 9) · **Status:** Reference material, frozen
 
 **Rev 6 note:** section 7 undercounted the review reason codes (said 7, `04-VOICE-PIPELINE.md`'s "11"
 was the correct number) and included one, `unknown`, that isn't real — conflated with `grammar.ts`'s

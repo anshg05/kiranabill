@@ -86,7 +86,7 @@ export function messageFor(err: unknown): string {
   if (err instanceof VoiceUserError) return err.message;
   if (err instanceof VoiceApiError) {
     if (err.kind === "unauthorized") return "Session expired — sign out and sign in again";
-    if (err.kind === "rate_limited") return "Too many voice requests — wait a minute and try again";
+    if (err.kind === "rate_limited") return "Voice limit reached for now — try again later, or add by hand";
     if (err.kind === "network") return "No internet — voice needs a connection";
     // KB-319 (owner): Groq over quota / past a deadline - not "couldn't hear".
     if (err.kind === "busy") return "Voice service busy — try again in a minute";

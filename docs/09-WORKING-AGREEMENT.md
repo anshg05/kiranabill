@@ -1,6 +1,6 @@
 # 09 — Working Agreement
 
-**Last updated:** 27 Sep 2026 (rev 7) · **Status:** Active from first commit
+**Last updated:** 3 Oct 2026 (rev 8) · **Status:** Active from first commit
 
 How work gets done on this project. Engineering standards, the AI session protocol, and the
 definition of done.

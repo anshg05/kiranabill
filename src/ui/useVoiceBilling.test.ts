@@ -117,7 +117,7 @@ describe("useVoiceBilling", () => {
 
   it.each([
     [401, "Session expired — sign out and sign in again"],
-    [429, "Too many voice requests — wait a minute and try again"],
+    [429, "Voice limit reached for now — try again later, or add by hand"],
     [502, "Couldn't hear that — try again"],
     [503, "Voice service busy — try again in a minute"], // KB-319: Groq 429 (owner)
     [504, "Took too long — try again"], // KB-319: Groq's 8 s deadline (the client's 12 s gives the same kind - voiceApi.test.ts)

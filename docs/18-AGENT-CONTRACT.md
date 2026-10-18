@@ -1,6 +1,6 @@
 # 18 — Agent Contract
 
-**Last updated:** 27 Sep 2026 · **Status:** Binding on every session
+**Last updated:** 11 Oct 2026 · **Status:** Binding on every session
 
 > **If you are an AI agent working on this project, this document is your operating contract.
 > Read it in full before doing anything. It overrides your defaults.**

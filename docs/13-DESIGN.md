@@ -1,6 +1,6 @@
 # 13 — Design
 
-**Last updated:** 4 Oct 2026 (rev 5) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 9 Oct 2026 (rev 6) · **Status:** Final for MVP · Validated against mockups
 
 ---
 

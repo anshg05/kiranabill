@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 16 Oct 2026 (rev 53) · Supersedes rev 40
+**Last updated:** 18 Oct 2026 (rev 54) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being

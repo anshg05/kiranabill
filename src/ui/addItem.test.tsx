@@ -298,7 +298,7 @@ describe("KB-331 - 'Add by hand' on every voice failure", () => {
     "Didn't catch anything — try again",
     "No internet — voice needs a connection",
     "Took too long — try again",
-    "Too many voice requests — wait a minute and try again",
+    "Voice limit reached for now — try again later, or add by hand",
     "Voice service busy — try again in a minute",
     "Session expired — sign out and sign in again",
     "Couldn't hear that — try again",

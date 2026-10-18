@@ -1,6 +1,6 @@
 # 20 — Continuity: Handing Off This Chat's Role
 
-**Last updated:** 3 Oct 2026 · **Status:** Active
+**Last updated:** 18 Oct 2026 · **Status:** Active
 **Purpose:** let a new Claude conversation, on a new account, pick up the role this chat has played — without duplicating the project's actual documentation, which already lives durably in the repo and would only drift out of sync if copied here.
 
 **The framing worth holding onto:** this is the same problem `09-WORKING-AGREEMENT.md §A0` already solved for Claude Code — a fresh session with no memory needs to become useful fast, without re-deriving decisions that are already settled. That pattern is being reused here, for a human-facing reviewer session instead of a code-writing one.
@@ -35,13 +35,14 @@ Across this project, this chat has functioned as **the senior technical reviewer
 
 ---
 
-## 3. Current state — read these two things first
+## 3. Current state — read these first
 
-1. **`docs/10-TRACKER.md`** — "Right now" (phase, current ticket, next ticket), the build log and the retrospectives.
+1. **`docs/10-TRACKER.md`** — "Right now", then the **FINAL STATUS REPORT** right after it: every ticket done since the audit, every owner check still pending, what remains before a production deploy, and the owner's pre-pilot items. Then the build log and the retrospectives.
 2. **`docs/12-PARKED.md`** — every open issue (KI), idea (SG), deferred feature and not-yet-investigated item (NI), each with a trigger.
+3. **`docs/21-AUDIT-2026-10.md`** — the October 2026 audit (tickets, promises, risks): why several rows in 06 and 10 read the way they do.
 
-This file deliberately states no ticket numbers or dates beyond this line — they go stale; the tracker doesn't.
-(As of 3 Oct 2026: Phase 3, billing UI; `KB-307` done, `KB-308` receipt in progress.)
+This file keeps one dated line of state - the rest goes stale; the tracker doesn't.
+**As of 18 Oct 2026:** Phase 3 is built end to end. **Every agreed pre-pilot ticket is done** (the last: `KB-332` Screen language, `KB-404` pilot numbers, the `KB-325` Cancel-only fix, `KI-60`), except `KB-318` (Gemini), which waits on the owner's decision about Gemini billing (`KI-50`). `main` is ~95 commits past production, all pushed, **none deployed**. What waits for the owner: the **release draft + the full phone session**, then **one deploy** (the `[deploy]` marker, his explicit approval), and his pre-pilot items (privacy notice, onboarding the pilot shop, the Redirect-URL cleanup). **No deploy and no Gemini work until he says so.** The owner audits and adds the next items.
 
 ---
 
@@ -49,12 +50,10 @@ This file deliberately states no ticket numbers or dates beyond this line — th
 
 ### 4a. The loop (every ticket)
 
-**PLAN → STOP → owner approves → tests first (shown red) → build → VERIFY (real output pasted, never summarised) →
-DOCUMENT → the agent's own real-browser check → the owner's browser check → commit → push.**
+**One stop per ticket: PLAN → STOP → owner approves → tests FIRST with a real red run shown → build → plants (deliberate breakages, each must make a test fail, each restored) → VERIFY (real output, never summarised: typecheck, lint, the 3-worker `npm test`, `test:e2e`, `test:rls`, build, `npm audit --omit=dev`, and `eval:real` + `bench:numbers` + `coverage:probe` unchanged) → the agent's own real-browser check at 375 px → DOCUMENT (a sweep, below) → commit and push (never a `[deploy]` marker) → STOP, with an exact short check for the owner.** Red-first applies to every ticket, bug fixes included. Helper scripts (`.plant*.py`, `.verify*.sh`, `.docs*.py`, outputs) are never committed and are deleted before the commit.
 
 **VERIFY runs `npm test` as it is configured: the unit suite is capped at 3 workers in `vite.config.ts` (owner, 17 Oct 2026) - that is the official run; there is no separate default-worker run to pass before a release.**
-Formats: `18-AGENT-CONTRACT.md` §3; Definition of Done: `09-WORKING-AGREEMENT.md` Part C. The agent commits locally after
-each verified step; it pushes only after the owner's check passes.
+Formats: `18-AGENT-CONTRACT.md` §3; Definition of Done: `09-WORKING-AGREEMENT.md` Part C. Since 17 Oct 2026 the agent commits and pushes after its own VERIFY and browser check (no deploy marker); the owner's check follows and is recorded in the next commit.
 
 ### 4b. Standing rules a reviewer should enforce
 

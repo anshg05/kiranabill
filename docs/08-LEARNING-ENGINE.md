@@ -1,6 +1,6 @@
 # 08 — Learning Engine
 
-**Last updated:** 14 Oct 2026 (rev 4) · **Status:** Final for MVP
+**Last updated:** 17 Oct 2026 (rev 5) · **Status:** Final for MVP
 
 **Principle:** every bill makes the next bill better, for this shop specifically.
 

@@ -110,7 +110,7 @@ export const MESSAGES = {
   "voice.noNet": m("No internet — voice needs a connection", "इंटरनेट नहीं है — बोलकर बिल के लिए नेट चाहिए", "Internet nahi hai — bolkar bill ke liye net chahiye"),
   "voice.offline": m("Offline — voice needs internet", "ऑफ़लाइन — बोलने के लिए इंटरनेट चाहिए", "Offline — bolne ke liye internet chahiye"),
   "voice.busy": m("Voice service busy — try again in a minute", "आवाज़ सेवा व्यस्त है — एक मिनट बाद कोशिश करें", "Awaaz service busy hai — ek minute baad koshish karein"),
-  "voice.rate": m("Too many voice requests — wait a minute and try again", "बहुत बार बोला — एक मिनट रुकें, फिर कोशिश करें", "Bahut baar bola — ek minute rukein, phir koshish karein"),
+  "voice.rate": m("Voice limit reached for now — try again later, or add by hand", "अभी आवाज़ की सीमा पूरी हो गई — बाद में कोशिश करें, या खुद जोड़ें", "Abhi awaaz ki seema poori ho gayi — baad mein koshish karein, ya khud jodein"),
   "voice.session": m("Session expired — sign out and sign in again", "लॉगिन ख़त्म हो गया — साइन आउट करके फिर साइन इन करें", "Login khatam ho gaya — sign out karke phir sign in karein"),
   "voice.micDenied": m("Mic permission denied — allow it in the browser's site settings", "माइक की अनुमति नहीं मिली — ब्राउज़र की साइट सेटिंग में अनुमति दें", "Mic ki permission nahi mili — browser ki site settings mein allow karein"),
   "voice.noMic": m("No microphone found", "माइक नहीं मिला", "Mic nahi mila"),

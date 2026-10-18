@@ -1,6 +1,6 @@
 # 19 — Machine Setup
 
-**Last updated:** 7 Oct 2026 · **Status:** Active
+**Last updated:** 17 Oct 2026 · **Status:** Active
 **Purpose:** get a new machine to the exact state the old one was in, with nothing skipped and nothing guessed. Written from what this project's actual setup involved, including the real problems hit along the way — not a generic checklist.
 
 **Do these in order.** Each section assumes the previous one is done.

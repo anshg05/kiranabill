@@ -1,6 +1,6 @@
 # 16 — App Flow
 
-**Last updated:** 11 Oct 2026 · **Status:** Final for MVP
+**Last updated:** 14 Oct 2026 · **Status:** Final for MVP
 
 Journeys, sequences and state machines. `05-FRONTEND-SPEC.md` describes screens; this describes
 how a person moves through them and what the system does underneath.

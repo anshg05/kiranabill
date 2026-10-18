@@ -1,6 +1,6 @@
 # 03 — Data Model and Schema
 
-**Last updated:** 14 Oct 2026 (rev 14) · **Status:** Final for MVP
+**Last updated:** 17 Oct 2026 (rev 15) · **Status:** Final for MVP
 
 ## 0. Where the catalog actually lives — read this first
 

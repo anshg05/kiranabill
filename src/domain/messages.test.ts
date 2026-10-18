@@ -74,6 +74,17 @@ describe("what never changes (owner, 17 Oct 2026)", () => {
   });
 });
 
+describe("KI-60: the rate-limit message is true (the limit is per HOUR, not per minute)", () => {
+  it("none of the three languages promises a minute, and each points to adding by hand or trying later", () => {
+    for (const l of LANGUAGES) {
+      expect(MESSAGES["voice.rate"][l]).not.toMatch(/minute|मिनट|minut/i);
+    }
+    expect(MESSAGES["voice.rate"].en).toBe("Voice limit reached for now — try again later, or add by hand");
+    expect(MESSAGES["voice.rate"].hi).toMatch(/बाद में/);
+    expect(MESSAGES["voice.rate"].hl).toMatch(/baad mein/);
+  });
+});
+
 describe("render", () => {
   it("fills the placeholders, in the chosen language", () => {
     expect(render("undo.removed", { name: "Chini" }, "en")).toBe("Chini removed");

@@ -1,6 +1,6 @@
 # 17 — Manual Tasks
 
-**Last updated:** 4 Oct 2026 · **Status:** Active
+**Last updated:** 11 Oct 2026 · **Status:** Active
 
 Everything only **you** can do. The agent cannot create accounts, click consent screens, hold
 credit cards, or paste secrets into dashboards.

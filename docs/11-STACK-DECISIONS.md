@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 4 Oct 2026 (rev 11)
+**Last updated:** 11 Oct 2026 (rev 12)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 

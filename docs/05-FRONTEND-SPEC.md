@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 16 Oct 2026 (rev 21) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 18 Oct 2026 (rev 22) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.

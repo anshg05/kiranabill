@@ -1,6 +1,6 @@
 # 01 — Product Requirements Document
 
-**Last updated:** 16 Sep 2026 (rev 4) · **Status:** Final · **Supersedes:** rev 3
+**Last updated:** 11 Oct 2026 (rev 5) · **Status:** Final · **Supersedes:** rev 3
 
 **Rev 4 note:** S6 updated with `KB-009`'s real fast-path coverage measurement (92.8%, Phase 0
 fixture data) — the number that used to be an assumption everything else in this document rested on.

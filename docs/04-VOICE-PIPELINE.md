@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 29 Sep 2026 (rev 8) · **Status:** Final for MVP
+**Last updated:** 16 Oct 2026 (rev 9) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
