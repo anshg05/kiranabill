@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseUtterance, type ParsedItem } from "./grammar";
 import { SEED_PARSER_CATALOG } from "./seedCatalog";
-import { editAmount, editQty, editRate } from "./billEdit";
+import { editAmount, editQty, editRate, editUnit } from "./billEdit";
 import { buildFinalBill, type FinalLine } from "./finalBill";
 import { EMPTY_LEARNING_STATE, learnFromBill, type LearnLine } from "./learning";
 import { buildReceipt, type ReceiptBill, type ReceiptShop } from "./receipt";
@@ -57,6 +57,26 @@ describe("the stored line", () => {
     const item = ok(editRate(one("sabun 180 rupay"), "10"));
     const line: FinalLine = { id: "l0", utteranceId: 0, item, original: one("sabun 180 rupay"), displayName: "Sabun", source: "fastpath" };
     expect(buildFinalBill([line], []).ok).toBe(false);
+  });
+});
+
+describe("KB-338 (D86): a line with no unit, finished", () => {
+  it("stored as unit null with a plain-number rate (rate_unit ''): every number as it was when '—' was picked", () => {
+    const r = built("2 kilo chini", (i) => ok(editUnit(i, "")));
+    expect(r.items[0]).toMatchObject({ qty: 2, unit: null, ratePaise: 4500, rateUnit: "", totalPaise: 9000, wasEdited: true });
+  });
+
+  it("the receipt and the share texts print the qty with no unit", () => {
+    const r0 = built("2 kilo chini", (i) => ok(editUnit(i, "")));
+    const r = buildReceipt({ ...header, totalPaise: r0.totalPaise }, r0.items, shop);
+    expect(r.rows[0]).toMatchObject({ qty: "2", rate: "₹45", amount: "₹90" });
+    expect(receiptText(r)).toContain("Chini — 2 × ₹45 = ₹90");
+  });
+
+  it("teaches no price observation (no unit to compare); being edited it confirms no alias", () => {
+    const lines: LearnLine[] = built("2 kilo चिनी", (i) => ok(editUnit(i, ""))).items.map((i) => ({ ...i }));
+    const r = learnFromBill(EMPTY_LEARNING_STATE, { lines, discarded: [] }, catalog, Date.parse("2026-10-18T12:00:00.000Z"));
+    expect(r.decisions.map((d) => d.kind)).toEqual([]);
   });
 });
 

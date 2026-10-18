@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 18 Oct 2026 (rev 23) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 18 Oct 2026 (rev 24) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -175,6 +175,12 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - **The amount is editable on every line** (it was "only where no rate", `KB-303` decision 1). Typing one makes the line a total line: total = what was typed, the rate shows `—`, qty and unit stay. **An empty rate box** shows `—` and keeps the amount. **A typed rate** recalculates (qty x rate, exact, D36); with no qty the line says "Quantity needed". An empty amount box on a line with no rate leaves it "Price needed"; on a rate line it changes nothing.
 - **A quantity with no unit** is allowed on a line with no rate (receipt: `1`), and **a rate on a line with no unit** is a plain-number rate (no price is learned from it). A rate per a real unit still needs the unit with the qty.
 - **No check on a typed amount** (owner): it is his own number, like a spoken "ka" total - a typing slip raises nothing; the TOTAL and the receipt are the check.
+
+### Implementation notes — "—" on every line, spoken commands, the shop name (`KB-338`/`KB-339`/`KB-340`, 18 Oct 2026; D86)
+
+- **Unit picker:** every line offers **"—"** (no unit) first, for every product. It changes no number; a line with no unit shows its qty as a plain number ("1", "2") and its rate as a plain number. The product's own unit never changes - only the line's.
+- **Spoken commands** (before the parser): the whole utterance only - "bas" / "ho gaya" / "bill banao": the line **"Tap Bill Banao to finish"** (never finalises by voice); "hatao" / "undo": the last added line is removed with the usual Undo strip, or **"Nothing to remove"**; "sab hatao": **"To clear the whole bill, use the menu → Clear bill"**. The answer sits under the transcript as a quiet status line, not a failure (no "Add by hand"). A command is not a turn and never a "Not added" entry.
+- **Header:** the shop's name (one line, ellipsis, full name as the title) instead of "KiranaBill"; it follows a rename from Settings.
 
 ## 3. S2 — Onboarding catalog choice
 

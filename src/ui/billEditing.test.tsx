@@ -121,7 +121,7 @@ describe("KB-303 - editing a line", () => {
   it("unit: only compatible units offered; kg -> gm recomputes (2 gm chini = ₹0.09)", () => {
     render(<Harness transcripts={["2 kilo chini"]} />);
     const select = table().getByRole("combobox", { name: "Chini unit" }) as HTMLSelectElement;
-    expect([...select.options].map((o) => o.value)).toEqual(["kg", "gm"]);
+    expect([...select.options].map((o) => o.value)).toEqual(["", "kg", "gm"]); // "—" (KB-338) first, then only the compatible units
     fireEvent.change(select, { target: { value: "gm" } });
     expect(total()).toBe("₹0.09");
   });

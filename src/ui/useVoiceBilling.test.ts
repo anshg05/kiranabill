@@ -51,6 +51,79 @@ async function speak(result: { current: ReturnType<typeof useVoiceBilling> }) {
   await waitFor(() => expect(["done", "failed"]).toContain(result.current.view.phase));
 }
 
+describe("KB-339 (D86): spoken commands, before parsing", () => {
+  const hooks = () => ({ onTranscript: vi.fn(async () => {}), onTurn: vi.fn(), onTranscribed: vi.fn(), onCommand: vi.fn((): string | null => null) });
+  const open = (h: ReturnType<typeof hooks>) => renderHook(() => useVoiceBilling({ accessToken: "jwt", ...h }));
+
+  it("'bas' finalises nothing and parses nothing: the hint 'Tap Bill Banao to finish', no turn, no stop-to-transcript sample", async () => {
+    reply(200, { transcript: "bas" });
+    const h = hooks();
+    h.onCommand.mockReturnValue("Tap Bill Banao to finish");
+    const { result } = open(h);
+    await speak(result);
+    expect(h.onCommand).toHaveBeenCalledWith("finalize");
+    expect(h.onTranscript).not.toHaveBeenCalled();
+    expect(h.onTurn).not.toHaveBeenCalled();
+    expect(h.onTranscribed).not.toHaveBeenCalled();
+    expect(result.current.view).toMatchObject({ phase: "done", transcript: "bas", message: null, notice: "Tap Bill Banao to finish" });
+  });
+
+  it("'hatao' (and in Devanagari) is handed to the screen as removeLast; with no notice nothing else is shown", async () => {
+    for (const said of ["hatao", "हटाओ"]) {
+      reply(200, { transcript: said });
+      const h = hooks();
+      const { result } = open(h);
+      await speak(result);
+      expect(h.onCommand).toHaveBeenCalledWith("removeLast");
+      expect(h.onTranscript).not.toHaveBeenCalled();
+      expect(h.onTurn).not.toHaveBeenCalled();
+      expect(result.current.view.notice ?? null).toBeNull();
+    }
+  });
+
+  it("'sab hatao' reaches the screen as clearAll (the screen only hints) and is never parsed or 'Not added'", async () => {
+    reply(200, { transcript: "sab hatao" });
+    const h = hooks();
+    h.onCommand.mockReturnValue("To clear the whole bill, use the menu → Clear bill");
+    const { result } = open(h);
+    await speak(result);
+    expect(h.onCommand).toHaveBeenCalledWith("clearAll");
+    expect(h.onTranscript).not.toHaveBeenCalled();
+    expect(result.current.view.notice).toBe("To clear the whole bill, use the menu → Clear bill");
+  });
+
+  it("a sentence that merely contains the word ('chini aur bas') is an ORDER: parsed, one turn, no command", async () => {
+    reply(200, { transcript: "chini aur bas" });
+    const h = hooks();
+    const { result } = open(h);
+    await speak(result);
+    expect(h.onCommand).not.toHaveBeenCalled();
+    expect(h.onTranscript).toHaveBeenCalledWith("chini aur bas");
+    expect(h.onTurn).toHaveBeenCalledTimes(1);
+    expect(h.onTranscribed).toHaveBeenCalledTimes(1);
+  });
+
+  it("an ordinary order is still exactly one turn, and a failed transcription still counts as one", async () => {
+    reply(200, { transcript: "do kilo chini" });
+    const ok1 = hooks();
+    await speak(open(ok1).result);
+    expect(ok1.onTurn).toHaveBeenCalledTimes(1);
+    fetchMock.mockRejectedValueOnce(new TypeError("offline"));
+    const bad = hooks();
+    await speak(open(bad).result);
+    expect(bad.onTurn).toHaveBeenCalledTimes(1);
+    expect(bad.onTranscript).not.toHaveBeenCalled();
+  });
+
+  it("without an onCommand handler nothing is intercepted (the hook alone never swallows an utterance)", async () => {
+    reply(200, { transcript: "bas" });
+    const onTranscript = vi.fn(async () => {});
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscript }));
+    await speak(result);
+    expect(onTranscript).toHaveBeenCalledWith("bas");
+  });
+});
+
 describe("useVoiceBilling", () => {
   it("tap -> listening -> tap -> transcript shown, then handed on for items", async () => {
     reply(200, { transcript: "  do kilo chini  " });

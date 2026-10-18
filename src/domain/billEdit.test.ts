@@ -338,6 +338,74 @@ describe("edit unit", () => {
 // was_edited - the learning signal (08 section 2): the line differs from what
 // was spoken. Put back as it was -> not a correction.
 // ---------------------------------------------------------------------------
+describe("KB-338 (D86): '—' (no unit) on every line changes NO number", () => {
+  it("2 kilo chini: the unit goes, qty 2, the rate (Rs.45 as shown), the amount Rs.90 all stay; the rate is now a plain number", () => {
+    const line = one("2 kilo chini");
+    expect(ok(editUnit(line, ""))).toMatchObject({ qty: 2, unit: "", rate: 4500, rateUnit: "", total: 9000, priceType: line.priceType });
+  });
+
+  it("across a conversion (500 gram chini, Rs.45/kg, Rs.22.50): every number stays - nothing is recomputed on the way", () => {
+    expect(ok(editUnit(one("500 gram chini"), ""))).toMatchObject({ qty: 500, unit: "", rate: 4500, rateUnit: "", total: 2250 });
+  });
+
+  it("a per-gm catalog price shows per kg (SG-09) and stays as shown: 1 kilo ajwain Rs.500 -> plain 500, amount unchanged", () => {
+    const ajwain = one("1 kilo ajwain");
+    const r = ok(editUnit(ajwain, ""));
+    expect(r).toMatchObject({ qty: 1, unit: "", rateUnit: "", total: ajwain.total });
+    expect(r.rate).toBe(displayRate(ajwain)!.paise);
+  });
+
+  it("a total-priced line and a line that already has no unit", () => {
+    expect(ok(editUnit(one("5 kg chawal 30 ka"), ""))).toMatchObject({ qty: 5, unit: "", rate: null, rateUnit: null, total: 3000, priceType: "total" });
+    const custom = customItem("kuch naya");
+    expect(ok(editUnit(custom, ""))).toEqual(custom);
+  });
+
+  it("typing an amount then works as in D85 (the rate becomes '—'); a typed rate is a plain number: qty x rate", () => {
+    const none = ok(editUnit(one("2 kilo chini"), ""));
+    expect(ok(editAmount(none, "100"))).toMatchObject({ qty: 2, unit: "", rate: null, rateUnit: null, total: 10000, priceType: "total" });
+    expect(ok(editRate(none, "40"))).toMatchObject({ qty: 2, unit: "", rate: 4000, rateUnit: "", total: 8000, priceType: "rate" });
+  });
+
+  it("picking the unit again puts the line back: 500 gram chini -> '—' -> gm = Rs.45/kg, Rs.22.50 as before", () => {
+    const back = ok(editUnit(ok(editUnit(one("500 gram chini"), "")), "gm"));
+    expect(back).toMatchObject({ qty: 500, unit: "gm", rate: 4500, rateUnit: "kg", total: 2250 });
+  });
+
+  it("'—' then another real unit is allowed (the compatible-units rule is between real units); numbers stay: 2 x Rs.45 = Rs.90 per piece now", () => {
+    expect(ok(editUnit(ok(editUnit(one("2 kilo chini"), "")), "piece"))).toMatchObject({ unit: "piece", rateUnit: "piece", rate: 4500, total: 9000 });
+  });
+
+  it("change-product (D83): a line with NO unit fits every product - it keeps its qty and a typed amount; its unit stays '—' (the product's own unit never changes)", () => {
+    const typed = ok(editAmount(ok(editUnit(one("2 kilo chini"), "")), "100"));
+    const piece = SEED_PARSER_CATALOG.entries.find((e) => e.unit === "piece")!;
+    expect(ok(changeProduct(typed, piece))).toMatchObject({ qty: 2, unit: "", rate: null, total: 10000, priceType: "total" });
+    const kg = SEED_PARSER_CATALOG.entries.find((e) => e.unit === "kg" && e.id !== typed.catalogId)!;
+    expect(ok(changeProduct(typed, kg))).toMatchObject({ qty: 2, unit: "" });
+  });
+
+  it("change-product on a catalog-priced unitless line: the new product's price is a plain number x the qty; qty and unit stay", () => {
+    const none = ok(editUnit(one("2 kilo chini"), ""));
+    const atta = SEED_PARSER_CATALOG.entries.find((e) => e.unit === "kg" && e.id !== none.catalogId)!;
+    const r = ok(changeProduct(none, atta));
+    expect(r).toMatchObject({ qty: 2, unit: "", rate: atta.suggestedPricePaise, rateUnit: "", total: 2 * atta.suggestedPricePaise });
+  });
+
+  it("an empty unit never raises a flag by itself - not invalid_unit, not unit_mismatch, not an unusual total or rate", () => {
+    const line = ok(editUnit(one("2 kilo chini"), ""));
+    const lowRate = ok(editRate(line, "1"));
+    for (const item of [line, lowRate, ok(editQty(customItem("kuch naya"), "1"))]) {
+      const codes = evaluateReviewFlags("", [item], SEED_PARSER_CATALOG.entries).map((f) => f.code);
+      for (const bad of ["invalid_unit", "unit_mismatch", "unusual_total", "unusual_rate"]) expect(codes).not.toContain(bad);
+    }
+  });
+
+  it("isEdited: dropping the unit is an edit (L4)", () => {
+    const line = one("2 kilo chini");
+    expect(isEdited(ok(editUnit(line, "")), line)).toBe(true);
+  });
+});
+
 describe("isEdited", () => {
   it("untouched -> false; edited -> true; edited back to the original -> false", () => {
     const chini = one("2 kilo chini");

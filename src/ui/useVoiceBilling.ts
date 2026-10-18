@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { transcribeAudio, VoiceApiError } from "@/data/voiceApi";
+import { matchCommand, type BillCommand } from "@/domain/commands";
 import { useVoiceCapture } from "./useVoiceCapture";
 import { useBrowserOnline } from "./useBrowserOnline";
 
@@ -24,6 +25,8 @@ export interface VoiceView {
   transcript: string | null;
   /** Inline failure message (phase "failed"). */
   message: string | null;
+  /** KB-339 (D86): the one-line answer to a spoken command ("Tap Bill Banao to finish") - not a failure. */
+  notice?: string | null;
   /** While listening: ms recorded so far. */
   elapsedMs: number;
   /** Set when the mic must be disabled - the one-line reason (05 section 7). */
@@ -101,8 +104,11 @@ export interface UseVoiceBillingOptions {
   vocabulary?: readonly string[];
   /** Called with each transcript; resolves when its lines are on the bill (commit b). */
   onTranscript?: (transcript: string) => Promise<void>;
-  /** KB-404 (D80): a recording reached transcription (success or failure) - one TURN. Never fires for a mic that did not start. */
+  /** KB-404 (D80): a recording reached transcription (success or failure) - one TURN. Never fires for a mic that did not start,
+   * nor (KB-339, D86) for a spoken command - saying "bas" must not make every bill two turns. */
   onTurn?: () => void;
+  /** KB-339 (D86): a transcript that is a command, whole - run it and return the one-line answer (or null). Without this nothing is intercepted. */
+  onCommand?: (command: BillCommand) => string | null;
   /** KB-404: stop -> transcript in whole ms, just before the transcript is handed on (not for an empty transcript). */
   onTranscribed?: (stopToTranscriptMs: number) => void;
   /** Set while voice can't run yet for a non-network reason (the shop's
@@ -130,6 +136,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [transcript, setTranscript] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const disabledReason = !opts.accessToken || !browserOnline ? OFFLINE_REASON : (opts.notReadyReason ?? null);
 
@@ -156,7 +163,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
           return;
         }
         setPhase("transcribing");
-        opts.onTurn?.();
+        setNotice(null);
         const language = devLanguage();
         let text: string;
         try {
@@ -169,6 +176,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
             })
           ).trim();
         } catch (err) {
+          opts.onTurn?.(); // a failed transcription is still a turn (KB-404)
           setPhase("failed");
           setMessage(messageFor(err));
           return;
@@ -201,11 +209,24 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
           }
         };
         if (!text) {
+          opts.onTurn?.();
           save("empty transcript");
           setPhase("failed");
           setMessage("Didn't catch anything — try again");
           return;
         }
+        // KB-339 (D86): a command is the WHOLE utterance - decided before anything is parsed; it is not a turn and has no
+        // stop-to-transcript sample, and it never becomes a "Not added" entry.
+        const command = opts.onCommand ? matchCommand(text) : null;
+        if (command) {
+          save(`command: ${command}`);
+          setTranscript(text);
+          setMessage(null);
+          setNotice(opts.onCommand!(command));
+          setPhase("done");
+          return;
+        }
+        opts.onTurn?.();
         setTranscript(text);
         setMessage(null);
         opts.onTranscribed?.(Math.round(performance.now() - stoppedAt));
@@ -231,6 +252,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
       if (capture.phase === "idle") {
         pointerDownToTapRef.current = pointerDownAt === null ? null : performance.now() - pointerDownAt;
         setMessage(null);
+        setNotice(null);
         setTranscript(null);
         setPhase("requesting");
         await capture.start();
@@ -255,7 +277,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
   }, []);
 
   return {
-    view: { phase: livePhase, transcript, message, elapsedMs: capture.elapsedMs, disabledReason },
+    view: { phase: livePhase, transcript, message, notice, elapsedMs: capture.elapsedMs, disabledReason },
     onMicTap,
     onMicPointerDown,
     releaseMic: capture.release,

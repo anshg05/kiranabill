@@ -370,6 +370,11 @@ export const MESSAGES = {
   "onboard.offline": m("Setting up a shop needs an internet connection.", "दुकान सेट करने के लिए इंटरनेट चाहिए।", "Dukaan set karne ke liye internet chahiye."),
   "app.serverDown": m("Couldn't reach the server", "सर्वर से जुड़ नहीं पाए", "Server se connect nahi ho paaya"),
   "app.loading": m("Loading…", "खुल रहा है…", "Khul raha hai…"),
+
+  // ---- Spoken commands (KB-339, D86): the one-line answers; "Bill Banao" stays exactly as it is
+  "cmd.finish": m("Tap Bill Banao to finish", "खत्म करने के लिए Bill Banao दबाएं", "Khatam karne ke liye Bill Banao dabayein"),
+  "cmd.clear": m("To clear the whole bill, use the menu → Clear bill", "पूरा बिल हटाने के लिए मेन्यू → बिल हटाएं दबाएं", "Poora bill hatane ke liye Menu → Bill hatayein dabayein"),
+  "cmd.nothing": m("Nothing to remove", "हटाने के लिए कुछ नहीं है", "Hatane ke liye kuch nahi hai"),
 } as const satisfies Record<string, Entry>;
 
 export type MessageId = keyof typeof MESSAGES;

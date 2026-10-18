@@ -183,8 +183,17 @@ export function editAmount(item: ParsedItem, text: string): EditResult {
   return { ok: true, item: { ...item, total: amount.value, rate: null, rateUnit: null, priceType: "total" } };
 }
 
-/** Edit the unit - only between compatible units (owner, decision 3). */
+/**
+ * Edit the unit - only between compatible units (owner, decision 3). KB-338 (D86): "" is "—", no unit, offered on every
+ * line and for every product: it changes NO number (qty, the rate as it is shown, and the amount all stay - rule 7). A
+ * rate on a line with no unit is a plain number (rateUnit ""). Only the LINE's unit moves; the catalog product's never does.
+ */
 export function editUnit(item: ParsedItem, unit: string): EditResult {
+  if (unit === "") {
+    if (item.unit === "") return { ok: true, item };
+    const shown = displayRate(item);
+    return { ok: true, item: { ...item, unit: "", ...(shown ? { rate: shown.paise, rateUnit: "" } : {}) } };
+  }
   if (!isBillUnit(unit)) return { ok: false, error: `"${unit}" isn't a unit` };
   if (unit === item.unit) return { ok: true, item };
   if (item.unit && !unitsAreCompatible(item.unit, unit)) return { ok: false, error: `Can't change ${item.unit} to ${unit}` };
@@ -204,17 +213,19 @@ export function editUnit(item: ParsedItem, unit: string): EditResult {
  *    with no catalog price the line has none ("Price needed") - nothing is invented (rule 5).
  *  - A rate said per the OLD unit cannot price a different unit: when the units do not fit it too follows the catalog.
  *  - The same product again changes nothing.
+ *  - KB-338 (D86): a line with no unit keeps its qty and unit whatever the product; a catalog price then applies as a plain number.
  */
 export function changeProduct(item: ParsedItem, entry: CatalogEntry): EditResult {
   if (item.catalogId === entry.id) return { ok: true, item };
-  const fits = item.unit !== "" && unitsAreCompatible(item.unit, entry.unit);
+  // KB-338 (D86): a line with NO unit fits every product - it keeps its qty (and a typed amount); its unit stays "—".
+  const fits = item.unit === "" || unitsAreCompatible(item.unit, entry.unit);
   let next: ParsedItem = { ...item, catalogId: entry.id, isCustom: false, matchStatus: "matched" };
   if (!fits) next = { ...next, qty: null, unit: isBillUnit(entry.unit) ? entry.unit : "" };
   const keepsSaidPrice = item.priceType === "total" || (item.priceType === "rate" && fits);
   if (!keepsSaidPrice) {
     next =
       entry.suggestedPricePaise > 0
-        ? { ...next, rate: entry.suggestedPricePaise, rateUnit: entry.unit, total: null, priceType: "default" }
+        ? { ...next, rate: entry.suggestedPricePaise, rateUnit: next.unit === "" ? "" : entry.unit, total: null, priceType: "default" }
         : { ...next, rate: null, rateUnit: null, total: null, priceType: "unknown" };
   }
   const priced = withDerivedTotal(next);

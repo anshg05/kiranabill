@@ -85,6 +85,19 @@ describe("KI-60: the rate-limit message is true (the limit is per HOUR, not per 
   });
 });
 
+describe("KB-339 (D86): the spoken-command answers", () => {
+  it("the finish hint keeps 'Bill Banao' exactly in every language", () => {
+    for (const l of LANGUAGES) expect(MESSAGES["cmd.finish"][l]).toContain("Bill Banao");
+    expect(MESSAGES["cmd.finish"].en).toBe("Tap Bill Banao to finish");
+  });
+  it("each answer exists in all three languages and differs from the English in Hindi and Hinglish", () => {
+    for (const id of ["cmd.finish", "cmd.clear", "cmd.nothing"] as const) {
+      expect(MESSAGES[id].hi).not.toBe(MESSAGES[id].en);
+      expect(MESSAGES[id].hl).not.toBe(MESSAGES[id].en);
+    }
+  });
+});
+
 describe("render", () => {
   it("fills the placeholders, in the chosen language", () => {
     expect(render("undo.removed", { name: "Chini" }, "en")).toBe("Chini removed");
@@ -133,6 +146,8 @@ describe("every sentence the domain can build has a translation (drift guard - r
     ...literals(readFileSync(join(__dirname, "..", "ui", "useVoiceBilling.ts"), "utf8"), /return "([^"]{8,})";|OFFLINE_REASON = "([^"]+)"/g),
     ...literals(readFileSync(join(__dirname, "..", "ui", "useVoiceCapture.ts"), "utf8").split("permission:")[1]!.split("interrupted:")[0]!.replace(/^/, "permission:") + "interrupted:", /: "([^"]{8,})",/g),
     ...literals(readFileSync(join(__dirname, "..", "ui", "useBillLines.ts"), "utf8"), /PARSE_FAILED = "([^"]+)"/g),
+    // KB-339: the three lines a spoken command can answer with.
+    ...literals(readFileSync(join(__dirname, "..", "ui", "voiceCommands.ts"), "utf8"), /COMMAND_[A-Z_]+ = "([^"]+)"/g),
     ...literals(readFileSync(join(__dirname, "..", "ui", "useOrderResolver.ts"), "utf8"), /"(Couldn't read the items[^"]*)"/g),
     ...literals(readFileSync(join(__dirname, "..", "data", "finalise.ts"), "utf8"), /SAVE_FAILED = "([^"]+)"/g),
     // Checkpoint B: the catalog rules, the import's reasons, the cancel reasons and refusals, the file-read errors, the set-up refusal.

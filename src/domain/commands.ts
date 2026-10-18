@@ -61,6 +61,13 @@ const COMMAND_PHRASES: Record<BillCommand, readonly string[]> = {
   ],
 };
 
+/**
+ * KB-339 (D86, owner): a command is the WHOLE utterance. Besides the fillers above, only these small neutral words may
+ * sit around a command phrase ("ab bas", "theek hai bas"); any other word - a product, anything - means it is an order
+ * ("chini aur bas" is chini, not "finish the bill").
+ */
+const NEUTRAL = new Set(["theek", "hai", "ab", "ji", "ठीक", "है"]);
+
 interface PhraseEntry {
   readonly type: BillCommand;
   readonly tokens: readonly string[];
@@ -110,5 +117,7 @@ export function matchCommand(text: string): BillCommand | null {
       best = entry;
     }
   }
-  return best ? best.type : null;
+  if (!best) return null;
+  const phrase = best.tokens;
+  return tokens.every((token) => phrase.includes(token) || NEUTRAL.has(token)) ? best.type : null;
 }

@@ -195,6 +195,7 @@ export function evaluateReviewFlags(
       item.total !== null &&
       item.qty !== null &&
       item.qty > 0 &&
+      item.unit !== "" && // KB-338 (D86): a line with no unit has nothing to compare with the catalog's price
       entry &&
       (item.priceType === "default" || item.priceType === "rate")
     ) {

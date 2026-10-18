@@ -49,6 +49,8 @@ import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from ".
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import { runBillCommand } from "./voiceCommands";
+import { useShopName } from "./useShopName";
 import type { Customer } from "./useBillLines";
 import { CASH, formatMobile } from "@/domain/customer";
 
@@ -166,6 +168,8 @@ export function BillingScreen() {
     vocabulary,
     onTranscript,
     onTurn: () => wiringRef.current?.onTurn(),
+    // KB-339 (D86): a spoken command, decided before parsing - "hatao" removes the last line (Undo brings it back); the rest only hint.
+    onCommand: (command) => runBillCommand(command, rows, bill.remove),
     onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
@@ -256,10 +260,13 @@ export function BillingScreen() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // KB-340 (D86): the shop's name in the header; re-read when Settings closes, so a rename shows at once.
+  const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, settingsOpen);
   const sync = useSyncChip(localDb);
   return (
     <>
     <BillView
+      shopName={shopName}
       lines={bill.rows}
       onSignOut={onSignOut}
       voice={voice.view}
@@ -337,6 +344,8 @@ export function BillingScreen() {
 const NO_ENTRIES: never[] = [];
 
 interface BillViewProps {
+  /** KB-340 (D86): the shop's name for the header (truncated to one line); "KiranaBill" when there is none. */
+  shopName?: string;
   /** KB-303: the bill is always editable - every line has a stable id. */
   lines: readonly (BillLine & { readonly id: string })[];
   onSignOut: () => void;
@@ -590,7 +599,8 @@ function FlagList({ flags, name, onAcknowledge }: { flags: readonly ShownFlag[];
 function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: string; line: BillLine["item"]; onPick: (unit: string) => void }) {
   return (
     <select id={fieldId} name={fieldId} aria-label={label} value={line.unit} onChange={(e) => onPick(e.target.value)} className="min-h-11 rounded-[6px] border border-line bg-surface px-1">
-      {!line.unit && <option value="">—</option>}
+      {/* KB-338 (D86): "—" (no unit) is a choice on every line, for every product - it changes no number. */}
+      <option value="">—</option>
       {unitChoices(line).map((u) => (
         <option key={u} value={u}>
           {u}
@@ -647,9 +657,16 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
   if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>{t("voice.listening")}</p>;
   if (voice.transcript) {
     return (
-      <p data-testid="voice-transcript" className={`${base} text-ink`}>
-        “{voice.transcript}”
-      </p>
+      <>
+        <p data-testid="voice-transcript" className={`${base} text-ink`}>
+          “{voice.transcript}”
+        </p>
+        {voice.notice && (
+          <p role="status" data-testid="voice-notice" className={`${base} text-ink-soft`}>
+            {tx(voice.notice)}
+          </p>
+        )}
+      </>
     );
   }
   return <p className={base} />;
@@ -701,6 +718,7 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
 
 export function BillView({
+  shopName,
   lines,
   onSignOut,
   voice = IDLE_VOICE,
@@ -947,7 +965,9 @@ export function BillView({
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
-            <h1 className="text-[20px] font-semibold">KiranaBill</h1>
+            <h1 title={shopName || undefined} className="min-w-0 truncate text-[20px] font-semibold">
+              {shopName || "KiranaBill"}
+            </h1>
             <SyncChipView chip={syncChip} detail={syncDetail} />
             {reviewMode && (
               <span data-testid="review-badge" className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">

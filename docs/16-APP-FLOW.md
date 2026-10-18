@@ -1,6 +1,6 @@
 # 16 — App Flow
 
-**Last updated:** 14 Oct 2026 · **Status:** Final for MVP
+**Last updated:** 18 Oct 2026 · **Status:** Final for MVP
 
 Journeys, sequences and state machines. `05-FRONTEND-SPEC.md` describes screens; this describes
 how a person moves through them and what the system does underneath.
@@ -138,6 +138,10 @@ sequenceDiagram
 product and asks for a customer name.
 
 ---
+
+### Spoken commands (`KB-339`, D86)
+
+After the transcript lands (step 2) and before any parsing: if the **whole** utterance is a command - "bas" / "ho gaya" / "bill banao" (never an item: "Tap Bill Banao to finish"), "hatao" / "undo" (the last added line is removed, Undo brings it back; "Nothing to remove" on an empty bill), "sab hatao" (not a command: "use the menu → Clear bill") - it is answered on the spot and the flow ends there: no parse, no turn in `KB-404`'s numbers, no "Not added" entry. A sentence that merely contains the word ("chini aur bas") is an order and continues as in this section.
 
 ## 4. Finalising a bill
 

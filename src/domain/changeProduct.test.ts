@@ -67,10 +67,11 @@ describe("units that do not fit: the quantity is cleared, never converted", () =
     expect(free).toMatchObject({ qty: null, rate: null, total: null, priceType: "unknown" });
     expect(amountNeeded(free)).toBe("price");
   });
-  it("a line with no unit yet (an unknown product) takes the product's unit with NO quantity", () => {
+  it("KB-338 (D86): a line with no unit (an unknown product) fits every product - its qty and its '—' unit stay; the catalog price applies as a plain number ('Quantity needed' while there is no qty)", () => {
     const unknown = { ...line("2 kilo chini"), catalogId: null, isCustom: true, matchStatus: "none" as const, qty: null, unit: "", rate: null, rateUnit: null, total: null, priceType: "unknown" as const };
     const item = ok(changeProduct(unknown, piece));
-    expect(item).toMatchObject({ catalogId: "biscuit", qty: null, unit: "piece", rate: 1_000, priceType: "default" });
+    expect(item).toMatchObject({ catalogId: "biscuit", qty: null, unit: "", rate: 1_000, rateUnit: "", priceType: "default" });
+    expect(amountNeeded(item)).toBe("quantity");
   });
 });
 

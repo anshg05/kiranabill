@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 16 Oct 2026 (rev 9) · **Status:** Final for MVP
+**Last updated:** 18 Oct 2026 (rev 10) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -171,6 +171,10 @@ Log `fastPathHit` / `fastPathMiss` with a reason on every utterance. **Fast-path
 tracked product metric**, target ≥60%. **Not built (10 Oct 2026 audit):** only the dev server logs it; the runtime log is `KB-404`. The lab figure is `coverage:probe` (D69).
 
 ---
+
+### Commands, before parsing (`KB-339`, D86)
+
+`domain/commands.ts` runs on the transcript **before** Layer 1 or Layer 2 sees it, and only when the whole utterance is a command (Roman or Devanagari; fillers and "theek / hai / ab / ji" aside - "chini aur bas" is an order). It is not a parse, so it is **not a turn** (`KB-404`) and costs no `/voice` parse call: "bas" / "ho gaya" / "bill banao" -> the hint "Tap Bill Banao to finish" (no finalising by voice); "hatao" / "undo" -> remove the last added line (the Undo strip); "sab hatao" -> a hint to use the menu.
 
 ## 4. Layer 2 — LLM fallback
 

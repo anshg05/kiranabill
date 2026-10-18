@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 18 Oct 2026 (rev 55) · Supersedes rev 40
+**Last updated:** 18 Oct 2026 (rev 56) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2065,10 +2065,23 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 
 ---
 
+### D86 — "—" (no unit) on every line; spoken commands run before parsing; the shop's name in the header (built as `KB-338`, `KB-339`, `KB-340`) 🟢
+
+**Owner decisions, 18 Oct 2026** (three small requests, one round). No migration.
+1. **`KB-338` - "—" (no unit) on every line.** The unit picker of every line - voice, Add item, custom, reissued - and for every product offers "—". Picking it changes **no number** (rule 7): qty, the rate **as shown** (the per-kg figure of a per-gm catalog price stays) and the amount all stay; the rate becomes a plain number (`rateUnit` "", D85). Typing an amount then works as in D85 (the rate becomes "—"). Only the LINE's unit moves - the catalog product's own unit never changes. Picking a real unit again puts the line back (a plain rate takes that unit; 500 gm of chini is Rs.22.50 again). Between two real units the compatible-units rule (`KB-303` decision 3) still holds - "—" is the way through (`12` SG-14 stays parked: the full any-unit idea). Such a line teaches **no price observation** (no unit to compare with) and, being edited, confirms no alias; the receipt, PDF, WhatsApp and SMS print the qty with no unit; it is stored with `unit` null and a plain rate as `rate_unit` '' (D85). **An empty unit never raises a flag by itself:** `invalid_unit` and `unit_mismatch` already needed a unit, and the unusual-total check now also skips a line with no unit (nothing to compare with the catalog's price).
+2. **`KB-338` and change-product (D83).** A line with NO unit "fits" every product: change-product keeps its qty (and a typed amount) and the line's unit stays "—"; a catalog price then applies as a plain number x the qty ("Quantity needed" while there is no qty). **What this changes:** a custom line (no unit) that is changed to a catalog product no longer takes the product's unit - the shopkeeper picks it. **A known edge, accepted:** after "—" on a cross-unit line (500 gm at Rs.45/kg, Rs.22.50) the three numbers stay as they were and no longer multiply (500 x 45); the next edit of the qty or rate recomputes them as plain numbers - picking the unit back restores the original.
+3. **`KB-339` - spoken commands, before parsing.** `domain/commands.ts` (`KB-002`) is now wired (it was built and tested but never called - the audit's Part 4 found it). A command is the **WHOLE utterance**, in Roman and Devanagari: besides the fillers the matcher already ignored, only the neutral words "theek / hai / ab / ji" (ठीक / है) may sit around the phrase ("ab bas" is a command) - any other word makes it an order ("chini aur bas", "namak hatao" are parsed as orders; before, any utterance of up to 6 words containing a phrase matched). "bas" / "ho gaya" / "bill banao" never finalise by voice and are never an item: the line "Tap Bill Banao to finish". "hatao" / "undo" remove the last added line through the existing one-level Undo; with nothing to remove: "Nothing to remove". "sab hatao" is **not** a voice command: the line "To clear the whole bill, use the menu → Clear bill". A command is **not a turn** in `KB-404`'s numbers (otherwise saying "bas" would make every bill two turns), has no stop-to-transcript sample, and is never a "Not added" entry. The turn is now counted once the transcript is known (a failed or empty transcription still counts; a mic that never started does not). The hook intercepts only when the screen passes `onCommand`. Strings in all three languages (the catalog, `cmd.*`; "Bill Banao" exact).
+4. **`KB-340` - the shop's name in the billing header**, one line, truncated with an ellipsis (the full name as the title), in place of the fixed "KiranaBill" (which stays when there is no name). It is read from the stored shop row and re-read when Settings closes, so a rename shows at once; a rename made on another phone shows after the next screen open.
+5. **Owner answers on the legacy comparison stay as recorded in D85 point 6**; the small items still waiting for his answers are a History item count and a Copy debug report button.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 18 Oct 2026 | D83: "units that do not fit (or a line with no unit yet): the quantity is CLEARED and the unit becomes the product's" | **A line with NO unit fits every product: it keeps its qty and its "—" unit (D86, `KB-338`)** | Owner: "—" is a choice on every line and the product's own unit never changes - only the line's. |
+| 18 Oct 2026 | `KB-002` / `04`: "whole-utterance" command matching (in fact any utterance of up to 6 words that contained a phrase), and the matcher never called by the app | **A command is the whole utterance (fillers and "theek / hai / ab / ji" aside) and is wired before parsing (D86, `KB-339`)** | Owner, audit Part 4: "chini aur bas" is an order; "bas" never finalises by voice. |
 | 18 Oct 2026 | `KB-303` decision 1 (owner, 1 Oct 2026): "amount only where there is no rate" (`billEdit.ts` header, `06`'s `KB-303` row) | **The amount can be typed on every line; the rate can be cleared or typed on any line (D85, `KB-337`)** | Owner: the legacy behaviour, before Bill Banao. A typed amount is stored like a spoken "ka" total; no flag on it (the TOTAL is the check). |
 | 14 Oct 2026 | D61 / `pullBills`: "a bill that arrives already cancelled is stored, not listed" | **It is listed too, marked Cancelled, with a flagged search row (D79)**; and cancellations reach other devices (a separate pull of `bill_cancellations`) - D63 §5 "Not in this ticket: cancellations reaching other devices" is done | Owner, `KB-325`. |
 | 14 Oct 2026 | D56 §3: "a rate in another unit (SG-09) is skipped rather than converted with a division" | **A per-kg / per-liter rate on a per-gm / per-ml product is observed when `rate % 1000 === 0` (an exact integer division); otherwise skipped (D78)** | Owner, `KB-329` (KI-63): the most common edit on loose goods taught nothing. |

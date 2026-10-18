@@ -76,6 +76,25 @@ describe("matchCommand - KI-02 regression (docs/14-LEGACY-REFERENCE.md section 1
   });
 });
 
+describe("KB-339 (D86): a command is the WHOLE utterance - never a word inside an order", () => {
+  it.each(["chini aur bas", "chini bas", "bas chini", "namak hatao", "2 chini bas", "bill banao chini", "wapas chini"])(
+    "'%s' is an order, not a command",
+    (text) => {
+      expect(matchCommand(text)).toBeNull();
+    },
+  );
+
+  it.each(["ab bas", "bas ji", "theek hai bas", "bas bas", "बस ठीक है", "ab hatao", "हटाओ"])("'%s' is still a command (neutral words around it)", (text) => {
+    expect(matchCommand(text)).not.toBeNull();
+  });
+
+  it("the Roman and Devanagari forms agree", () => {
+    expect(matchCommand("बस")).toBe("finalize");
+    expect(matchCommand("पिछला हटाओ")).toBe("removeLast");
+    expect(matchCommand("सब हटाओ")).toBe("clearAll");
+  });
+});
+
 describe("matchCommand - non-commands", () => {
   it("empty text is not a command", () => {
     expect(matchCommand("")).toBeNull();
