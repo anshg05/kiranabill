@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are BUILT and PASSED the owner's check (19 Oct; D86). One amendment is built, awaiting a 1-minute check: "—" on a line whose qty and rate units differ makes it total-priced (500 gram chini -> "—" -> qty 600 keeps Rs.22.50, never Rs.27,000).** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
+**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). `KB-341` (simple bill numbers) is PLANNED, awaiting the owner's approval.** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -113,7 +113,7 @@ stores), `src/app/` (the auth and shop gates), `src/voice/` (server-side Groq/Ge
 | Test run | The unit suite is capped at 3 workers in `vite.config.ts` and that run IS the official VERIFY | 17 Oct | owner decision | — |
 | `KB-325` follow-up | **"Cancel only" keeps the shopkeeper on the cancelled bill** (CANCELLED card showing, History underneath); "Cancel and make a new bill" leaves no stray Back press. Cause: `useBackEntry` closed every overlay on any popstate that was not its own entry. Also: a Review-mode write finishing after the database closed was an unhandled rejection (`PilotNumbers`) | 18 Oct | D79 follow-up | **passed** (18 Oct) |
 | `KB-337` | **Amount editing on every line** (typed amount, cleared rate, typed rate, a qty with no unit); reverses `KB-303` decision 1 | 18 Oct | D85 | **passed** (18 Oct) |
-| `KB-338` | **"—" (no unit) on every line**; picking it changes no number; D83: a line with no unit fits every product | 18 Oct | D86 | ✅ passed 19 Oct (cross-unit amendment: check pending) |
+| `KB-338` | **"—" (no unit) on every line**; picking it changes no number; D83: a line with no unit fits every product | 18 Oct | D86 | ✅ passed 19 Oct (incl. the cross-unit amendment) |
 | `KB-339` | **Spoken commands** ("bas" -> hint, "hatao" -> remove last with Undo, "sab hatao" -> hint), whole utterance only, not a turn | 18 Oct | D86 | **PENDING** |
 | `KB-340` | **The shop's name in the billing header** | 18 Oct | D86 | **PENDING** |
 | `KB-332` | **Screen language** — English / हिन्दी / Hinglish, per device, no reload (Checkpoint A: billing, flags, voice errors, sync chip, sign-in, Add item, Settings. Checkpoint B: Catalog, History and Cancel, product sheets, set-up, shop-load error) | 17 Oct | D84 | A and B **passed** (18 Oct) |
@@ -124,7 +124,7 @@ Also decided in this stretch (docs only): rule 5 reworded (D72), `eval:real` + `
 
 Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-only fix, and **`KB-404` "Pilot numbers"** (17 bills reconciled - every one on the server with the same number, total and item count; two voice bills: turns 1, fast-path 100%, fast-path item on screen 18 ms, finalise → receipt 54 ms; Review mode showed the Heard → Billed pairs and "Clear now" removed them).
 
-1. **`KB-338`, `KB-339`, `KB-340`** - the owner's checks PASSED (19 Oct); the D86 cross-unit amendment ("—" on 500 gm at Rs.45/kg = total-priced) is built, awaiting a quick check: 500 gram chini -> unit "—" -> qty 600 keeps Rs.22.50.
+1. **`KB-338`, `KB-339`, `KB-340`** - the owner's checks PASSED (19 Oct), incl. the D86 cross-unit amendment. Closed.
 2. **Answers the owner owes (nothing built or planned):** an item count on a History row, a Copy debug report button (`21` Part 4).
 3. **`KB-335`, on the release draft** — (a) sign in on the Android phone with the installed app: the return must land signed in; (b) the sign-up-off test: switch off "Allow new users to sign up", pre-create a second Gmail user (Auto Confirm) — it must sign in; an uncreated Gmail must be refused with "This account isn't set up for the pilot".
 4. **Release-draft leftovers** — the Android file picker for the catalog import (`KB-314`) and the foreground-update fix (`KB-401`), each on a phone.
