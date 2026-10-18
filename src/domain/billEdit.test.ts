@@ -344,8 +344,12 @@ describe("KB-338 (D86): '—' (no unit) on every line changes NO number", () => 
     expect(ok(editUnit(line, ""))).toMatchObject({ qty: 2, unit: "", rate: 4500, rateUnit: "", total: 9000, priceType: line.priceType });
   });
 
-  it("across a conversion (500 gram chini, Rs.45/kg, Rs.22.50): every number stays - nothing is recomputed on the way", () => {
-    expect(ok(editUnit(one("500 gram chini"), ""))).toMatchObject({ qty: 500, unit: "", rate: 4500, rateUnit: "", total: 2250 });
+  it("units DIFFER (500 gram chini, Rs.45/kg, Rs.22.50): the line becomes total-priced - rate '-', qty 500 and Rs.22.50 stay; a later qty edit does NOT multiply plain numbers", () => {
+    const r = ok(editUnit(one("500 gram chini"), ""));
+    expect(r).toMatchObject({ qty: 500, unit: "", rate: null, rateUnit: null, total: 2250, priceType: "total" });
+    const q = ok(editQty(r, "600"));
+    expect(q.total).toBe(2250); // never 600 x Rs.45 = Rs.27,000
+    expect(q.qty).toBe(600);
   });
 
   it("a per-gm catalog price shows per kg (SG-09) and stays as shown: 1 kilo ajwain Rs.500 -> plain 500, amount unchanged", () => {
@@ -353,6 +357,12 @@ describe("KB-338 (D86): '—' (no unit) on every line changes NO number", () => 
     const r = ok(editUnit(ajwain, ""));
     expect(r).toMatchObject({ qty: 1, unit: "", rateUnit: "", total: ajwain.total });
     expect(r.rate).toBe(displayRate(ajwain)!.paise);
+  });
+
+  it("a per-gm rate on a gm line (500 gm ajwain) differs from how it is shown (per kg): total-priced, amount stays", () => {
+    const line = ok(editUnit(one("1 kilo ajwain"), "gm"));
+    const r = ok(editUnit({ ...line, qty: 500, total: 25000 }, ""));
+    expect(r).toMatchObject({ qty: 500, unit: "", rate: null, rateUnit: null, total: 25000, priceType: "total" });
   });
 
   it("a total-priced line and a line that already has no unit", () => {
@@ -367,9 +377,9 @@ describe("KB-338 (D86): '—' (no unit) on every line changes NO number", () => 
     expect(ok(editRate(none, "40"))).toMatchObject({ qty: 2, unit: "", rate: 4000, rateUnit: "", total: 8000, priceType: "rate" });
   });
 
-  it("picking the unit again puts the line back: 500 gram chini -> '—' -> gm = Rs.45/kg, Rs.22.50 as before", () => {
+  it("picking the unit again does NOT bring the cleared rate back: 500 gram chini -> '—' -> gm = still total-priced Rs.22.50", () => {
     const back = ok(editUnit(ok(editUnit(one("500 gram chini"), "")), "gm"));
-    expect(back).toMatchObject({ qty: 500, unit: "gm", rate: 4500, rateUnit: "kg", total: 2250 });
+    expect(back).toMatchObject({ qty: 500, unit: "gm", rate: null, rateUnit: null, total: 2250, priceType: "total" });
   });
 
   it("'—' then another real unit is allowed (the compatible-units rule is between real units); numbers stay: 2 x Rs.45 = Rs.90 per piece now", () => {

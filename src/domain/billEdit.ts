@@ -185,14 +185,18 @@ export function editAmount(item: ParsedItem, text: string): EditResult {
 
 /**
  * Edit the unit - only between compatible units (owner, decision 3). KB-338 (D86): "" is "—", no unit, offered on every
- * line and for every product: it changes NO number (qty, the rate as it is shown, and the amount all stay - rule 7). A
+ * line and for every product: it changes NO number (qty, the rate as it is shown when it is per the line's own unit, and the amount stay - rule 7; a rate per another unit goes: total-priced). A
  * rate on a line with no unit is a plain number (rateUnit ""). Only the LINE's unit moves; the catalog product's never does.
  */
 export function editUnit(item: ParsedItem, unit: string): EditResult {
   if (unit === "") {
     if (item.unit === "") return { ok: true, item };
     const shown = displayRate(item);
-    return { ok: true, item: { ...item, unit: "", ...(shown ? { rate: shown.paise, rateUnit: "" } : {}) } };
+    if (!shown) return { ok: true, item: { ...item, unit: "" } };
+    // Amended D86: the rate keeps as a plain number only when it is already per the line's own unit (2 kg x Rs.45/kg). A rate
+    // per another unit (500 gm at Rs.45/kg) would multiply wrongly on the next qty edit: the line becomes total-priced instead.
+    if (shown.unit === item.unit) return { ok: true, item: { ...item, unit: "", rate: shown.paise, rateUnit: "" } };
+    return { ok: true, item: { ...item, unit: "", rate: null, rateUnit: null, priceType: item.total === null ? "unknown" : "total" } };
   }
   if (!isBillUnit(unit)) return { ok: false, error: `"${unit}" isn't a unit` };
   if (unit === item.unit) return { ok: true, item };
