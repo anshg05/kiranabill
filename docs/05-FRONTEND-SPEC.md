@@ -443,15 +443,17 @@ Shop details, receipt language, developer mode.
 
 ## 10. Performance budgets
 
+> **Baseline note (`KB-404`, D80):** `?try=` dev bills have no voice turn, so Pilot numbers counts them as hand-only "typing" bills. Harmless for a fresh pilot shop; the owner's own dev shop's typing median is polluted by them.
+
 | Action | Budget |
 |---|---|
 | Keystroke → search results | **Lookup ≤ 16 ms; keystroke → visible results ≤ 50 ms median** on a realistic catalog (`07-DECISIONS.md` D51, superseding the single < 16 ms; real phone 3 Oct 2026: lookup p95 0.50 ms at 481 products, 11.2 ms at 10,101) |
 | Tap mic → listening | **Cold (first) tap ≤ 1 s; warm taps (within 60 s of the last) < 100 ms** — never shown before recording has actually started (`07-DECISIONS.md` D49, superseding D45's 300 ms cold budget; measured 30 Sep 2026 with the warm mic: warm 52–61 ms, cold 816 ms = getUserMedia 709 + recorder 106) |
-| Stop → transcript shown | < 1.5 s |
+| Stop → transcript shown | < 1.5 s. **Watch (owner, 18 Oct 2026, `KB-404` check):** localhost median 4.2 s / p95 5.2 s, inflated by `netlify dev` (~1 s per `/voice` call) - measure on the phone in the release-draft session; a ticket only if still over. |
 | Fast-path item on screen | < 300 ms after transcript |
 | LLM-path item on screen | < 4 s after transcript |
 | Finalise → receipt shown | < 500 ms (local write, sync is background) |
-| App cold start | < 2 s |
+| App cold start | < 2 s. **Watch (18 Oct 2026):** the localhost p95 of 27 s is dev-server first loads - the phone session gives the real figure. |
 | History (S5) at 40,000 bills — **open** (newest 200) | **≤ 300 ms** on the phone (D61; owner, 7 Oct 2026). Measured 7 Oct 2026, `/__dev/history`: phone (Android 10, Chrome 152) 234 / 72 / 62 ms; laptop over the LAN 35 / 11 / 10 ms |
 | History — **90-day search load** (≈ 9,000 bills; background) | **≤ 2 s** on the phone. Phone 1,624 / 1,187 / 1,145 ms; laptop 278 / 230 / 229 ms |
 | History — **"Search older bills"** (all 40,000) | **≤ 6 s** on the phone, with "Loading older bills…" shown meanwhile. Phone 4,540 / 3,825 ms; laptop 1,072 / 1,031 ms |
