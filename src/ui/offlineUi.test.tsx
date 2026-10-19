@@ -5,6 +5,7 @@ import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { BillLine } from "@/data/voiceBilling";
 import { BillView } from "./BillingScreen";
+import { chooseMenu } from "./menuTestUtil";
 
 // KB-313 (owner, 8 Oct 2026): the header chip (05 §7), "Clear bill" in the ≡ menu, and the sign-out warning
 // (16 §2). Nothing here ever blocks billing: a chip is a status, never a dialog standing in the way.
@@ -66,6 +67,7 @@ describe("the header chip", () => {
 describe("Clear bill", () => {
   it("is in the ≡ menu only when the bill has lines", () => {
     const { rerender } = render(<BillView {...base} onClearBill={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Menu" })); // KB-342: the items exist while the menu is open
     expect(screen.queryByRole("button", { name: "Clear bill" })).toBeNull();
     rerender(<BillView {...base} lines={lines()} onClearBill={() => {}} />);
     expect(screen.getByRole("button", { name: "Clear bill" })).toBeTruthy();
@@ -75,7 +77,7 @@ describe("Clear bill", () => {
     const onClearBill = vi.fn();
     const two = [...lines("2 kilo chini"), ...lines("teen parle g 10 wala").map((l) => ({ ...l, id: "p0" }))];
     render(<BillView {...base} lines={two} onClearBill={onClearBill} />);
-    fireEvent.click(screen.getByRole("button", { name: "Clear bill" }));
+    chooseMenu("Clear bill");
     const dialog = screen.getByRole("alertdialog", { name: "Clear this bill?" });
     expect(dialog.textContent).toMatch(/2 lines will be removed/);
     expect(dialog.textContent).toContain("nothing is saved");
@@ -83,7 +85,7 @@ describe("Clear bill", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(onClearBill).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Clear bill" }));
+    chooseMenu("Clear bill");
     fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Clear bill" }));
     expect(onClearBill).toHaveBeenCalledOnce();
   });
@@ -98,7 +100,7 @@ describe("the sign-out warning", () => {
   it("nothing unsynced: Sign out signs out at once, no dialog", () => {
     const onSignOut = vi.fn();
     render(<BillView {...base} onSignOut={onSignOut} unsynced={{ pending: 0, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     expect(onSignOut).toHaveBeenCalledOnce();
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
@@ -106,27 +108,27 @@ describe("the sign-out warning", () => {
   it("unsynced bills: it warns with the count, and only 'Sign out anyway' signs out", () => {
     const onSignOut = vi.fn();
     render(<BillView {...base} onSignOut={onSignOut} unsynced={{ pending: 3, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     const dialog = screen.getByRole("alertdialog", { name: "Sign out?" });
     expect(dialog.textContent).toContain("3 bills haven't reached the server yet — they'll stay on this phone and sync when you sign back in");
     expect(onSignOut).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(onSignOut).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Sign out anyway" }));
     expect(onSignOut).toHaveBeenCalledOnce();
   });
 
   it("one bill reads in the singular", () => {
     render(<BillView {...base} unsynced={{ pending: 1, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     expect(screen.getByRole("alertdialog").textContent).toContain("1 bill hasn't reached the server yet — it'll stay on this phone and sync when you sign back in");
   });
 
   it("bills in a permanent conflict get their own, truthful line - they will NOT sync by signing back in", () => {
     render(<BillView {...base} unsynced={{ pending: 2, conflict: 1 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     const text = screen.getByRole("alertdialog").textContent ?? "";
     expect(text).toContain("2 bills haven't reached the server yet");
     expect(text).toContain("1 bill couldn't be saved to the server and won't sync on its own — it stays on this phone");
@@ -134,7 +136,7 @@ describe("the sign-out warning", () => {
 
   it("only conflict bills: the pending line is not shown", () => {
     render(<BillView {...base} unsynced={{ pending: 0, conflict: 2 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     const text = screen.getByRole("alertdialog").textContent ?? "";
     expect(text).not.toContain("haven't reached");
     expect(text).toContain("2 bills couldn't be saved to the server and won't sync on its own");
@@ -142,12 +144,12 @@ describe("the sign-out warning", () => {
 
   it("a bill in progress is mentioned: it stays on this phone for the same user", () => {
     render(<BillView {...base} lines={lines()} unsynced={{ pending: 1, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     expect(screen.getByRole("alertdialog").textContent).toContain("Your bill in progress stays on this phone too");
   });
   it("a SAVED bill (its lines still on screen, read-only) is not 'a bill in progress'", () => {
     render(<BillView {...base} lines={lines()} saved={{ receiptNumber: "KB-000001" }} unsynced={{ pending: 1, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     expect(screen.getByRole("alertdialog").textContent).not.toContain("bill in progress");
   });
 });

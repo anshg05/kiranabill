@@ -6,6 +6,7 @@ import { KiranaBillDB, type LocalBaseProduct, type LocalShopProduct } from "@/da
 import type { CatalogWriteResult } from "@/data/catalogEdit";
 import { BillView } from "./BillingScreen";
 import { CatalogScreen } from "./CatalogScreen";
+import { chooseMenu } from "./menuTestUtil";
 
 // KB-311 (owner, 8 Oct 2026): S4 Catalog. Search (the Add item index), rows
 // with name, unit, price and use count, filters, an inline price edit
@@ -79,7 +80,7 @@ describe("KB-311 - S4 Catalog", () => {
   it("the ≡ menu has Catalog", () => {
     const onOpenCatalog = vi.fn();
     render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onOpenCatalog={onOpenCatalog} />);
-    fireEvent.click(screen.getByRole("button", { name: "Catalog" }));
+    chooseMenu("Catalog");
     expect(onOpenCatalog).toHaveBeenCalledOnce();
   });
 

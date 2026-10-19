@@ -74,6 +74,7 @@ export function EditableValue({
         onKeyDown={(e) => {
           if (e.key === "Enter") commit();
           else if (e.key === "Escape") {
+            e.stopPropagation(); // cancels this edit only - not also an overlay (KB-342)
             setDraft(null);
             setError(null);
           }

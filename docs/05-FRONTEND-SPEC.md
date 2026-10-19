@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 18 Oct 2026 (rev 24) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 19 Oct 2026 (rev 25) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -181,6 +181,14 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - **Unit picker:** every line offers **"—"** (no unit) first, for every product. It changes no number; a line with no unit shows its qty as a plain number ("1", "2") and its rate as a plain number. The product's own unit never changes - only the line's.
 - **Spoken commands** (before the parser): the whole utterance only - "bas" / "ho gaya" / "bill banao": the line **"Tap Bill Banao to finish"** (never finalises by voice); "hatao" / "undo": the last added line is removed with the usual Undo strip, or **"Nothing to remove"**; "sab hatao": **"To clear the whole bill, use the menu → Clear bill"**. The answer sits under the transcript as a quiet status line, not a failure (no "Add by hand"). A command is not a turn and never a "Not added" entry.
 - **Header:** the shop's name (one line, ellipsis, full name as the title) instead of "KiranaBill"; it follows a rename from Settings.
+
+### Implementation notes — layers, dialogs and the ≡ menu (`KB-342`, 19 Oct 2026; `21` Part 5)
+
+- **The ≡ menu** (`ui/HeaderMenu.tsx`, was a native `<details>`): closes on a tap outside it, on choosing an item, on **Escape** and **Android Back**, and whenever a panel, sheet, dialog or the mic opens (`closeWhen`); it never opens above an open panel; `aria-expanded` is true only while the list shows; focus returns to ≡ on Escape, Back and a choice - not after an outside tap (that tap's own target keeps the focus).
+- **Escape closes the top layer only**, for every full-screen layer and sheet (`useBackEntry`, the same stack as Back). An inline editor's Escape cancels just that edit.
+- **Dialogs** ("Sign out?", "Clear this bill?", the sync detail) are modal in fact: Back, Escape and a tap on the dim area cancel; focus starts on Cancel and Tab stays inside; `aria-modal`.
+- **Behind a full-screen layer** (History, Catalog, Settings) the bill is `inert` and `aria-hidden`.
+- **Share:** the same button's repeats within 1.5 s are ignored; the SMS sheet scrolls into view and takes the focus. **Sign in:** one tap starts one Google sign-in ("Opening Google…"). Every 44 px control keeps its size (`shrink-0`).
 
 ## 3. S2 — Onboarding catalog choice
 

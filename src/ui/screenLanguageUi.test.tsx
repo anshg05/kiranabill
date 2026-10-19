@@ -11,6 +11,7 @@ import { setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
 import type { ShownFlag } from "./useBillLines";
 import type { VoiceView } from "./useVoiceBilling";
+import { chooseMenu } from "./menuTestUtil";
 
 vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signInWithGoogle: () => Promise.resolve() }) }));
 
@@ -61,6 +62,7 @@ describe("the bill screen", () => {
   it.each(LANGUAGES)("menu, headings, total, customer - in %s; Bill Banao never changes", (l) => {
     use(l);
     render(<BillView {...base} lines={lines()} onFinalise={() => {}} onOpenCatalog={() => {}} onOpenSettings={() => {}} onOpenHistory={() => {}} onClearBill={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: say("menu.label", {}, l) })); // KB-342: the items exist while the menu is open
     for (const id of ["menu.history", "menu.catalog", "menu.settings", "menu.clear", "menu.signout"] as const) expect(screen.getAllByText(say(id, {}, l)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(say("bill.total", {}, l)).length).toBeGreaterThan(0);
     expect(screen.getByText(say("customer.label", {}, l))).toBeTruthy();
@@ -134,7 +136,7 @@ describe("sync chip and dialogs", () => {
   it("the sign-out warning - title, line and buttons", () => {
     use("hi");
     render(<BillView {...base} unsynced={{ pending: 2, conflict: 0 }} />);
-    fireEvent.click(screen.getByRole("button", { name: say("menu.signout", {}, "hi") }));
+    chooseMenu(say("menu.signout", {}, "hi"));
     const dialog = screen.getByRole("alertdialog", { name: say("signout.title", {}, "hi") });
     expect(dialog.textContent).toContain(say("signout.pending.many", { n: 2 }, "hi"));
     expect(within(dialog).getByRole("button", { name: say("signout.anyway", {}, "hi") })).toBeTruthy();

@@ -21,9 +21,14 @@ export function SignInScreen() {
   }, []);
   useUpdateGate(true); // KB-401: nothing here to lose - a waiting update may apply
 
+  // KB-342: one tap starts one sign-in (a second OAuth start could overwrite the first one's code verifier), and the button says it is working.
+  const [opening, setOpening] = useState(false);
   const handleClick = () => {
+    if (opening) return;
     setError(null);
+    setOpening(true);
     signInWithGoogle().catch((err) => {
+      setOpening(false);
       setError(err instanceof Error ? err.message : String(err));
     });
   };
@@ -34,9 +39,10 @@ export function SignInScreen() {
       <button
         type="button"
         onClick={handleClick}
-        className="rounded-lg bg-indigo px-6 py-3 text-white font-medium"
+        aria-disabled={opening}
+        className="rounded-lg bg-indigo px-6 py-3 text-white font-medium aria-disabled:opacity-50"
       >
-        {t("signin.google")}
+        {opening ? t("signin.opening") : t("signin.google")}
       </button>
       {error && <p role="alert" className="text-danger text-sm">{error === REFUSED_TEXT ? t("signin.refused") : error === FAILED_TEXT ? t("signin.unfinished") : error}</p>}
       {import.meta.env.DEV && isLocalSupabaseUrl(import.meta.env.VITE_SUPABASE_URL) && <DevEmailSignIn />}

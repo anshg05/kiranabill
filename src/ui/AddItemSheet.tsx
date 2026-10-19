@@ -62,7 +62,7 @@ export function AddItemSheet({ catalog, usage, initialQuery = "", billTotal, bil
         <span className="text-[13px] text-ink-soft tabular-nums [overflow-wrap:anywhere]">
           {change ? t("change.to", { name: change.name }) : t(billCount === 1 ? "add.billSoFar.one" : "add.billSoFar.many", { total: formatAmount(billTotal), n: billCount })}
         </span>
-        <button type="button" aria-label={change ? t("change.close") : t("add.close")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+        <button type="button" aria-label={change ? t("change.close") : t("add.close")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
           <X size={18} strokeWidth={1.5} aria-hidden />
         </button>
       </div>

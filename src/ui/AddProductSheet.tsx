@@ -55,7 +55,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
     <section aria-label={t("product.addTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">{t("product.addTitle")}</h2>
@@ -80,7 +80,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
             </label>
             <div className="flex flex-wrap gap-2">
               {UNIT_CHIPS.map((u) => (
-                <button key={u} type="button" onClick={() => setUnit(u)} className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium">
+                <button key={u} type="button" onClick={() => setUnit(u)} className="min-h-11 min-w-11 rounded-[6px] border border-line bg-surface px-3 font-medium">
                   {u}
                 </button>
               ))}

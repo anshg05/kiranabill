@@ -94,7 +94,7 @@ export function CatalogImportSheet({ existing, online, run, onClose }: CatalogIm
     <section aria-label="Import products" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label="Back" aria-disabled={busy} onClick={busy ? undefined : onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft aria-disabled:opacity-50">
+          <button type="button" aria-label="Back" aria-disabled={busy} onClick={busy ? undefined : onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft aria-disabled:opacity-50">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">Import products</h2>

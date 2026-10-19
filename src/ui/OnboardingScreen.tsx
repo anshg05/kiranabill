@@ -44,7 +44,7 @@ export function OnboardingScreen() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={submitting}
-        className="w-full max-w-sm rounded-lg border border-line px-4 py-2"
+        className="w-full max-w-sm rounded-lg border border-line min-h-11 px-4 py-2"
       />
       <input
         type="tel"
@@ -52,7 +52,7 @@ export function OnboardingScreen() {
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         disabled={submitting}
-        className="w-full max-w-sm rounded-lg border border-line px-4 py-2"
+        className="w-full max-w-sm rounded-lg border border-line min-h-11 px-4 py-2"
       />
 
       <p className="text-ink-soft text-sm">{t("onboard.question")}</p>
@@ -61,7 +61,7 @@ export function OnboardingScreen() {
           type="button"
           onClick={() => handleChoice("ready")}
           disabled={submitting}
-          className="rounded-lg bg-indigo px-4 py-2 text-white font-medium"
+          className="rounded-lg bg-indigo min-h-11 px-4 py-2 text-white font-medium"
         >
           {t("onboard.ready")}
         </button>
@@ -69,13 +69,13 @@ export function OnboardingScreen() {
           type="button"
           onClick={() => handleChoice("empty")}
           disabled={submitting}
-          className="rounded-lg border border-line px-4 py-2 font-medium"
+          className="rounded-lg border border-line min-h-11 px-4 py-2 font-medium"
         >
           {t("onboard.empty")}
         </button>
       </div>
 
-      {error && <p className="text-danger text-sm">{tx(error)}</p>}
+      {error && <p role="alert" className="text-danger text-sm">{tx(error)}</p>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Check, Loader2, Menu, Mic, Pencil, Plus, Square, TriangleAlert, X } from "lucide-react";
+import { Check, Loader2, Mic, Pencil, Plus, Square, TriangleAlert, X } from "lucide-react";
 import type { CatalogEntry } from "@/domain/catalog";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
@@ -45,6 +45,7 @@ import { learnPendingBills, learnThenReload } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
 import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
+import { HeaderMenu } from "./HeaderMenu";
 import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
@@ -306,6 +307,7 @@ export function BillingScreen() {
       syncDetail={sync.detail}
       unsynced={sync.unsynced}
       onClearBill={() => void bill.clearBill()}
+      covered={historyOpen || catalogOpen || settingsOpen}
     />
     {historyOpen && localDb && shop && (
       <HistoryScreen
@@ -404,6 +406,8 @@ interface BillViewProps {
   unsynced?: Unsynced;
   /** KB-313: "Clear bill" in the ≡ menu - offered only while the bill has lines. */
   onClearBill?: () => void;
+  /** KB-342: a full-screen overlay (History, Catalog, Settings) is open over this screen - nothing behind it may be reached by keyboard or screen reader. */
+  covered?: boolean;
 }
 
 const NO_FLAGS: readonly ShownFlag[] = [];
@@ -476,7 +480,7 @@ function NotAddedList({
               type="button"
               aria-label={t("dismiss.label", { text: n.transcript })}
               onClick={() => onDismiss?.(n.id)}
-              className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft"
+              className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft"
             >
               <X size={18} strokeWidth={1.5} aria-hidden />
             </button>
@@ -557,7 +561,7 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
         className={
           medium
             ? "min-h-11 rounded-[6px] border border-warn px-2 text-[11px] font-semibold tracking-[0.04em] text-warn"
-            : "flex size-11 items-center justify-center rounded-[6px]"
+            : "flex size-11 shrink-0 items-center justify-center rounded-[6px]"
         }
       >
         {medium ? t("flag.review") : <span aria-hidden className="size-2 rounded-full bg-muted" />}
@@ -758,6 +762,7 @@ export function BillView({
   reviewMode,
   unsynced,
   onClearBill,
+  covered,
 }: BillViewProps) {
   const { t, tx } = useT();
   // KB-307: once saved, the bill is immutable - shown read-only until New bill.
@@ -915,7 +920,7 @@ export function BillView({
     );
   const removeOf = (id: string, name: string) =>
     readOnly ? null : (
-    <button type="button" aria-label={t("line.remove", { name })} onClick={() => onRemove(id)} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+    <button type="button" aria-label={t("line.remove", { name })} onClick={() => onRemove(id)} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
       <X size={18} strokeWidth={1.5} aria-hidden />
     </button>
   );
@@ -961,7 +966,7 @@ export function BillView({
   }, [lines.length, notAdded.length]);
 
   return (
-    <div className="h-dvh bg-paper text-ink text-[15px]">
+    <div inert={covered} aria-hidden={covered || undefined} className="h-dvh bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -975,76 +980,22 @@ export function BillView({
               </span>
             )}
           </div>
-          <details className="relative">
-            <summary
-              aria-label={t("menu.label")}
-              className="flex size-11 cursor-pointer list-none items-center justify-center rounded-[6px] text-ink-soft [&::-webkit-details-marker]:hidden"
-            >
-              <Menu size={20} strokeWidth={1.5} aria-hidden />
-            </summary>
-            <div className="absolute right-0 z-10 mt-1 min-w-40 rounded-[6px] border border-line bg-surface py-1">
-              {onOpenHistory && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.closest("details")?.removeAttribute("open");
-                    onOpenHistory();
-                  }}
-                  className="block min-h-11 w-full px-4 text-left"
-                >
-                  {t("menu.history")}
-                </button>
-              )}
-              {onOpenCatalog && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.closest("details")?.removeAttribute("open");
-                    onOpenCatalog();
-                  }}
-                  className="block min-h-11 w-full px-4 text-left"
-                >
-                  {t("menu.catalog")}
-                </button>
-              )}
-              {onOpenSettings && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.closest("details")?.removeAttribute("open");
-                    onOpenSettings();
-                  }}
-                  className="block min-h-11 w-full px-4 text-left"
-                >
-                  {t("menu.settings")}
-                </button>
-              )}
-              {onClearBill && lines.length > 0 && !saved && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.currentTarget.closest("details")?.removeAttribute("open");
-                    setConfirm("clear");
-                  }}
-                  className="block min-h-11 w-full px-4 text-left"
-                >
-                  {t("menu.clear")}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.currentTarget.closest("details")?.removeAttribute("open");
-                  // 16 §2: never a silent sign-out over bills that haven't reached the server.
-                  if (unsynced && unsynced.pending + unsynced.conflict > 0) setConfirm("signout");
-                  else onSignOut();
-                }}
-                className="block min-h-11 w-full px-4 text-left"
-              >
-                {t("menu.signout")}
-              </button>
-            </div>
-          </details>
+          <HeaderMenu
+            label={t("menu.label")}
+            closeWhen={addItem !== null || changing !== null || confirm !== null || voiceBusy}
+            items={[
+              ...(onOpenHistory ? [{ key: "history", label: t("menu.history"), onSelect: onOpenHistory }] : []),
+              ...(onOpenCatalog ? [{ key: "catalog", label: t("menu.catalog"), onSelect: onOpenCatalog }] : []),
+              ...(onOpenSettings ? [{ key: "settings", label: t("menu.settings"), onSelect: onOpenSettings }] : []),
+              ...(onClearBill && lines.length > 0 && !saved ? [{ key: "clear", label: t("menu.clear"), onSelect: () => setConfirm("clear" as const) }] : []),
+              {
+                key: "signout",
+                label: t("menu.signout"),
+                // 16 §2: never a silent sign-out over bills that haven't reached the server.
+                onSelect: () => (unsynced && unsynced.pending + unsynced.conflict > 0 ? setConfirm("signout" as const) : onSignOut()),
+              },
+            ]}
+          />
         </header>
 
         {confirm === "signout" && unsynced && (

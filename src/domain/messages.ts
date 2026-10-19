@@ -201,6 +201,7 @@ export const MESSAGES = {
 
   // ---- Sign-in (KB-335)
   "signin.google": m("Sign in with Google", "Google से साइन इन करें", "Google se sign in karein"),
+  "signin.opening": m("Opening Google…", "Google खुल रहा है…", "Google khul raha hai…"), // KB-342
   "signin.refused": m("This account isn't set up for the pilot", "यह खाता पायलट के लिए सेट नहीं है", "Yeh account pilot ke liye set nahi hai"),
   "signin.unfinished": m("Sign-in didn't finish — tap Sign in with Google again", "साइन इन पूरा नहीं हुआ — फिर से ‘Google से साइन इन करें’ दबाएं", "Sign in poora nahi hua — phir se ‘Google se sign in karein’ dabayein"),
 

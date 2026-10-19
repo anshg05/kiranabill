@@ -79,8 +79,16 @@ export function useBackEntry(key: string, onClose: () => void): void {
       onCloseRef.current();
     };
     window.addEventListener("popstate", onPop);
+    // KB-342: Escape closes the TOP overlay only (the one whose entry is last in the stack) - like Back. An editor that
+    // uses Escape itself (EditableValue) stops it before it gets here.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || e.isComposing || stack[stack.length - 1] !== mine.token) return;
+      onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("popstate", onPop);
+      document.removeEventListener("keydown", onKey);
       if (closedByBack) return;
       pending.add(mine.token);
       mine.pendingBack = setTimeout(() => {

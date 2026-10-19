@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { SyncChip, Unsynced } from "./syncChip";
+import { useBackEntry } from "./useBackEntry";
 import { useT } from "./useT";
 
 // KB-313 (05 §7, 16 §2): the header chip, and the two inline confirmations (sign out with unsynced bills,
@@ -32,7 +33,7 @@ export function SyncChipView({ chip, detail }: { chip: SyncChip | null; detail?:
         {tx(chip.label)}
       </button>
       {open && (
-        <Overlay label={t("sync.label")} role="dialog">
+        <Overlay label={t("sync.label")} role="dialog" onClose={() => setOpen(false)}>
           <div className="flex flex-col gap-2">
             {detail && detail.pending > 0 && (
               <p>{t(detail.pending === 1 ? "sync.pending.one" : "sync.pending.many", { n: detail.pending })}</p>
@@ -60,10 +61,42 @@ function timeOf(iso: string): string {
   return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
-function Overlay({ label, role, children }: { label: string; role: "dialog" | "alertdialog"; children: ReactNode }) {
+/**
+ * KB-342: a modal dialog that behaves like one - Android Back and Escape close it (useBackEntry, like every sheet), so does
+ * a tap on the dim backdrop; focus moves inside (the first button - Cancel / Close, never the destructive one) and Tab
+ * stays inside; aria-modal tells a screen reader the rest of the page is behind it.
+ */
+function Overlay({ label, role, onClose, children }: { label: string; role: "dialog" | "alertdialog"; onClose: () => void; children: ReactNode }) {
+  useBackEntry("kbDialog", onClose);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    box.current?.querySelector<HTMLElement>("button")?.focus();
+    return () => previous?.focus?.();
+  }, []);
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/40 px-4">
-      <div role={role} aria-label={label} className="w-full max-w-sm rounded-[6px] border border-line bg-surface p-4 text-[15px] text-ink">
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink/40 px-4"
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={box}
+        role={role}
+        aria-modal="true"
+        aria-label={label}
+        onKeyDown={(e) => {
+          if (e.key !== "Tab") return;
+          const buttons = [...(box.current?.querySelectorAll<HTMLElement>("button") ?? [])];
+          const first = buttons[0];
+          const last = buttons[buttons.length - 1];
+          if (!first || !last) return;
+          if (e.shiftKey && document.activeElement === first) (e.preventDefault(), last.focus());
+          else if (!e.shiftKey && document.activeElement === last) (e.preventDefault(), first.focus());
+        }}
+        className="w-full max-w-sm rounded-[6px] border border-line bg-surface p-4 text-[15px] text-ink"
+      >
         {children}
       </div>
     </div>
@@ -98,7 +131,7 @@ export function clearBillWarning(lineCount: number): Confirmation {
 export function ConfirmDialog({ title, lines, confirmLabel, onCancel, onConfirm }: Confirmation & { confirmLabel: string; onCancel: () => void; onConfirm: () => void }) {
   const { t, tx } = useT();
   return (
-    <Overlay label={tx(title)} role="alertdialog">
+    <Overlay label={tx(title)} role="alertdialog" onClose={onCancel}>
       <h2 className="text-[17px] font-semibold">{tx(title)}</h2>
       <div className="mt-2 flex flex-col gap-2">
         {lines.map((l) => (

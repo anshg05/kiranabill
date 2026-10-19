@@ -197,7 +197,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
     <section aria-label={t("menu.catalog")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
       <div inert={readyOpen || importOpen || editing !== null || addOpen} aria-hidden={readyOpen || importOpen || editing !== null || addOpen || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">{t("menu.catalog")}</h2>
@@ -550,7 +550,7 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
     <section aria-label={t("ready.title")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">{t("ready.title")}</h2>

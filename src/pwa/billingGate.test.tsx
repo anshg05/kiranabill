@@ -12,6 +12,7 @@ import { HistoryScreen } from "@/ui/HistoryScreen";
 import { SettingsScreen } from "@/ui/SettingsScreen";
 import { IDLE_VOICE } from "@/ui/useVoiceBilling";
 import { isUpdateSafe, resetUpdateGate } from "./updateGate";
+import { chooseMenu } from "@/ui/menuTestUtil";
 
 // KB-401 (D67 - owner, 9 Oct 2026): the update never reloads the page under a bill. The billing screen reports
 // "idle" only for an EMPTY bill with nothing open; every overlay (Add item, History, Catalog, Settings, a dialog)
@@ -86,7 +87,7 @@ describe("the billing screen reports whether a reload is safe", () => {
 
   it("a confirmation dialog is not", () => {
     render(<BillView {...base} lines={lines()} onClearBill={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    chooseMenu("Sign out");
     expect(isUpdateSafe()).toBe(false);
   });
 

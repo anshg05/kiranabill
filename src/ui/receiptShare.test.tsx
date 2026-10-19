@@ -252,3 +252,41 @@ describe("KB-309 - the mobile in the page", () => {
     for (const f of forms) expect(page.outerHTML).not.toContain(f);
   });
 });
+
+describe("KB-342 - a double tap never shares twice; the SMS sheet is brought to the shopkeeper", () => {
+  it("Image / PDF tapped twice quickly download once each; the other button is not blocked by the first", async () => {
+    const clicked = captureAnchors();
+    await saveBill();
+    fireEvent.click(button("Image"));
+    fireEvent.click(button("Image"));
+    fireEvent.click(button("PDF"));
+    fireEvent.click(button("PDF"));
+    expect(clicked.map((a) => a.download)).toEqual(["Bill-1.png", "Bill-1.pdf"]);
+  });
+
+  it("WhatsApp (the share sheet) tapped twice opens one sheet", async () => {
+    await saveBill();
+    fireEvent.click(button("WhatsApp"));
+    fireEvent.click(button("WhatsApp"));
+    expect(share).toHaveBeenCalledTimes(1);
+  });
+
+  it("Send (SMS) tapped twice opens one sms: link", async () => {
+    const clicked = captureAnchors();
+    await saveBill(null);
+    await openSms();
+    fireEvent.change(field(), { target: { value: "9876543210" } });
+    fireEvent.click(button("Send"));
+    fireEvent.click(button("Send"));
+    expect(clicked).toHaveLength(1);
+  });
+
+  it("opening SMS scrolls the sheet into view and puts the cursor in the number field", async () => {
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    await saveBill(null);
+    await openSms();
+    expect(scrolled).toHaveBeenCalled();
+    expect(document.activeElement).toBe(field());
+  });
+});

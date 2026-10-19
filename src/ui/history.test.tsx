@@ -21,6 +21,7 @@ vi.mock("@/data/history", async (original) => {
   return { ...actual, loadRecentRows: vi.fn(actual.loadRecentRows) };
 });
 import type { RenderReceiptFiles } from "./useReceiptShare";
+import { chooseMenu } from "./menuTestUtil";
 
 // KB-310 (owner, 7 Oct 2026): S5 History and S6 bill detail, with REAL
 // finalised bills (D39). Opens on the newest rows, then searches the last 90
@@ -83,7 +84,7 @@ describe("KB-310 - S5 History", () => {
   it("the ≡ menu has History", () => {
     const onOpenHistory = vi.fn();
     render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onOpenHistory={onOpenHistory} />);
-    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    chooseMenu("History");
     expect(onOpenHistory).toHaveBeenCalledTimes(1);
   });
 

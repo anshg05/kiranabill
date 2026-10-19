@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileDown, ImageDown, MessageCircle, MessageSquareText } from "lucide-react";
 import { parseIndianMobile } from "@/domain/customer";
 import type { ReceiptShare } from "./useReceiptShare";
@@ -47,6 +47,13 @@ export function ShareBar({ share }: { share: ReceiptShare }) {
 function SmsSheet({ share, onClose }: { share: ReceiptShare; onClose: () => void }) {
   const { t, tx } = useT();
   const [value, setValue] = useState("");
+  const sheet = useRef<HTMLElement>(null);
+  const field = useRef<HTMLInputElement>(null);
+  // KB-342: the sheet opens below the buttons, off screen on a small phone - bring it into view and put the cursor in the number.
+  useEffect(() => {
+    sheet.current?.scrollIntoView?.({ block: "nearest" });
+    field.current?.focus({ preventScroll: true });
+  }, []);
   useEffect(() => {
     let live = true;
     share
@@ -63,10 +70,11 @@ function SmsSheet({ share, onClose }: { share: ReceiptShare; onClose: () => void
   const parsed = parseIndianMobile(value);
   const mobile = parsed.ok ? parsed.value : null;
   return (
-    <section aria-label={t("share.sendLabel")} className="mt-3 rounded-[6px] border border-line bg-surface p-3">
+    <section ref={sheet} aria-label={t("share.sendLabel")} className="mt-3 rounded-[6px] border border-line bg-surface p-3">
       <label className="flex flex-col gap-1">
         <span className={label}>{t("share.mobile")}</span>
         <input
+          ref={field}
           type="tel"
           inputMode="tel"
           autoComplete="off"

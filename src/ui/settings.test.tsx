@@ -12,6 +12,7 @@ import { SettingsScreen } from "./SettingsScreen";
 import { render as say } from "@/domain/messages";
 import { getScreenLanguage, setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
+import { chooseMenu } from "./menuTestUtil";
 
 // KB-312 (owner, 8 Oct 2026): S7 Settings - shop name and phone, the customer's receipt language, and a
 // collapsed Developer mode (learned aliases, provisional products, price suggestions, reset learning).
@@ -87,7 +88,7 @@ describe("KB-312 - S7 Settings", () => {
   it("the ≡ menu has Settings", () => {
     const onOpenSettings = vi.fn();
     render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onOpenSettings={onOpenSettings} />);
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    chooseMenu("Settings");
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
 

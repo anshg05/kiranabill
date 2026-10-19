@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
@@ -54,6 +54,16 @@ function download(file: File): void {
 
 export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBillDB | null; saved: SavedBill | null; render: RenderReceiptFiles }): ReceiptShare | null {
   const [files, setFiles] = useState<Files | null>(null);
+  const lastRun = useRef<Record<string, number>>({});
+  // KB-342: a double tap must not download twice or open two share sheets - the same button's repeats within 1.5 s are ignored (another button is not).
+  const once =
+    <A extends unknown[]>(key: string, fn: (...args: A) => void) =>
+    (...args: A): void => {
+      const now = Date.now();
+      if (now - (lastRun.current[key] ?? 0) < 1500) return;
+      lastRun.current[key] = now;
+      fn(...args);
+    };
 
   useEffect(() => {
     const receipt = saved?.receipt;
@@ -83,13 +93,13 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
   return {
     ready: ready !== null,
     smsText: sms,
-    downloadImage: () => {
+    downloadImage: once("image", () => {
       if (ready) download(ready.png);
-    },
-    downloadPdf: () => {
+    }),
+    downloadPdf: once("pdf", () => {
       if (ready) download(ready.pdf);
-    },
-    whatsApp: () => {
+    }),
+    whatsApp: once("whatsapp", () => {
       const data = ready ? { files: [ready.png] } : null;
       if (data && typeof navigator.canShare === "function" && navigator.canShare(data)) {
         // In the tap, nothing awaited before it.
@@ -100,11 +110,11 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
         return;
       }
       void storedMobile().then((mobile) => window.open(waLink(receiptText(receipt), mobile), "_blank", "noopener"));
-    },
+    }),
     storedMobile,
-    sendSms: (mobile) => {
+    sendSms: once("sms", (mobile: string) => {
       const link = smsLink(sms, mobile);
       if (link) follow(link);
-    },
+    }),
   };
 }
