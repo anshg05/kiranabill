@@ -15,6 +15,7 @@ import { Receipt, ReceiptNumberText } from "./Receipt";
 import { ShareBar } from "./ShareBar";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
+import { inject, mark } from "./inject";
 import { useT } from "./useT";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
@@ -204,7 +205,7 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
                         <button type="button" onClick={() => setOpenIds([b.localId])} className="flex min-h-12 w-full items-center gap-3 border-b border-line bg-surface px-4 py-2 text-left">
                           <span className="min-w-0 flex-1">
                             <span className="block font-medium [overflow-wrap:anywhere]">
-                              <ReceiptNumberText value={b.receiptNumber} />
+                              {inject(t("history.billNo", { n: mark("n") }), { n: <ReceiptNumberText value={b.receiptNumber} /> })}
                             </span>
                             <span className="block text-[13px] text-ink-soft">
                               {timeOf(b.at)}
@@ -328,7 +329,7 @@ function BillDetail({
           <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
-          <h2 className="text-[20px] font-semibold">{t("bill.savedBefore")}</h2>
+          <h2 className="text-[20px] font-semibold">{receipt ? inject(t("history.billNo", { n: mark("n") }), { n: <ReceiptNumberText value={receipt.receiptNumber} /> }) : t("bill.savedBefore")}</h2>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {receipt && <Receipt receipt={receipt} />}

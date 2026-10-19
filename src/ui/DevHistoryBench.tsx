@@ -39,7 +39,7 @@ async function seed(db: KiranaBillDB): Promise<void> {
     for (let i = start; i < Math.min(N, start + 5_000); i++) {
       const at = new Date(now - (i / PER_DAY) * DAY).toISOString();
       const localId = benchId();
-      bills.push({ localId, shopId: SHOP, status: "final", syncStatus: "synced", receiptNumber: `KB-${String(N - i).padStart(6, "0")}`, receiptNumberSource: "block", customerName: i % 7 ? "Cash" : `Ramesh ${i % 50}`, customerMobile: null, subtotalPaise: 0, totalPaise: 9000 + (i % 400) * 25, schemaVersion: 1, deviceId: "bench", createdAt: at, finalizedAt: at, syncedAt: at });
+      bills.push({ localId, shopId: SHOP, status: "final", syncStatus: "synced", receiptNumber: i % 3 === 0 ? `KB-${String(N - i).padStart(6, "0")}` : String(N - i), receiptNumberSource: "block", customerName: i % 7 ? "Cash" : `Ramesh ${i % 50}`, customerMobile: null, subtotalPaise: 0, totalPaise: 9000 + (i % 400) * 25, schemaVersion: 1, deviceId: "bench", createdAt: at, finalizedAt: at, syncedAt: at });
       for (let l = 1; l <= 5; l++) items.push({ billLocalId: localId, shopId: SHOP, lineNo: l, shopProductId: null, displayName: NAMES[(i + l) % NAMES.length]!, spokenName: null, qty: 1, unit: "kg", ratePaise: 100, rateUnit: "kg", totalPaise: 100, priceType: "rate", source: "fastpath", reviewFlags: [], wasEdited: false });
     }
     await db.bills.bulkPut(bills);

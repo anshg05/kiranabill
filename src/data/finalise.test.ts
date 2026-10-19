@@ -62,10 +62,10 @@ describe("finaliseBill - one atomic local write", () => {
     await giveBlock(7);
     const draft = input();
     const result = await finaliseBill(db, draft);
-    expect(result).toEqual({ receiptNumber: "KB-000007", source: "block", alreadySaved: false });
+    expect(result).toEqual({ receiptNumber: "7", source: "block", alreadySaved: false });
     const bill = await db.bills.get(draft.localId);
     expect(bill).toMatchObject({
-      localId: draft.localId, shopId, status: "final", syncStatus: "pending", receiptNumber: "KB-000007", receiptNumberSource: "block",
+      localId: draft.localId, shopId, status: "final", syncStatus: "pending", receiptNumber: "7", receiptNumberSource: "block",
       customerName: "Ramesh", customerMobile: "9876543210", subtotalPaise: 18000, totalPaise: 18000, schemaVersion: 1, deviceId,
       createdAt: "2026-10-03T10:00:00.000Z", finalizedAt: "2026-10-03T10:05:00.000Z", syncedAt: null,
     });
@@ -77,10 +77,10 @@ describe("finaliseBill - one atomic local write", () => {
     expect(await nextNumber()).toBe(8);
   });
 
-  it("no block on this device -> D23 fallback number with the full device id, source 'fallback'", async () => {
+  it("no block on this device -> D87 fallback number (6-character device code), source 'fallback'", async () => {
     const draft = input();
     const result = await finaliseBill(db, draft);
-    expect(result).toEqual({ receiptNumber: `KB-${deviceId}-1`, source: "fallback", alreadySaved: false });
+    expect(result).toEqual({ receiptNumber: `${deviceId.slice(0, 6).toUpperCase()}-1`, source: "fallback", alreadySaved: false });
     expect((await db.bills.get(draft.localId))?.receiptNumberSource).toBe("fallback");
     expect(await counter()).toBe(1);
   });
@@ -89,8 +89,8 @@ describe("finaliseBill - one atomic local write", () => {
     await giveBlock(1);
     const draft = input();
     const [a, b] = await Promise.all([finaliseBill(db, draft), finaliseBill(db, draft)]);
-    expect(a.receiptNumber).toBe("KB-000001");
-    expect(b.receiptNumber).toBe("KB-000001");
+    expect(a.receiptNumber).toBe("1");
+    expect(b.receiptNumber).toBe("1");
     expect([a.alreadySaved, b.alreadySaved].sort()).toEqual([false, true]);
     expect(await db.bills.count()).toBe(1);
     expect(await db.billItems.count()).toBe(2);
@@ -101,7 +101,7 @@ describe("finaliseBill - one atomic local write", () => {
     await giveBlock(1);
     const draft = input();
     await finaliseBill(db, draft);
-    expect(await finaliseBill(db, draft)).toEqual({ receiptNumber: "KB-000001", source: "block", alreadySaved: true });
+    expect(await finaliseBill(db, draft)).toEqual({ receiptNumber: "1", source: "block", alreadySaved: true });
     expect(await nextNumber()).toBe(2);
   });
 
@@ -117,7 +117,7 @@ describe("finaliseBill - one atomic local write", () => {
     expect(await db.billItems.count()).toBe(0);
     expect(await nextNumber()).toBe(5);
     db.billItems.hook("creating").unsubscribe(failItems);
-    expect((await finaliseBill(db, draft)).receiptNumber).toBe("KB-000005");
+    expect((await finaliseBill(db, draft)).receiptNumber).toBe("5");
   });
 
   it("a failure inside the fallback path does not advance the device counter either", async () => {
@@ -129,7 +129,7 @@ describe("finaliseBill - one atomic local write", () => {
     await expect(finaliseBill(db, draft)).rejects.toThrow();
     expect(await counter()).toBe(0);
     db.bills.hook("creating").unsubscribe(failBill);
-    expect((await finaliseBill(db, draft)).receiptNumber).toBe(`KB-${deviceId}-1`);
+    expect((await finaliseBill(db, draft)).receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`);
   });
 
   it("refuses a bill that can't be a receipt - no items, or a line without an amount - and writes nothing", async () => {
@@ -147,7 +147,7 @@ describe("receipt numbers - taken inside the transaction, topped up after", () =
   it("takeNextNumber only touches local tables (safe inside a Dexie transaction)", async () => {
     await giveBlock(49);
     const n = await db.transaction("rw", [db.receiptNumberBlocks, db.syncState, db.shops], () => takeNextNumber(db, shopId, deviceId));
-    expect(n).toEqual({ receiptNumber: "KB-000049", source: "block" });
+    expect(n).toEqual({ receiptNumber: "49", source: "block" });
   });
 
   it("blockNeedsTopUp: fewer than 10 numbers left in this device's block (or none) -> true", async () => {

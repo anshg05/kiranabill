@@ -136,10 +136,10 @@ describe("KB-310 - S5 History", () => {
     await waitFor(() => expect(bills()).toBeTruthy());
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Today", "Yesterday", dateKey(5)]);
     const rows = rowTexts();
-    expect(rows[0]).toContain("KB-000003");
+    expect(rows[0]).toContain("Bill 3");
     expect(rows[0]).toContain("Ramesh");
     expect(rows[0]).not.toContain("Not synced");
-    expect(rows[1]).toContain("KB-000002");
+    expect(rows[1]).toContain("Bill 2");
     expect(rows[1]).toContain("₹90");
     expect(rows[1]).not.toContain("Cash");
     expect(rows[1]).toContain("Not synced");
@@ -215,7 +215,7 @@ describe("KB-310 - S6 bill detail", () => {
     await waitFor(() => expect(bills()).toBeTruthy());
     fireEvent.click(within(bills()!).getAllByRole("button")[0]!);
     const receipt = await screen.findByRole("article", { name: "Receipt" });
-    expect(within(receipt).getByTestId("receipt-number").textContent).toBe("KB-000001");
+    expect(within(receipt).getByTestId("receipt-number").textContent).toBe("1");
     for (const name of ["Image", "PDF", "WhatsApp", "SMS"]) expect(screen.getByRole("button", { name })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Bill Banao" })).toBeNull(); // read-only
     fireEvent.click(screen.getByRole("button", { name: "Back" }));

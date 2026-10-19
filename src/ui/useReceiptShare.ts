@@ -64,8 +64,8 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
         if (!live) return;
         setFiles({
           localId: saved.localId,
-          png: new File([png], `${receipt.receiptNumber}.png`, { type: "image/png" }),
-          pdf: new File([pdf], `${receipt.receiptNumber}.pdf`, { type: "application/pdf" }),
+          png: new File([png], `Bill-${receipt.receiptNumber}.png`, { type: "image/png" }),
+          pdf: new File([pdf], `Bill-${receipt.receiptNumber}.pdf`, { type: "application/pdf" }),
         });
       })
       .catch((err: unknown) => console.warn("[share] render failed:", err instanceof Error ? err.message : err));

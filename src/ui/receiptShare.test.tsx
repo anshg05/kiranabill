@@ -113,7 +113,7 @@ describe("KB-309 - four buttons on the saved screen (D58, the legacy behaviour)"
   it("Image, PDF, WhatsApp, SMS; the PNG and PDF rendered once, when the receipt is shown", async () => {
     await saveBill();
     expect(renderFiles).toHaveBeenCalledTimes(1);
-    expect((renderFiles.mock.calls[0]![0] as Receipt).receiptNumber).toBe("KB-000001");
+    expect((renderFiles.mock.calls[0]![0] as Receipt).receiptNumber).toBe("1");
     for (const name of ["Image", "PDF", "WhatsApp", "SMS"]) expect(button(name)).toBeTruthy();
   });
 
@@ -122,7 +122,7 @@ describe("KB-309 - four buttons on the saved screen (D58, the legacy behaviour)"
     await saveBill();
     fireEvent.click(button("Image"));
     expect(share).not.toHaveBeenCalled();
-    expect(clicked.map((a) => [a.download, a.href])).toEqual([["KB-000001.png", "blob:receipt"]]);
+    expect(clicked.map((a) => [a.download, a.href])).toEqual([["Bill-1.png", "blob:receipt"]]);
   });
 
   it("PDF always DOWNLOADS the PDF - no share sheet", async () => {
@@ -130,7 +130,7 @@ describe("KB-309 - four buttons on the saved screen (D58, the legacy behaviour)"
     await saveBill();
     fireEvent.click(button("PDF"));
     expect(share).not.toHaveBeenCalled();
-    expect(clicked.map((a) => a.download)).toEqual(["KB-000001.pdf"]);
+    expect(clicked.map((a) => a.download)).toEqual(["Bill-1.pdf"]);
   });
 });
 
@@ -140,7 +140,7 @@ describe("KB-309 - WhatsApp sends the image", () => {
     fireEvent.click(button("WhatsApp"));
     expect(share).toHaveBeenCalledTimes(1); // synchronously, before any await
     const file = (share.mock.calls[0]![0] as { files: File[] }).files[0]!;
-    expect([file.name, file.type]).toEqual(["KB-000001.png", "image/png"]);
+    expect([file.name, file.type]).toEqual(["Bill-1.png", "image/png"]);
     expect(renderFiles).toHaveBeenCalledTimes(1);
   });
 

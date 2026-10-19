@@ -200,7 +200,7 @@ describe("receiptNumbers.ts", () => {
   });
 
   describe("consumeNextNumber", () => {
-    it("consumes from the active block, formats as {prefix}-{6-digit padded number}", async () => {
+    it("consumes from the active block, formats as the plain number (D87)", async () => {
       await localDb.shops.add({
         id: "shop-1",
         syncStatus: "synced",
@@ -231,14 +231,14 @@ describe("receiptNumbers.ts", () => {
       const client = makeMockClient({});
       const result = await consumeNextNumber(client, localDb, "shop-1", "device-1");
 
-      expect(result).toEqual({ receiptNumber: "KB-000142", source: "block" });
+      expect(result).toEqual({ receiptNumber: "142", source: "block" });
 
       const block = await localDb.receiptNumberBlocks.get("block-1");
       expect(block?.nextNumber).toBe(143);
       expect(block?.syncStatus).toBe("pending");
     });
 
-    it("falls back to a full-device-UUID-based number when no block has numbers remaining", async () => {
+    it("falls back to a 6-character-device-code number when no block has numbers remaining (D87)", async () => {
       await localDb.shops.add({
         id: "shop-1",
         syncStatus: "synced",
@@ -267,7 +267,7 @@ describe("receiptNumbers.ts", () => {
       const result = await consumeNextNumber(client, localDb, "shop-1", deviceId);
 
       expect(result.source).toBe("fallback");
-      expect(result.receiptNumber).toBe(`KB-${deviceId}-1`);
+      expect(result.receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`);
     });
 
     it("fallback numbers never repeat across consecutive exhaustion calls", async () => {
@@ -291,8 +291,8 @@ describe("receiptNumbers.ts", () => {
       const second = await consumeNextNumber(client, localDb, "shop-1", deviceId);
 
       expect(first.receiptNumber).not.toBe(second.receiptNumber);
-      expect(first.receiptNumber).toBe(`KB-${deviceId}-1`);
-      expect(second.receiptNumber).toBe(`KB-${deviceId}-2`);
+      expect(first.receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`);
+      expect(second.receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-2`);
     });
 
     it("fires a background reservation when remaining numbers drop below the threshold, without blocking", async () => {

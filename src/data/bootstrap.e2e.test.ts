@@ -139,7 +139,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     expect(shop?.id).toBe(shopId);
     expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(ACTIVE_BASE_PRODUCTS);
     const receipt = await consumeNextNumber(offlineClient, db, shopId, deviceId);
-    expect(receipt).toEqual({ receiptNumber: "KB-000001", source: "block" });
+    expect(receipt).toEqual({ receiptNumber: "1", source: "block" });
 
     // Even told it's online, an unreachable network degrades, never throws.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -172,7 +172,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
       { device_id: newDeviceId, block_start: 51, block_end: 100 },
     ]);
     expect(await wipedDb.receiptNumberBlocks.count()).toBe(1); // only its own block was pulled
-    expect(await consumeNextNumber(client, wipedDb, shopId, newDeviceId)).toEqual({ receiptNumber: "KB-000051", source: "block" });
+    expect(await consumeNextNumber(client, wipedDb, shopId, newDeviceId)).toEqual({ receiptNumber: "51", source: "block" });
     await wipedDb.delete();
   });
 

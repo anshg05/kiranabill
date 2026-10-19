@@ -245,6 +245,7 @@ export const MESSAGES = {
   "history.billsLabel": m("Bills", "बिल", "Bills"),
   "history.cancellation": m("Cancellation", "रद्द करने की जानकारी", "Radd karne ki jaankari"),
   "history.cancelledReason": m("Cancelled — {reason}", "रद्द — {reason}", "Radd — {reason}"),
+  "history.billNo": m("Bill {n}", "बिल {n}", "Bill {n}"), // KB-341 (D87): a number on its own gets its label, so it is not read as an amount
   "history.replacedBy": m("Replaced by Bill {n}", "बिल नं. {n} से बदला गया", "Bill no. {n} se badla gaya"),
   "history.noReplacement": m("No replacement bill made", "नया बिल नहीं बनाया गया", "Naya bill nahi banaya gaya"),
   "history.conflictNote": m("This bill couldn't be saved to the server, so its cancellation is on this phone only.", "यह बिल सर्वर पर सेव नहीं हो पाया, इसलिए इसका रद्द होना सिर्फ़ इस फ़ोन में है।", "Yeh bill server par save nahi ho paaya, isliye iska radd hona sirf is phone mein hai."),

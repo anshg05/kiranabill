@@ -82,8 +82,8 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     const r = within(receiptEl());
     expect(r.getByText("Sharma Kirana")).toBeTruthy();
     expect(r.getByText("98765 43210")).toBeTruthy();
-    expect(r.getByTestId("receipt-number").textContent).toBe("KB-000001");
-    expect(r.getByTestId("receipt-bill-no").textContent).toBe("Bill No. KB-000001"); // D57: one "Bill No." line
+    expect(r.getByTestId("receipt-number").textContent).toBe("1");
+    expect(r.getByTestId("receipt-bill-no").textContent).toBe("Bill No. 1"); // D57: one "Bill No." line
     expect(r.queryByTestId("receipt-customer")).toBeNull(); // Cash: no customer line
     expect(receiptEl().textContent).not.toContain("Cash");
 
@@ -104,9 +104,9 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
   it("a REAL fallback-numbered bill (no block left): the full number, breaks only after hyphens, copies as one string", async () => {
     await db.shops.put(shopRow());
     const receipt = await drawSaved(spokenLines("2 kilo chini"));
-    expect(receipt.receiptNumber).toBe(`KB-${deviceId}-1`);
+    expect(receipt.receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`);
     const number = within(receiptEl()).getByTestId("receipt-number");
-    expect(number.textContent).toBe(`KB-${deviceId}-1`); // what a copy gets - <wbr> adds no characters
+    expect(number.textContent).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`); // what a copy gets - <wbr> adds no characters
     expect(number.querySelectorAll("wbr")).toHaveLength(receipt.numberChunks.length - 1);
     for (const wbr of number.querySelectorAll("wbr")) expect(wbr.previousSibling?.textContent?.endsWith("-")).toBe(true);
     expect(number.className).toContain("select-all");
@@ -122,7 +122,7 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     expect(r.getByText("Chini")).toBeTruthy();
     expect(r.getByRole("rowheader").textContent).toBe("कुल");
     expect(r.getByText("धन्यवाद!")).toBeTruthy();
-    expect(r.getByTestId("receipt-bill-no").textContent).toBe("बिल नं. KB-000001");
+    expect(r.getByTestId("receipt-bill-no").textContent).toBe("बिल नं. 1");
     cleanup();
 
     await db.shops.update(shopId, { billLanguage: "both" });
@@ -211,7 +211,7 @@ describe("KB-308 - the receipt on the saved screen", () => {
       screen.getByRole("button", { name: "Bill Banao" }).click();
     });
     const receipt = await waitFor(() => receiptEl());
-    expect(within(receipt).getByTestId("receipt-number").textContent).toBe("KB-000001");
+    expect(within(receipt).getByTestId("receipt-number").textContent).toBe("1");
     expect(within(receipt).getByTestId("receipt-customer").textContent).toBe("Customer: Ramesh"); // D57
     expect(screen.getByRole("status", { name: "Bill saved" })).toBeTruthy();
 
@@ -228,7 +228,7 @@ describe("KB-308 - the receipt on the saved screen", () => {
       screen.getByRole("button", { name: "Bill Banao" }).click();
     });
     const status = await waitFor(() => screen.getByRole("status", { name: "Bill saved" }));
-    const number = `KB-${deviceId}-1`;
+    const number = `${deviceId.slice(0, 6).toUpperCase()}-1`;
     expect(status.textContent).toBe(`Bill ${number} saved`);
     const wbrs = status.querySelectorAll("wbr");
     expect(wbrs).toHaveLength(number.split("-").length - 1);

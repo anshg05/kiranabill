@@ -160,7 +160,7 @@ describe("no bill lost or corrupted", () => {
     const panel = await open(reconcile);
     fireEvent.click(within(panel).getByRole("button", { name: "Check this phone's bills" }));
     await within(panel).findByText("3 bills checked: 1 with a problem");
-    expect(within(panel).getByText(/KB-000002/).textContent).toContain("total differs (9000 paise here, 9100 on the server)");
+    expect(within(panel).getByText(/KB-000002/).textContent).toMatch(/^Bill KB-000002: total differs/);
     expect(reconcile).toHaveBeenCalledOnce();
   });
   it("all fine: says so; the server could not be asked: claims nothing", async () => {
@@ -223,7 +223,7 @@ describe("Review mode (S2): device-only, off by default", () => {
     expect(items[0]!.textContent).toContain("Heard: “<b>do</b> kilo chini”"); // text, not markup
     expect(list.querySelector("b")).toBeNull();
     expect(items[0]!.textContent).toContain("Billed: Chini 2 kg = ₹90");
-    expect(items[0]!.textContent).toContain("KB-0000");
+    expect(items[0]!.textContent).toMatch(/^Bill KB-0000\d+ · /); // KB-341: the number with its label
     expect(items[1]!.textContent).toContain("Billed: nothing added");
     expect(items[1]!.textContent).toContain("bill not saved");
     fireEvent.click(within(panel).getByRole("button", { name: "Clear now" }));

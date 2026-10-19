@@ -294,15 +294,15 @@ Each row shows a sync chip when not yet synced. Never alarming; just information
   search until everything is loaded, so an older `dd-mm` never ends at "No bills found.") loads all of the shop's rows —
   "Loading older bills…". Items are read only when a bill's detail opens.
 - **Search** (`domain/billSearch.ts`): every word must match the customer name, the receipt's sequence number ("142" →
-  `KB-000142`, "14" doesn't), the exact total in paise ("112.50", "112.5"), a date `dd-mm` / `dd-mm-yyyy` with `-` `/`
+  `142` or an old `KB-000142`, "14" doesn't; the words bill / बिल / no / no. / नं. / number are ignored, so "bill 142" works; a fallback number like `7F2A91-1` has no sequence), the exact total in paise ("112.50", "112.5"), a date `dd-mm` / `dd-mm-yyyy` with `-` `/`
   or `.` and single digits ("4/10"), or an item name; Devanagari digits read as 0–9. **Never the customer's mobile.**
-- **Row:** receipt number, time, the name unless Cash, the total, "Not synced" while pending, and a text tag **"Cancelled"** (`KB-325`; never colour alone). Grouped Today /
+- **Row:** the number with its label (**"Bill 59"** / "बिल 59"; an old one "Bill KB-000059" - `KB-341`, D87), time, the name unless Cash, the total, "Not synced" while pending, and a text tag **"Cancelled"** (`KB-325`; never colour alone). Grouped Today /
   Yesterday / `dd-mm-yyyy`. No item count (owner: no schema change).
 - **S6 bill detail:** the read-only receipt (`Receipt.tsx`) and the four share buttons (`ShareBar.tsx`, D58); **Cancel bill** below them (`KB-325`, next section).
 
 ### Implementation notes - cancel and reissue (`KB-325`, 14 Oct 2026; D79)
 
-- **Cancel bill** (a saved bill, 44 px) opens a sheet: **"Cancel Bill KB-000142?"**, "The bill stays in History, marked Cancelled. Its number is not used again. This cannot be undone.", **five reason chips** (Wrong item - Wrong price - Wrong quantity - Customer cancelled - Other; nothing to type), and **Cancel and make a new bill** / **Cancel only** (both wait for a reason) / **Keep the bill**. It is irreversible and not mid-bill, so a confirm step is right (hard rule 6 is about questions *during* a bill). Works offline - it only writes this phone's database - and reaches the other phones on the next sync cycle.
+- **Cancel bill** (a saved bill, 44 px) opens a sheet: **"Cancel Bill 142?"**, "The bill stays in History, marked Cancelled. Its number is not used again. This cannot be undone.", **five reason chips** (Wrong item - Wrong price - Wrong quantity - Customer cancelled - Other; nothing to type), and **Cancel and make a new bill** / **Cancel only** (both wait for a reason) / **Keep the bill**. It is irreversible and not mid-bill, so a confirm step is right (hard rule 6 is about questions *during* a bill). Works offline - it only writes this phone's database - and reaches the other phones on the next sync cycle.
 - **Cancel and make a new bill:** the stored bill's lines (qty, unit, rate with its own unit, total, price type - exactly as stored, nothing re-priced or filled in) and its customer become a **new draft** under the id the cancellation points to; History closes and the billing screen opens on it. It goes through the ordinary Bill Banao (flags re-derived; a line with no price still says "Price needed"). It takes the **next receipt number**; a cancelled number is never reused. Every reissued line is a manual line, so it teaches no alias a second time. **Off while a bill is in progress** ("A bill is in progress - finish it or clear it first to make the new bill.") - it would have to replace it; Cancel only still works. If the draft is abandoned the cancelled bill reads "No replacement bill made".
 - **A cancelled bill:** the receipt carries a **CANCELLED** line on the screen, the image / PDF and the WhatsApp / SMS text (hi: "रद्द", both: "रद्द / CANCELLED"), with the same lines and total - it is never shown or shared as if valid; the four share buttons stay. Below it a card: "Cancelled - Wrong price", the date, and **"Replaced by Bill KB-000143"** (tap to open) or "No replacement bill made". The new bill says **"Replaces Bill KB-000142"** (tap to open) - **and prints it on its receipt too** (SG-13, D57 amended: one small muted line under the bill number, in the screen, image / PDF, WhatsApp and SMS renderings) - found by looking the cancellations up by its own id; no bills column. The reason is internal: not printed on the receipt, shown only as the preset label.
 - **Sync honesty:** while the cancellation has not reached the server the card says "Will reach your other phones when this one is online". For a bill whose own push is in permanent conflict (the server refused it, so it is not there to cancel) it says **"This bill couldn't be saved to the server, so its cancellation is on this phone only."** - the bill stays in conflict, still counted by the sync chip.
@@ -324,7 +324,7 @@ Layout: the legacy parchi's (D57), en shown — the default for new shops; hi / 
                98765 43210                   ← small, muted
           04-10-2026 | 4:33 PM               ← small, muted
 - - - - - - - - - - - - - - - - - - - - - -
-Bill No. KB-000142
+Bill No. 142
 Customer: Ramesh                             ← only when not "Cash"; never the mobile
 - - - - - - - - - - - - - - - - - - - - - -
 Item          Qty        Rate        Amt     ← visible header row, bold
@@ -353,7 +353,7 @@ TOTAL                             ₹142.50    ← larger, bold
   `innerHTML`/`outerHTML` and `insertAdjacentHTML` everywhere.
 - **A total-only line** (D47): qty `—`, rate `—`, the spoken amount. Amounts always carry ₹ in exact paise
   (`formatRupees` — ₹22.50 prints ₹22.50, never rounded).
-- **Bill numbers with several devices (D73, D74):** each device draws its own block of 50, so numbers can interleave in time (`KB-000012` may be issued after `KB-000061` by another device). They **never repeat** and a number never changes after it is issued.
+- **Bill numbers with several devices (D73, D74):** each device draws its own block of 50, so numbers can interleave in time (`12` may be issued after `61` by another device). **Plain numbers (`KB-341`, D87):** `59`, no prefix, no padding; old bills keep `KB-000059`; the rare offline fallback is `7F2A91-1` (a 6-character device code + a counter). They **never repeat** and a number never changes after it is issued.
 - Share (`KB-309`, D58 — the legacy behaviour): four buttons under the saved receipt — **Image**, **PDF**,
   **WhatsApp**, **SMS**.
 
@@ -364,7 +364,7 @@ TOTAL                             ₹142.50    ← larger, bold
   wide**, and the same pixels as a JPEG inside our own **one-page PDF** (`ui/onePagePdf.ts`, no dependency) **58 mm
   wide** (164.41 pt). A typical bill: PNG ≈ 80–105 kB, PDF ≈ 75–100 kB. Rendered **when the receipt is shown**, every
   Plex / Mukta face loaded first with the receipt's actual strings.
-- **Image** and **PDF** always **download** (`KB-000142.png` / `.pdf`) — desktop and phone, no share sheet.
+- **Image** and **PDF** always **download** (`Bill-142.png` / `.pdf`) — desktop and phone, no share sheet.
 - **WhatsApp** sends the **image**: the share sheet when `navigator.canShare({ files })` (called inside the tap — the
   file is already rendered; Android needs the tap's activation); the shopkeeper picks WhatsApp and the chat. Cancelled
   (AbortError) → nothing. No file sharing → `wa.me/91<mobile>?text=…` with the text receipt (`domain/receiptText.ts`),

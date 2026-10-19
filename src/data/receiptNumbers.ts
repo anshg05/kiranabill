@@ -15,24 +15,16 @@ export const RESERVE_RETRY_MAX_WAIT_MS = 60 * (RESERVE_MAX_ATTEMPTS - 1);
 const RESERVE_THRESHOLD = 10;
 const FALLBACK_COUNTER_KEY = "receiptNumberFallback";
 
-function formatBlockNumber(prefix: string, n: number): string {
-  return `${prefix}-${String(n).padStart(6, "0")}`;
-}
+/** KB-341 (D87): a block number is the plain number - "59": no prefix, no padding. receipt_prefix stays in the schema, unused. */
+const formatBlockNumber = (n: number): string => String(n);
 
 /**
- * The full device UUID, not a truncated prefix - see 07-DECISIONS.md D23.
- * A shortened prefix's birthday-paradox collision probability looks low
- * in isolation, but the fallback counter below is device-local and
- * starts fresh each time a device enters exhaustion mode - a prefix
- * collision between two devices would produce a near-certain immediate
- * duplicate, not just a small chance of one, since the two counters
- * aren't independent once the prefixes match. The full UUID's collision
- * probability is cryptographically negligible instead of merely
- * statistically low.
+ * KB-341 (D87, supersedes D23): "7F2A91-1" - the first 6 characters of the device UUID, upper-case, then this device's
+ * counter. Two devices of one shop sharing a code is accepted at about 1 in 1.7 million for 5 devices (owner): both then
+ * count 1, 2 ... so the second bill to push is refused by unique (shop_id, receipt_number) - that bill stays final on its
+ * phone in permanent conflict, never silently wrong. Old numbers with the full UUID stay as saved.
  */
-function formatFallbackNumber(prefix: string, deviceId: string, n: number): string {
-  return `${prefix}-${deviceId}-${n}`;
-}
+const formatFallbackNumber = (deviceId: string, n: number): string => `${deviceId.slice(0, 6).toUpperCase()}-${n}`;
 
 /** The database refused the range because another device took it first: exclusion_violation / unique_violation. */
 const isRangeTaken = (error: { code?: string } | null): boolean => error?.code === "23P01" || error?.code === "23505";
@@ -139,15 +131,13 @@ async function activeBlockOf(localDb: KiranaBillDB, shopId: string, deviceId: st
  * the caller's job after the commit (topUpReceiptBlock).
  */
 export async function takeNextNumber(localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<AllocatedReceiptNumber> {
-  const shop = await localDb.shops.get(shopId);
-  const prefix = shop?.receiptPrefix ?? "KB";
   const activeBlock = await activeBlockOf(localDb, shopId, deviceId);
   if (!activeBlock) {
-    return { receiptNumber: await allocateFallbackNumber(localDb, deviceId, prefix), source: "fallback" };
+    return { receiptNumber: await allocateFallbackNumber(localDb, deviceId), source: "fallback" };
   }
   const number = activeBlock.nextNumber;
   await localDb.receiptNumberBlocks.update(activeBlock.id, { nextNumber: number + 1, syncStatus: "pending" });
-  return { receiptNumber: formatBlockNumber(prefix, number), source: "block" };
+  return { receiptNumber: formatBlockNumber(number), source: "block" };
 }
 
 /** Fewer than RESERVE_THRESHOLD numbers left in this device's block, or no block at all. */
@@ -189,7 +179,7 @@ export async function consumeNextNumber(
  * for a single number. Never touches the server - this is the path that
  * exists specifically because the server is unreachable.
  */
-async function allocateFallbackNumber(localDb: KiranaBillDB, deviceId: string, prefix: string): Promise<string> {
+async function allocateFallbackNumber(localDb: KiranaBillDB, deviceId: string): Promise<string> {
   const state = await localDb.syncState.get(FALLBACK_COUNTER_KEY);
   const next = (state?.pendingCount ?? 0) + 1;
 
@@ -206,5 +196,5 @@ async function allocateFallbackNumber(localDb: KiranaBillDB, deviceId: string, p
     pendingCount: next,
   });
 
-  return formatFallbackNumber(prefix, deviceId, next);
+  return formatFallbackNumber(deviceId, next);
 }

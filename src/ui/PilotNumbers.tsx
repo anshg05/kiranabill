@@ -142,7 +142,7 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
                   <ul className="mt-1 flex flex-col gap-1">
                     {check.problems.map((p) => (
                       <li key={p.receiptNumber} className="[overflow-wrap:anywhere]">
-                        {p.receiptNumber}: {p.problems.join("; ")}
+                        Bill {p.receiptNumber}: {p.problems.join("; ")}
                       </li>
                     ))}
                   </ul>
@@ -184,7 +184,7 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
           <ul aria-label="Heard and billed" className="mt-2 flex flex-col gap-2">
             {pairs.map(({ capture: c, receipt }) => (
               <li key={c.id} className="rounded-[6px] border border-line px-3 py-2 [overflow-wrap:anywhere]">
-                <span className="text-[13px] text-ink-soft">{receipt ?? "bill not saved"} · </span>
+                <span className="text-[13px] text-ink-soft">{receipt === null ? "bill not saved" : `Bill ${receipt}`} · </span>
                 Heard: “{c.transcript}” → Billed:{" "}
                 {c.lines.length === 0 ? "nothing added" : c.lines.map((l) => `${l.name} ${l.qty ?? "—"}${l.unit ? ` ${l.unit}` : ""} = ${l.total === null ? "—" : formatRupees(l.total)}`).join("; ")}
               </li>

@@ -164,7 +164,7 @@ describe("KB-307 - finalise and the saved screen", () => {
   it("saves one bill; the screen shows its receipt number, read-only, with New bill", async () => {
     render(<Harness pre={[spoken("1 kilo besan")]} />);
     await tapBillBanao();
-    await waitFor(() => expect(screen.getByRole("status", { name: "Bill saved" }).textContent).toContain("KB-000001"));
+    await waitFor(() => expect(screen.getByRole("status", { name: "Bill saved" }).textContent).toContain("Bill 1 saved"));
     expect(await db.bills.count()).toBe(1);
     expect(screen.queryAllByRole("button", { name: "Besan quantity" })).toHaveLength(0); // read-only
     expect(screen.queryAllByRole("button", { name: "Remove Besan" })).toHaveLength(0);

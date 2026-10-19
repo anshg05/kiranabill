@@ -70,7 +70,7 @@ sequenceDiagram
     end
 
     App->>Supabase: Reserve receipt number block (50)
-    Supabase-->>App: KB-000001 to KB-000050
+    Supabase-->>App: numbers 1 to 50 (plain, D87)
     App->>Local: Cache catalog, settings, number block
     App->>Shopkeeper: Billing screen, ready
 ```
@@ -220,7 +220,7 @@ sequenceDiagram
 ```
 
 **The receipt number never changes after sync.** That is what block reservation buys — a customer
-holding a parchi with `KB-000042` will find `KB-000042` in the shop's records.
+holding a parchi with `Bill No. 42` will find bill `42` in the shop's records (bills saved before `KB-341` keep their `KB-000042`).
 
 ---
 

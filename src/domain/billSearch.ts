@@ -38,11 +38,14 @@ function dateParts(word: string): [number, number, number | null] | null {
   return [Number(m[1]), Number(m[2]), year];
 }
 
-/** KB-000142 -> 142; a fallback number (UUID) has none. */
+/** KB-341 (D87): "142" -> 142; an old "KB-000142" -> 142 (a prefix and 6+ digits); a fallback ("7F2A91-1", or an old UUID number) has none. */
 function sequenceNumber(receiptNumber: string): number | null {
-  const m = /^[^-]+-(\d+)$/.exec(receiptNumber);
-  return m ? Number(m[1]) : null;
+  const m = /^(?:\d+|[A-Za-z]+-(\d{6,}))$/.exec(receiptNumber);
+  return m ? Number(m[1] ?? receiptNumber) : null;
 }
+
+/** KB-341: words that only say "the bill number" - ignored, so "bill 59" and "बिल 59" find bill 59. */
+const FILLER_WORDS = new Set(["bill", "बिल", "no", "no.", "नं.", "नं", "number"]);
 
 /**
  * D61: a bill's search row, stored in its own device-only table (billSearch),
@@ -54,7 +57,7 @@ export interface BillSearchRow {
   /** When it was finalised (ISO) - the [shopId+finalizedAt] index. */
   readonly finalizedAt: string;
   readonly totalPaise: Paise;
-  /** KB-000142 -> 142; null for a fallback number. */
+  /** 142 / KB-000142 -> 142; null for a fallback number. */
   readonly sequence: number | null;
   /** "04-10-2026", device time when written. */
   readonly dateKey: string;
@@ -103,7 +106,7 @@ function compileWord(word: string): (r: BillSearchRow) => boolean {
 
 /** The query parsed ONCE; the returned test runs per row. Every word must match something. */
 export function compileQuery(query: string): (r: BillSearchRow) => boolean {
-  const words = normalizeDigits(query).toLowerCase().split(/\s+/).filter(Boolean).map(compileWord);
+  const words = normalizeDigits(query).toLowerCase().split(/\s+/).filter((w) => w && !FILLER_WORDS.has(w)).map(compileWord);
   return (r) => words.every((w) => w(r));
 }
 

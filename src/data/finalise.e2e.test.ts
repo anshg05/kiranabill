@@ -16,7 +16,7 @@ import { finaliseBill, type FinaliseInput } from "./finalise";
  * KB-307 commit 2 - finalise on the real local stack, shipped code (D21/D32):
  * finaliseBill() writes the bill locally (one Dexie transaction), syncNow()
  * pushes it through push_bill. Online -> block number; no block (the offline-
- * exhaustion path) -> D23 fallback number, synced later as 'fallback'; a double
+ * exhaustion path) -> D87 fallback number, synced later as 'fallback'; a double
  * tap -> one bill on the server; a failure inside the transaction -> nothing
  * written, nothing consumed, nothing pushed. Local stack only.
  */
@@ -96,15 +96,15 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
     );
   });
 
-  it("offline (no block on this device): D23 fallback number; pushed later, stored as 'fallback'", async () => {
+  it("offline (no block on this device): D87 fallback number; pushed later, stored as 'fallback'", async () => {
     const { db, deviceId } = device(); // never reserved a block - the offline-exhaustion path
     const d = draft(deviceId, "2 kilo chini");
     const saved = await finaliseBill(db, d);
-    expect(saved).toMatchObject({ source: "fallback", receiptNumber: `KB-${deviceId}-1` });
+    expect(saved).toMatchObject({ source: "fallback", receiptNumber: `${deviceId.slice(0, 6).toUpperCase()}-1` });
     expect((await db.bills.get(d.localId))?.syncStatus).toBe("pending");
     await syncNow({ client, localDb: db, shopId, deviceId }); // "back online"
     const [bill] = await serverBill(d.localId);
-    expect(bill).toMatchObject({ receipt_number: `KB-${deviceId}-1`, receipt_number_source: "fallback", status: "final" });
+    expect(bill).toMatchObject({ receipt_number: `${deviceId.slice(0, 6).toUpperCase()}-1`, receipt_number_source: "fallback", status: "final" });
   });
 
   it("double tap: two concurrent finalises -> one bill locally and on the server", async () => {

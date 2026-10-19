@@ -52,7 +52,7 @@ describe("loadRecentRows - what History opens with", () => {
 
     const rows = await loadRecentRows(db, shopA, 2);
     expect(rows.map((r) => r.localId)).toEqual([a3, a2]);
-    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "KB-000002", customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending", cancelled: false });
+    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "2", customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending", cancelled: false });
     expect((await loadRecentRows(db, shopA, 200)).map((r) => r.localId)).toEqual([a3, a2, a1]);
     expect(JSON.stringify(rows)).not.toContain("9123456789");
   });
