@@ -157,11 +157,11 @@ describe("flags and 'Theek hai' (KB-337 decision 2)", () => {
     expect(visible(/usually|expected around/)).toEqual([]);
   });
 
-  it("a typed amount is not checked against the catalog - a typing slip (₹4500 for 2 kg) raises nothing; the TOTAL shows it (the trade-off)", () => {
+  it("a typed amount is not checked against the catalog - a typing slip (₹4,500 for 2 kg) raises nothing; the TOTAL shows it (the trade-off)", () => {
     render(<Harness transcripts={["2 kilo chini"]} />);
     type("Chini amount", "4500");
     expect(visible(/[1-9]\d* checks? pending/)).toEqual([]);
-    expect(total()).toBe("₹4500");
+    expect(total()).toBe("₹4,500");
   });
 });
 

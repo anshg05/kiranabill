@@ -68,6 +68,7 @@ export function CancelBillSheet({ receiptNumber, billInProgress, onCancel, onClo
           )}
         </div>
         <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
+          {reason === null && <p className="text-center text-[13px] text-ink-soft">{t("reason.cancelReason")}</p>}
           <button
             type="button"
             aria-disabled={!ready || billInProgress}

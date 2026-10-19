@@ -40,10 +40,16 @@ function ensureListening(): void {
 const tokenOf = (state: unknown): string | undefined =>
   Object.values((state ?? {}) as Record<string, unknown>).find((v): v is string => typeof v === "string");
 
-export function useBackEntry(key: string, onClose: () => void): void {
+/**
+ * `canClose` (KB-343): asked when Android Back is about to close this overlay - false keeps it open (it is expected to have asked the
+ * shopkeeper, e.g. "Discard changes?"): the entry Back just took is put straight back, so the next Back asks again.
+ */
+export function useBackEntry(key: string, onClose: () => void, canClose?: () => boolean): void {
   useUpdateGate(false); // KB-401: an open overlay is never reloaded under the shopkeeper
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const canCloseRef = useRef(canClose);
+  canCloseRef.current = canClose;
   const entry = useRef<{ token: string; pendingBack: ReturnType<typeof setTimeout> | null } | null>(null);
   useEffect(() => {
     if (!entry.current) {
@@ -73,6 +79,10 @@ export function useBackEntry(key: string, onClose: () => void): void {
       const now = tokenOf(window.history.state);
       const here = now === undefined ? -1 : stack.indexOf(now);
       if (here >= stack.indexOf(mine.token) && stack.indexOf(mine.token) >= 0) return;
+      if (canCloseRef.current && !canCloseRef.current()) {
+        window.history.pushState({ [key]: mine.token }, "");
+        return;
+      }
       closedByBack = true;
       const at = stack.indexOf(mine.token);
       if (at >= 0) stack.splice(at, 1);

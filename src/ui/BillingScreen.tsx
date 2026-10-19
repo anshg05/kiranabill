@@ -658,13 +658,14 @@ function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (
       </p>
     );
   }
-  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>{t("voice.listening")}</p>;
+  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>{t("voice.understanding")}</p>;
   if (voice.transcript) {
     return (
       <>
         <p data-testid="voice-transcript" className={`${base} text-ink`}>
           “{voice.transcript}”
         </p>
+        {voice.phase === "resolving" && <p className={`${base} text-ink-soft`}>{t("voice.understanding")}</p>}
         {voice.notice && (
           <p role="status" data-testid="voice-notice" className={`${base} text-ink-soft`}>
             {tx(voice.notice)}
@@ -701,7 +702,7 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
     return (
       <button type="button" disabled className={cls}>
         <Loader2 {...icon} className="animate-spin" />
-        {t("voice.listening")}
+        {t("voice.understanding")}
       </button>
     );
   }
@@ -1200,6 +1201,8 @@ export function BillView({
               {checksText(pending, t)}
             </p>
           )}
+          {!readOnly && lines.length === 0 && !saving && <p className="col-span-2 text-center text-[13px] text-ink-soft">{t("reason.emptyBill")}</p>}
+          {saving && <p className="col-span-2 text-center text-[13px] text-ink-soft">{t("reason.saving")}</p>}
           {saveError && (
             <p role="alert" className="col-span-2 text-center text-[13px] font-medium text-danger">
               {tx(saveError)}

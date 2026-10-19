@@ -37,6 +37,7 @@ export function ShareBar({ share }: { share: ReceiptShare }) {
           {t("share.sms")}
         </button>
       </div>
+      {!share.ready && <p className="mt-2 text-center text-[13px] text-ink-soft">{t("reason.preparing")}</p>}
       {smsOpen && <SmsSheet share={share} onClose={() => setSmsOpen(false)} />}
     </div>
   );
@@ -89,6 +90,7 @@ function SmsSheet({ share, onClose }: { share: ReceiptShare; onClose: () => void
           {tx(parsed.error)}
         </p>
       )}
+      {mobile === null && parsed.ok && <p className="mt-1 text-[13px] text-ink-soft">{t("reason.smsNumber")}</p>}
       <pre data-testid="sms-preview" className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-[6px] bg-paper p-2 font-mono text-[12px] text-ink-soft">
         {share.smsText}
       </pre>

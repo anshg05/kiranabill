@@ -5,6 +5,7 @@ import type { LocalShopProduct } from "@/data/db";
 import { checkAliases, checkName, lostNameNote, productPatch, type OtherProduct, type ProductPatch } from "@/domain/catalogEdit";
 import { nameKey } from "@/domain/catalogImport";
 import { useBackEntry } from "./useBackEntry";
+import { useDiscardGuard } from "./useDiscardGuard";
 import { useT } from "./useT";
 
 // KB-330 (D71, D77): rename, other names (aliases) and archive for ONE product. The unit is shown, never editable (a unit
@@ -27,7 +28,6 @@ interface Props {
 }
 
 export function EditProductSheet({ product, others, online, onSave, onArchive, onClose }: Props) {
-  useBackEntry("kbEditProduct", onClose);
   const { t, tx } = useT();
   const initialAliases = product.aliases.join("\n");
   const [name, setName] = useState(product.displayName);
@@ -48,6 +48,8 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
   const changed = Object.keys(patch).length > 0;
   const lost = nameCheck.ok ? lostNameNote(product.displayName, nameCheck.name, aliasesTouched ? aliasCheck.aliases : product.aliases.map(nameKey)) : null;
   const canWrite = online && !busy;
+  const guard = useDiscardGuard(name !== product.displayName || aliasesTouched, onClose);
+  useBackEntry("kbEditProduct", guard.requestClose, guard.canClose);
 
   const run = async (write: () => Promise<CatalogWriteResult>, clashName: string) => {
     setBusy(true);
@@ -66,7 +68,7 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
     <section aria-label={t("product.editTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">{t("product.editTitle")}</h2>
@@ -158,8 +160,10 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
               {t("product.archive")}
             </button>
           )}
+          {canWrite && nameCheck.ok && !changed && <p className="w-full text-[13px] text-ink-soft">{t("reason.noChanges")}</p>}
         </div>
       </div>
+      {guard.dialog}
     </section>
   );
 }

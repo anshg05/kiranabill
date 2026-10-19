@@ -188,6 +188,7 @@ describe("BillView voice states", () => {
   it("transcript ready: shown before items resolve", () => {
     renderVoice({ phase: "resolving", transcript: "do kilo chini" });
     expect(screen.getByTestId("voice-transcript").textContent).toBe("“do kilo chini”");
+    expect(screen.getAllByText("Understanding…").length).toBeGreaterThan(0); // KB-343: still working on it
   });
 
   it("failed: inline alert, and the mic stays usable (never a dead end)", () => {

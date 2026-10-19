@@ -12,7 +12,7 @@ import { MAX_RATE_PAISE, parseMoneyInput } from "@/domain/billEdit";
 import { nameKey } from "@/domain/catalogImport";
 import { prepareParserCatalog, searchCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { PriceSuggestion } from "@/domain/learning";
-import { formatRupees } from "@/domain/money";
+import { formatRupees, plainRupees } from "@/domain/money";
 import { CatalogImportSheet } from "./CatalogImportSheet";
 import { AddProductSheet } from "./AddProductSheet";
 import { EditProductSheet, SAVE_FAILED_TEXT } from "./EditProductSheet";
@@ -365,7 +365,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                         label={t("catalog.priceOf", { name: p.displayName })}
                         fieldId={`price-${p.id}`}
                         text={priceText(p.pricePaise, p.unit)}
-                        initial={formatRupees(p.pricePaise).slice(1)}
+                        initial={plainRupees(p.pricePaise)}
                         onCommit={(text) => {
                           const r = parseMoneyInput(text, MAX_RATE_PAISE);
                           if (!r.ok) return r.error;

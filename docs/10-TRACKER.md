@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 19 Oct 2026 (rev 126) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
+**Last updated:** 19 Oct 2026 (rev 127) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu closes properly + the UI audit's 11 bugs) is BUILT 19 Oct 2026 - awaiting the owner's check; the audit's 8 DESIGN items (`21` Part 5 #12-#19) wait for the owner's decisions.** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
+**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is BUILT 19 Oct 2026 - awaiting the owner's check.** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -77,7 +77,7 @@ https://kiranabilling.netlify.app **only** when the commit carries the owner-app
 
 **Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
 verified step (D29, `CLAUDE.md`).
-**Test state (19 Oct 2026, `KB-342`):** `npm test` (the official 3-worker run, unit then perf) **133 files / 2208 tests**; `test:e2e` 22 files / 138; `test:rls` **112/112**; build, typecheck, lint clean; `npm audit --omit=dev` 0. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong of 39; `coverage:probe` 145/154.
+**Test state (19 Oct 2026, `KB-343`):** `npm test` (the official 3-worker run, unit then perf) **136 files / 2290 tests**; `test:e2e` 22 files / 138; `test:rls` **112/112**; build, typecheck, lint clean; `npm audit --omit=dev` 0. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong of 39; `coverage:probe` 145/154.
 `test:e2e` 93 in 15 files; `test:rls` **82/82**. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
 **`npm test` workers (owner, 4 Oct 2026; SUPERSEDED 17 Oct 2026):** **Official test run (owner, 17 Oct 2026):** the unit suite is capped at **3 workers in `vite.config.ts`** (`test.maxWorkers: 3`; `scripts/vitestConfig.test.ts` guards it) and `npm test` - unit, then perf alone (D35) - IS the official VERIFY run. It replaces the 4 Oct `--maxWorkers=2` workaround and the rule that a default-worker run must pass before a release: with one worker per core the 117-file suite times out UI tests on a busy machine (a different handful each run, all green alone and at 3 workers).
 **Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
@@ -117,6 +117,7 @@ stores), `src/app/` (the auth and shop gates), `src/voice/` (server-side Groq/Ge
 | `KB-339` | **Spoken commands** ("bas" -> hint, "hatao" -> remove last with Undo, "sab hatao" -> hint), whole utterance only, not a turn | 18 Oct | D86 | **PENDING** |
 | `KB-340` | **The shop's name in the billing header** | 18 Oct | D86 | **PENDING** |
 | `KB-341` | **Simple bill numbers** - plain 1, 2, 3 …; fallback `7F2A91-1`; "Bill 59" labels; search ignores bill / बिल / no | 19 Oct | D87 | ✅ passed 19 Oct |
+| `KB-343` | **The audit's DESIGN items:** Indian digit grouping (₹1,25,000), focus after Enter, "Discard changes?", a reason beside every disabled button, "Understanding…", Undo 10 s, translated errors, set-up labels | 19 Oct | D88 | **PENDING** |
 | `KB-342` | **The ≡ menu closes properly** (outside tap, a choice, Escape, Back, a panel / dialog / the mic opening) + the UI audit's 11 bugs (Escape on every layer, real modal dialogs, `inert` behind a layer, SMS sheet in view, no double share, 44 px targets, one Google sign-in per tap) | 19 Oct | `21` Part 5 | **PENDING** |
 | `KB-332` | **Screen language** — English / हिन्दी / Hinglish, per device, no reload (Checkpoint A: billing, flags, voice errors, sync chip, sign-in, Add item, Settings. Checkpoint B: Catalog, History and Cancel, product sheets, set-up, shop-load error) | 17 Oct | D84 | A and B **passed** (18 Oct) |
 
@@ -126,7 +127,7 @@ Also decided in this stretch (docs only): rule 5 reworded (D72), `eval:real` + `
 
 Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-only fix, and **`KB-404` "Pilot numbers"** (17 bills reconciled - every one on the server with the same number, total and item count; two voice bills: turns 1, fast-path 100%, fast-path item on screen 18 ms, finalise → receipt 54 ms; Review mode showed the Heard → Billed pairs and "Clear now" removed them).
 
-1. **`KB-342`** - the owner's check (the steps went with the commit); then **decide the 8 DESIGN items** of `21` Part 5 (digit grouping, focus after Enter, discard-changes step, reasons on disabled buttons, "Understanding…", Undo time, Hindi times / sign-in errors, set-up labels). The phone-only checks of Part 5 go into the release-draft session.
+1. **`KB-343`** - the owner's check (the steps went with the commit). The phone-only checks of `21` Part 5 go into the release-draft session.
 2. **Answers the owner owes (nothing built or planned):** an item count on a History row, a Copy debug report button (`21` Part 4).
 3. **`KB-335`, on the release draft** — (a) sign in on the Android phone with the installed app: the return must land signed in; (b) the sign-up-off test: switch off "Allow new users to sign up", pre-create a second Gmail user (Auto Confirm) — it must sign in; an uncreated Gmail must be refused with "This account isn't set up for the pilot".
 4. **Release-draft leftovers** — the Android file picker for the catalog import (`KB-314`) and the foreground-update fix (`KB-401`), each on a phone.
@@ -570,6 +571,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 19 Oct 2026 | **`KB-343` built (D88): Indian digit grouping on every amount, focus after Enter, "Discard changes?", reasons on disabled buttons, "Understanding…", Undo 10 s, translated errors, set-up labels; `KB-342` and the audit passed the owner's check.** Red first (32 tests), 27 plants caught, official VERIFY (unit 136 files / 2290, e2e 22 / 138, RLS 112/112, benchmarks unchanged). |
 | 19 Oct 2026 | **`KB-342` built: the ≡ menu closes on an outside tap, a choice, Escape, Back and when a panel / dialog / the mic opens; `21` Part 5 = the UI audit of every shopkeeper screen at 320 / 375 / 1280 and in हिन्दी (19 rows: 11 BUGs fixed, 8 DESIGN waiting); `KB-341` passed the owner's check.** Red first, 21 plants caught, official VERIFY (unit 133 files / 2208, e2e 22 / 138, RLS 112/112, benchmarks unchanged). |
 | 19 Oct 2026 | **`KB-341` simple bill numbers built (D87): plain 1, 2, 3 …; fallback `7F2A91-1`; "Bill 59" labels; search ignores bill / बिल / no; `Bill-59.pdf`. No migration.** Red first (17 unit + 2 e2e), 14 plants caught, official VERIFY, mixed old + plain + fallback e2e on the real stack. |
 | 19 Oct 2026 | **D86 amended: "—" on a cross-unit line (500 gm at Rs.45/kg) turns it into a total-priced line - no more 600 x Rs.45 = Rs.27,000; `KB-338`-`KB-340` passed the owner's check.** Red first, 5 plants, official VERIFY (unit 127 files / 2159, e2e 21 / 136, RLS 112/112, benchmarks unchanged). |

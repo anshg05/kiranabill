@@ -4,6 +4,7 @@ import type { CatalogWriteResult } from "@/data/catalogEdit";
 import { checkNewProduct, type NewProduct, type OtherProduct } from "@/domain/catalogEdit";
 import { normalizeUnit } from "@/domain/catalogImport";
 import { useBackEntry } from "./useBackEntry";
+import { useDiscardGuard } from "./useDiscardGuard";
 import { OFFLINE_NOTE, SAVE_FAILED_TEXT } from "./EditProductSheet";
 import { useT } from "./useT";
 
@@ -24,11 +25,12 @@ interface Props {
 type Errors = { name?: string; unit?: string; price?: string };
 
 export function AddProductSheet({ existing, online, onCreate, onClose }: Props) {
-  useBackEntry("kbAddProduct", onClose);
   const { t, tx } = useT();
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
   const [price, setPrice] = useState("");
+  const guard = useDiscardGuard(name.trim() !== "" || unit.trim() !== "" || price.trim() !== "", onClose);
+  useBackEntry("kbAddProduct", guard.requestClose, guard.canClose);
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,7 +57,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
     <section aria-label={t("product.addTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
+          <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
             <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
           </button>
           <h2 className="text-[20px] font-semibold">{t("product.addTitle")}</h2>
@@ -124,6 +126,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
           </button>
         </div>
       </div>
+      {guard.dialog}
     </section>
   );
 }

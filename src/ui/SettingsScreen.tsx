@@ -169,6 +169,7 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                   >
                     {t("settings.save")}
                   </button>
+                  {!dirty && !saved && <span className="text-[13px] text-ink-soft">{t("reason.noChanges")}</span>}
                   {saved && (
                     <span role="status" className="text-[13px] text-ink-soft">
                       {online ? t("settings.saved") : t("settings.savedOffline")}

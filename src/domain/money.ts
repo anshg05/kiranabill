@@ -111,8 +111,34 @@ export function rupeesToPaise(rupees: number): Paise {
  */
 export function formatRupees(paise: Paise): string {
   const sign = paise < 0 ? "-" : "";
+  const { rupees, paiseRemainder } = splitRupees(paise);
+  const grouped = groupIndian(rupees);
+  return paiseRemainder === "00" ? `${sign}₹${grouped}` : `${sign}₹${grouped}.${paiseRemainder}`;
+}
+
+function splitRupees(paise: Paise): { rupees: string; paiseRemainder: string } {
   const digits = String(Math.abs(paise)).padStart(3, "0");
-  const rupees = digits.slice(0, -2);
-  const paiseRemainder = digits.slice(-2);
-  return paiseRemainder === "00" ? `${sign}₹${rupees}` : `${sign}₹${rupees}.${paiseRemainder}`;
+  return { rupees: digits.slice(0, -2), paiseRemainder: digits.slice(-2) };
+}
+
+/**
+ * KB-343 (D88): the amount as it is TYPED into an editor - plain, no rupee sign, no commas ("1520", "1250.50"), so a small
+ * correction is one keystroke. The screens, receipt, image, PDF and texts use formatRupees (Indian grouping).
+ */
+export function plainRupees(paise: Paise): string {
+  const sign = paise < 0 ? "-" : "";
+  const { rupees, paiseRemainder } = splitRupees(paise);
+  return paiseRemainder === "00" ? `${sign}${rupees}` : `${sign}${rupees}.${paiseRemainder}`;
+}
+
+/** "10000000" -> "1,00,00,000": Indian digit grouping (2-digit groups above the last three), by string. */
+export function groupIndian(digits: string): string {
+  if (digits.length <= 3) return digits;
+  let out = digits.slice(-3);
+  let rest = digits.slice(0, -3);
+  while (rest.length > 2) {
+    out = `${rest.slice(-2)},${out}`;
+    rest = rest.slice(0, -2);
+  }
+  return `${rest},${out}`;
 }

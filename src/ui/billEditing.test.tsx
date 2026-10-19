@@ -195,7 +195,7 @@ describe("KB-303 - removing a line, with one-level undo", () => {
       vi.advanceTimersByTime(UNDO_MS);
     });
     expect(screen.queryByRole("status")).toBeNull();
-    expect(UNDO_MS).toBe(6_000);
+    expect(UNDO_MS).toBe(10_000);
   });
 
 });

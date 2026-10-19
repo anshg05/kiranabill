@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 19 Oct 2026 (rev 25) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 19 Oct 2026 (rev 26) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -189,6 +189,13 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - **Dialogs** ("Sign out?", "Clear this bill?", the sync detail) are modal in fact: Back, Escape and a tap on the dim area cancel; focus starts on Cancel and Tab stays inside; `aria-modal`.
 - **Behind a full-screen layer** (History, Catalog, Settings) the bill is `inert` and `aria-hidden`.
 - **Share:** the same button's repeats within 1.5 s are ignored; the SMS sheet scrolls into view and takes the focus. **Sign in:** one tap starts one Google sign-in ("Opening Google…"). Every 44 px control keeps its size (`shrink-0`).
+
+### Implementation notes — amounts, discard, reasons, Understanding (`KB-343`, 19 Oct 2026; D88)
+
+- **Amounts** print with Indian grouping (₹1,520, ₹1,25,000) through the one formatter; an editor opens with the plain number (`1520`) and reads a typed `1,25,000` (a real grouping only).
+- **After Enter** in an inline editor the focus stays on that value. **Edit product / Add product:** Back with something typed asks **"Discard changes?"** (Cancel / Discard); nothing typed closes at once.
+- **Disabled buttons say why** in one line (Save "No changes to save yet", Share "Preparing the receipt…", SMS Send, Cancel bill "Choose a reason first", Bill Banao "Add an item first" / "Saving the bill…").
+- **After the recording stops** the line and the mic say **"Understanding…"** until the result or error. **Undo strip:** 10 s or the next action. **Set-up:** a visible label over each field.
 
 ## 3. S2 — Onboarding catalog choice
 

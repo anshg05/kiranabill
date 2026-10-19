@@ -1,6 +1,6 @@
 import type { CatalogEntry } from "./catalog.js";
 import { unitsAreCompatible, unitScale, type ParsedItem } from "./grammar.js";
-import { lineTotalPaiseScaled, type Paise } from "./money.js";
+import { groupIndian, lineTotalPaiseScaled, type Paise } from "./money.js";
 import { evaluateReviewFlags, flagAcrossUtterances, type ReviewFlag } from "./reviewFlags.js";
 
 /**
@@ -55,24 +55,21 @@ export function normalizeDigits(text: string): string {
   }).join("");
 }
 
-/** "10000000" -> "1,00,00,000": Indian digit grouping, by string. */
-function groupIndian(digits: string): string {
-  if (digits.length <= 3) return digits;
-  const head = digits.slice(0, -3);
-  const pairs = head.replace(/\B(?=(\d{2})+$)/g, ",");
-  return `${pairs},${digits.slice(-3)}`;
-}
-
 /** A whole-rupee paise limit as "₹1,00,000" - the limits are whole rupees. */
 function rupeeLimit(maxPaise: number): string {
   return `₹${groupIndian(String(maxPaise).slice(0, -2))}`;
 }
 
 const NUMBER_TEXT = /^(\d+)(?:\.(\d+))?$/;
+const GROUPED_NUMBER = /^(?:\d{1,2}(?:,\d{2})*,\d{3}|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/;
 
 /** Rupees as typed ("12.50", "₹ 45", "१२.५०") -> exact integer paise. */
 export function parseMoneyInput(text: string, maxPaise: number): ParseResult<Paise> {
-  const match = NUMBER_TEXT.exec(normalizeDigits(text).replace(/₹/g, "").trim());
+  const typed = normalizeDigits(text).replace(/₹/g, "").trim();
+  // KB-343: the screens show ₹1,520 / ₹1,25,000, so a typed "1,520" is read - but only a REAL grouping (Indian or western);
+  // "1,5" or "12,34" is refused, never read as some other number (hard rule 7's spirit).
+  const unGrouped = !typed.includes(",") ? typed : GROUPED_NUMBER.test(typed) ? typed.replace(/,/g, "") : typed;
+  const match = NUMBER_TEXT.exec(unGrouped);
   if (!match) return { ok: false, error: "Enter an amount like 45 or 12.50" };
   const [, rupees, paiseDigits = ""] = match;
   if (paiseDigits.length > 2) return { ok: false, error: "At most 2 digits after the point" };

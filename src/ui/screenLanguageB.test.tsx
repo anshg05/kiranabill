@@ -255,12 +255,12 @@ describe("the first-time shop set-up and the shop-load error", () => {
     shopState.createShop.mockRejectedValueOnce(new Error("Setting up a shop needs an internet connection."));
     render(<OnboardingScreen />);
     expect(screen.getByRole("heading", { name: T("onboard.title", l) })).toBeTruthy();
-    expect(screen.getByPlaceholderText(T("settings.shopName", l))).toBeTruthy();
-    expect(screen.getByPlaceholderText(T("onboard.phone", l))).toBeTruthy();
+    expect(screen.getByLabelText(T("settings.shopName", l))).toBeTruthy(); // KB-343: visible labels
+    expect(screen.getByLabelText(T("onboard.phone", l))).toBeTruthy();
     expect(screen.getByText(T("onboard.question", l))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: T("onboard.ready", l) }));
     expect(screen.getByText(T("err.shopNameRequired", l))).toBeTruthy();
-    fireEvent.change(screen.getByPlaceholderText(T("settings.shopName", l)), { target: { value: "Sharma Kirana" } });
+    fireEvent.change(screen.getByLabelText(T("settings.shopName", l)), { target: { value: "Sharma Kirana" } });
     fireEvent.click(screen.getByRole("button", { name: T("onboard.empty", l) }));
     expect(await screen.findByText(T("onboard.offline", l))).toBeTruthy();
   });

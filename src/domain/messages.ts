@@ -201,6 +201,19 @@ export const MESSAGES = {
 
   // ---- Sign-in (KB-335)
   "signin.google": m("Sign in with Google", "Google से साइन इन करें", "Google se sign in karein"),
+  "signin.error": m("Couldn't start sign-in — check the internet and try again", "साइन इन शुरू नहीं हो पाया — इंटरनेट देखें और फिर कोशिश करें", "Sign in shuru nahi ho paya — internet dekhein aur phir koshish karein"), // KB-343
+  "onboard.error": m("Couldn't set up the shop — check the internet and try again", "दुकान सेट नहीं हो पाई — इंटरनेट देखें और फिर कोशिश करें", "Dukaan set nahi ho payi — internet dekhein aur phir koshish karein"),
+  "voice.noItem": m("Couldn't find an item — add it manually", "कोई सामान नहीं मिला — खुद जोड़ें", "Koi saaman nahi mila — khud jodein"),
+  "voice.understanding": m("Understanding…", "समझ रहे हैं…", "Samajh rahe hain…"),
+  "discard.title": m("Discard changes?", "बदलाव छोड़ें?", "Badlav chhodein?"),
+  "discard.line": m("What you typed here will be lost.", "यहाँ जो आपने लिखा है वह नहीं रहेगा।", "Yahan jo aapne likha hai woh nahi rahega."),
+  "discard.confirm": m("Discard", "छोड़ दें", "Chhod dein"),
+  "reason.noChanges": m("No changes to save yet", "अभी सेव करने के लिए कोई बदलाव नहीं", "Abhi save karne ke liye koi badlav nahi"),
+  "reason.preparing": m("Preparing the receipt…", "रसीद तैयार हो रही है…", "Receipt taiyaar ho rahi hai…"),
+  "reason.smsNumber": m("Enter the 10-digit mobile number to send", "भेजने के लिए 10 अंकों का मोबाइल नंबर डालें", "Bhejne ke liye 10 ankon ka mobile number daalein"),
+  "reason.cancelReason": m("Choose a reason first", "पहले कारण चुनें", "Pehle karan chunein"),
+  "reason.emptyBill": m("Add an item first", "पहले सामान जोड़ें", "Pehle saaman jodein"),
+  "reason.saving": m("Saving the bill…", "बिल सेव हो रहा है…", "Bill save ho raha hai…"),
   "signin.opening": m("Opening Google…", "Google खुल रहा है…", "Google khul raha hai…"), // KB-342
   "signin.refused": m("This account isn't set up for the pilot", "यह खाता पायलट के लिए सेट नहीं है", "Yeh account pilot ke liye set nahi hai"),
   "signin.unfinished": m("Sign-in didn't finish — tap Sign in with Google again", "साइन इन पूरा नहीं हुआ — फिर से ‘Google से साइन इन करें’ दबाएं", "Sign in poora nahi hua — phir se ‘Google se sign in karein’ dabayein"),

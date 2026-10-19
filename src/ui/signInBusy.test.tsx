@@ -29,7 +29,7 @@ describe("sign-in: a double tap", () => {
     signInWithGoogle.mockRejectedValueOnce(new Error("network down"));
     render(<SignInScreen />);
     fireEvent.click(screen.getByRole("button", { name: "Sign in with Google" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("network down");
+    expect((await screen.findByRole("alert")).textContent).toBe("Couldn't start sign-in — check the internet and try again"); // KB-343: a sentence, not "network down"
     expect(screen.getByRole("button", { name: "Sign in with Google" }).getAttribute("aria-disabled")).toBe("false");
     signInWithGoogle.mockReturnValue(new Promise(() => {}));
     fireEvent.click(screen.getByRole("button", { name: "Sign in with Google" }));

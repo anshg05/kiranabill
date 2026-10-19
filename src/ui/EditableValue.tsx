@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useT } from "./useT";
 
 /**
@@ -32,11 +32,19 @@ export function EditableValue({
   const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
   const { tx } = useT();
   const [error, setError] = useState<string | null>(null);
+  // KB-343: after Enter the focus stays on this value (its button) - tapping away must not pull it back.
+  const refocus = useRef(false);
   if (draft === null) {
     return (
       <button
         type="button"
         aria-label={label}
+        ref={(el) => {
+          if (el && refocus.current) {
+            refocus.current = false;
+            el.focus();
+          }
+        }}
         data-pending-target={pendingTarget || undefined}
         onClick={() => {
           setDraft(initial);
@@ -48,10 +56,11 @@ export function EditableValue({
       </button>
     );
   }
-  const commit = () => {
+  const commit = (viaEnter = false) => {
     const message = onCommit(draft);
     if (message) setError(message);
     else {
+      refocus.current = viaEnter;
       setDraft(null);
       setError(null);
     }
@@ -72,7 +81,7 @@ export function EditableValue({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
+          if (e.key === "Enter") commit(true);
           else if (e.key === "Escape") {
             e.stopPropagation(); // cancels this edit only - not also an overlay (KB-342)
             setDraft(null);

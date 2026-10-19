@@ -131,7 +131,7 @@ describe("the bill behind a full-screen overlay", () => {
 describe("the set-up screen's touch targets are 44 px", () => {
   it("both fields and both buttons carry min-h-11", () => {
     render(<OnboardingScreen />);
-    for (const el of [screen.getByPlaceholderText("Shop name"), screen.getByPlaceholderText("Phone (optional)"), screen.getByRole("button", { name: "Use ready catalog" }), screen.getByRole("button", { name: "Start empty" })]) {
+    for (const el of [screen.getByLabelText("Shop name"), screen.getByLabelText("Phone (optional)"), screen.getByRole("button", { name: "Use ready catalog" }), screen.getByRole("button", { name: "Start empty" })]) {
       expect(el.className, el.outerHTML.slice(0, 60)).toContain("min-h-11");
     }
   });

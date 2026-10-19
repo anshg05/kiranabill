@@ -1,6 +1,6 @@
 import type { ParsedItem } from "@/domain/grammar";
 import { shownRate } from "@/domain/billEdit";
-import { formatRupees, type Paise } from "@/domain/money";
+import { formatRupees, plainRupees, type Paise } from "@/domain/money";
 
 // KB-301: how a bill line's numbers are SHOWN. No arithmetic here - every
 // value comes from the domain; this only decides the text. 13-DESIGN.md §6c:
@@ -34,5 +34,5 @@ export function formatRate(item: Pick<ParsedItem, "rate" | "rateUnit" | "unit">)
 
 /** A paise value as the rupee text an input starts from ("45", "12.50"). */
 export function paiseText(paise: Paise | null): string {
-  return paise === null ? "" : formatRupees(paise).replace("₹", "");
+  return paise === null ? "" : plainRupees(paise);
 }

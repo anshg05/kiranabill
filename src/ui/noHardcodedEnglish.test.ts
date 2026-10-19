@@ -11,7 +11,7 @@ const MIGRATED = [
   "HistoryScreen.tsx", "CancelBillSheet.tsx", "CatalogScreen.tsx", "AddProductSheet.tsx", "EditProductSheet.tsx", "OnboardingScreen.tsx", "../app/App.tsx",
 ];
 // Words that stay as they are in every language (brand, units, the owner's fixed phrases, symbols).
-const STAYS = new Set(["KiranaBill", "Bill Banao", "Theek hai", "Cash", "WhatsApp", "PDF", "SMS", "REVIEW", "MEDIUM", "LOW", "HIGH", "Escape", "Enter", "Receipt", "Promise"]);
+const STAYS = new Set(["KiranaBill", "Bill Banao", "Theek hai", "Cash", "WhatsApp", "PDF", "SMS", "REVIEW", "MEDIUM", "LOW", "HIGH", "Escape", "Enter", "Receipt", "Promise", "Sharma Kirana Store" /* an example shop name in the set-up field */]);
 
 const stripExpressions = (s: string): string => {
   let prev = "";

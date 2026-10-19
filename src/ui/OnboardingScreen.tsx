@@ -7,6 +7,9 @@ import { useT } from "./useT";
  * is KB-107b's own work (a distinct Storage/security surface) - not built
  * here. The field is intentionally absent rather than present-but-fake.
  */
+const SETUP_OFFLINE = "Setting up a shop needs an internet connection."; // ShopProvider's wording
+const SETUP_FAILED = "Couldn't set up the shop — check the internet and try again";
+
 export function OnboardingScreen() {
   const { createShop } = useShop();
   const { t, tx } = useT();
@@ -30,7 +33,9 @@ export function OnboardingScreen() {
       // persistent id (device.ts), not a throwaway UUID (KI-32).
     }).catch((err) => {
       setSubmitting(false);
-      setError(err instanceof Error ? err.message : String(err));
+      // The one message written for the shopkeeper (ShopProvider) keeps its sentence; anything else is a developer's text.
+      console.warn("[setup] could not create the shop:", err instanceof Error ? err.name : "error");
+      setError(err instanceof Error && err.message === SETUP_OFFLINE ? err.message : SETUP_FAILED);
     });
   };
 
@@ -38,22 +43,29 @@ export function OnboardingScreen() {
     <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4">
       <h1 className="text-2xl font-semibold">{t("onboard.title")}</h1>
 
-      <input
-        type="text"
-        placeholder={t("settings.shopName")}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        disabled={submitting}
-        className="w-full max-w-sm rounded-lg border border-line min-h-11 px-4 py-2"
-      />
-      <input
-        type="tel"
-        placeholder={t("onboard.phone")}
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        disabled={submitting}
-        className="w-full max-w-sm rounded-lg border border-line min-h-11 px-4 py-2"
-      />
+      {/* KB-343: a label that stays while typing; the placeholder is only an example. */}
+      <label className="flex w-full max-w-sm flex-col gap-1">
+        <span className="text-[13px] font-medium text-ink-soft">{t("settings.shopName")}</span>
+        <input
+          type="text"
+          placeholder="Sharma Kirana Store"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          disabled={submitting}
+          className="w-full rounded-lg border border-line min-h-11 px-4 py-2"
+        />
+      </label>
+      <label className="flex w-full max-w-sm flex-col gap-1">
+        <span className="text-[13px] font-medium text-ink-soft">{t("onboard.phone")}</span>
+        <input
+          type="tel"
+          placeholder="98765 43210"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          disabled={submitting}
+          className="w-full rounded-lg border border-line min-h-11 px-4 py-2"
+        />
+      </label>
 
       <p className="text-ink-soft text-sm">{t("onboard.question")}</p>
       <div className="flex gap-3">

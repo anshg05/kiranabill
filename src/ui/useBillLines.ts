@@ -56,7 +56,7 @@ export interface NotAdded {
 export const PARSE_FAILED = "Couldn't read the items";
 
 /** How long "Chini removed — Undo" stays (owner: one level of undo). */
-export const UNDO_MS = 6_000;
+export const UNDO_MS = 10_000; // KB-343 (owner): 10 s - or until the next action, whichever comes first
 
 export interface BillState {
   /** KB-307: the bill's identity from the moment it starts - bills.local_id
@@ -126,7 +126,15 @@ const updateNotAdded = (state: BillState, id: string, change: Partial<NotAdded>)
   notAdded: state.notAdded.map((n) => (n.id === id ? { ...n, ...change } : n)),
 });
 
+/** KB-343: the next action on the bill (a line added or changed, the customer changed) takes the Undo strip away. */
+const ENDS_UNDO = new Set<Action["type"]>(["add", "replace", "customer"]);
+
 export function billReducer(state: BillState, action: Action): BillState {
+  const next = reduce(state, action);
+  return state.removed && next !== state && next.removed === state.removed && ENDS_UNDO.has(action.type) ? { ...next, removed: null } : next;
+}
+
+function reduce(state: BillState, action: Action): BillState {
   switch (action.type) {
     case "add": {
       // KB-319: a Retry's lines land only while its entry is still listed -

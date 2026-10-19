@@ -7,9 +7,11 @@ import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
 
 /** S1 (05-FRONTEND-SPEC.md): Google sign-in only. (A dev-only email form
  * appears against a LOCAL Supabase stack - DevEmailSignIn.tsx.) */
+const START_FAILED = "Couldn't start sign-in — check the internet and try again";
+
 export function SignInScreen() {
   const { signInWithGoogle } = useAuth();
-  const { t } = useT();
+  const { t, tx } = useT();
   // KB-335 (D82): the marks of a refused or failed sign-in in the address bar - one plain sentence, then cleared.
   const [error, setError] = useState<string | null>(() => {
     const returned = readOAuthReturn(window.location.href);
@@ -27,9 +29,10 @@ export function SignInScreen() {
     if (opening) return;
     setError(null);
     setOpening(true);
-    signInWithGoogle().catch((err) => {
+    signInWithGoogle().catch((err: unknown) => {
       setOpening(false);
-      setError(err instanceof Error ? err.message : String(err));
+      console.warn("[signin] could not start:", err instanceof Error ? err.name : "error"); // the raw text is for developers, not the shopkeeper (KB-343)
+      setError(START_FAILED);
     });
   };
 
@@ -44,7 +47,7 @@ export function SignInScreen() {
       >
         {opening ? t("signin.opening") : t("signin.google")}
       </button>
-      {error && <p role="alert" className="text-danger text-sm">{error === REFUSED_TEXT ? t("signin.refused") : error === FAILED_TEXT ? t("signin.unfinished") : error}</p>}
+      {error && <p role="alert" className="text-danger text-sm">{error === REFUSED_TEXT ? t("signin.refused") : error === FAILED_TEXT ? t("signin.unfinished") : tx(error)}</p>}
       {import.meta.env.DEV && isLocalSupabaseUrl(import.meta.env.VITE_SUPABASE_URL) && <DevEmailSignIn />}
     </div>
   );

@@ -47,7 +47,7 @@ describe("the mic and the recording text", () => {
     expect(screen.getByRole("button", { name: say("mic.stopLabel", {}, l) }).textContent).toContain(say("mic.stop", {}, l));
     expect(document.body.textContent).toContain(say("voice.listening", {}, l));
     rerender(<BillView {...base} voice={voice({ phase: "transcribing" })} onMicTap={() => {}} />);
-    expect(document.body.textContent).toContain(say("voice.listening", {}, l));
+    expect(document.body.textContent).toContain(say("voice.understanding", {}, l)); // KB-343
   });
   it("a failure message and its 'Add by hand' - in the chosen language, the heard words untouched", () => {
     use("hi");
