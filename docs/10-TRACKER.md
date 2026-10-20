@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 19 Oct 2026 (rev 127) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
+**Last updated:** 20 Oct 2026 (rev 128) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is BUILT 19 Oct 2026 - awaiting the owner's check.** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
+**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is DONE (owner's check passed). Everything built since the audit (`KB-337` ... `KB-343`) has passed the owner's checks; what remains is the release, the pre-pilot items and Gemini (see the FINAL STATUS REPORT).** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -91,9 +91,9 @@ stores), `src/app/` (the auth and shop gates), `src/voice/` (server-side Groq/Ge
 
 ---
 
-## FINAL STATUS REPORT — 17 Oct 2026 (written after `KB-332` Checkpoint B, as the owner asked; nothing is deployed)
+## FINAL STATUS REPORT — updated 20 Oct 2026 (first written 17 Oct after `KB-332` Checkpoint B, as the owner asked; **every ticket since the audit is done and passed - `KB-337` ... `KB-343` included; nothing is deployed**)
 
-**Where things stand.** `main` is **93 commits past production** (`6e29cf2`, live), all pushed to GitHub, none deployed (D55). 22 migrations exist and **all 22 are on the remote** (`migration list --linked`, 17 Oct 2026) — none is waiting for a `db push`, and each is additive against the live app (D55 §5). Last full VERIFY: see "Test state" above.
+**Where things stand.** `main` is **104 commits past production** (`6e29cf2`, live), all pushed to GitHub, none deployed (D55). 22 migrations exist and **all 22 are on the remote** (`migration list --linked`, 17 Oct 2026) — none is waiting for a `db push`, and each is additive against the live app (D55 §5). Last full VERIFY: see "Test state" above.
 
 ### 1. Every ticket done since the audit (Part 3 accepted 11 Oct 2026)
 
@@ -114,11 +114,11 @@ stores), `src/app/` (the auth and shop gates), `src/voice/` (server-side Groq/Ge
 | `KB-325` follow-up | **"Cancel only" keeps the shopkeeper on the cancelled bill** (CANCELLED card showing, History underneath); "Cancel and make a new bill" leaves no stray Back press. Cause: `useBackEntry` closed every overlay on any popstate that was not its own entry. Also: a Review-mode write finishing after the database closed was an unhandled rejection (`PilotNumbers`) | 18 Oct | D79 follow-up | **passed** (18 Oct) |
 | `KB-337` | **Amount editing on every line** (typed amount, cleared rate, typed rate, a qty with no unit); reverses `KB-303` decision 1 | 18 Oct | D85 | **passed** (18 Oct) |
 | `KB-338` | **"—" (no unit) on every line**; picking it changes no number; D83: a line with no unit fits every product | 18 Oct | D86 | ✅ passed 19 Oct (incl. the cross-unit amendment) |
-| `KB-339` | **Spoken commands** ("bas" -> hint, "hatao" -> remove last with Undo, "sab hatao" -> hint), whole utterance only, not a turn | 18 Oct | D86 | **PENDING** |
-| `KB-340` | **The shop's name in the billing header** | 18 Oct | D86 | **PENDING** |
+| `KB-339` | **Spoken commands** ("bas" -> hint, "hatao" -> remove last with Undo, "sab hatao" -> hint), whole utterance only, not a turn | 18 Oct | D86 | ✅ passed 19 Oct |
+| `KB-340` | **The shop's name in the billing header** | 18 Oct | D86 | ✅ passed 19 Oct |
 | `KB-341` | **Simple bill numbers** - plain 1, 2, 3 …; fallback `7F2A91-1`; "Bill 59" labels; search ignores bill / बिल / no | 19 Oct | D87 | ✅ passed 19 Oct |
-| `KB-343` | **The audit's DESIGN items:** Indian digit grouping (₹1,25,000), focus after Enter, "Discard changes?", a reason beside every disabled button, "Understanding…", Undo 10 s, translated errors, set-up labels | 19 Oct | D88 | **PENDING** |
-| `KB-342` | **The ≡ menu closes properly** (outside tap, a choice, Escape, Back, a panel / dialog / the mic opening) + the UI audit's 11 bugs (Escape on every layer, real modal dialogs, `inert` behind a layer, SMS sheet in view, no double share, 44 px targets, one Google sign-in per tap) | 19 Oct | `21` Part 5 | **PENDING** |
+| `KB-343` | **The audit's DESIGN items:** Indian digit grouping (₹1,25,000), focus after Enter, "Discard changes?", a reason beside every disabled button, "Understanding…", Undo 10 s, translated errors, set-up labels | 19 Oct | D88 | ✅ passed 19 Oct |
+| `KB-342` | **The ≡ menu closes properly** (outside tap, a choice, Escape, Back, a panel / dialog / the mic opening) + the UI audit's 11 bugs (Escape on every layer, real modal dialogs, `inert` behind a layer, SMS sheet in view, no double share, 44 px targets, one Google sign-in per tap) | 19 Oct | `21` Part 5 | ✅ passed 19 Oct |
 | `KB-332` | **Screen language** — English / हिन्दी / Hinglish, per device, no reload (Checkpoint A: billing, flags, voice errors, sync chip, sign-in, Add item, Settings. Checkpoint B: Catalog, History and Cancel, product sheets, set-up, shop-load error) | 17 Oct | D84 | A and B **passed** (18 Oct) |
 
 Also decided in this stretch (docs only): rule 5 reworded (D72), `eval:real` + `bench:numbers` + `coverage:probe` are the eval baseline (D69), Supabase Free + scheduled dump (D70).
@@ -127,10 +127,10 @@ Also decided in this stretch (docs only): rule 5 reworded (D72), `eval:real` + `
 
 Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-only fix, and **`KB-404` "Pilot numbers"** (17 bills reconciled - every one on the server with the same number, total and item count; two voice bills: turns 1, fast-path 100%, fast-path item on screen 18 ms, finalise → receipt 54 ms; Review mode showed the Heard → Billed pairs and "Clear now" removed them).
 
-1. **`KB-343`** - the owner's check (the steps went with the commit). The phone-only checks of `21` Part 5 go into the release-draft session.
+1. **None of the tickets is waiting for a check** - `KB-337` to `KB-343` all passed (`KB-343` on 20 Oct: grouping on the bill, editors, History, receipt, SMS and WhatsApp; Enter keeps focus; Discard; the reason lines; "Understanding…" with the real mic; 10 s Undo; set-up labels; हिन्दी).
 2. **Answers the owner owes (nothing built or planned):** an item count on a History row, a Copy debug report button (`21` Part 4).
 3. **`KB-335`, on the release draft** — (a) sign in on the Android phone with the installed app: the return must land signed in; (b) the sign-up-off test: switch off "Allow new users to sign up", pre-create a second Gmail user (Auto Confirm) — it must sign in; an uncreated Gmail must be refused with "This account isn't set up for the pilot".
-4. **Release-draft leftovers** — the Android file picker for the catalog import (`KB-314`) and the foreground-update fix (`KB-401`), each on a phone.
+4. **Release-draft leftovers** — the Android file picker for the catalog import (`KB-314`) and the foreground-update fix (`KB-401`), each on a phone; and the **phone-only checks of `21` Part 5** - the virtual keyboard (focused field and TOTAL bar stay visible; decimal / tel keyboards appear), Android Back with the menu, a dialog and History > bill > Cancel, a real voice with the menu open, the share sheet and a double tap, a 320 px phone with the real font, touch feel, and Hinglish on screen once.
 5. **A live voice order through Layer 2** — needs Gemini billing (`KI-50`) first.
 6. **`M-38`** — the weekly look at the newest file in Drive `KiranaBill-Backups` (ongoing).
 7. Optional: `NI-28`, one paint reading on the 481-product catalog.
