@@ -201,6 +201,9 @@ export const MESSAGES = {
 
   // ---- Sign-in (KB-335)
   "signin.google": m("Sign in with Google", "Google से साइन इन करें", "Google se sign in karein"),
+  "install.ios": m("On iPhone, keep your bills safe: tap Share, then “Add to Home Screen”.", "iPhone पर बिल सुरक्षित रखने के लिए: शेयर दबाएं, फिर “होम स्क्रीन पर जोड़ें” चुनें।", "iPhone par bill surakshit rakhne ke liye: Share dabayein, phir “Add to Home Screen” chunein."), // KB-346
+  "share.copy": m("Copy message", "संदेश कॉपी करें", "Message copy karein"),
+  "share.copied": m("Copied", "कॉपी हो गया", "Copy ho gaya"),
   "signin.error": m("Couldn't start sign-in — check the internet and try again", "साइन इन शुरू नहीं हो पाया — इंटरनेट देखें और फिर कोशिश करें", "Sign in shuru nahi ho paya — internet dekhein aur phir koshish karein"), // KB-343
   "onboard.error": m("Couldn't set up the shop — check the internet and try again", "दुकान सेट नहीं हो पाई — इंटरनेट देखें और फिर कोशिश करें", "Dukaan set nahi ho payi — internet dekhein aur phir koshish karein"),
   "voice.noItem": m("Couldn't find an item — add it manually", "कोई सामान नहीं मिला — खुद जोड़ें", "Koi saaman nahi mila — khud jodein"),

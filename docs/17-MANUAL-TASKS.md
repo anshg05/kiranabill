@@ -128,6 +128,34 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 
 ---
 
+## Release day — self sign-up (`KB-348`, D90) — owner
+
+The two migrations, then the dashboards, then a real new-user test. Self sign-up goes live with the release (not before).
+
+**A. Before the deploy**
+1. **Supabase SQL editor (remote):** `select owner_user_id, count(*) from shops group by 1 having count(*) > 1;` - it must return **no rows**. If it returns one, tell the agent (an owner with two shops must be resolved by hand first; the migration stops with a message rather than guess).
+2. **`npx supabase db push --dry-run`, then `npx supabase db push`** - two additive migrations: `20261020090000_sync_probe.sql` (a function and six indexes) and `20261020091000_shops_one_per_owner.sql` (a unique index). The live app is unaffected by both (D55 section 5).
+
+**B. Google Cloud console** (APIs & Services > OAuth consent screen, also called Google Auth Platform > Audience and Branding)
+1. **Audience > Publishing status.** If it says **Testing**, only up to 100 listed test users can sign in - click **Publish app** so it reads **In production** ("available to any user with a Google Account").
+2. **Scopes:** only `openid`, `email`, `profile` (Supabase's default) - non-sensitive; full verification is not mandatory for these.
+3. **Branding:** app name, user-support e-mail, developer contact. **Open question (not confirmed):** Google's pages say a production OAuth app must have a public **homepage** (not only a login page) and a **privacy-policy link** on the consent screen, on the homepage's domain; that is "brand verification" (2-3 business days) and shows the app's name and logo. I could not confirm whether **Publish app** is blocked without them, or whether a `netlify.app` address can be verified as the app's domain. Look at what the console says when you publish. **If it needs a privacy-policy page, tell the agent - `KB-347` is parked and a one-page policy is the smallest thing that would do** (a lawyer reviews it).
+   Sources: support.google.com/cloud/answer/15549945 (audience), answer/13464321 (verification requirements), answer/13806988 (privacy policy), answer/13807376 (homepage).
+4. Leave the **Authorized redirect URI** as it is (Supabase's `.../auth/v1/callback`).
+
+**C. Supabase dashboard**
+1. **Authentication > Sign In / Providers > "Allow new users to sign up"** -> **ON** (it is OFF today: a new Google account is refused with "This account isn't set up for the pilot").
+2. Google provider stays enabled with its client ID and secret. **URL Configuration** unchanged until the last draft is done.
+
+**D. After the deploy**
+1. On a phone, sign in with a **Gmail that has never used the app** (not a test user): the Google sign-in returns signed in -> "Set up your shop" -> **Use ready catalog** -> billing -> make a bill. The "isn't set up for the pilot" sentence must **not** appear.
+2. Make a bill on that account and check it on a second phone of the same shop (about 15 s).
+3. **Rollback of sign-ups only:** switch "Allow new users to sign up" OFF again - immediate, and every existing user keeps working.
+
+**E. What watches the spend (nothing automatic - the owner's choice, D90):** Netlify credits, the Groq usage page, Supabase database size (500 MB on Free). The per-shop 300-an-hour `/voice` limit stays.
+
+---
+
 ## Post-MVP — Android
 
 | # | Task | Cost |

@@ -281,6 +281,21 @@ describe("KB-342 - a double tap never shares twice; the SMS sheet is brought to 
     expect(clicked).toHaveLength(1);
   });
 
+  it("on an iPhone Send opens sms:<number>&body= (iOS), not ?body=", async () => {
+    Object.defineProperty(navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", configurable: true });
+    try {
+      const clicked = captureAnchors();
+      await saveBill(null);
+      await openSms();
+      fireEvent.change(field(), { target: { value: "9876543210" } });
+      fireEvent.click(button("Send"));
+      expect(clicked).toHaveLength(1);
+      expect(clicked[0]!.href).toMatch(/^sms:9876543210&body=/);
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).userAgent;
+    }
+  });
+
   it("opening SMS scrolls the sheet into view and puts the cursor in the number field", async () => {
     const scrolled = vi.fn();
     Element.prototype.scrollIntoView = scrolled;

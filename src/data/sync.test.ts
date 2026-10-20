@@ -1045,6 +1045,8 @@ describe("sync.ts - KB-315", () => {
           requests += 1;
           return { data: [], error: null };
         },
+        // KB-345: the loop asks sync_probe first; "no such function" (an older database) = the full pull these tests count.
+        "rpc:sync_probe": () => ({ data: null, error: { code: "PGRST202", message: "Could not find the function public.sync_probe" } }),
         ...extra,
       });
     const options = (client: SupabaseClient) => ({ client, localDb, shopId: "shop-1", deviceId: "device-1" });

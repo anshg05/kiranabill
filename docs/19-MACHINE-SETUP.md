@@ -303,6 +303,23 @@ The daily encrypted backup (`22-BACKUP-AND-RESTORE.md`) needs, on this machine: 
 
 ---
 
+## 9c. The iPhone test checklist (`KB-346`, D90)
+
+Nothing in `KB-346` was run on an iPhone - the code follows WebKit's, Groq's and MDN's documents. Whoever can borrow an iPhone (**iOS 16.4 or newer**) runs this once and writes the result in the tracker. Use a throw-away Google account first.
+
+1. **Sign in in Safari** (a normal tab): the return lands signed in? (PKCE, `KB-335`.)
+2. **Add to Home Screen** (Share, then Add to Home Screen), open the icon, and **sign in INSIDE the installed app.** *The one that matters most:* Google has blocked sign-in from iPhone Home Screen apps before (`disallowed_useragent`) and a Home Screen app's storage is separate from Safari's - the reports I found are 2016-2021, the situation now is unknown. If it is blocked: iPhone users stay in a Safari tab (and the 7-day clean-up of an unused site applies - say so), or we add e-mail sign-in later (it needs a custom SMTP; Supabase's own sends 2 e-mails an hour).
+3. **The hint:** in the Safari tab, on an empty bill, the note "tap Share, then Add to Home Screen" shows with an X; the X keeps it away; it never shows in the installed app or with a bill on screen.
+4. **Storage:** Settings > Developer mode: in Safari the line says "tap Share, then Add to Home Screen"; in the installed app it should read "Storage: protected".
+5. **The microphone:** the permission prompt (once per launch, or every time?); a recording; the transcript appears (the audio is mp4/AAC - Groq accepts it); recording after the phone was locked, and after switching apps for a minute.
+6. **A bill, end to end:** voice and by hand, Bill Banao, the receipt.
+7. **Share:** Image and PDF download (where do they land?); **WhatsApp** opens the share sheet with the image; **SMS** - does `sms:<number>&body=` open Messages with the text? If not, does **Copy message** work and can it be pasted?
+8. **Notch and home bar:** Bill Banao and the sheets' buttons are not under the home indicator; landscape is not cut by the notch.
+9. **Offline:** aeroplane mode, make a bill, back online - it syncs; the app opens from the Home Screen offline.
+10. **The 7-day rule (a note, not a test):** a Safari tab not opened for a week may lose its data - the reason to install.
+
+---
+
 ## 10. What this document deliberately does not cover
 
 - **Product/account setup questions** (which Claude plan, billing, UI navigation) — see `support.claude.com`.

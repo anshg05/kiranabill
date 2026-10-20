@@ -1,6 +1,6 @@
 # 05 — Frontend Specification
 
-**Last updated:** 19 Oct 2026 (rev 26) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 20 Oct 2026 (rev 27) · **Status:** Final for MVP · Validated against mockups
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.
@@ -196,6 +196,12 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 - **After Enter** in an inline editor the focus stays on that value. **Edit product / Add product:** Back with something typed asks **"Discard changes?"** (Cancel / Discard); nothing typed closes at once.
 - **Disabled buttons say why** in one line (Save "No changes to save yet", Share "Preparing the receipt…", SMS Send, Cancel bill "Choose a reason first", Bill Banao "Add an item first" / "Saving the bill…").
 - **After the recording stops** the line and the mic say **"Understanding…"** until the result or error. **Undo strip:** 10 s or the next action. **Set-up:** a visible label over each field.
+
+### Implementation notes — sync that rests, iPhone, self sign-up (`KB-345`, `KB-346`, `KB-348`, 20 Oct 2026; D90)
+
+- **Sync:** while the app is open the phone asks one question every 15 s (`sync_probe`) and pulls only what moved, plus a full pull about every 5 minutes; hidden = one last push, then nothing; back in view = a cycle at once. A bill still reaches another phone in about 15 s. 2,900 -> about 360 requests an hour per open phone (idle).
+- **iPhone (minimum iOS 16.4):** in Safari, an empty bill shows a dismissible note "Share, then Add to Home Screen"; the SMS sheet has **Copy message**; the iOS SMS link uses `&body=`; the bottom bars clear the home indicator (`.safe-bottom`).
+- **Set-up:** one tap makes one shop; a database rule keeps one shop per owner.
 
 ## 3. S2 — Onboarding catalog choice
 

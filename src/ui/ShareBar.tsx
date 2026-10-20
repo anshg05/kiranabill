@@ -48,6 +48,7 @@ export function ShareBar({ share }: { share: ReceiptShare }) {
 function SmsSheet({ share, onClose }: { share: ReceiptShare; onClose: () => void }) {
   const { t, tx } = useT();
   const [value, setValue] = useState("");
+  const [copied, setCopied] = useState(false);
   const sheet = useRef<HTMLElement>(null);
   const field = useRef<HTMLInputElement>(null);
   // KB-342: the sheet opens below the buttons, off screen on a small phone - bring it into view and put the cursor in the number.
@@ -91,6 +92,20 @@ function SmsSheet({ share, onClose }: { share: ReceiptShare; onClose: () => void
         </p>
       )}
       {mobile === null && parsed.ok && <p className="mt-1 text-[13px] text-ink-soft">{t("reason.smsNumber")}</p>}
+      {typeof navigator !== "undefined" && navigator.clipboard?.writeText && (
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(share.smsText).then(() => setCopied(true)).catch(() => setCopied(false));
+            }}
+            className="min-h-11 rounded-[6px] border border-line px-3 font-medium"
+          >
+            {t("share.copy")}
+          </button>
+          {copied && <span role="status" className="text-[13px] text-ok">{t("share.copied")}</span>}
+        </div>
+      )}
       <pre data-testid="sms-preview" className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-[6px] bg-paper p-2 font-mono text-[12px] text-ink-soft">
         {share.smsText}
       </pre>

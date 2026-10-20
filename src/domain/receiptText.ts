@@ -59,7 +59,11 @@ export function smsText(r: Receipt): string {
   ].join("\n");
 }
 
-/** sms:<10 digits>?body= (the Android form) - only for a mobile that is already a valid D52 number; otherwise none. */
-export function smsLink(text: string, mobile: string): string | null {
-  return /^[6-9]\d{9}$/.test(mobile) ? `sms:${mobile}?body=${encodeURIComponent(text)}` : null;
+/**
+ * sms:<10 digits>?body= (the Android form) - only for a mobile that is already a valid D52 number; otherwise none.
+ * KB-346: on iOS the separator is "&" (`sms:<number>&body=`); Apple documents no body parameter at all, so the app also
+ * offers "Copy message" (community reports, not a spec - to be proven on a phone: docs/19 iPhone checklist).
+ */
+export function smsLink(text: string, mobile: string, ios = false): string | null {
+  return /^[6-9]\d{9}$/.test(mobile) ? `sms:${mobile}${ios ? "&" : "?"}body=${encodeURIComponent(text)}` : null;
 }

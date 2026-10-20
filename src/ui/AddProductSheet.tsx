@@ -115,7 +115,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2 border-t border-line px-4 py-3">
+        <div className="safe-bottom flex items-center gap-2 border-t border-line px-4 pt-3">
           <button
             type="button"
             disabled={!online || busy}

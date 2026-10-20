@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* KB-346 (D90): an iPhone's home bar and landscape notch. A bottom bar keeps its 12 px and clears the home indicator;
+ * the page keeps clear of a notch at the sides. (env() is 0 where there is nothing to clear.) */
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+#root {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 /* Mukta, self-hosted via @fontsource (M-21; 11-STACK-DECISIONS.md).
  * Weights are 13-DESIGN.md section 4's scale. Each file is split by
  * unicode-range, so the browser fetches only the Devanagari/Latin subsets it

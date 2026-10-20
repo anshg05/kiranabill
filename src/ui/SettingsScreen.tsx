@@ -8,6 +8,7 @@ import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct, LocalSho
 import { listIgnoredPriceSuggestions, listLearnedAliases, listPendingPriceSuggestions, listProvisionalProducts, resetLearning } from "@/data/learningAudit";
 import { updateShopSettings } from "@/data/shopSettings";
 import { readStorageStatus, storageStatusText, type StorageStatus } from "@/data/storagePersist";
+import { isIos } from "./platform";
 import { BUILD_ID } from "@/pwa/buildId";
 import { formatMobile } from "@/domain/customer";
 import type { PriceSuggestion } from "@/domain/learning";
@@ -233,7 +234,7 @@ function StorageLine({ deviceDb }: { deviceDb: DeviceDB }) {
   useEffect(() => {
     void readStorageStatus(deviceDb).then((r) => setStatus(r.status));
   }, [deviceDb]);
-  return status === null ? null : <p className="text-[13px] text-ink-soft">{storageStatusText(status)}</p>;
+  return status === null ? null : <p className="text-[13px] text-ink-soft">{storageStatusText(status, isIos())}</p>;
 }
 
 interface Learning {

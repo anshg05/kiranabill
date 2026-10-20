@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useShop } from "@/providers/ShopProvider";
 import { useT } from "./useT";
 
@@ -16,6 +16,8 @@ export function OnboardingScreen() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // KB-348: a ref, not only the state - two taps in the same instant both see the old state.
+  const asked = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleChoice = (catalogChoice: "ready" | "empty") => {
@@ -23,6 +25,8 @@ export function OnboardingScreen() {
       setError("Shop name is required.");
       return;
     }
+    if (asked.current) return;
+    asked.current = true;
     setError(null);
     setSubmitting(true);
     createShop({
@@ -32,6 +36,7 @@ export function OnboardingScreen() {
       // KB-315: no deviceId here any more - ShopProvider uses the device's
       // persistent id (device.ts), not a throwaway UUID (KI-32).
     }).catch((err) => {
+      asked.current = false;
       setSubmitting(false);
       // The one message written for the shopkeeper (ShopProvider) keeps its sentence; anything else is a developer's text.
       console.warn("[setup] could not create the shop:", err instanceof Error ? err.name : "error");

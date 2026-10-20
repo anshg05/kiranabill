@@ -46,6 +46,7 @@ import { AddItemSheet } from "./AddItemSheet";
 import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
 import { HeaderMenu } from "./HeaderMenu";
+import { InstallHint } from "./InstallHint";
 import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
@@ -192,7 +193,7 @@ export function BillingScreen() {
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     // KB-323: an alias this bill just promoted reads from the next utterance on (learnThenReload reloads the catalog after learning).
     void learnThenReload(localDb, shop.id, () => setCatalogVersion((v) => v + 1))
-      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
+      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId, pull: "probe" }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
   }, [deviceId, discardDraft, localDb, protectStorage, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
@@ -999,6 +1000,8 @@ export function BillView({
           />
         </header>
 
+        <InstallHint eligible={lines.length === 0 && !saved} />
+
         {confirm === "signout" && unsynced && (
           <ConfirmDialog {...signOutWarning(unsynced, lines.length > 0 && !saved)} confirmLabel={t("signout.anyway")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onSignOut(); }} />
         )}
@@ -1178,7 +1181,7 @@ export function BillView({
           {announcement}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 px-4 py-3">
+        <div className="safe-bottom grid grid-cols-2 gap-2 px-4 pt-3">
           {/* Add item (KB-305): disabled only while the shop catalog loads; Bill
               Banao until KB-307. The reason is a tooltip only (owner, 27 Sep
               2026) - a disabled button fires no hover events, so the title sits

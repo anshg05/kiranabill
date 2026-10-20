@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isIos } from "./platform";
 import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
@@ -113,7 +114,7 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
     }),
     storedMobile,
     sendSms: once("sms", (mobile: string) => {
-      const link = smsLink(sms, mobile);
+      const link = smsLink(sms, mobile, isIos());
       if (link) follow(link);
     }),
   };

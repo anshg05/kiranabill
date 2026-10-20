@@ -140,7 +140,7 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
             </p>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-t border-line px-4 py-3">
+        <div className="safe-bottom flex flex-wrap items-center gap-2 border-t border-line px-4 pt-3">
           <button
             type="button"
             disabled={!canWrite || !nameCheck.ok || !changed}

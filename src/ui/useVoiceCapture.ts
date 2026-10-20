@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { recordedMimeType } from "./recordingType";
 
 // KB-302: push-to-talk capture (docs/04-VOICE-PIPELINE.md section 2 - tap to
 // start, tap to stop; no length limit). The browser picks its own recording
@@ -208,7 +209,7 @@ export function useVoiceCapture(): VoiceCapture {
     }
     setPhase("stopping");
     const blob = await new Promise<Blob>((resolve) => {
-      recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recorder.mimeType }));
+      recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recordedMimeType(recorder.mimeType, navigator.userAgent) }));
       recorder.stop();
     });
     recorderRef.current = null;

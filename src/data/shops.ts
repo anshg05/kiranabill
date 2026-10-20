@@ -98,7 +98,15 @@ export async function createShop(client: SupabaseClient, params: CreateShopParam
         .select("id, owner_user_id, name, phone, catalog_mode")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // KB-348 (D90): shops_one_per_owner. A second call racing the first (a double tap on set-up) loses the insert:
+        // take the shop the winner made instead of failing.
+        if (error.code === "23505") {
+          const won = await findOwnShop(client, params.ownerUserId);
+          if (won) return won;
+        }
+        throw error;
+      }
       return fromRow(data as ShopRow);
     })());
 
@@ -107,7 +115,8 @@ export async function createShop(client: SupabaseClient, params: CreateShopParam
     const { error } = await client
       .from("shop_members")
       .insert({ shop_id: shop.id, user_id: params.ownerUserId, role: "owner" });
-    if (error) throw error;
+    // 23505: the racing call made the membership first - it is there, which is all this call wanted.
+    if (error && error.code !== "23505") throw error;
   }
 
   return shop;

@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- KB-346: viewport-fit=cover lets env(safe-area-inset-*) clear the notch and the home bar on an iPhone (see .safe-bottom). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- KB-401 (D67): the paper colour of the app's header, so the status bar and the splash match it. -->
     <meta name="theme-color" content="#FBF9F4" />
     <link rel="manifest" href="/manifest.webmanifest" />

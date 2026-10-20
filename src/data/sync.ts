@@ -1067,6 +1067,64 @@ export interface SyncNowOptions {
   shopId: string;
   /** This installation's id (device.ts) - blocks are pulled per device. */
   deviceId: string;
+  /**
+   * KB-345 (D90): "all" (the default - what a manual kick and the tests mean) pulls every table; "probe" is the loop's cycle:
+   * ask sync_probe and pull only what moved (a full pull about every 5 minutes); "none" only pushes (the last push before
+   * the app is hidden).
+   */
+  pull?: PullMode;
+}
+
+export type PullMode = "all" | "probe" | "none";
+
+// ---------------------------------------------------------------------
+// KB-345 (D90): the probe. One request tells which tables moved since the last answer; the loop pulls only those.
+// Measured before (20 Oct 2026): a full pull is 12 requests, every 15 s = ~2,900 an hour per open phone.
+// ---------------------------------------------------------------------
+
+/** How often a full pull runs even when the probe says nothing moved - a row that commits late carries an OLDER stamp. */
+export const FULL_PULL_EVERY_MS = 5 * 60_000;
+/** After the server answered "no such function" (an older database), don't ask again for this long. */
+const PROBE_RETRY_AFTER_MS = 30 * 60_000;
+
+export const PROBE_TABLES = ["bills", "bill_cancellations", "bill_metrics", "shop_products", "shops", "receipt_number_blocks", "learning"] as const;
+export type ProbeTable = (typeof PROBE_TABLES)[number];
+export type ProbeSnapshot = Readonly<Record<string, unknown>>;
+
+/** Which tables' stamps differ between two answers; no earlier answer = all of them. */
+export function changedTables(prev: ProbeSnapshot | null, next: ProbeSnapshot): Set<ProbeTable> {
+  if (!prev) return new Set(PROBE_TABLES);
+  return new Set(PROBE_TABLES.filter((t) => JSON.stringify(prev[t] ?? null) !== JSON.stringify(next[t] ?? null)));
+}
+
+export type PullPlan = { kind: "all" } | { kind: "some"; tables: Set<ProbeTable> };
+
+/** What a probe-mode cycle pulls. `next` null = the probe failed. */
+export function planPull(a: { prev: ProbeSnapshot | null; next: ProbeSnapshot | null; lastFullAt: number; now: number; probeBlockedUntil: number }): PullPlan {
+  if (a.next === null || a.prev === null || a.now - a.lastFullAt >= FULL_PULL_EVERY_MS) return { kind: "all" };
+  return { kind: "some", tables: changedTables(a.prev, a.next) };
+}
+
+let lastProbe: ProbeSnapshot | null = null;
+let lastFullPullAt = 0;
+let probeBlockedUntil = 0;
+
+/** The probe's state is per loop run - forgotten on stop, and by the tests. */
+export function resetProbeState(): void {
+  lastProbe = null;
+  lastFullPullAt = 0;
+  probeBlockedUntil = 0;
+}
+
+async function askProbe(client: SupabaseClient, shopId: string): Promise<ProbeSnapshot | null> {
+  if (Date.now() < probeBlockedUntil) return null;
+  const { data, error } = await client.rpc("sync_probe", { p_shop_id: shopId });
+  if (error || !data || typeof data !== "object") {
+    // PGRST202 / 404: the server has no such function (an older database) - the full pull carries on, quietly.
+    if (error && (error.code === "PGRST202" || (error as { status?: number }).status === 404)) probeBlockedUntil = Date.now() + PROBE_RETRY_AFTER_MS;
+    return null;
+  }
+  return data as ProbeSnapshot;
 }
 
 /** KB-313 (NI-38): only an explicit `false` is offline - Node and old browsers have no value at all. */
@@ -1105,6 +1163,47 @@ export function syncNow(options: SyncNowOptions): Promise<SyncCycleResult> {
       syncInFlight = null;
     });
   return syncInFlight;
+}
+
+/** The pulls, in their fixed order. `only` = the tables the probe said moved (absent = all, base products included). */
+async function pullTables(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string, only?: Set<ProbeTable>): Promise<void> {
+  const wants = (t: ProbeTable) => only === undefined || only.has(t);
+  if (wants("shop_products")) await pullShopProducts(client, localDb, shopId);
+  if (only === undefined) await pullBaseProducts(client, localDb); // global and read-only: changes only with a release
+  if (wants("receipt_number_blocks")) await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
+  if (wants("shops")) await pullShop(client, localDb, shopId);
+  if (wants("bills")) await pullBills(client, localDb, shopId);
+  if (wants("bill_cancellations")) await pullCancellations(client, localDb, shopId);
+  if (wants("bill_metrics")) await pullBillMetrics(client, localDb, shopId);
+  if (wants("learning")) {
+    // KB-326: learning state (aliases, provisional products, the last 35 days of price observations), honouring
+    // learning_reset. Once it is in, bills that were waiting at the learning gate are learned (idempotent).
+    // Only when the gate opens in THIS cycle - a steady-state cycle must not rescan every bill (the app learns after each save).
+    const gateWasOpen = await isLearningPullDone(localDb, shopId);
+    if ((await pullLearningState(client, localDb, shopId)).done && !gateWasOpen) {
+      await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
+    }
+  }
+}
+
+async function pullPhase(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string, mode: PullMode): Promise<void> {
+  if (mode === "none") return;
+  if (mode === "all") {
+    await pullTables(client, localDb, shopId, deviceId);
+    lastFullPullAt = Date.now();
+    return;
+  }
+  // KB-345: ask first, so a row that commits WHILE the pulls run is seen as a change by the next question.
+  const next = await askProbe(client, shopId);
+  const plan = planPull({ prev: lastProbe, next, lastFullAt: lastFullPullAt, now: Date.now(), probeBlockedUntil });
+  if (plan.kind === "all") {
+    await pullTables(client, localDb, shopId, deviceId);
+    lastFullPullAt = Date.now();
+  } else if (plan.tables.size > 0) {
+    await pullTables(client, localDb, shopId, deviceId, plan.tables);
+  }
+  // Only after the pulls succeeded (a thrown error leaves the old answer, so the change is asked about again).
+  lastProbe = next;
 }
 
 async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
@@ -1150,21 +1249,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
     pushShop(client, localDb),
   ]);
 
-  // Pulls.
-  await pullShopProducts(client, localDb, shopId);
-  await pullBaseProducts(client, localDb);
-  await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
-  await pullShop(client, localDb, shopId);
-  await pullBills(client, localDb, shopId);
-  await pullCancellations(client, localDb, shopId);
-  await pullBillMetrics(client, localDb, shopId);
-  // KB-326: learning state (aliases, provisional products, the last 35 days of price observations), honouring
-  // learning_reset. Once it is in, bills that were waiting at the learning gate are learned (idempotent).
-  // Only when the gate opens in THIS cycle - a steady-state cycle must not rescan every bill (the app learns after each save).
-  const gateWasOpen = await isLearningPullDone(localDb, shopId);
-  if ((await pullLearningState(client, localDb, shopId)).done && !gateWasOpen) {
-    await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
-  }
+  await pullPhase(client, localDb, shopId, deviceId, options.pull ?? "all");
 
   return mergeResults([billsResult, learningEventsResult, cancellationsResult, metricsResult, ...otherPushResults]);
 }
@@ -1182,19 +1267,33 @@ export interface OnlineEventSource {
   removeEventListener(type: "online", listener: () => void): void;
 }
 
+/** KB-345: `document`, as far as the loop uses it - injectable (Node has none). */
+export interface VisibilitySource {
+  readonly hidden: boolean;
+  addEventListener(type: "visibilitychange", listener: () => void): void;
+  removeEventListener(type: "visibilitychange", listener: () => void): void;
+}
+
+type CycleFn = (options: SyncNowOptions) => Promise<SyncCycleResult>;
+
 let loopRunning = false;
 let loopTimer: ReturnType<typeof setTimeout> | null = null;
 let currentBackoffMs = BASE_INTERVAL_MS;
 let onlineSource: OnlineEventSource | null = null;
 let onlineListener: (() => void) | null = null;
+let visibilitySource: VisibilitySource | null = null;
+let visibilityListener: (() => void) | null = null;
+let cycleFn: CycleFn = syncNow;
 
 async function runLoop(options: SyncNowOptions): Promise<void> {
   if (!loopRunning) return;
   // NI-38: no request and no timer while the browser is offline - the 'online' listener resumes the loop.
   if (browserOffline()) return;
+  // KB-345: no request and no timer while the app is hidden - the visibility listener resumes the loop at once.
+  if (visibilitySource?.hidden) return;
   let anyTransientFailure = true;
   try {
-    ({ anyTransientFailure } = await syncNow(options));
+    ({ anyTransientFailure } = await cycleFn({ ...options, pull: "probe" }));
   } catch (err) {
     // e.g. the database was closed by sign-out mid-cycle. Never let an
     // exception kill the loop silently - log, back off, try again.
@@ -1210,11 +1309,29 @@ async function runLoop(options: SyncNowOptions): Promise<void> {
 export function startSyncLoop(
   options: SyncNowOptions,
   eventSource: OnlineEventSource | null = typeof window !== "undefined" ? window : null,
+  doc: VisibilitySource | null = typeof document !== "undefined" ? document : null,
+  deps: { cycle?: CycleFn } = {},
 ): void {
   if (loopRunning) return;
   loopRunning = true;
   currentBackoffMs = BASE_INTERVAL_MS;
+  cycleFn = deps.cycle ?? syncNow;
+  resetProbeState();
   onlineSource = eventSource;
+  // KB-345 (D90): hidden -> one last push (a bill saved a second ago must not wait for the app to come back), then stop
+  // everything; visible -> a cycle at once and the normal cadence again.
+  visibilitySource = doc;
+  visibilityListener = () => {
+    if (doc?.hidden) {
+      if (loopTimer) clearTimeout(loopTimer);
+      loopTimer = null;
+      void cycleFn({ ...options, pull: "none" }).catch((err: unknown) => console.warn("[sync] last push before hidden failed:", err instanceof Error ? err.message : err));
+      return;
+    }
+    currentBackoffMs = BASE_INTERVAL_MS;
+    void runLoop(options);
+  };
+  visibilitySource?.addEventListener("visibilitychange", visibilityListener);
   // KB-313 (NI-38): back online -> a cycle at once and the normal cadence again (the loop timer is not running
   // while offline), starting from the base interval.
   // (runLoop's own reschedule clears any older timer, so repeated events never stack.)
@@ -1234,6 +1351,11 @@ export function stopSyncLoop(): void {
   if (onlineSource && onlineListener) onlineSource.removeEventListener("online", onlineListener);
   onlineSource = null;
   onlineListener = null;
+  if (visibilitySource && visibilityListener) visibilitySource.removeEventListener("visibilitychange", visibilityListener);
+  visibilitySource = null;
+  visibilityListener = null;
+  cycleFn = syncNow;
+  resetProbeState();
 }
 
 export function isSyncLoopRunning(): boolean {

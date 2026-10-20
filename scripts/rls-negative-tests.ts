@@ -831,6 +831,29 @@ async function main(): Promise<void> {
       await asAnon(client);
       await cancelCall(shopA, cancelA2.localId);
     });
+    await checkRejects(client, "KB-348: owner A cannot create a SECOND shop - shops_one_per_owner (23505)", "23505", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into shops (id, owner_user_id, name, catalog_mode) values ($1, $2, 'Shop A again', 'custom_only')`, [randomUUID(), ownerA]);
+    });
+    await checkRejects(client, "KB-345: the anon role cannot execute sync_probe", "42501", async () => {
+      await asAnon(client);
+      await client.query("select sync_probe($1)", [shopA]);
+    });
+    await check(client, "KB-345: owner B probing shop A's stamps gets nothing (RLS) - every stamp null, no blocks", async () => {
+      await asUser(client, ownerB);
+      const r = await client.query("select sync_probe($1) as p", [shopA]);
+      const p = r.rows[0].p as Record<string, unknown>;
+      const stamps = Object.entries(p).filter(([k]) => k !== "receipt_number_blocks");
+      if (stamps.some(([, v]) => v !== null)) throw new Error(`a stamp leaked: ${JSON.stringify(p)}`);
+      if (JSON.stringify(p.receipt_number_blocks) !== "[0,0]") throw new Error(`blocks leaked: ${JSON.stringify(p.receipt_number_blocks)}`);
+      return "all null";
+    });
+    await check(client, "KB-345 sanity: owner A probing their OWN shop sees a stamp for the shop row", async () => {
+      await asUser(client, ownerA);
+      const r = await client.query("select sync_probe($1) as p", [shopA]);
+      if ((r.rows[0].p as { shops: unknown }).shops === null) throw new Error("own shop's stamp is null");
+      return "shop stamp present";
+    });
     await checkRejects(client, "KB-325: a reason outside the five is refused by the CHECK (23514) and leaves the bill final", "23514", async () => {
       await asUser(client, ownerA);
       await cancelCall(shopA, cancelA2.localId, "because");

@@ -46,8 +46,9 @@ export async function requestPersistentStorage(db: DeviceDB, storage: StorageLik
   }
 }
 
-export function storageStatusText(status: StorageStatus): string {
+export function storageStatusText(status: StorageStatus, ios = false): string {
   if (status === "granted") return "Storage: protected";
   if (status === "unsupported") return "Storage: this browser cannot protect it";
-  return "Storage: not protected yet — install the app";
+  // KB-346: Safari has no install prompt - the Home Screen is the way (WebKit grants persistent storage to a Home Screen app).
+  return ios ? "Storage: not protected yet — tap Share, then Add to Home Screen" : "Storage: not protected yet — install the app";
 }
