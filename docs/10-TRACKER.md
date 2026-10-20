@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 20 Oct 2026 (rev 128) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
+**Last updated:** 20 Oct 2026 (rev 129) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -14,7 +14,7 @@
 
 **Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
 a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**Working on:** nothing open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is DONE (owner's check passed). Everything built since the audit (`KB-337` ... `KB-343`) has passed the owner's checks; what remains is the release, the pre-pilot items and Gemini (see the FINAL STATUS REPORT).** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
+**Working on:** **PLANNING, awaiting the owner's approval (one stop): `KB-344` error monitoring, `KB-345` sync efficiency, `KB-346` iPhone readiness, `KB-347` privacy notice, `KB-348` self sign-up with guardrails, then the release (D89).** Nothing else is open. `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is DONE (owner's check passed). Everything built since the audit (`KB-337` ... `KB-343`) has passed the owner's checks; what remains is the release, the pre-pilot items and Gemini (see the FINAL STATUS REPORT).** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
 **Production:** live is `6e29cf2` (KI-61). Everything after it is pushed to GitHub but **not deployed** (D55 — a release needs the owner-approved deploy marker).
 
 **Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
@@ -571,6 +571,7 @@ catalog index under 16 ms at 10,000 products ✅.
 
 | Date | What | By |
 |---|---|---|
+| 20 Oct 2026 | **Owner decisions recorded (D89):** Supabase / Netlify paid plans later (the owner buys); daily sales total, GST and staff permissions not now (`SG-15`-`SG-17`); Gemini billing waits; `KB-344`-`KB-348` queued and planned (not built); self sign-up approved in principle, live only with `KB-347`. Docs only. |
 | 19 Oct 2026 | **`KB-343` built (D88): Indian digit grouping on every amount, focus after Enter, "Discard changes?", reasons on disabled buttons, "Understanding…", Undo 10 s, translated errors, set-up labels; `KB-342` and the audit passed the owner's check.** Red first (32 tests), 27 plants caught, official VERIFY (unit 136 files / 2290, e2e 22 / 138, RLS 112/112, benchmarks unchanged). |
 | 19 Oct 2026 | **`KB-342` built: the ≡ menu closes on an outside tap, a choice, Escape, Back and when a panel / dialog / the mic opens; `21` Part 5 = the UI audit of every shopkeeper screen at 320 / 375 / 1280 and in हिन्दी (19 rows: 11 BUGs fixed, 8 DESIGN waiting); `KB-341` passed the owner's check.** Red first, 21 plants caught, official VERIFY (unit 133 files / 2208, e2e 22 / 138, RLS 112/112, benchmarks unchanged). |
 | 19 Oct 2026 | **`KB-341` simple bill numbers built (D87): plain 1, 2, 3 …; fallback `7F2A91-1`; "Bill 59" labels; search ignores bill / बिल / no; `Bill-59.pdf`. No migration.** Red first (17 unit + 2 e2e), 14 plants caught, official VERIFY, mixed old + plain + fallback e2e on the real stack. |

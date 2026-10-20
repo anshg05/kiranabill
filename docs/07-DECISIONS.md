@@ -2099,6 +2099,15 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 8. **Error messages in all three languages:** the voice "no item found" message (it was English in हिन्दी), a failed Google sign-in and a failed shop set-up (they showed the browser's or the server's own text) now have catalog sentences; the raw text goes to the console only. **Times stay "5:20 PM".**
 9. **The set-up fields have visible labels** (the placeholders stay as examples).
 
+### D89 — After the audit: plans bought later, three features not now, five tickets queued, self sign-up approved in principle 🟢
+
+**Owner decisions, 20 Oct 2026** (docs only; the five tickets below are PLANNED, not built).
+1. **A Supabase paid plan and a Netlify plan: LATER - the owner buys them.** Until then the Free plans stay: Supabase Free pauses a project after a week with no activity (`pricing`), so the pilot shop must use the app daily or the owner must open the project; Netlify Free keeps function logs about a day (so errors are written to our own table, `KB-344`).
+2. **NOT now:** a daily sales total, GST invoices (`NI-35` stays parked) and staff permissions (`SG-15`, `SG-16`, `SG-17` in `12`).
+3. **Gemini billing still waits for the owner** (`KI-50`, `KB-318`): no Gemini work.
+4. **Queued in this order, planned together first (one stop):** `KB-344` error monitoring (free, no personal data ever); `KB-345` sync efficiency; `KB-346` iPhone readiness; `KB-347` privacy notice (a DRAFT, English / हिन्दी / Hinglish, accepted at set-up, readable in Settings); `KB-348` self sign-up with guardrails. **Then the release** (draft, two phones on one shop, owner approves the exact commit, the `[deploy]` commit, checks, the redirect-URL cleanup).
+5. **Self sign-up is approved in principle** - new users may sign up with Google and create a shop - but it goes live **only in the same release as `KB-347`**. The "sign-ups stay OFF" policy (tracker, 18 Oct 2026) is superseded **when `KB-348` is built**, not before.
+
 ---
 
 ## Superseded
