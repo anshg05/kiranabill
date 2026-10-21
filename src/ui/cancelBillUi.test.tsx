@@ -55,7 +55,7 @@ async function open({ billInProgress = false, onReissue = vi.fn<(billLocalId: st
   await screen.findByRole("list", { name: "Bills" });
   return { onReissue };
 }
-const rowFor = (number: string) => within(screen.getByRole("list", { name: "Bills" })).getAllByRole("button").find((b) => b.textContent!.includes(number))!;
+const rowFor = (number: string) => within(screen.getByRole("list", { name: "Bills" })).getAllByRole("button").find((b) => b.querySelector(".font-medium")?.textContent === `Bill ${number}`)!; // the title - not the row text: "Bill 2" + "12:39 PM" read "Bill 212:39", which contains "1"
 async function openBill(number: string) {
   fireEvent.click(rowFor(number));
   return within(await screen.findByRole("region", { name: "Bill" }));

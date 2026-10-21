@@ -233,7 +233,7 @@ describe("History and Cancel", () => {
     use("hl");
     history();
     const list = await screen.findByRole("list", { name: T("history.billsLabel", "hl") });
-    fireEvent.click(within(list).getAllByRole("button").find((x) => x.textContent!.includes(a.number))!);
+    fireEvent.click(within(list).getAllByRole("button").find((x) => x.querySelector(".font-medium")?.textContent?.endsWith(` ${a.number}`))!); // the title, not the row text (a time like 12:39 holds "1")
     expect(await screen.findByRole("button", { name: T("history.replacedBy", "hl", { n: b.number }) })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: T("history.replacedBy", "hl", { n: b.number }) }));
     expect(await screen.findByRole("button", { name: T("history.replaces", "hl", { n: a.number }) })).toBeTruthy();
