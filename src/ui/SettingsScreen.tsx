@@ -219,7 +219,10 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
               <p className="mt-3 text-[13px] text-ink-soft">{t("settings.receiptNote")}</p>
 
               <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} />
-              <p className="mt-6 text-[13px] text-ink-soft">Version {BUILD_ID}</p>
+              <a href="/privacy" target="_blank" rel="noopener" className="mt-6 flex min-h-11 items-center text-indigo underline">
+                {t("settings.privacy")}
+              </a>
+              <p className="text-[13px] text-ink-soft">Version {BUILD_ID}</p>
             </>
           )}
         </div>

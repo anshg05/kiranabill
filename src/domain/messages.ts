@@ -225,6 +225,7 @@ export const MESSAGES = {
   "history.cancelled": m("Cancelled", "रद्द", "Radd"),
 
   // ---- Settings
+  "settings.privacy": m("Privacy policy", "गोपनीयता नीति", "Privacy policy"), // D91
   "settings.back": m("Back", "वापस", "Wapas"),
   "settings.shopDetails": m("Shop details", "दुकान की जानकारी", "Dukaan ki jaankari"),
   "settings.shopName": m("Shop name", "दुकान का नाम", "Dukaan ka naam"),
