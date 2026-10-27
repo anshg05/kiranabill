@@ -1,3 +1,4 @@
+import { noteCatalogPulled } from "./catalogPullStatus";
 import type { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
 import type { KiranaBillDB, LocalBill, LocalBillCancellation, LocalBillItem, LocalShop, ShopField, SyncStatus } from "@/data/db";
@@ -1184,6 +1185,8 @@ async function pullTables(client: SupabaseClient, localDb: KiranaBillDB, shopId:
       await learnPendingBills(localDb, shopId).catch((err: unknown) => console.warn("[learning] after pull failed:", err instanceof Error ? err.message : err));
     }
   }
+  // KB-350: what the billing screen's catalog is built from was pulled - it reloads (and keeps the old one if nothing differs).
+  if (wants("shop_products") || wants("shops") || wants("learning")) noteCatalogPulled(localDb.name);
 }
 
 async function pullPhase(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string, mode: PullMode): Promise<void> {

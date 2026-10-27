@@ -11,7 +11,7 @@ import { sumPaise } from "@/domain/money";
 import { recordingVocabulary } from "@/domain/vocabulary";
 import { learnedNoteFor, type LearnedMap } from "@/domain/aliasEvidence";
 import { removeLearnedAlias } from "@/data/aliasEvidence";
-import { loadShopCatalog, type ShopCatalog } from "@/data/shopCatalog";
+import { useShopCatalog } from "./useShopCatalog";
 import { parseTranscript } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
@@ -110,20 +110,9 @@ export function BillingScreen() {
   const { shop, localDb, deviceId } = useShop();
   // THIS shop's catalog, from Dexie (works offline) - Layer 1, the Layer 2
   // slice, reviewFlags and the Whisper vocabulary all use it (Q2, D4).
-  const [shopCatalog, setShopCatalog] = useState<ShopCatalog | null>(null);
-  // KB-311: bumped after a Catalog save - new lines use the new price; lines
-  // already on the bill keep their own.
-  const [catalogVersion, setCatalogVersion] = useState(0);
-  useEffect(() => {
-    if (!localDb || !shop) return;
-    let active = true;
-    void loadShopCatalog(localDb, shop.id).then((c) => {
-      if (active) setShopCatalog(c);
-    });
-    return () => {
-      active = false;
-    };
-  }, [localDb, shop, catalogVersion]);
+  // KB-311: reload() after a Catalog save - new lines use the new price; lines already on the bill keep their own.
+  // KB-350: also reloaded by every sync pull that moved the catalog, shop settings or learning (another phone's change).
+  const { catalog: shopCatalog, reload: reloadCatalog, pulls: catalogPulls } = useShopCatalog(localDb ?? null, shop?.id);
   const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog]);
   const vocabulary = useMemo(
     () => (shopCatalog ? recordingVocabulary(shopCatalog.entries, shopCatalog.usageById) : []),
@@ -192,7 +181,7 @@ export function BillingScreen() {
     if (!localDb || !shop || !deviceId) return;
     void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     // KB-323: an alias this bill just promoted reads from the next utterance on (learnThenReload reloads the catalog after learning).
-    void learnThenReload(localDb, shop.id, () => setCatalogVersion((v) => v + 1))
+    void learnThenReload(localDb, shop.id, () => reloadCatalog())
       .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId, pull: "probe" }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
   }, [deviceId, discardDraft, localDb, protectStorage, shop]);
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
@@ -263,7 +252,7 @@ export function BillingScreen() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   // KB-340 (D86): the shop's name in the header; re-read when Settings closes, so a rename shows at once.
-  const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, settingsOpen);
+  const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, `${settingsOpen}:${catalogPulls}`);
   const sync = useSyncChip(localDb);
   return (
     <>
@@ -288,7 +277,7 @@ export function BillingScreen() {
       usage={shopCatalog?.usageById}
       learned={shopCatalog?.learned}
       onChangeProduct={bill.changeProduct}
-      onNotThis={localDb && shop && deviceId ? (alias, catalogId) => void removeLearnedAlias(localDb, shop.id, deviceId, alias, catalogId).then(() => setCatalogVersion((v) => v + 1)).catch((err: unknown) => console.warn("[learning] could not remove the alias:", err)) : undefined}
+      onNotThis={localDb && shop && deviceId ? (alias, catalogId) => void removeLearnedAlias(localDb, shop.id, deviceId, alias, catalogId).then(() => reloadCatalog()).catch((err: unknown) => console.warn("[learning] could not remove the alias:", err)) : undefined}
       onAddByHand={(item, name) => (wiring.touch(), bill.addByHand(item, name))}
       focusLineId={bill.focusLineId}
       customer={bill.customer}
@@ -336,7 +325,7 @@ export function BillingScreen() {
         create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
         ignoreSuggestion={(id) => ignorePriceSuggestionFor(localDb, shop.id, id, deviceId, Date.now())}
         removeAlias={(alias, id) => removeLearnedAlias(localDb, shop.id, deviceId, alias, id)}
-        onChanged={() => setCatalogVersion((v) => v + 1)}
+        onChanged={() => reloadCatalog()}
         onClose={() => setCatalogOpen(false)}
       />
     )}
