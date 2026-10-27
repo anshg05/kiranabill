@@ -16,6 +16,7 @@ export function EditableValue({
   startOpen = false,
   kind = "number",
   pendingTarget = false,
+  changedNote,
 }: {
   label: string;
   fieldId: string;
@@ -28,8 +29,13 @@ export function EditableValue({
   kind?: "number" | "text" | "tel";
   /** KB-307: where a Bill Banao tap sends focus when this value is what's missing. */
   pendingTarget?: boolean;
+  /** KB-350: shown while the editor is open and `initial` has moved since it opened (another phone changed the value). */
+  changedNote?: string;
 }) {
   const [draft, setDraft] = useState<string | null>(startOpen ? initial : null);
+  // What the value was when the editor opened: "untouched" means equal to THIS, not to a newer `initial` that a pull brought in
+  // (an untouched editor must close without saving its old text over the other phone's value).
+  const [openedWith, setOpenedWith] = useState(initial);
   const { tx } = useT();
   const [error, setError] = useState<string | null>(null);
   // KB-343: after Enter the focus stays on this value (its button) - tapping away must not pull it back.
@@ -48,6 +54,7 @@ export function EditableValue({
         data-pending-target={pendingTarget || undefined}
         onClick={() => {
           setDraft(initial);
+          setOpenedWith(initial);
           setError(null);
         }}
         className="min-h-11 min-w-11 rounded-[6px] border border-line bg-paper px-2 tabular-nums text-ink"
@@ -93,13 +100,18 @@ export function EditableValue({
         // Leaving an untouched editor (e.g. for the unit picker beside it) just
         // closes it - only a changed value, or an explicit Enter, commits (KB-305).
         onBlur={() => {
-          if (draft === initial) {
+          if (draft === openedWith) {
             setDraft(null);
             setError(null);
           } else commit();
         }}
         className={`h-11 rounded-[6px] border border-line bg-surface px-2 tabular-nums ${kind === "number" ? "w-24 text-right" : "w-44"}`}
       />
+      {changedNote && initial !== openedWith && (
+        <span role="status" className="text-[13px] text-ink-soft">
+          {changedNote}
+        </span>
+      )}
       {error && (
         <span role="alert" className="text-[13px] text-danger">
           {tx(error)}

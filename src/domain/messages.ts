@@ -325,6 +325,8 @@ export const MESSAGES = {
   "catalog.noneFound": m("No products found.", "कोई सामान नहीं मिला।", "Koi saaman nahi mila."),
   "catalog.noneOfKind": m("No products of this kind.", "इस तरह का कोई सामान नहीं है।", "Is tarah ka koi saaman nahi hai."),
   "catalog.noneYet": m("No products yet — add them from the ready catalog or import a file.", "अभी कोई सामान नहीं है — तैयार सूची से जोड़ें या फ़ाइल से लाएं।", "Abhi koi saaman nahi hai — taiyaar list se jodein ya file se laayein."),
+  "catalog.changedElsewhere": m("Changed on another phone: now {now}", "दूसरे फ़ोन पर बदला गया: अब {now}", "Dusre phone par badla gaya: ab {now}"),
+  "catalog.nowArchived": m("archived", "आर्काइव किया गया", "archive kiya gaya"),
   "catalog.saving": m("Saving…", "सेव हो रहा है…", "Save ho raha hai…"),
   "catalog.restore": m("Restore", "वापस लाएं", "Wapas laayein"),
   "catalog.restoreLabel": m("Restore {name}", "{name} वापस लाएं", "{name} wapas laayein"),

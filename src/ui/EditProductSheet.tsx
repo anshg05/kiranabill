@@ -25,9 +25,11 @@ interface Props {
   /** Absent for an archived product (already archived). */
   onArchive?: () => Promise<CatalogWriteResult>;
   onClose: () => void;
+  /** KB-350: what another phone changed on this product while the sheet is open - shown, never applied over his typing. */
+  changedNote?: string | null;
 }
 
-export function EditProductSheet({ product, others, online, onSave, onArchive, onClose }: Props) {
+export function EditProductSheet({ product, others, online, onSave, onArchive, onClose, changedNote }: Props) {
   const { t, tx } = useT();
   const initialAliases = product.aliases.join("\n");
   const [name, setName] = useState(product.displayName);
@@ -75,6 +77,7 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
         </header>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
           {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE_NOTE)}</p>}
+          {changedNote && <p role="status" className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{changedNote}</p>}
 
           <label className="flex flex-col gap-1">
             <span className="text-[13px] font-medium text-ink-soft">{t("product.name")}</span>

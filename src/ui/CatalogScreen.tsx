@@ -7,6 +7,7 @@ import type { CatalogWriteResult } from "@/data/catalogEdit";
 import type { ImportOutcome, ImportRow } from "@/data/catalogImport";
 import type { NewProduct, OtherProduct, ProductPatch } from "@/domain/catalogEdit";
 import { listPendingPriceSuggestions, listProvisionalProducts } from "@/data/learningAudit";
+import { subscribeCatalogPulled } from "@/data/catalogPullStatus";
 import { loadShopCatalog } from "@/data/shopCatalog";
 import { MAX_RATE_PAISE, parseMoneyInput } from "@/domain/billEdit";
 import { nameKey } from "@/domain/catalogImport";
@@ -127,6 +128,9 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
   useEffect(() => {
     reload().catch((err: unknown) => console.warn("[catalog] load failed:", err instanceof Error ? err.message : err));
   }, [reload]);
+  // KB-350: another phone's change (a sync pull) refreshes the open screen. The row being edited keeps his typing: the inline
+  // editor and the Edit sheet hold their own text and only show a note (below).
+  useEffect(() => subscribeCatalogPulled(localDb.name, () => void reload().catch((err: unknown) => console.warn("[catalog] reload failed:", err instanceof Error ? err.message : err))), [localDb, reload]);
 
   const savePrice = (p: LocalShopProduct, pricePaise: number) => {
     setSaving((s) => new Set(s).add(p.id));
@@ -366,6 +370,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                         fieldId={`price-${p.id}`}
                         text={priceText(p.pricePaise, p.unit)}
                         initial={plainRupees(p.pricePaise)}
+                        changedNote={t("catalog.changedElsewhere", { now: formatRupees(p.pricePaise) })}
                         onCommit={(text) => {
                           const r = parseMoneyInput(text, MAX_RATE_PAISE);
                           if (!r.ok) return r.error;
@@ -441,6 +446,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
               : undefined
           }
           onClose={() => setEditing(null)}
+          changedNote={changedNoteFor(editing, loaded.all, t)}
         />
       )}
       {addOpen && loaded && create && (
@@ -488,6 +494,16 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
       )}
     </section>
   );
+}
+
+/** KB-350: what changed on another phone for the product whose Edit sheet is open (price, then name, then archived), or null. */
+function changedNoteFor(opened: LocalShopProduct, all: readonly LocalShopProduct[], t: Translate): string | null {
+  const now = all.find((p) => p.id === opened.id);
+  if (!now) return null;
+  if (opened.isActive && !now.isActive) return t("catalog.changedElsewhere", { now: t("catalog.nowArchived") });
+  if (now.pricePaise !== opened.pricePaise) return t("catalog.changedElsewhere", { now: formatRupees(now.pricePaise) });
+  if (now.displayName !== opened.displayName) return t("catalog.changedElsewhere", { now: `“${now.displayName}”` });
+  return null;
 }
 
 function without(s: ReadonlySet<string>, id: string): ReadonlySet<string> {
