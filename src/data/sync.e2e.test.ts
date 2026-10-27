@@ -3,7 +3,8 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill, type LocalBillItem } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock, consumeNextNumber } from "./receiptNumbers";
+import { requestBillNumber } from "./receiptNumbers";
+import { consumeNextNumber } from "./testNumbers";
 import { syncNow, pushBills } from "./sync";
 
 /**
@@ -48,10 +49,9 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     const shop = await createShop(client, { ownerUserId: data.user.id, name: "KB-110b e2e", phone: null, catalogMode: "custom_only" });
     shopId = shop.id;
-    await reserveBlock(client, localDb, shopId, deviceId);
   });
 
-  function billRow(localId: string, receipt: { receiptNumber: string; source: "block" | "fallback" }, totalPaise: number, status: LocalBill["status"] = "final"): LocalBill {
+  function billRow(localId: string, receipt: { receiptNumber: string; source: "block" | "fallback" | "counter" }, totalPaise: number, status: LocalBill["status"] = "final"): LocalBill {
     return {
       localId,
       shopId,
@@ -91,8 +91,10 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     return data;
   }
 
-  async function writeFinalisedBill(localId: string, items: LocalBillItem[], db = localDb, status: LocalBill["status"] = "final") {
-    const receipt = await consumeNextNumber(client, db, shopId, deviceId);
+  async function writeFinalisedBill(localId: string, items: LocalBillItem[], db = localDb, status: LocalBill["status"] = "final", offline = false) {
+    // KB-351: online the number is the shop's next one from the server counter; offline it is this device's own code.
+    const server = offline ? null : await requestBillNumber(client, shopId, localId);
+    const receipt = server ? { receiptNumber: server.receiptNumber, source: server.source } : await consumeNextNumber(client, db, shopId, deviceId);
     const total = items.reduce((sum, i) => sum + i.totalPaise, 0);
     await db.bills.add(billRow(localId, receipt, total, status));
     await db.billItems.bulkAdd(items);
@@ -116,7 +118,7 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     expect(rows).toHaveLength(1);
     const server = rows[0]!;
     expect(server.status).toBe("final");
-    expect(server.receipt_number_source).toBe("block");
+    expect(server.receipt_number_source).toBe("counter");
     expect(server.total_paise).toBe(14250);
     const items = [...server.bill_items].sort((a, b) => a.line_no - b.line_no);
     expect(items.map((i) => [i.line_no, Number(i.qty), i.unit, i.rate_paise, i.rate_unit, i.total_paise])).toEqual([
@@ -171,11 +173,11 @@ describe("KB-110b sync e2e - real local stack, shipped code path", () => {
     expect(server.bill_items).toHaveLength(3);
   });
 
-  it("6. a fallback-numbered bill (a device with no reserved block) lands with receipt_number_source 'fallback'", async () => {
+  it("6. a fallback-numbered bill (no server number - offline) lands with receipt_number_source 'fallback'", async () => {
     const secondDevice = new KiranaBillDB(`e2e-dev2-${crypto.randomUUID()}`);
     const bill3 = crypto.randomUUID();
-    const receipt = await writeFinalisedBill(bill3, crossUnitItems(bill3), secondDevice);
-    expect(receipt.source).toBe("fallback"); // the shipped consumeNextNumber chose the fallback path
+    const receipt = await writeFinalisedBill(bill3, crossUnitItems(bill3), secondDevice, "final", true);
+    expect(receipt.source).toBe("fallback"); // the offline path
     await pushBills(client, secondDevice);
     const server = (await serverBill(bill3))[0]!;
     expect(server.receipt_number_source).toBe("fallback");

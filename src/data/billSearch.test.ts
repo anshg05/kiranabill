@@ -7,7 +7,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { toBillSearchRow } from "@/domain/billSearch";
 import { KiranaBillDB } from "./db";
-import { finaliseBill } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { loadSearchIndex } from "./history";
 import { pushBills } from "./sync";
 
@@ -26,7 +26,6 @@ const DAY = 86_400_000;
 
 async function seedShop(target: KiranaBillDB, id: string) {
   await target.shops.put({ id, syncStatus: "synced", name: "S", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-07T00:00:00.000Z" });
-  await target.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId: id, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-07T00:00:00.000Z", syncStatus: "synced" });
 }
 
 beforeEach(async () => {

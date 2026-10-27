@@ -10,7 +10,6 @@ import type { FinalLine } from "@/domain/finalBill";
 import { gateReport, type UtteranceMetric } from "@/domain/billMetrics";
 import { KiranaBillDB } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullBills, syncNow } from "./sync";
 import { finaliseBill } from "./finalise";
 import { cancelBillLocal } from "./cancelBill";
@@ -36,7 +35,6 @@ describe("KB-404 e2e - bill_metrics (local Postgres)", () => {
     const db = new KiranaBillDB(`e2e-metrics-${crypto.randomUUID()}`);
     dbs.push(db);
     const deviceId = crypto.randomUUID();
-    await reserveBlock(client, db, shopId, deviceId);
     return { db, deviceId };
   }
   type Device = Awaited<ReturnType<typeof device>>;
@@ -85,7 +83,7 @@ describe("KB-404 e2e - bill_metrics (local Postgres)", () => {
     const text = JSON.stringify(rows[0]);
     for (const secret of ["Ramesh", "9876543210", "Chini", "chini"]) expect(text).not.toContain(secret);
     expect(Object.keys(rows[0]).sort()).toEqual([
-      "bill_id", "bill_local_id", "device_id", "edited_lines", "finalise_to_receipt_ms", "flags_acknowledged", "flags_raised", "id", "line_count", "local_id", "manual_lines", "not_added",
+      "bill_id", "bill_local_id", "device_id", "edited_lines", "finalise_to_receipt_ms", "flags_acknowledged", "flags_raised", "id", "line_count", "local_id", "manual_lines", "not_added", "number_ms",
       "receipt_number", "recorded_at", "removed_lines", "seconds_to_bill", "shop_id", "total_paise", "turns", "updated_at", "utterances", "voice_lines",
     ]);
     expect((await a.db.billMetrics.get(id))!.syncStatus).toBe("synced");
@@ -192,7 +190,6 @@ describe("KB-404 e2e - scripts/pilot/gate.sql reads the same lines the app compu
       const db = new KiranaBillDB(`e2e-gate-${crypto.randomUUID()}`);
       dbs.push(db);
       const deviceId = crypto.randomUUID();
-      await reserveBlock(client, db, shopId, deviceId);
       return { db, deviceId };
     };
     const a = await mk();

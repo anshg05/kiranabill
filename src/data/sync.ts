@@ -836,91 +836,8 @@ export async function pullBills(client: SupabaseClient, localDb: KiranaBillDB, s
   }
 }
 
-// ---------------------------------------------------------------------
-// Hybrid: receiptNumberBlocks. Never created locally (reserved via a real
-// online round-trip - KB-111's job, not this ticket's). This ticket's job
-// is only the generic mechanics: pull newly-reserved blocks, push a
-// locally-mutated nextNumber.
-// ---------------------------------------------------------------------
-
-// KB-315 (docs/07-DECISIONS.md D38): only THIS device's blocks. Pulling every
-// block of the shop let a device (e.g. one whose IndexedDB was wiped and now
-// has a new deviceId) pull another install's block back and reissue numbers
-// that install had already used offline but never pushed.
-export async function pullReceiptNumberBlocks(
-  client: SupabaseClient,
-  localDb: KiranaBillDB,
-  shopId: string,
-  deviceId: string,
-): Promise<void> {
-  const { data, error } = await client
-    .from("receipt_number_blocks")
-    .select("*")
-    .eq("shop_id", shopId)
-    .eq("device_id", deviceId);
-  if (error || !data) {
-    console.warn(`[sync] receiptNumberBlocks pull failed: ${error?.message}`);
-    return;
-  }
-
-  for (const row of data) {
-    const existing = await localDb.receiptNumberBlocks.get(row.id);
-    // Never overwrite a block whose nextNumber has been locally advanced
-    // and not yet pushed - this pull only adds newly-reserved blocks or
-    // refreshes ones this device hasn't touched.
-    if (existing && existing.syncStatus === "pending") continue;
-
-    await localDb.receiptNumberBlocks.put({
-      id: row.id,
-      shopId: row.shop_id,
-      deviceId: row.device_id,
-      blockStart: row.block_start,
-      blockEnd: row.block_end,
-      nextNumber: row.next_number,
-      allocatedAt: row.allocated_at,
-      syncStatus: "synced",
-    });
-  }
-}
-
-export async function pushReceiptNumberBlocks(client: SupabaseClient, localDb: KiranaBillDB): Promise<PushResult> {
-  const pending = await localDb.receiptNumberBlocks.where("syncStatus").equals("pending").toArray();
-  let anyTransientFailure = false;
-
-  for (const block of pending) {
-    // .select("id") (returning an array, not .single()) so a zero-row
-    // result is checked explicitly rather than relying on an error being
-    // thrown - KB-105 already proved RLS UPDATE is a silent zero-row
-    // filter, not a raised error, for exactly this shape of statement.
-    const { data, error } = await client
-      .from("receipt_number_blocks")
-      .update({ next_number: block.nextNumber })
-      .eq("id", block.id)
-      .select("id");
-
-    if (error || !data || data.length === 0) {
-      if (isPermanentError(error) || (!error && data?.length === 0)) {
-        console.warn(
-          `[sync] receiptNumberBlocks: ${
-            error ? `permanent failure (${error.code})` : "update silently affected 0 rows (RLS filtered)"
-          } for id=${block.id}: ${error?.message ?? "no matching row visible to this session"}`,
-        );
-        // No "conflict" status for this table's mutation path - a rejected
-        // nextNumber update is surfaced via the same log, but the block
-        // stays pending so KB-111's allocation logic can decide what to
-        // do (e.g. reserve a fresh block) rather than this generic worker
-        // guessing at a receipt-numbering-specific recovery.
-      } else {
-        anyTransientFailure = true;
-      }
-      continue;
-    }
-
-    await localDb.receiptNumberBlocks.update(block.id, { syncStatus: "synced" });
-  }
-
-  return { anyTransientFailure };
-}
+// KB-351 (D92): receipt-number blocks are retired - no pull, no push. The bill number comes from the server's per-shop counter
+// at Bill Banao (receiptNumbers.ts); the block table and its Dexie store stay, unused, until a later release (D55 section 5).
 
 // ---------------------------------------------------------------------
 // shops: bidirectional. KB-312 (docs/07-DECISIONS.md D64): the SERVER's
@@ -966,7 +883,7 @@ export async function pushShop(client: SupabaseClient, localDb: KiranaBillDB): P
         : Object.fromEntries(fields.map((f) => [SHOP_COLUMN[f], shop[f]]));
 
     // .select(...) (an array, not .single()) so a zero-row result is
-    // checked explicitly - same reasoning as pushReceiptNumberBlocks:
+    // checked explicitly (as the other push paths do):
     // RLS UPDATE is a silent zero-row filter, not a raised error.
     const { data, error } = await client
       .from("shops")
@@ -1066,7 +983,7 @@ export interface SyncNowOptions {
   /** The signed-in user's own database (openShopDb(userId), D38). */
   localDb: KiranaBillDB;
   shopId: string;
-  /** This installation's id (device.ts) - blocks are pulled per device. */
+  /** This installation's id (device.ts). KB-351: no longer used by a sync cycle (receipt blocks are retired); callers still pass it. */
   deviceId: string;
   /**
    * KB-345 (D90): "all" (the default - what a manual kick and the tests mean) pulls every table; "probe" is the loop's cycle:
@@ -1088,7 +1005,7 @@ export const FULL_PULL_EVERY_MS = 5 * 60_000;
 /** After the server answered "no such function" (an older database), don't ask again for this long. */
 const PROBE_RETRY_AFTER_MS = 30 * 60_000;
 
-export const PROBE_TABLES = ["bills", "bill_cancellations", "bill_metrics", "shop_products", "shops", "receipt_number_blocks", "learning"] as const;
+export const PROBE_TABLES = ["bills", "bill_cancellations", "bill_metrics", "shop_products", "shops", "learning"] as const;
 export type ProbeTable = (typeof PROBE_TABLES)[number];
 export type ProbeSnapshot = Readonly<Record<string, unknown>>;
 
@@ -1167,11 +1084,10 @@ export function syncNow(options: SyncNowOptions): Promise<SyncCycleResult> {
 }
 
 /** The pulls, in their fixed order. `only` = the tables the probe said moved (absent = all, base products included). */
-async function pullTables(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string, only?: Set<ProbeTable>): Promise<void> {
+async function pullTables(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, only?: Set<ProbeTable>): Promise<void> {
   const wants = (t: ProbeTable) => only === undefined || only.has(t);
   if (wants("shop_products")) await pullShopProducts(client, localDb, shopId);
   if (only === undefined) await pullBaseProducts(client, localDb); // global and read-only: changes only with a release
-  if (wants("receipt_number_blocks")) await pullReceiptNumberBlocks(client, localDb, shopId, deviceId);
   if (wants("shops")) await pullShop(client, localDb, shopId);
   if (wants("bills")) await pullBills(client, localDb, shopId);
   if (wants("bill_cancellations")) await pullCancellations(client, localDb, shopId);
@@ -1189,10 +1105,10 @@ async function pullTables(client: SupabaseClient, localDb: KiranaBillDB, shopId:
   if (wants("shop_products") || wants("shops") || wants("learning")) noteCatalogPulled(localDb.name);
 }
 
-async function pullPhase(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string, mode: PullMode): Promise<void> {
+async function pullPhase(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, mode: PullMode): Promise<void> {
   if (mode === "none") return;
   if (mode === "all") {
-    await pullTables(client, localDb, shopId, deviceId);
+    await pullTables(client, localDb, shopId);
     lastFullPullAt = Date.now();
     return;
   }
@@ -1200,10 +1116,10 @@ async function pullPhase(client: SupabaseClient, localDb: KiranaBillDB, shopId: 
   const next = await askProbe(client, shopId);
   const plan = planPull({ prev: lastProbe, next, lastFullAt: lastFullPullAt, now: Date.now(), probeBlockedUntil });
   if (plan.kind === "all") {
-    await pullTables(client, localDb, shopId, deviceId);
+    await pullTables(client, localDb, shopId);
     lastFullPullAt = Date.now();
   } else if (plan.tables.size > 0) {
-    await pullTables(client, localDb, shopId, deviceId, plan.tables);
+    await pullTables(client, localDb, shopId, plan.tables);
   }
   // Only after the pulls succeeded (a thrown error leaves the old answer, so the change is asked about again).
   lastProbe = next;
@@ -1213,7 +1129,7 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   // KB-313: offline - e.g. right after Bill Banao - nothing is sent; the 'online' event runs the next cycle.
   if (browserOffline()) return { anyTransientFailure: false, skippedOffline: true };
   const client = options.client ?? supabase;
-  const { localDb, shopId, deviceId } = options;
+  const { localDb, shopId } = options;
 
   // KB-315 (docs/07-DECISIONS.md D38): NEVER sync without a real session.
   // In offline-session mode, or after auth-js drops a session whose refresh
@@ -1248,11 +1164,10 @@ async function runSyncCycle(options: SyncNowOptions): Promise<SyncCycleResult> {
   // The remaining push-first tables have no dependency on bill serverIds.
   const otherPushResults = await Promise.all([
     ...(resetNotOnServer ? [] : [pushLearnedAliases(client, localDb), pushProvisionalProducts(client, localDb), pushPriceObservations(client, localDb)]),
-    pushReceiptNumberBlocks(client, localDb),
     pushShop(client, localDb),
   ]);
 
-  await pullPhase(client, localDb, shopId, deviceId, options.pull ?? "all");
+  await pullPhase(client, localDb, shopId, options.pull ?? "all");
 
   return mergeResults([billsResult, learningEventsResult, cancellationsResult, metricsResult, ...otherPushResults]);
 }

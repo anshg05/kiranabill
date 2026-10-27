@@ -6,7 +6,7 @@ import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB, type LocalBill } from "@/data/db";
-import { finaliseBill } from "@/data/finalise";
+import { finaliseBill } from "@/data/testNumbers";
 import { BillView } from "./BillingScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { loadRecentRows } from "@/data/history";
@@ -38,7 +38,6 @@ const renderFiles: RenderReceiptFiles = async () => ({ png: new Blob(["png"]), p
 beforeEach(async () => {
   db = new KiranaBillDB(`ui-history-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Sharma Kirana", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-07T00:00:00.000Z" });
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 1000, nextNumber: 1, allocatedAt: "2026-10-07T00:00:00.000Z", syncStatus: "synced" });
   await setPull("done"); // a device whose first bills pull (KB-324) is finished
 });
 const setPull = (phase: "done" | "backfill" | null) =>

@@ -26,7 +26,7 @@ export interface WiringInput {
   /** Lines removed and not brought back. */
   removed: number;
   /** The bill just saved (the receipt is showing), or null. */
-  saved: { readonly localId: string } | null;
+  saved: { readonly localId: string; readonly numberMs?: number | null } | null;
 }
 
 interface Pending {
@@ -104,6 +104,7 @@ export function useMetricsWiring(input: WiringInput) {
         secondsToBill: p.seconds,
         utterances: p.utterances,
         finaliseToReceiptMs: performance.now() - p.t0,
+        numberMs: saved.numberMs ?? null,
         snapshot: p.snapshot,
       });
     });

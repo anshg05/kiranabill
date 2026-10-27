@@ -854,6 +854,54 @@ async function main(): Promise<void> {
       if ((r.rows[0].p as { shops: unknown }).shops === null) throw new Error("own shop's stamp is null");
       return "shop stamp present";
     });
+    // KB-351 (D92): the shop's bill-number counter - SECURITY INVOKER, RLS the boundary, never anon, never moved by hand.
+    const numberBill = randomUUID();
+    await check(client, "KB-351 sanity: owner A takes a number for shop A; the SAME bill asking again gets the same one; another bill gets the next", async () => {
+      await asUser(client, ownerA);
+      const take = async (bill: string) => Number((await client.query("select next_bill_number($1, $2) as n", [shopA, bill])).rows[0].n);
+      const first = await take(numberBill);
+      const again = await take(numberBill);
+      const next = await take(randomUUID());
+      if (!(first >= 1) || again !== first || next !== first + 1) throw new Error(`got ${first}, ${again}, ${next}`);
+      return `${first}, ${again}, ${next}`;
+    });
+    await checkRejects(client, "KB-351: owner B cannot take a number for shop A (RLS refuses the counter row)", "42501", async () => {
+      await asUser(client, ownerB);
+      await client.query("select next_bill_number($1, $2)", [shopA, randomUUID()]);
+    });
+    await checkRejects(client, "KB-351: the anon role cannot execute next_bill_number", "42501", async () => {
+      await asAnon(client);
+      await client.query("select next_bill_number($1, $2)", [shopA, randomUUID()]);
+    });
+    await check(client, "KB-351 read isolation: owner B reads zero of shop A's counter and grants; owner A reads their own", async () => {
+      await asUser(client, ownerB);
+      const b = await client.query("select (select count(*) from shop_bill_counters where shop_id = $1) as c, (select count(*) from bill_number_grants where shop_id = $1) as g", [shopA]);
+      await asUser(client, ownerA);
+      const a = await client.query("select (select count(*) from shop_bill_counters where shop_id = $1) as c, (select count(*) from bill_number_grants where shop_id = $1) as g", [shopA]);
+      if (Number(b.rows[0].c) !== 0 || Number(b.rows[0].g) !== 0) throw new Error("B saw shop A's counter or grants");
+      if (Number(a.rows[0].c) !== 1 || Number(a.rows[0].g) < 2) throw new Error(`A sees ${a.rows[0].c} counter, ${a.rows[0].g} grants`);
+      return "B 0 / 0, A 1 / " + a.rows[0].g;
+    });
+    await checkRejects(client, "KB-351: the counter only moves up by one - owner A's direct UPDATE to a far number is refused (KB409)", "KB409", async () => {
+      await asUser(client, ownerA);
+      await client.query("update shop_bill_counters set last_number = last_number + 1000 where shop_id = $1", [shopA]);
+    });
+    await check(client, "KB-351: owner B's UPDATE of shop A's counter affects zero rows; nobody can DELETE a counter or change / delete a grant", async () => {
+      await asUser(client, ownerB);
+      const bUpd = await client.query("update shop_bill_counters set last_number = last_number + 1 where shop_id = $1", [shopA]);
+      await asUser(client, ownerA);
+      const del = await client.query("delete from shop_bill_counters where shop_id = $1", [shopA]);
+      const gUpd = await client.query("update bill_number_grants set bill_number = 999999 where shop_id = $1", [shopA]);
+      const gDel = await client.query("delete from bill_number_grants where shop_id = $1", [shopA]);
+      if (bUpd.rowCount !== 0 || del.rowCount !== 0 || gUpd.rowCount !== 0 || gDel.rowCount !== 0) throw new Error(`rows: ${bUpd.rowCount}, ${del.rowCount}, ${gUpd.rowCount}, ${gDel.rowCount}`);
+      return "0 / 0 / 0 / 0";
+    });
+    await check(client, "KB-351: next_bill_number and its trigger function are SECURITY INVOKER (no security definer)", async () => {
+      await asSuperuser(client);
+      const r = await client.query("select proname, prosecdef from pg_proc where proname in ('next_bill_number', 'shop_bill_counter_step')");
+      if (r.rowCount !== 2 || r.rows.some((x) => x.prosecdef)) throw new Error(JSON.stringify(r.rows));
+      return "invoker";
+    });
     await checkRejects(client, "KB-325: a reason outside the five is refused by the CHECK (23514) and leaves the bill final", "23514", async () => {
       await asUser(client, ownerA);
       await cancelCall(shopA, cancelA2.localId, "because");

@@ -5,7 +5,7 @@ import { KiranaBillDB, openShopDb, type LocalBill } from "./db";
 import { DeviceDB, getOrCreateDeviceId, getActiveUserId, setActiveUserId } from "./device";
 import { createShop } from "./shops";
 import { bootstrapAfterOnboarding, bootstrapOnStart } from "./bootstrap";
-import { consumeNextNumber } from "./receiptNumbers";
+import { consumeNextNumber } from "./testNumbers";
 import { startSyncLoop, stopSyncLoop, isSyncLoopRunning, syncNow, type OnlineEventSource } from "./sync";
 import { resolveAuthMode, signOutDevice } from "./offlineSession";
 import { catalog } from "@/domain/catalog";
@@ -75,13 +75,14 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
 
   afterAll(() => stopSyncLoop());
 
+  /** KB-351 (D92): receipt blocks are retired - nothing reserves one, at onboarding or at any start. */
   async function serverBlocks() {
     const { data, error } = await client.from("receipt_number_blocks").select("device_id, block_start, block_end").eq("shop_id", shopId).order("block_start");
     if (error) throw error;
     return data;
   }
 
-  it("1. onboarding: deviceId persisted, copy_base_catalog stamped with it, first block reserved server-side, every active base product + the shop in Dexie, loop running", async () => {
+  it("1. onboarding: deviceId persisted, copy_base_catalog stamped with it, NO receipt block reserved any more (KB-351), every active base product + the shop in Dexie, loop running", async () => {
     const deviceDb = new DeviceDB(deviceDbName);
     deviceId = await getOrCreateDeviceId(deviceDb);
     await setActiveUserId(deviceDb, userId); // what AuthProvider does on a live session
@@ -97,7 +98,7 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     expect(products).toHaveLength(ACTIVE_BASE_PRODUCTS);
     expect(new Set(products!.map((p) => p.device_id))).toEqual(new Set([deviceId])); // the persistent id, not a throwaway
 
-    expect(await serverBlocks()).toEqual([{ device_id: deviceId, block_start: 1, block_end: 50 }]);
+    expect(await serverBlocks()).toEqual([]);
     expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(ACTIVE_BASE_PRODUCTS);
 
     startSyncLoop({ client, localDb: db, shopId, deviceId }, onlineSource);
@@ -124,22 +125,22 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     await setActiveUserId(deviceDb, userId);
   });
 
-  it("2. restart: new DeviceDB + KiranaBillDB instances on the same stores keep the SAME deviceId and reuse the block (no new reservation)", async () => {
+  it("2. restart: new DeviceDB + KiranaBillDB instances on the same stores keep the SAME deviceId (and still reserve no block)", async () => {
     const restartedDevice = new DeviceDB(deviceDbName);
     expect(await getOrCreateDeviceId(restartedDevice)).toBe(deviceId);
     const restartedDb = openShopDb(userId);
     const shop = await bootstrapOnStart(client, restartedDb, { shopId, deviceId, online: true });
     expect(shop?.id).toBe(shopId);
-    expect(await serverBlocks()).toHaveLength(1);
+    expect(await serverBlocks()).toEqual([]);
   });
 
-  it("3. offline start: with no network the cached shop, products and this device's block are all usable", async () => {
+  it("3. offline start: with no network the cached shop and products are usable, and a bill takes an offline number", async () => {
     const offlineClient = createClient(UNREACHABLE, anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
     const shop = await bootstrapOnStart(offlineClient, db, { shopId, deviceId, online: false });
     expect(shop?.id).toBe(shopId);
     expect(await db.shopProducts.where("shopId").equals(shopId).count()).toBe(ACTIVE_BASE_PRODUCTS);
     const receipt = await consumeNextNumber(offlineClient, db, shopId, deviceId);
-    expect(receipt).toEqual({ receiptNumber: "1", source: "block" });
+    expect(receipt).toEqual({ receiptNumber: `${deviceId.slice(0, 6).toUpperCase()}-1`, source: "fallback" });
 
     // Even told it's online, an unreachable network degrades, never throws.
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -160,19 +161,16 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     expect(resolveAuthMode(result, await getActiveUserId(new DeviceDB(deviceDbName)))).toEqual({ kind: "offline", userId });
   });
 
-  it("6. wiped device: a fresh device store -> a NEW deviceId -> a new block past max(block_end); the old install's block is never consumed", async () => {
+  it("6. wiped device: a fresh device store -> a NEW deviceId; its own offline code, and no block is reserved or pulled", async () => {
     const wipedDevice = new DeviceDB(`e2e-device-wiped-${crypto.randomUUID()}`);
     const newDeviceId = await getOrCreateDeviceId(wipedDevice);
     expect(newDeviceId).not.toBe(deviceId);
     const wipedDb = new KiranaBillDB(`e2e-wiped-${crypto.randomUUID()}`);
 
     await bootstrapOnStart(client, wipedDb, { shopId, deviceId: newDeviceId, online: true });
-    expect(await serverBlocks()).toEqual([
-      { device_id: deviceId, block_start: 1, block_end: 50 },
-      { device_id: newDeviceId, block_start: 51, block_end: 100 },
-    ]);
-    expect(await wipedDb.receiptNumberBlocks.count()).toBe(1); // only its own block was pulled
-    expect(await consumeNextNumber(client, wipedDb, shopId, newDeviceId)).toEqual({ receiptNumber: "51", source: "block" });
+    expect(await serverBlocks()).toEqual([]);
+    expect(await wipedDb.receiptNumberBlocks.count()).toBe(0);
+    expect(await consumeNextNumber(client, wipedDb, shopId, newDeviceId)).toEqual({ receiptNumber: `${newDeviceId.slice(0, 6).toUpperCase()}-1`, source: "fallback" });
     await wipedDb.delete();
   });
 
@@ -216,6 +214,6 @@ describe("KB-315 bootstrap e2e - real local stack, shipped code path", () => {
     expect(result.skippedNoSession).toBeUndefined();
     expect((await db.bills.get(billLocalId))?.syncStatus).toBe("synced");
     const { data: pushed } = await client.from("bills").select("status, receipt_number_source, bill_items(rate_unit, total_paise)").eq("shop_id", shopId).eq("local_id", billLocalId);
-    expect(pushed).toEqual([{ status: "final", receipt_number_source: "block", bill_items: [{ rate_unit: "kg", total_paise: 2250 }] }]);
+    expect(pushed).toEqual([{ status: "final", receipt_number_source: "fallback", bill_items: [{ rate_unit: "kg", total_paise: 2250 }] }]);
   });
 });

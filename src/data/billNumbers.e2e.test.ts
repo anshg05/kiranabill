@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock, consumeNextNumber } from "./receiptNumbers";
+import { requestBillNumber } from "./receiptNumbers";
 import { pullBills, pullShop, pushBills } from "./sync";
 import { loadSearchIndex } from "./history";
 import { cancelBillLocal, loadCancellationInfo } from "./cancelBill";
@@ -26,6 +26,9 @@ describe("KB-341 mixed old + plain + fallback numbers - real local stack", () =>
   const dbA = new KiranaBillDB(`e2e-num-a-${crypto.randomUUID()}`);
   const dbB = new KiranaBillDB(`e2e-num-b-${crypto.randomUUID()}`);
 
+  /** The shop's next number from the server counter (KB-351), as the app takes it at Bill Banao. */
+  const take = async () => (await requestBillNumber(client, shopId, crypto.randomUUID()))!;
+
   async function addBill(receiptNumber: string, source: LocalBill["receiptNumberSource"], customer = "Cash"): Promise<string> {
     const localId = crypto.randomUUID();
     const at = new Date().toISOString();
@@ -42,20 +45,19 @@ describe("KB-341 mixed old + plain + fallback numbers - real local stack", () =>
     const { data, error } = await client.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb341.local`, password: crypto.randomUUID() });
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     shopId = (await createShop(client, { ownerUserId: data.user.id, name: "KB-341 e2e", phone: null, catalogMode: "custom_only" })).id;
-    await reserveBlock(client, dbA, shopId, deviceA);
   });
   afterAll(() => {
     dbA.close();
     dbB.close();
   });
 
-  it("the first number of a new shop is 1, the next 2 (plain), and the old/fallback shapes sit beside them", async () => {
-    const one = await consumeNextNumber(client, dbA, shopId, deviceA);
-    const two = await consumeNextNumber(client, dbA, shopId, deviceA);
+  it("the first number of a new shop is 1, the next 2 (plain, from the server counter), and the old/fallback shapes sit beside them", async () => {
+    const one = await take();
+    const two = await take();
     expect([one.receiptNumber, two.receiptNumber]).toEqual(["1", "2"]);
     const idOld = await addBill("KB-000012", "block", "Old Ramesh");
-    const idOne = await addBill(one.receiptNumber, "block");
-    const idTwo = await addBill(two.receiptNumber, "block");
+    const idOne = await addBill(one.receiptNumber, "counter");
+    const idTwo = await addBill(two.receiptNumber, "counter");
     const idFallback = await addBill("7F2A91-1", "fallback", "Offline Suresh");
     const r = await pushBills(client, dbA);
     expect(r.anyTransientFailure).toBe(false);
@@ -80,10 +82,10 @@ describe("KB-341 mixed old + plain + fallback numbers - real local stack", () =>
   it("cancel + reissue links plain and old numbers: 'Replaces' / 'Replaced by' carry the numbers as saved", async () => {
     const oldId = (await dbA.bills.toArray()).find((b) => b.receiptNumber === "KB-000012")!.localId;
     const replacement = crypto.randomUUID();
-    const next = await consumeNextNumber(client, dbA, shopId, deviceA);
+    const next = await take();
     expect(next.receiptNumber).toBe("3");
     const at = new Date().toISOString();
-    await dbA.bills.add({ localId: replacement, shopId, status: "final", syncStatus: "pending", receiptNumber: next.receiptNumber, receiptNumberSource: "block", customerName: "Cash", customerMobile: null, subtotalPaise: 9000, totalPaise: 9000, schemaVersion: 1, deviceId: deviceA, createdAt: at, finalizedAt: at, syncedAt: null });
+    await dbA.bills.add({ localId: replacement, shopId, status: "final", syncStatus: "pending", receiptNumber: next.receiptNumber, receiptNumberSource: "counter", customerName: "Cash", customerMobile: null, subtotalPaise: 9000, totalPaise: 9000, schemaVersion: 1, deviceId: deviceA, createdAt: at, finalizedAt: at, syncedAt: null });
     const done = await cancelBillLocal(dbA, { shopId, billLocalId: oldId, reason: "wrong_item", deviceId: deviceA, replacementLocalId: replacement });
     expect(done.ok).toBe(true);
     expect((await loadCancellationInfo(dbA, oldId)).replacedBy?.receiptNumber).toBe("3");

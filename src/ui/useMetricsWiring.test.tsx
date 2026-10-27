@@ -6,7 +6,7 @@ import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "@/data/db";
-import { finaliseBill } from "@/data/finalise";
+import { finaliseBill } from "@/data/testNumbers";
 import { setReviewCapture, listReviewCapture } from "@/data/reviewCapture";
 import type { BillRow } from "./useBillLines";
 import { useMetricsWiring, type WiringInput } from "./useMetricsWiring";
@@ -54,6 +54,16 @@ describe("one voice bill, end to end", () => {
     expect(row.utterances).toEqual([{ path: "fastpath", stopToTranscriptMs: 912, transcriptToItemsMs: 140 }]);
     expect(Number.isInteger(row.finaliseToReceiptMs)).toBe(true);
     expect(Number.isInteger(row.secondsToBill)).toBe(true);
+    expect(row.numberMs).toBeNull(); // no server number for this bill
+  });
+
+  it("KB-351: the server round trip for the bill number is written with the bill's row (number_ms); an offline-numbered bill has none", async () => {
+    const { billLocalId, result, rerender, base } = setup();
+    act(() => result.current.beforeFinalise());
+    await save(billLocalId);
+    rerender({ ...base, saved: { localId: billLocalId, numberMs: 123.4 } });
+    await waitFor(async () => expect(await db.billMetrics.count()).toBe(1));
+    expect((await db.billMetrics.get(billLocalId))!.numberMs).toBe(123); // a whole number of ms
   });
 
   it("a failed utterance is counted as one that never reached the bill, and the stop time is not reused by the next utterance", async () => {

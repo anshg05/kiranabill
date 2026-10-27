@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill } from "./db";
 import { createShop } from "./shops";
-import { consumeNextNumber, reserveBlock } from "./receiptNumbers";
+import { consumeNextNumber } from "./testNumbers";
 import { pushBills } from "./sync";
 import { isStorableMobile, isStorableName, parseCustomerName, parseIndianMobile } from "@/domain/customer";
 
@@ -70,7 +70,6 @@ describe("KB-306 e2e - customer rules: client <=> bills CHECK constraints (local
     const { data, error } = await client.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb306.local`, password: crypto.randomUUID() });
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     shopId = (await createShop(client, { ownerUserId: data.user.id, name: "KB-306 e2e", phone: null, catalogMode: "custom_only" })).id;
-    await reserveBlock(client, localDb, shopId, deviceId);
   });
 
   /** Push one final bill with these customer fields; true = the server stored it. */

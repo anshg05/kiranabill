@@ -1,22 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KiranaBillDB } from "@/data/db";
 
-// KB-111: receipt number allocation (02-ARCHITECTURE.md section 4).
-// KB-110 already built the generic hybrid sync mechanics for
-// receipt_number_blocks (pull newly-reserved blocks, push a locally
-// mutated nextNumber). This file is the actual allocation POLICY on top
-// of that: reserve, consume, and the offline-exhaustion fallback.
+// KB-351 (owner, 22 Oct 2026; D92, supersedes D22 and D74 sections 1, 2 and 4): ONE bill-number sequence for the whole shop.
+// Online, Bill Banao takes the next number from the server - an atomic per-shop counter (next_bill_number, SECURITY INVOKER,
+// RLS the boundary), so two phones saving at the same moment get 5 and 6. Offline, or when the server is too slow, the bill
+// saves AT ONCE with the KB-341 offline number and keeps it for ever (the customer may already hold the receipt). Never
+// "number pending", never an error. The old 50-number blocks are retired: an offline pool would put 353 beside 5.
 
-const BLOCK_SIZE = 50;
-/** KB-334 (D73, D74): how many times reserveBlock tries when another device took the range first. */
-export const RESERVE_MAX_ATTEMPTS = 6;
-/** The longest single wait between two attempts (grows with the attempt, jittered so devices do not stay in step). */
-export const RESERVE_RETRY_MAX_WAIT_MS = 60 * (RESERVE_MAX_ATTEMPTS - 1);
-const RESERVE_THRESHOLD = 10;
+/** The CAP only (owner): normally the answer comes in one warm round trip, ~100-250 ms from Nagpur to Mumbai. */
+export const NUMBER_CAP_MS = 1500;
+/** After one failure the server is not asked for this long, so every following bill is not slowed by the same bad connection. */
+export const BREAKER_MS = 30_000;
+/** warmServer asks at most this often - the connection (DNS, TCP, TLS) is warm for the first Bill Banao. */
+export const WARM_EVERY_MS = 20_000;
+
 const FALLBACK_COUNTER_KEY = "receiptNumberFallback";
-
-/** KB-341 (D87): a block number is the plain number - "59": no prefix, no padding. receipt_prefix stays in the schema, unused. */
-const formatBlockNumber = (n: number): string => String(n);
 
 /**
  * KB-341 (D87, supersedes D23): "7F2A91-1" - the first 6 characters of the device UUID, upper-case, then this device's
@@ -26,175 +24,82 @@ const formatBlockNumber = (n: number): string => String(n);
  */
 const formatFallbackNumber = (deviceId: string, n: number): string => `${deviceId.slice(0, 6).toUpperCase()}-${n}`;
 
-/** The database refused the range because another device took it first: exclusion_violation / unique_violation. */
-const isRangeTaken = (error: { code?: string } | null): boolean => error?.code === "23P01" || error?.code === "23505";
+export interface ServerNumber {
+  /** The plain number: "59". */
+  readonly receiptNumber: string;
+  readonly source: "counter";
+  /** The round trip, for the metrics (bill_metrics.number_ms). */
+  readonly ms: number;
+}
+
+let blockedUntil = 0;
+let lastServerTouch = 0;
+
+/** The breaker and the warm clock are per page load - forgotten by the tests. */
+export function resetNumberState(): void {
+  blockedUntil = 0;
+  lastServerTouch = 0;
+}
+
+const browserOffline = (): boolean => typeof navigator !== "undefined" && navigator.onLine === false;
 
 /**
- * Reserves the next 50-number block for a shop: read the highest block, insert the next range.
- *
- * KB-334 (D73, D74): a shop may use several devices at once, so two devices can read the same highest block
- * and insert the same range. It is NOT made atomic in the client - the database decides: the exclusion
- * constraint receipt_number_blocks_no_overlap refuses an overlapping range (23P01), and the device that lost
- * re-reads the highest block and tries the next range, up to RESERVE_MAX_ATTEMPTS times with a short,
- * growing, jittered wait. Plain invoker queries - no SECURITY DEFINER, RLS stays the boundary.
- *
- * Never throws and never blocks billing: callers do not await it for a bill. Any other error, or running out
- * of attempts, simply leaves this device without a new block, and the next bill uses the D23 fallback number.
+ * The next number of the shop's sequence for THIS bill, or null (offline, breaker open, error, refused, or no answer within
+ * the cap) - then the bill takes an offline number. Asking again for the same bill returns the same number (bill_number_grants),
+ * so a double tap or a lost response never burns one. Never throws.
  */
-export async function reserveBlock(
+export async function requestBillNumber(
   client: SupabaseClient,
-  localDb: KiranaBillDB,
   shopId: string,
-  deviceId: string,
-): Promise<void> {
-  for (let attempt = 1; attempt <= RESERVE_MAX_ATTEMPTS; attempt++) {
-    const { data: existing, error: maxError } = await client
-      .from("receipt_number_blocks")
-      .select("block_end")
-      .eq("shop_id", shopId)
-      .order("block_end", { ascending: false })
-      .limit(1);
-
-    if (maxError) {
-      console.warn(`[receiptNumbers] reserveBlock: failed to read existing blocks: ${maxError.message}`);
-      return;
-    }
-
-    const blockStart = ((existing?.[0]?.block_end as number | undefined) ?? 0) + 1;
-    const blockEnd = blockStart + BLOCK_SIZE - 1;
-    const allocatedAt = new Date().toISOString();
-
-    const { data, error } = await client
-      .from("receipt_number_blocks")
-      .insert({
-        shop_id: shopId,
-        device_id: deviceId,
-        block_start: blockStart,
-        block_end: blockEnd,
-        next_number: blockStart,
-        allocated_at: allocatedAt,
-      })
-      .select("id")
-      .single();
-
-    if (error && isRangeTaken(error)) {
-      if (attempt === RESERVE_MAX_ATTEMPTS) {
-        console.warn(`[receiptNumbers] reserveBlock: another device kept taking the range (${attempt} attempts) - the next bill uses a fallback number`);
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * (RESERVE_RETRY_MAX_WAIT_MS - 20) * (attempt / (RESERVE_MAX_ATTEMPTS - 1))));
-      continue;
-    }
-
-    if (error || !data) {
-      console.warn(`[receiptNumbers] reserveBlock: insert failed: ${error?.message}`);
-      return;
-    }
-
-    // Optimistic local write: this block was just successfully created via
-    // a real online round-trip, so it's already synced - no need to wait
-    // for KB-110's next pull cycle to be able to use it immediately.
-    await localDb.receiptNumberBlocks.put({
-      id: data.id,
-      shopId,
-      deviceId,
-      blockStart,
-      blockEnd,
-      nextNumber: blockStart,
-      allocatedAt,
-      syncStatus: "synced",
+  billLocalId: string,
+  opts: { capMs?: number } = {},
+): Promise<ServerNumber | null> {
+  if (browserOffline() || Date.now() < blockedUntil) return null;
+  const started = Date.now();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const failed = (): null => {
+    blockedUntil = Date.now() + BREAKER_MS;
+    return null;
+  };
+  try {
+    const timeout = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), opts.capMs ?? NUMBER_CAP_MS);
     });
-    return;
-  }
-}
-
-interface AllocatedReceiptNumber {
-  receiptNumber: string;
-  source: "block" | "fallback";
-}
-
-/** This device's block with numbers left (D38: never another install's). */
-async function activeBlockOf(localDb: KiranaBillDB, shopId: string, deviceId: string) {
-  // KB-315 (D38): only a block THIS device reserved. Another install's block
-  // (e.g. from before an IndexedDB wipe) may have numbers that install already
-  // used offline and never pushed - consuming it could reissue them.
-  const blocks = await localDb.receiptNumberBlocks.where("shopId").equals(shopId).sortBy("blockStart");
-  return blocks.find((b) => b.deviceId === deviceId && b.nextNumber <= b.blockEnd);
-}
-
-/**
- * KB-307: takes the next number from this device's active block, or the D23
- * fallback counter when there is none (the offline-exhaustion path). LOCAL
- * tables only (receiptNumberBlocks, syncState, shops) - so it can run inside
- * finalise's Dexie transaction, and a failed finalise rolls the number back
- * with everything else. No network, nothing fired: topping the block up is
- * the caller's job after the commit (topUpReceiptBlock).
- */
-export async function takeNextNumber(localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<AllocatedReceiptNumber> {
-  const activeBlock = await activeBlockOf(localDb, shopId, deviceId);
-  if (!activeBlock) {
-    return { receiptNumber: await allocateFallbackNumber(localDb, deviceId), source: "fallback" };
-  }
-  const number = activeBlock.nextNumber;
-  await localDb.receiptNumberBlocks.update(activeBlock.id, { nextNumber: number + 1, syncStatus: "pending" });
-  return { receiptNumber: formatBlockNumber(number), source: "block" };
-}
-
-/** Fewer than RESERVE_THRESHOLD numbers left in this device's block, or no block at all. */
-export async function blockNeedsTopUp(localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<boolean> {
-  const activeBlock = await activeBlockOf(localDb, shopId, deviceId);
-  return !activeBlock || activeBlock.blockEnd - activeBlock.nextNumber + 1 < RESERVE_THRESHOLD;
-}
-
-/** KB-307: after a bill is committed - reserve the next block if this one is
- * running low and we're online. Never awaited by finalising; a failure only
- * means the next bill may use a fallback number (never blocks billing). */
-export async function topUpReceiptBlock(client: SupabaseClient, localDb: KiranaBillDB, shopId: string, deviceId: string): Promise<void> {
-  if (navigator.onLine && (await blockNeedsTopUp(localDb, shopId, deviceId))) {
-    await reserveBlock(client, localDb, shopId, deviceId);
+    const reply = await Promise.race([Promise.resolve(client.rpc("next_bill_number", { p_shop_id: shopId, p_local_id: billLocalId })), timeout]);
+    if (reply === "timeout") return failed();
+    const n = typeof reply.data === "string" && /^[0-9]+$/.test(reply.data) ? Number(reply.data) : reply.data;
+    if (reply.error || typeof n !== "number" || !Number.isSafeInteger(n) || n < 1) return failed();
+    lastServerTouch = Date.now();
+    return { receiptNumber: String(n), source: "counter", ms: lastServerTouch - started };
+  } catch (err) {
+    console.warn("[receiptNumbers] no server number:", err instanceof Error ? err.name : "error"); // only a name - never a message
+    return failed();
+  } finally {
+    clearTimeout(timer);
   }
 }
 
 /**
- * takeNextNumber + a background top-up - for callers outside a transaction
- * (receipt-number tests, e2e). Finalise uses takeNextNumber inside its
- * transaction and tops up after the commit instead.
+ * Called when a bill gets its first line: one cheap question (the sync probe) so the connection is warm by the time Bill
+ * Banao is tapped - the first bill of a session must not be the slow one. Not more than every WARM_EVERY_MS; never throws,
+ * never awaited, and a failure is silent (the number request has its own cap).
  */
-export async function consumeNextNumber(
-  client: SupabaseClient,
-  localDb: KiranaBillDB,
-  shopId: string,
-  deviceId: string,
-): Promise<AllocatedReceiptNumber> {
-  const taken = await takeNextNumber(localDb, shopId, deviceId);
-  // Fire-and-forget: reserving proactively must never block this bill.
-  if (taken.source === "block") void topUpReceiptBlock(client, localDb, shopId, deviceId);
-  return taken;
+export function warmServer(client: SupabaseClient, shopId: string): void {
+  if (browserOffline() || Date.now() - lastServerTouch < WARM_EVERY_MS) return;
+  lastServerTouch = Date.now();
+  void Promise.resolve(client.rpc("sync_probe", { p_shop_id: shopId })).catch(() => {});
 }
 
 /**
- * A device-local, ever-incrementing counter, distinct from any block -
- * reused from the generic syncState table (tableName as a key, pendingCount
- * repurposed as the counter value) rather than adding a new Dexie table
- * for a single number. Never touches the server - this is the path that
- * exists specifically because the server is unreachable.
+ * A device-local, ever-incrementing counter for the offline number. LOCAL tables only, so it can run inside finalise's Dexie
+ * transaction (a failed finalise rolls the count back with everything else). Reused from the generic syncState table
+ * (tableName as a key, pendingCount repurposed as the counter value) rather than adding a Dexie table for one number.
  */
-async function allocateFallbackNumber(localDb: KiranaBillDB, deviceId: string): Promise<string> {
+export async function takeFallbackNumber(localDb: KiranaBillDB, deviceId: string): Promise<string> {
   const state = await localDb.syncState.get(FALLBACK_COUNTER_KEY);
   const next = (state?.pendingCount ?? 0) + 1;
-
-  // Deliberate special-cased overload of syncState's schema for a single
-  // device-local counter under a fake "tableName" - NOT a real per-table
-  // sync entry. pendingCount means something specific everywhere else in
-  // this table (rows waiting to sync); here it's repurposed as a raw
-  // integer counter. Flagged explicitly so a future reader of the real
-  // syncState rows doesn't assume this one means the same thing.
-  await localDb.syncState.put({
-    tableName: FALLBACK_COUNTER_KEY,
-    lastSyncedAt: null,
-    cursor: null,
-    pendingCount: next,
-  });
-
+  // Deliberate special-cased overload of syncState's schema for a single device-local counter under a fake "tableName" -
+  // NOT a real per-table sync entry. Flagged so a future reader of the real syncState rows doesn't assume otherwise.
+  await localDb.syncState.put({ tableName: FALLBACK_COUNTER_KEY, lastSyncedAt: null, cursor: null, pendingCount: next });
   return formatFallbackNumber(deviceId, next);
 }

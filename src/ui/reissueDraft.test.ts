@@ -5,7 +5,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { editAmount, editQty, editRate } from "@/domain/billEdit";
 import { buildFinalBill, type FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "@/data/db";
-import { finaliseBill } from "@/data/finalise";
+import { finaliseBill } from "@/data/testNumbers";
 import { billReducer, newBill } from "./useBillLines";
 import { reissueState } from "./reissueDraft";
 

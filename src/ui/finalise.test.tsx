@@ -12,6 +12,7 @@ import { SAVE_FAILED } from "@/data/finalise";
 import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
 import { useFinalise } from "./useFinalise";
+import { countedGetNumber } from "@/data/testNumbers";
 
 // KB-307 commit 2 (owner, 3 Oct 2026): Bill Banao. Enabled only with >=1 line
 // AND pending = 0 ("Price needed" included); tapping it while not enabled
@@ -27,7 +28,6 @@ let db: KiranaBillDB;
 beforeEach(async () => {
   db = new KiranaBillDB(`ui-finalise-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Test", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "hi", receiptPrefix: "KB", updatedAt: "2026-10-03T00:00:00.000Z" });
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-03T00:00:00.000Z", syncStatus: "synced" });
 });
 afterEach(async () => {
   cleanup();
@@ -52,7 +52,7 @@ interface Props {
 
 function Harness({ pre = [], api, onMicTap = () => {} }: Props) {
   const bill = useBillLines(catalog);
-  const fin = useFinalise({ localDb: db, shopId, deviceId });
+  const fin = useFinalise({ localDb: db, shopId, deviceId, getNumber: countedGetNumber(db) });
   useEffect(() => {
     for (const u of pre) bill.add(u.lines, u.flags, u.transcript);
     // once, on mount
@@ -219,7 +219,7 @@ describe("KB-307 - finalise and the saved screen", () => {
     });
     await waitFor(() => screen.getByRole("button", { name: "New bill" }));
     expect(await db.bills.count()).toBe(1);
-    expect((await db.receiptNumberBlocks.toArray())[0]!.nextNumber).toBe(2);
+    expect((await db.bills.toArray())[0]!.receiptNumber).toBe("1"); // one tap, one number
   });
 
   it("KB-307 commit 3: a removed voice line is kept on the saved bill (for learning); one brought back by Undo is not", async () => {

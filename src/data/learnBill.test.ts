@@ -6,7 +6,8 @@ import { customItem, editRate, editUnit, editQty } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { deterministicUuid } from "@/domain/ids";
 import { KiranaBillDB } from "./db";
-import { finaliseBill, type FinaliseInput } from "./finalise";
+import type { FinaliseInput } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { learnFromSavedBill, learnPendingBills } from "./learnBill";
 import { isLearningPullDone, markLearningPullDone } from "./pullLearning";
 
@@ -30,7 +31,6 @@ beforeEach(async () => {
       aliases: e.aliases, source: "base" as const, useCount: 0, sku: null, barcode: null, isActive: true,
     })),
   );
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-03T00:00:00.000Z", syncStatus: "synced" });
 });
 afterEach(async () => {
   db.close();

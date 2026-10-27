@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Client } from "pg";
 import { KiranaBillDB, type LocalBill, type LocalBillItem } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock, consumeNextNumber } from "./receiptNumbers";
+import { consumeNextNumber } from "./testNumbers";
 import { pullBills, pullShop, pushBills } from "./sync";
 import { learnPendingBills } from "./learnBill";
 import { loadReceipt } from "./receipt";
@@ -85,7 +85,6 @@ describe("KB-324 pull bills - real local stack", () => {
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     const shop = await createShop(client, { ownerUserId: data.user.id, name: "KB-324 e2e", phone: null, catalogMode: "custom_only" });
     shopId = shop.id;
-    await reserveBlock(client, dbA, shopId, deviceA);
   });
 
   afterAll(async () => {
@@ -278,7 +277,6 @@ describe("KB-324 pull bills - real local stack", () => {
     const dbOther = new KiranaBillDB(`e2e-pull-other-${crypto.randomUUID()}`);
     openDbs.push(dbOther);
     const dev = crypto.randomUUID();
-    await reserveBlock(other, dbOther, shopB.id, dev);
     const receipt = await consumeNextNumber(other, dbOther, shopB.id, dev);
     const id = crypto.randomUUID();
     const now = new Date().toISOString();

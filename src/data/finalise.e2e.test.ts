@@ -8,7 +8,7 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
+import { requestBillNumber } from "./receiptNumbers";
 import { syncNow } from "./sync";
 import { finaliseBill, type FinaliseInput } from "./finalise";
 
@@ -73,16 +73,16 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
     return data;
   }
 
-  it("online: block number; synced; the server has the bill, its items and their review flags (with acknowledgement)", async () => {
+  it("online: the shop's number from the server counter; synced; the server has the bill, its items and their review flags (with acknowledgement)", async () => {
     const { db, deviceId } = device();
-    await reserveBlock(client, db, shopId, deviceId);
     const d = draft(deviceId, "2 kilo chini 5 wala", "1 kilo besan"); // HIGH unusual_rate + unusual_total, acknowledged
-    const saved = await finaliseBill(db, d);
-    expect(saved.source).toBe("block");
+    const number = await requestBillNumber(client, shopId, d.localId);
+    const saved = await finaliseBill(db, { ...d, serverNumber: number?.receiptNumber });
+    expect(saved.source).toBe("counter");
     await syncNow({ client, localDb: db, shopId, deviceId });
     expect((await db.bills.get(d.localId))?.syncStatus).toBe("synced");
     const [bill] = await serverBill(d.localId);
-    expect(bill).toMatchObject({ status: "final", receipt_number: saved.receiptNumber, receipt_number_source: "block", total_paise: 1000 + 9000 });
+    expect(bill).toMatchObject({ status: "final", receipt_number: saved.receiptNumber, receipt_number_source: "counter", total_paise: 1000 + 9000 });
     const items = [...(bill!.bill_items as Array<Record<string, unknown>>)].sort((a, b) => (a.line_no as number) - (b.line_no as number));
     expect(items.map((i) => [i.line_no, i.display_name, i.total_paise])).toEqual([
       [1, "Chini", 1000],
@@ -96,8 +96,8 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
     );
   });
 
-  it("offline (no block on this device): D87 fallback number; pushed later, stored as 'fallback'", async () => {
-    const { db, deviceId } = device(); // never reserved a block - the offline-exhaustion path
+  it("offline (no server number): the offline number; pushed later, stored as 'fallback'", async () => {
+    const { db, deviceId } = device(); // the server was not asked (offline)
     const d = draft(deviceId, "2 kilo chini");
     const saved = await finaliseBill(db, d);
     expect(saved).toMatchObject({ source: "fallback", receiptNumber: `${deviceId.slice(0, 6).toUpperCase()}-1` });
@@ -109,7 +109,6 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
 
   it("double tap: two concurrent finalises -> one bill locally and on the server", async () => {
     const { db, deviceId } = device();
-    await reserveBlock(client, db, shopId, deviceId);
     const d = draft(deviceId, "1 kilo besan");
     const [a, b] = await Promise.all([finaliseBill(db, d), finaliseBill(db, d)]);
     expect(a.receiptNumber).toBe(b.receiptNumber);
@@ -118,10 +117,8 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
     expect(await serverBill(d.localId)).toHaveLength(1);
   });
 
-  it("a failure inside the transaction: nothing written, no number consumed, nothing reaches the server", async () => {
+  it("a failure inside the transaction: nothing written, no offline number consumed, nothing reaches the server", async () => {
     const { db, deviceId } = device();
-    await reserveBlock(client, db, shopId, deviceId);
-    const before = (await db.receiptNumberBlocks.toArray())[0]!.nextNumber;
     const d = draft(deviceId, "1 kilo besan");
     const fail = () => {
       throw new Error("simulated disk failure");
@@ -130,7 +127,7 @@ describe("KB-307 e2e - finalise -> sync (local Postgres)", () => {
     await expect(finaliseBill(db, d)).rejects.toThrow();
     db.billItems.hook("creating").unsubscribe(fail);
     expect(await db.bills.count()).toBe(0);
-    expect((await db.receiptNumberBlocks.toArray())[0]!.nextNumber).toBe(before);
+    expect((await db.syncState.get("receiptNumberFallback"))?.pendingCount ?? 0).toBe(0); // the offline counter did not move
     await syncNow({ client, localDb: db, shopId, deviceId });
     expect(await serverBill(d.localId)).toHaveLength(0);
   });

@@ -8,7 +8,6 @@ import { editRate } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { copyBaseCatalog, createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullBills, pullShop, pullShopProducts, pushLearningEvents, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill } from "./finalise";
@@ -54,7 +53,6 @@ describe("KB-326 e2e - pull learning state (local Postgres)", () => {
     const deviceId = crypto.randomUUID();
     await pullShop(client, db, shopId);
     await pullShopProducts(client, db, shopId);
-    await reserveBlock(client, db, shopId, deviceId);
     return { db, deviceId };
   }
 
@@ -89,7 +87,6 @@ describe("KB-326 e2e - pull learning state (local Postgres)", () => {
     await copyBaseCatalog(client, shopId, deviceA);
     await pullShop(client, dbA, shopId);
     await pullShopProducts(client, dbA, shopId);
-    await reserveBlock(client, dbA, shopId, deviceA);
     shop = prepareParserCatalog((await loadShopCatalog(dbA, shopId)).entries);
     await sync(dbA, deviceA); // the first learning pull (empty) opens the learning gate
   }, 60_000);

@@ -1,8 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { KiranaBillDB, LocalShop } from "@/data/db";
 import { copyBaseCatalog } from "@/data/shops";
-import { reserveBlock } from "@/data/receiptNumbers";
-import { pullBaseProducts, pullReceiptNumberBlocks, pullShop, pullShopProducts } from "@/data/sync";
+import { pullBaseProducts, pullShop, pullShopProducts } from "@/data/sync";
 
 // KB-315 (docs/12-PARKED.md KI-32, docs/07-DECISIONS.md D38): the runtime
 // wiring that turns a signed-in user into a working, offline-capable device.
@@ -19,32 +18,10 @@ export async function readCachedShop(db: KiranaBillDB): Promise<LocalShop | null
 }
 
 /**
- * A receipt block this device can still number from, or a freshly reserved
- * one. Only THIS device's blocks count (D38). A reservation that fails
- * (offline) is not an error - consumeNextNumber falls back to a device-
- * scoped number, and the next online start reserves again.
- */
-export async function ensureReceiptBlock(
-  client: SupabaseClient,
-  db: KiranaBillDB,
-  shopId: string,
-  deviceId: string,
-): Promise<"existing" | "reserved" | "unavailable"> {
-  const usable = async () =>
-    (await db.receiptNumberBlocks.where("shopId").equals(shopId).toArray()).some(
-      (block) => block.deviceId === deviceId && block.nextNumber <= block.blockEnd,
-    );
-  if (await usable()) return "existing";
-  await reserveBlock(client, db, shopId, deviceId);
-  return (await usable()) ? "reserved" : "unavailable";
-}
-
-/**
  * Right after the shop and its owner membership exist (createShop): copy the
  * ready catalog if chosen - stamped with THIS device's id - pull the shop and
- * its products into Dexie, reserve the first receipt block (16-APP-FLOW.md
- * §2: "reserved during onboarding, so the very first bill works even if the
- * network drops immediately after"), and bind this database to the shop.
+ * its products into Dexie and bind this database to the shop. (KB-351: no receipt block any more - the first bill asks the
+ * server's counter, or takes an offline number.)
  */
 export async function bootstrapAfterOnboarding(
   client: SupabaseClient,
@@ -56,29 +33,25 @@ export async function bootstrapAfterOnboarding(
   await pullShop(client, db, shopId);
   await pullShopProducts(client, db, shopId);
   await pullBaseProducts(client, db);
-  await ensureReceiptBlock(client, db, shopId, deviceId);
   await db.meta.put({ key: ACTIVE_SHOP_KEY, value: shopId });
   return readCachedShop(db);
 }
 
 /**
- * Every app start. Offline: nothing touches the network - the cached shop,
- * products and this device's block are all local. Online: refresh the shop,
- * products and this device's blocks, then make sure a usable block exists.
+ * Every app start. Offline: nothing touches the network - the cached shop and
+ * products are all local. Online: refresh the shop and its products.
  */
 export async function bootstrapOnStart(
   client: SupabaseClient,
   db: KiranaBillDB,
   params: { shopId: string; deviceId: string; online: boolean },
 ): Promise<LocalShop | null> {
-  const { shopId, deviceId, online } = params;
+  const { shopId, online } = params;
   if (online) {
     await pullShop(client, db, shopId);
     await pullShopProducts(client, db, shopId);
     await pullBaseProducts(client, db);
-    await pullReceiptNumberBlocks(client, db, shopId, deviceId);
-    await ensureReceiptBlock(client, db, shopId, deviceId);
-    await db.meta.put({ key: ACTIVE_SHOP_KEY, value: shopId });
+      await db.meta.put({ key: ACTIVE_SHOP_KEY, value: shopId });
   }
   return readCachedShop(db);
 }

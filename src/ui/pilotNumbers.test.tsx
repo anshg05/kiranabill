@@ -33,7 +33,7 @@ async function bill(over: Partial<LocalBillMetrics> = {}, status: "final" | "can
   });
   await db.billMetrics.add({
     billLocalId, shopId, localId: crypto.randomUUID(), syncStatus: "synced", updatedAt: at, deviceId: "dev", receiptNumber: `KB-${String(seq).padStart(6, "0")}`, totalPaise: 9000, lineCount: 2,
-    turns: 1, secondsToBill: 12, utterances: [{ path: "fastpath", stopToTranscriptMs: 900, transcriptToItemsMs: 120 }], finaliseToReceiptMs: 200, voiceLines: 2, editedLines: 0, manualLines: 0,
+    turns: 1, secondsToBill: 12, utterances: [{ path: "fastpath", stopToTranscriptMs: 900, transcriptToItemsMs: 120 }], finaliseToReceiptMs: 200, numberMs: 120, voiceLines: 2, editedLines: 0, manualLines: 0,
     removedLines: 0, notAdded: 0, flagsRaised: 0, flagsAcknowledged: 0, recordedAt: at, ...over,
   });
   return billLocalId;
@@ -144,6 +144,9 @@ describe("the four budgets", () => {
     expect(row("LLM-path item on screen")).toContain("median 2.5 s");
     expect(row("Finalise → receipt")).toContain("budget < 500 ms");
     expect(row("Finalise → receipt")).toContain("median 200 ms");
+    // KB-351: the bill-number round trip (only bills that got a server number), budget the owner's 300 ms
+    expect(row("Bill number from the server (part of the line above)")).toContain("budget < 300 ms");
+    expect(row("Bill number from the server (part of the line above)")).toContain("median 120 ms");
     expect(row("App cold start")).toContain("budget < 2 s");
     expect(row("App cold start")).toContain("2 samples");
   });

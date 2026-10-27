@@ -159,15 +159,12 @@ mis-pushed as `anon`.
 
 ## 4. Receipt numbering across offline
 
-A sequential per-shop number cannot be assigned without the server.
+**Superseded 22 Oct 2026 (owner; `07-DECISIONS.md` D92, `KB-351`):** the shop has ONE sequence - 1, 2, 3 - whatever phone saves the bill.
 
-**Block allocation:**
-
-1. While online, the device reserves a block of 50 numbers → `receipt_number_blocks`
-2. Offline bills draw from the reserved block
-3. **The number shown to the customer never changes after sync**
-4. Block below 10 remaining and online → reserve the next block
-5. Block exhausted while offline → fall back to `{device_prefix}-{n}`, reconcile on sync and flag it
+1. **Online:** Bill Banao asks the server for the next number (`next_bill_number`, an atomic per-shop counter, `SECURITY INVOKER`, RLS the boundary) - one round trip, capped at 1.5 s, the connection pre-warmed. Two phones at the same moment get 5 and 6.
+2. **Offline, or the server is too slow, or any error:** the bill saves at once with this phone's offline number (`{6-character device code}-{n}`, D87) and keeps it for ever. Never "pending".
+3. **The number shown to the customer never changes after sync** (D24 - `receipt_number_source` is `counter`, `fallback` or, for old bills, `block`).
+4. The 50-number blocks (D22 / D74) are retired; their table and constraint stay until a later release.
 
 ---
 

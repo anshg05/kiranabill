@@ -4,7 +4,7 @@ import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB, type LocalBillCancellation } from "./db";
-import { finaliseBill } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { loadRecentRows } from "./history";
 import { loadReceipt } from "./receipt";
 import { applyCancellations, cancelBillLocal, loadCancellationInfo } from "./cancelBill";

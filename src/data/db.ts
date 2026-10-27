@@ -50,7 +50,7 @@ export interface LocalBill {
    * receiptNumbers.ts consumeNextNumber() returns it; KB-307 stores it here.
    * Pushed as bills.receipt_number_source; a permanent label, never a
    * trigger for renumbering. */
-  receiptNumberSource: "block" | "fallback";
+  receiptNumberSource: "block" | "fallback" | "counter";
   customerName: string;
   customerMobile: string | null;
   subtotalPaise: number;

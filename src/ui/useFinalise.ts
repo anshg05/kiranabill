@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { KiranaBillDB } from "@/data/db";
 import { finaliseBill, SAVE_FAILED, type FinaliseResult } from "@/data/finalise";
+import type { ServerNumber } from "@/data/receiptNumbers";
 import { loadReceipt } from "@/data/receipt";
 import type { Receipt } from "@/domain/receipt";
 import type { BillDraft } from "./useBillLines";
@@ -16,7 +17,9 @@ export interface UseFinaliseOptions {
   localDb: KiranaBillDB | null;
   shopId: string | null;
   deviceId: string | null;
-  /** After the bill is committed - the block top-up and a sync. Never awaited. */
+  /** KB-351 (D92): the shop's next bill number from the server (requestBillNumber - null when offline, slow or refused: the bill then takes an offline number). Absent = always offline numbers. */
+  getNumber?: (billLocalId: string) => Promise<ServerNumber | null>;
+  /** After the bill is committed - learning and a sync. Never awaited. */
   onSaved?: (result: FinaliseResult) => void;
 }
 
@@ -25,6 +28,8 @@ export interface SavedBill {
   /** KB-309: the stored bill's id - share reads its mobile from it at tap time. */
   readonly localId: string;
   readonly receiptNumber: string;
+  /** KB-351: the server round trip for the number, for the metrics (null: an offline number). */
+  readonly numberMs?: number | null;
   readonly receipt: Receipt | null;
 }
 
@@ -37,7 +42,7 @@ export interface Finaliser {
   clear: () => void;
 }
 
-export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseOptions): Finaliser {
+export function useFinalise({ localDb, shopId, deviceId, getNumber, onSaved }: UseFinaliseOptions): Finaliser {
   const [phase, setPhase] = useState<FinalisePhase>("idle");
   const [saved, setSaved] = useState<SavedBill | null>(null);
   const busy = useRef(false);
@@ -48,14 +53,16 @@ export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseO
       busy.current = true;
       setPhase("saving");
       try {
-        const result = await finaliseBill(localDb, { ...draft, shopId, deviceId });
+        // KB-351: ONE bounded round trip for the shop's next number; never an error and never "pending" - an offline number instead.
+        const got = (await getNumber?.(draft.localId).catch(() => null)) ?? null;
+        const result = await finaliseBill(localDb, { ...draft, shopId, deviceId, serverNumber: got?.receiptNumber ?? null });
         // KB-308: the receipt from the bill as stored. A failed read never
         // turns a saved bill into "failed" - the status line still shows it.
         const receipt = await loadReceipt(localDb, draft.localId).catch((err: unknown) => {
           console.warn("[receipt] read failed:", err instanceof Error ? err.message : err);
           return null;
         });
-        setSaved({ localId: draft.localId, receiptNumber: result.receiptNumber, receipt });
+        setSaved({ localId: draft.localId, receiptNumber: result.receiptNumber, numberMs: result.source === "counter" ? (got?.ms ?? null) : null, receipt });
         setPhase("saved");
         onSaved?.(result);
       } catch (err) {
@@ -65,7 +72,7 @@ export function useFinalise({ localDb, shopId, deviceId, onSaved }: UseFinaliseO
         busy.current = false;
       }
     },
-    [deviceId, localDb, onSaved, shopId],
+    [deviceId, getNumber, localDb, onSaved, shopId],
   );
 
   const clear = useCallback(() => {

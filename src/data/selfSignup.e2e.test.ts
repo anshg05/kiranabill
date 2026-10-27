@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB } from "./db";
 import { createShop, findOwnShop } from "./shops";
 import { bootstrapAfterOnboarding } from "./bootstrap";
-import { consumeNextNumber } from "./receiptNumbers";
+import { requestBillNumber } from "./receiptNumbers";
 
 /**
  * KB-348 (owner, 20 Oct 2026; D90): self sign-up - any Google account can sign up and create a shop. The new-user path on
@@ -44,15 +44,15 @@ describe("KB-348 the new-user path - two brand-new users, real local stack", () 
     dbB.close();
   });
 
-  it("1. set-up with the Ready catalog: the shop, its owner membership, the whole catalog and receipt block 1-50", async () => {
+  it("1. set-up with the Ready catalog: the shop, its owner membership and the whole catalog (no receipt block any more - KB-351)", async () => {
     const shop = await createShop(a.client, { ownerUserId: a.userId, name: "Sharma Kirana", phone: null, catalogMode: "base_imported" });
     await bootstrapAfterOnboarding(a.client, dbA, { shopId: shop.id, deviceId: deviceA, catalogChoice: "ready" });
     const products = await a.client.from("shop_products").select("id", { count: "exact", head: true }).eq("shop_id", shop.id);
     expect(products.count ?? 0).toBeGreaterThan(400);
     const blocks = await a.client.from("receipt_number_blocks").select("block_start, block_end").eq("shop_id", shop.id);
-    expect(blocks.data).toEqual([{ block_start: 1, block_end: 50 }]);
-    const first = await consumeNextNumber(a.client, dbA, shop.id, deviceA);
-    expect(first).toEqual({ receiptNumber: "1", source: "block" }); // a new shop starts at bill 1
+    expect(blocks.data).toEqual([]);
+    const first = await requestBillNumber(a.client, shop.id, crypto.randomUUID());
+    expect(first).toMatchObject({ receiptNumber: "1", source: "counter" }); // a new shop starts at bill 1
   });
 
   it("2. a second new user gets their OWN shop, catalog and numbers from 1 - and cannot see the first user's", async () => {
@@ -60,7 +60,7 @@ describe("KB-348 the new-user path - two brand-new users, real local stack", () 
     const shopB = await createShop(b.client, { ownerUserId: b.userId, name: "Verma Store", phone: null, catalogMode: "custom_only" });
     await bootstrapAfterOnboarding(b.client, dbB, { shopId: shopB.id, deviceId: deviceB, catalogChoice: "empty" });
     expect(shopB.id).not.toBe(shopA.id);
-    expect((await consumeNextNumber(b.client, dbB, shopB.id, deviceB)).receiptNumber).toBe("1");
+    expect((await requestBillNumber(b.client, shopB.id, crypto.randomUUID()))?.receiptNumber).toBe("1");
     const peek = await b.client.from("shops").select("id").eq("id", shopA.id);
     expect(peek.data).toEqual([]);
     const peekProducts = await b.client.from("shop_products").select("id").eq("shop_id", shopA.id).limit(1);

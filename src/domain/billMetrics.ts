@@ -27,6 +27,8 @@ export interface BillMetricsRow {
   readonly secondsToBill: number;
   readonly utterances: readonly UtteranceMetric[];
   readonly finaliseToReceiptMs: number | null;
+  /** KB-351: the server round trip for the bill number (null: no attempt, or an offline number). */
+  readonly numberMs: number | null;
   readonly voiceLines: number;
   readonly editedLines: number;
   readonly manualLines: number;
@@ -101,6 +103,8 @@ export interface GateReport {
   readonly zeroEdit: { readonly zero: number; readonly of: number; readonly pct: number | null; readonly needingHands: number };
   readonly latency: { readonly stopToTranscript: Spread; readonly fastpathToItems: Spread; readonly llmToItems: Spread };
   readonly finaliseToReceipt: Spread;
+  /** KB-351: the bill-number round trip, bills that got a server number only. */
+  readonly number: Spread;
   /** Bills later cancelled for a wrong item / price / quantity - an error that reached a finalised bill (all of them until the window is full). */
   readonly escapedErrors: number;
 }
@@ -147,6 +151,7 @@ export function gateReport(inputs: readonly GateInput[], cancellations: readonly
       llmToItems: spread(num(utterances.filter((u) => u.path === "voice").map((u) => u.transcriptToItemsMs))),
     },
     finaliseToReceipt: spread(num(win.map((i) => i.metrics.finaliseToReceiptMs))),
+    number: spread(num(win.map((i) => i.metrics.numberMs))),
     escapedErrors: cancellations.filter((c) => ERROR_REASONS.has(c.reason) && (escapedFrom === null || c.billFinalizedAt >= escapedFrom)).length,
   };
 }

@@ -9,7 +9,6 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullBills, syncNow } from "./sync";
 import { finaliseBill, type FinaliseInput } from "./finalise";
 import { cancelBillLocal, loadCancellationInfo } from "./cancelBill";
@@ -35,7 +34,6 @@ describe("KB-325 e2e - cancel and reissue (local Postgres)", () => {
     const db = new KiranaBillDB(`e2e-cancel-${crypto.randomUUID()}`);
     dbs.push(db);
     const deviceId = crypto.randomUUID();
-    await reserveBlock(client, db, shopId, deviceId);
     return { db, deviceId };
   }
   type Device = Awaited<ReturnType<typeof device>>;

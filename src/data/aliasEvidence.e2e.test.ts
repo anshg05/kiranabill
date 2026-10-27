@@ -7,7 +7,6 @@ import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex"
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { copyBaseCatalog, createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullShop, pullShopProducts, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill } from "./finalise";
@@ -47,7 +46,6 @@ describe("KB-323 e2e - learned aliases across devices (local Postgres)", () => {
     const deviceId = crypto.randomUUID();
     await pullShop(client, db, shopId);
     await pullShopProducts(client, db, shopId);
-    await reserveBlock(client, db, shopId, deviceId);
     await syncNow({ client, localDb: db, shopId, deviceId }); // opens the learning gate (an empty first pull)
     return { db, deviceId };
   }

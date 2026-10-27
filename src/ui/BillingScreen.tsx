@@ -39,7 +39,7 @@ import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./u
 import { useOrderResolver } from "./useOrderResolver";
 import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
-import { topUpReceiptBlock } from "@/data/receiptNumbers";
+import { requestBillNumber, warmServer } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
 import { learnPendingBills, learnThenReload } from "@/data/learnBill";
 import { AddItemSheet } from "./AddItemSheet";
@@ -164,8 +164,7 @@ export function BillingScreen() {
     onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
-  // KB-307: Bill Banao - one atomic local write; after it commits, top the
-  // receipt block up and start a sync (D38's loop would anyway). Neither is
+  // KB-307: Bill Banao - one atomic local write; after it commits, start a sync (D38's loop would anyway). Neither is
   // awaited: the bill is already saved, and neither can fail it.
   // KB-307 commit 3: then learning (08 §8: after the receipt, its own
   // transaction, never able to fail the bill), then the sync - so the bill and
@@ -179,7 +178,6 @@ export function BillingScreen() {
     protectStorage();
     void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
     if (!localDb || !shop || !deviceId) return;
-    void topUpReceiptBlock(supabase, localDb, shop.id, deviceId).catch((err: unknown) => console.warn("[finalise] block top-up failed:", err));
     // KB-323: an alias this bill just promoted reads from the next utterance on (learnThenReload reloads the catalog after learning).
     void learnThenReload(localDb, shop.id, () => reloadCatalog())
       .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId, pull: "probe" }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
@@ -189,7 +187,15 @@ export function BillingScreen() {
     if (!localDb || !shop) return;
     void learnPendingBills(localDb, shop.id).catch((err: unknown) => console.warn("[learning] recovery failed:", err));
   }, [localDb, shop]);
-  const finaliser = useFinalise({ localDb, shopId: shop?.id ?? null, deviceId, onSaved });
+  // KB-351 (D92): Bill Banao takes the shop's next number from the server (one bounded round trip) - only with a live session;
+  // offline, or when the server is slow, the bill saves at once with an offline number. The connection is warmed when the bill's
+  // first line is added, so the first Bill Banao of a session is not the slow one.
+  const getNumber = useMemo(() => (accessToken && shop ? (billLocalId: string) => requestBillNumber(supabase, shop.id, billLocalId) : undefined), [accessToken, shop]);
+  const hasLines = rows.length > 0;
+  useEffect(() => {
+    if (hasLines && accessToken && shop) warmServer(supabase, shop.id);
+  }, [hasLines, accessToken, shop]);
+  const finaliser = useFinalise({ localDb, shopId: shop?.id ?? null, deviceId, getNumber, onSaved });
   const share = useReceiptShare({ localDb, saved: finaliser.saved, render: renderReceiptFiles });
   const { finalise, clear: clearSaved } = finaliser;
   const { reset: resetBill, draft } = bill;

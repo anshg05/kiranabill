@@ -128,6 +128,13 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 
 ---
 
+## Release day - the bill-number migration (`KB-351`, D92) - owner
+
+1. **Before the two-phone re-test:** `npx supabase db push` (the dry run must list exactly `20261022090000_bill_numbers`), then `npx supabase migration list --linked` - both sides show it. It is additive (two tables, a trigger, a function, a wider CHECK, a nullable column): the deployed app never calls it.
+2. **After it is applied:** tell Claude, who moves `shop_bill_counters` and `bill_number_grants` from `PENDING_PUBLIC_TABLES` to `EXPECTED_PUBLIC_TABLES` (backup check).
+3. **Before the FIRST bill after the release (both phones):** open **Settings** on every phone and check it shows the NEW version (the build id). A phone still on the old build could issue a block number that the counter then reaches - that bill would sit in permanent conflict. Fully close and reopen the app if the old version shows.
+4. A phone that was offline keeps its offline-numbered bills as they are (a code like `7F2A91-3`); they push when it is back online and are never renumbered.
+
 ## Release day — self sign-up (`KB-348`, D90, D91) — owner
 
 **Done by the owner, 21 Oct 2026:** the duplicate-owner query returned no rows; `db push` applied `20261020090000_sync_probe` and `20261020091000_shops_one_per_owner` (the dry-run listed exactly those two); `migration list --linked` shows both on both sides. Netlify balance: **300 credits**.

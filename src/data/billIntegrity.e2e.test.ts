@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill, type LocalBillItem } from "./db";
 import { createShop } from "./shops";
-import { consumeNextNumber, reserveBlock } from "./receiptNumbers";
+import { consumeNextNumber } from "./testNumbers";
 import { pushBills } from "./sync";
 
 /**
@@ -33,7 +33,6 @@ describe("KB-307 e2e - KI-41: bills must add up (local Postgres, shipped push pa
     const { data, error } = await client.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb307.local`, password: crypto.randomUUID() });
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     shopId = (await createShop(client, { ownerUserId: data.user.id, name: "KB-307 e2e", phone: null, catalogMode: "custom_only" })).id;
-    await reserveBlock(client, localDb, shopId, deviceId);
   });
 
   /** Writes a bill + its items locally and pushes them; returns the sync verdict and the server's status. */

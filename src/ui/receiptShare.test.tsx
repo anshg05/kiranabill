@@ -11,6 +11,7 @@ import { KiranaBillDB } from "@/data/db";
 import { BillView } from "./BillingScreen";
 import { useBillLines } from "./useBillLines";
 import { useFinalise } from "./useFinalise";
+import { countedGetNumber } from "@/data/testNumbers";
 import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 
 // KB-309 commit 3 (owner, 4 Oct 2026 - the legacy behaviour, D58): four buttons
@@ -32,7 +33,6 @@ let canShare: ReturnType<typeof vi.fn>;
 beforeEach(async () => {
   db = new KiranaBillDB(`ui-share-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Sharma Kirana", phone: "9876543210", address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-04T00:00:00.000Z" });
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-04T00:00:00.000Z", syncStatus: "synced" });
   renderFiles = vi.fn<RenderReceiptFiles>(async () => ({ png: new Blob(["png"], { type: "image/png" }), pdf: new Blob(["pdf"], { type: "application/pdf" }) }));
   share = vi.fn(() => new Promise<void>(() => {})); // the share sheet stays open
   canShare = vi.fn(() => true);
@@ -48,7 +48,7 @@ afterEach(async () => {
 
 function Harness({ mobile }: { mobile: string | null }) {
   const bill = useBillLines(SEED_PARSER_CATALOG.entries);
-  const fin = useFinalise({ localDb: db, shopId, deviceId });
+  const fin = useFinalise({ localDb: db, shopId, deviceId, getNumber: countedGetNumber(db) });
   const share = useReceiptShare({ localDb: db, saved: fin.saved, render: renderFiles });
   useEffect(() => {
     const items = parseUtterance("2 kilo chini", SEED_PARSER_CATALOG)!;

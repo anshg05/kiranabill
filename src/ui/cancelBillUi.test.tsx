@@ -6,7 +6,7 @@ import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "@/data/db";
-import { finaliseBill } from "@/data/finalise";
+import { finaliseBill } from "@/data/testNumbers";
 import { cancelBillLocal } from "@/data/cancelBill";
 import { HistoryScreen } from "./HistoryScreen";
 import type { RenderReceiptFiles } from "./useReceiptShare";
@@ -24,7 +24,6 @@ const renderFiles: RenderReceiptFiles = async () => ({ png: new Blob(["png"]), p
 beforeEach(async () => {
   db = new KiranaBillDB(`ui-cancel-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Sharma Kirana", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-14T00:00:00.000Z" });
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 1000, nextNumber: 1, allocatedAt: "2026-10-14T00:00:00.000Z", syncStatus: "synced" });
   await db.syncState.put({ tableName: `bills:${shopId}`, lastSyncedAt: null, cursor: JSON.stringify({ phase: "done", before: null }), pendingCount: 0 });
 });
 afterEach(async () => {

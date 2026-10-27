@@ -7,7 +7,6 @@ import { customItem, editQty, editRate, editUnit } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { copyBaseCatalog, createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullShop, pullShopProducts, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill } from "./finalise";
@@ -46,7 +45,6 @@ describe("KB-307 e2e - finalise -> learn -> sync (local Postgres)", () => {
     await copyBaseCatalog(client, shopId, deviceId);
     await pullShop(client, db, shopId);
     await pullShopProducts(client, db, shopId);
-    await reserveBlock(client, db, shopId, deviceId);
     shop = prepareParserCatalog((await loadShopCatalog(db, shopId)).entries);
     await pullLearningState(client, db, shopId); // KB-326: learning waits for this phone's first learning pull
   }, 60_000);

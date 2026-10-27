@@ -13,7 +13,7 @@ const snap = (over: Record<string, unknown> = {}) => ({
 
 describe("changedTables - what the probe says moved", () => {
   it("no baseline (the first cycle): everything", () => {
-    expect([...changedTables(null, snap())].sort()).toEqual(["bill_cancellations", "bill_metrics", "bills", "learning", "receipt_number_blocks", "shop_products", "shops"]);
+    expect([...changedTables(null, snap())].sort()).toEqual(["bill_cancellations", "bill_metrics", "bills", "learning", "shop_products", "shops"]);
   });
   it("nothing moved: nothing", () => {
     expect([...changedTables(snap(), snap())]).toEqual([]);
@@ -22,8 +22,8 @@ describe("changedTables - what the probe says moved", () => {
     expect([...changedTables(snap(), snap({ bills: T1 }))]).toEqual(["bills"]);
     expect([...changedTables(snap(), snap({ bill_cancellations: T1, learning: T1 }))].sort()).toEqual(["bill_cancellations", "learning"]);
   });
-  it("a new receipt-number block (count or highest block_end) is a change", () => {
-    expect([...changedTables(snap(), snap({ receipt_number_blocks: [2, 100] }))]).toEqual(["receipt_number_blocks"]);
+  it("KB-351: receipt-number blocks are retired - the probe still answers them (an older client may read it) but a change there is nothing to pull", () => {
+    expect([...changedTables(snap(), snap({ receipt_number_blocks: [2, 100] }))]).toEqual([]);
   });
   it("a table that appears in the answer for the first time (null -> stamp) is a change", () => {
     expect([...changedTables(snap(), snap({ bill_cancellations: T1 }))]).toEqual(["bill_cancellations"]);

@@ -8,7 +8,6 @@ import { editRate } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { copyBaseCatalog, createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullShop, pullShopProducts, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill } from "./finalise";
@@ -46,7 +45,6 @@ describe("KB-329 e2e - the ignore is pushed and pulled (local Postgres)", () => 
     const deviceId = crypto.randomUUID();
     await pullShop(client, db, shopId);
     await pullShopProducts(client, db, shopId);
-    await reserveBlock(client, db, shopId, deviceId);
     return { db, deviceId };
   }
   const sync = (db: KiranaBillDB, deviceId: string) => syncNow({ client, localDb: db, shopId, deviceId });
@@ -77,7 +75,6 @@ describe("KB-329 e2e - the ignore is pushed and pulled (local Postgres)", () => 
     await copyBaseCatalog(client, shopId, deviceA);
     await pullShop(client, dbA, shopId);
     await pullShopProducts(client, dbA, shopId);
-    await reserveBlock(client, dbA, shopId, deviceA);
     shop = prepareParserCatalog((await loadShopCatalog(dbA, shopId)).entries);
     await sync(dbA, deviceA);
     for (let i = 0; i < 3; i++) await learnedBill(dbA, deviceA, [line(1, "1 kilo besan", "95")]); // a price suggestion for Besan

@@ -5,7 +5,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { compileQuery } from "@/domain/billSearch";
 import { KiranaBillDB } from "./db";
-import { finaliseBill } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { loadRecentRows, loadSearchIndex } from "./history";
 
 // KB-310 (owner's load design, 7 Oct 2026), REAL finalised bills (D39):
@@ -23,7 +23,6 @@ beforeEach(async () => {
   db = new KiranaBillDB(`history-${crypto.randomUUID()}`);
   for (const id of [shopA, shopB]) {
     await db.shops.put({ id, syncStatus: "synced", name: "S", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-07T00:00:00.000Z" });
-    await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId: id, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-07T00:00:00.000Z", syncStatus: "synced" });
   }
 });
 afterEach(async () => {
@@ -52,7 +51,8 @@ describe("loadRecentRows - what History opens with", () => {
 
     const rows = await loadRecentRows(db, shopA, 2);
     expect(rows.map((r) => r.localId)).toEqual([a3, a2]);
-    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "2", customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending", cancelled: false });
+    expect(rows[1]).toEqual({ localId: a2, receiptNumber: "3", // the third number this phone was given (shop B had the second)
+       customerName: "Ramesh", totalPaise: rows[1]!.totalPaise, at: "2026-10-06T10:00:00.000Z", syncStatus: "pending", cancelled: false });
     expect((await loadRecentRows(db, shopA, 200)).map((r) => r.localId)).toEqual([a3, a2, a1]);
     expect(JSON.stringify(rows)).not.toContain("9123456789");
   });

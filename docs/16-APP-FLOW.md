@@ -69,9 +69,9 @@ sequenceDiagram
         Note over App: Products learned as they are spoken
     end
 
-    App->>Supabase: Reserve receipt number block (50)
+    Note over App,Supabase: (KB-351, D92: no receipt block any more - the first bill asks the server counter)
     Supabase-->>App: numbers 1 to 50 (plain, D87)
-    App->>Local: Cache catalog, settings, number block
+    App->>Local: Cache catalog, settings
     App->>Shopkeeper: Billing screen, ready
 ```
 
@@ -164,7 +164,7 @@ sequenceDiagram
     end
 
     UI->>Domain: Compute totals (integer paise)
-    UI->>Local: Take next receipt number from block
+    UI->>Supabase: Next bill number (one round trip, cap 1.5 s; offline / slow: the offline number)
     UI->>Local: INSERT bill + bill_items (status final, pending)
     Local-->>UI: saved
     UI->>Shopkeeper: Receipt shown (under 500ms)

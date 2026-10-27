@@ -6,7 +6,8 @@ import { prepareParserCatalog } from "@/domain/catalogIndex";
 import { changeProduct } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB, type LocalLearningEvent } from "./db";
-import { finaliseBill, type FinaliseInput } from "./finalise";
+import type { FinaliseInput } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { learnFromSavedBill } from "./learnBill";
 import { deriveShopAliases } from "./aliasEvidence";
 import { cancelBillLocal } from "./cancelBill";
@@ -28,7 +29,6 @@ beforeEach(async () => {
   db = new KiranaBillDB(`chg-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Test", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "hi", receiptPrefix: "KB", updatedAt: "2026-10-17T00:00:00.000Z", deviceId } as never);
   await db.shopProducts.bulkPut(SEED_PARSER_CATALOG.entries.map((e) => ({ id: e.id, shopId, baseProductId: e.id, displayName: e.displayName, category: null, unit: e.unit, pricePaise: e.suggestedPricePaise, aliases: e.aliases, source: "base" as const, useCount: 0, sku: null, barcode: null, isActive: true })));
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-17T00:00:00.000Z", syncStatus: "synced" });
 });
 afterEach(async () => {
   db.close();

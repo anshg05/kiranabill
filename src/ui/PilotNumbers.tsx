@@ -13,7 +13,7 @@ import { formatRupees } from "@/domain/money";
 const TARGET_TURNS = 1;
 const TARGET_COVERAGE = 60;
 const TARGET_ZERO_EDIT = 80;
-const BUDGET_MS = { stop: 1500, fast: 300, llm: 4000, finalise: 500, cold: 2000 } as const;
+const BUDGET_MS = { stop: 1500, fast: 300, llm: 4000, finalise: 500, cold: 2000, number: 300 } as const;
 
 const ms = (v: number): string => {
   if (v < 1000) return `${Math.round(v)} ms`;
@@ -116,6 +116,7 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
           <Line label="Fast-path item on screen">{budgetLine(r.latency.fastpathToItems, BUDGET_MS.fast)}</Line>
           <Line label="LLM-path item on screen">{budgetLine(r.latency.llmToItems, BUDGET_MS.llm)}</Line>
           <Line label="Finalise → receipt">{budgetLine(r.finaliseToReceipt, BUDGET_MS.finalise)}</Line>
+          <Line label="Bill number from the server (part of the line above)">{budgetLine(r.number, BUDGET_MS.number)} · only bills that got a server number</Line>
           <Line label="App cold start">{budgetLine(coldSpread, BUDGET_MS.cold)} (this phone)</Line>
         </ul>
       </div>

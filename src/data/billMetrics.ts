@@ -28,6 +28,7 @@ const toServer = (m: LocalBillMetrics, billId: string) => ({
   seconds_to_bill: m.secondsToBill,
   utterances: m.utterances.map((u) => ({ path: u.path, stop_to_transcript_ms: u.stopToTranscriptMs, transcript_to_items_ms: u.transcriptToItemsMs })),
   finalise_to_receipt_ms: m.finaliseToReceiptMs,
+  number_ms: m.numberMs ?? null,
   voice_lines: m.voiceLines,
   edited_lines: m.editedLines,
   manual_lines: m.manualLines,
@@ -104,6 +105,7 @@ export async function pullBillMetrics(client: SupabaseClient, localDb: KiranaBil
                   transcriptToItemsMs: (u.transcript_to_items_ms as number | null) ?? null,
                 })),
                 finaliseToReceiptMs: (r.finalise_to_receipt_ms as number | null) ?? null,
+                numberMs: (r.number_ms as number | null) ?? null,
                 voiceLines: r.voice_lines as number,
                 editedLines: r.edited_lines as number,
                 manualLines: r.manual_lines as number,
@@ -199,6 +201,7 @@ export interface FinalisedInput {
   readonly secondsToBill: number;
   readonly utterances: BillMetricsRow["utterances"];
   readonly finaliseToReceiptMs: number | null;
+  readonly numberMs?: number | null;
   readonly snapshot: FinaliseSnapshot;
 }
 
@@ -222,6 +225,7 @@ export async function recordFinalised(localDb: KiranaBillDB, shopId: string, inp
       secondsToBill: input.secondsToBill,
       utterances: input.utterances,
       finaliseToReceiptMs: input.finaliseToReceiptMs === null ? null : Math.max(0, Math.round(input.finaliseToReceiptMs)),
+      numberMs: input.numberMs == null ? null : Math.max(0, Math.round(input.numberMs)),
       ...input.snapshot,
       recordedAt: new Date().toISOString(),
     });

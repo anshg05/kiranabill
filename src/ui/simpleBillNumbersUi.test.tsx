@@ -22,7 +22,6 @@ const renderFiles: RenderReceiptFiles = async () => ({ png: new Blob(["png"]), p
 beforeEach(async () => {
   db = new KiranaBillDB(`ui-simple-${crypto.randomUUID()}`);
   await db.shops.put({ id: shopId, syncStatus: "synced", name: "Sharma Kirana", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: "2026-10-07T00:00:00.000Z" });
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 1000, nextNumber: 58, allocatedAt: "2026-10-07T00:00:00.000Z", syncStatus: "synced" });
   await db.syncState.put({ tableName: `bills:${shopId}`, lastSyncedAt: null, cursor: JSON.stringify({ phase: "done", before: null }), pendingCount: 0 });
 });
 afterEach(async () => {
@@ -38,7 +37,8 @@ const lines = (t: string): FinalLine[] =>
 async function save(transcript = "2 kilo chini") {
   const d = new Date();
   const localId = crypto.randomUUID();
-  const r = await finaliseBill(db, { localId, shopId, deviceId, startedAt: d.toISOString(), customer: { name: "Cash", mobile: null }, lines: lines(transcript), flags: [], now: d });
+  // the shop's counter stands at 57: the next bill is 58 (KB-351: the number comes from the server and is handed in)
+  const r = await finaliseBill(db, { localId, shopId, deviceId, startedAt: d.toISOString(), customer: { name: "Cash", mobile: null }, lines: lines(transcript), flags: [], now: d, serverNumber: String(58 + (await db.bills.count())) });
   return { localId, receiptNumber: r.receiptNumber };
 }
 async function open() {

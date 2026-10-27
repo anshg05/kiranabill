@@ -189,7 +189,7 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `shop_id` | `uuid` NOT NULL | RLS key |
 | `local_id` | `uuid` NOT NULL | Client-generated **idempotency key** |
 | `receipt_number` | `text` NOT NULL | From the device's reserved block |
-| `receipt_number_source` | `text` NOT NULL | `'block'` \| `'fallback'` (default `'block'`). Which allocation path produced the number — a permanent label, never a trigger for renumbering (`07-DECISIONS.md` D24). Pushed since `KB-110b`. |
+| `receipt_number_source` | `text` NOT NULL | `'block'` \| `'fallback'` \| `'counter'` (default `'block'`; `'counter'` since `KB-351`, D92: the number came from the server counter). Which allocation path produced the number — a permanent label, never a trigger for renumbering (`07-DECISIONS.md` D24). Pushed since `KB-110b`. |
 | `customer_name` | `text` | Defaults to `'Cash'`. **Never blocks finalise.** `CHECK (char_length(customer_name) BETWEEN 1 AND 60)` — code points (`KB-306`, D52). |
 | `customer_mobile` | `text` NULL | Optional. **Exactly 10 digits**, no +91: `CHECK (customer_mobile IS NULL OR customer_mobile ~ '^[6-9][0-9]{9}$')` (`KB-306`, D52). For the receipt's WhatsApp target and future udhaar. |
 | `subtotal_paise` | `bigint` NOT NULL | |
@@ -204,7 +204,7 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 **Immutable once `status = 'final'`.** Enforced by a trigger, not by convention. The one legal change is `final` -> `cancelled`, and then **only `status` may change** (D18) - which is why a cancellation's reason and time are not columns here: see `bill_cancellations`.
 
 ### `bill_metrics` (`KB-404`, D80)
-`(id, shop_id, bill_id, bill_local_id, device_id, local_id, receipt_number, total_paise, line_count, turns, seconds_to_bill, utterances jsonb, finalise_to_receipt_ms, voice_lines, edited_lines, manual_lines, removed_lines, not_added, flags_raised, flags_acknowledged, recorded_at, updated_at)` - one row per finalised bill, **numbers and enums only** (`utterances` is an array of `{path, stop_to_transcript_ms, transcript_to_items_ms}`; no transcript, name or item). Unique `(shop_id, bill_id)` and `(shop_id, local_id)`; composite FK `(bill_id, shop_id) -> bills (id, shop_id)`; CHECKs keep every count >= 0. **RLS:** select and insert for a member; no update or delete policy. `updated_at` is server-stamped (the pull cursor). The device-only review capture (`reviewCapture` in Dexie, local version 6) is **not** a server table and never syncs.
+`(id, shop_id, bill_id, bill_local_id, device_id, local_id, receipt_number, total_paise, line_count, turns, seconds_to_bill, utterances jsonb, finalise_to_receipt_ms, number_ms, voice_lines, edited_lines, manual_lines, removed_lines, not_added, flags_raised, flags_acknowledged, recorded_at, updated_at)` - one row per finalised bill, **numbers and enums only** (`utterances` is an array of `{path, stop_to_transcript_ms, transcript_to_items_ms}`; no transcript, name or item). Unique `(shop_id, bill_id)` and `(shop_id, local_id)`; composite FK `(bill_id, shop_id) -> bills (id, shop_id)`; CHECKs keep every count >= 0. **RLS:** select and insert for a member; no update or delete policy. `updated_at` is server-stamped (the pull cursor). The device-only review capture (`reviewCapture` in Dexie, local version 6) is **not** a server table and never syncs.
 
 ### `bill_cancellations` (`KB-325`, D79)
 `(id, shop_id, bill_id, bill_local_id, reason, replacement_local_id, cancelled_at, local_id, device_id, updated_at)` - one row per cancelled bill, **append-only**.
@@ -233,9 +233,14 @@ Either way, base products can be pulled in and edited later, and base-catalog im
 | `review_flags` | `jsonb` | `[{code, severity, acknowledged}]` — each flag the line carried at finalise, and whether the shopkeeper said "Theek hai" (`KB-307`, D54). A bill-level flag is stored on its anchor line. |
 | `was_edited` | `boolean` | True if the user changed it after parsing — **the learning signal** |
 
-### `receipt_number_blocks`
+### `shop_bill_counters` and `bill_number_grants` (`KB-351`, D92)
+`shop_bill_counters (shop_id PK, last_number bigint >= 1, updated_at)` - the shop's one bill-number sequence; created the first time a shop asks, at the highest number used so far. A `BEFORE UPDATE` trigger allows only `last_number = old + 1`. RLS: select / insert / update for a member; no delete.
+`bill_number_grants (shop_id, local_id, bill_number, granted_at; PK (shop_id, local_id))` - one row per bill that took a number, so asking again for the same bill returns the same number. RLS: select / insert for a member; append-only.
+`next_bill_number(p_shop_id, p_local_id) -> bigint` is `SECURITY INVOKER`, not granted to anon.
+
+### `receipt_number_blocks` - RETIRED by `KB-351` (D92)
 `(id, shop_id, device_id, block_start, block_end, next_number, allocated_at)`
-Reserved while online, consumed offline. See `02-ARCHITECTURE.md` §4.
+No longer reserved, pulled or pushed by the app (a phone on the old build still uses it until the contract release). See `02-ARCHITECTURE.md` §4.
 
 **`receipt_number_blocks_no_overlap` (`KB-334`, D74):** `exclude using gist (shop_id with =, int4range(block_start, block_end, '[]') with &&)` - no two blocks of one shop may overlap, whichever device writes (needs `btree_gist`, in the `extensions` schema). The device that loses a race gets `23P01`, re-reads the highest block and takes the next range. With several devices, bill numbers interleave (each device draws its own block) but never repeat.
 

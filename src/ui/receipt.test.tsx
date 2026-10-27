@@ -8,12 +8,13 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { customItem, editQty, editRate, editUnit } from "@/domain/billEdit";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB, type LocalShop } from "@/data/db";
-import { finaliseBill } from "@/data/finalise";
+import { finaliseBill } from "@/data/testNumbers";
 import { loadReceipt } from "@/data/receipt";
 import { BillView } from "./BillingScreen";
 import { Receipt } from "./Receipt";
 import { useBillLines } from "./useBillLines";
 import { useFinalise } from "./useFinalise";
+import { countedGetNumber } from "@/data/testNumbers";
 
 // KB-308 (owner, 3 Oct 2026): the receipt drawn from REAL finalised bills
 // (D39) - finaliseBill on fake-indexeddb, read back with loadReceipt. Every
@@ -31,7 +32,6 @@ const shopRow = (over: Partial<LocalShop> = {}): LocalShop => ({
 });
 
 async function withBlock() {
-  await db.receiptNumberBlocks.put({ id: crypto.randomUUID(), shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 1, allocatedAt: "2026-10-03T00:00:00.000Z", syncStatus: "synced" });
 }
 
 beforeEach(async () => {
@@ -63,9 +63,9 @@ function customLine(name: string): FinalLine {
 }
 
 /** Finalise a real bill, read it back, draw it. */
-async function drawSaved(lines: FinalLine[], customer = { name: "Cash", mobile: null as string | null }) {
+async function drawSaved(lines: FinalLine[], customer = { name: "Cash", mobile: null as string | null }, serverNumber?: string | null) {
   const localId = crypto.randomUUID();
-  await finaliseBill(db, { localId, shopId, deviceId, startedAt: "2026-10-03T12:00:00.000Z", customer, lines, flags: [] });
+  await finaliseBill(db, { localId, shopId, deviceId, startedAt: "2026-10-03T12:00:00.000Z", customer, lines, flags: [], serverNumber });
   const receipt = await loadReceipt(db, localId);
   if (!receipt) throw new Error("no receipt");
   render(<Receipt receipt={receipt} />);
@@ -101,9 +101,9 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
     expect(within(table).getByRole("rowheader").textContent).toBe("TOTAL");
   });
 
-  it("a REAL fallback-numbered bill (no block left): the full number, breaks only after hyphens, copies as one string", async () => {
+  it("a REAL fallback-numbered bill (no server number - offline): the full number, breaks only after hyphens, copies as one string", async () => {
     await db.shops.put(shopRow());
-    const receipt = await drawSaved(spokenLines("2 kilo chini"));
+    const receipt = await drawSaved(spokenLines("2 kilo chini"), undefined, null);
     expect(receipt.receiptNumber).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`);
     const number = within(receiptEl()).getByTestId("receipt-number");
     expect(number.textContent).toBe(`${deviceId.slice(0, 6).toUpperCase()}-1`); // what a copy gets - <wbr> adds no characters
@@ -160,9 +160,9 @@ describe("KB-308 - the receipt from a real finalised bill", () => {
   });
 });
 
-function Harness({ transcript }: { transcript: string }) {
+function Harness({ transcript, offline = false }: { transcript: string; offline?: boolean }) {
   const bill = useBillLines(SEED_PARSER_CATALOG.entries);
-  const fin = useFinalise({ localDb: db, shopId, deviceId });
+  const fin = useFinalise({ localDb: db, shopId, deviceId, getNumber: offline ? async () => null : countedGetNumber(db) });
   useEffect(() => {
     const items = parseUtterance(transcript, SEED_PARSER_CATALOG)!;
     bill.add(items.map((item) => ({ item, displayName: SEED_PARSER_CATALOG.byId.get(item.catalogId!)!.displayName, source: "fastpath" as const })), [], transcript);
@@ -222,8 +222,8 @@ describe("KB-308 - the receipt on the saved screen", () => {
   });
 
   it("the 'Bill … saved' status breaks a REAL fallback number only after hyphens (a hyphen + digit is no break point for a browser)", async () => {
-    await db.shops.put(shopRow()); // no block -> the D23 fallback number
-    render(<Harness transcript="2 kilo chini" />);
+    await db.shops.put(shopRow()); // no server number -> the offline number
+    render(<Harness transcript="2 kilo chini" offline />);
     await act(async () => {
       screen.getByRole("button", { name: "Bill Banao" }).click();
     });

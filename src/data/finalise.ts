@@ -2,11 +2,11 @@ import Dexie from "dexie";
 import { buildFinalBill, type FinalFlag, type FinalLine } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
 import { billSearchRowOf, type KiranaBillDB, type LocalBill, type LocalBillItem } from "./db";
-import { takeNextNumber } from "./receiptNumbers";
+import { takeFallbackNumber } from "./receiptNumbers";
 
 // KB-307 commit 2 (owner, 3 Oct 2026; 16-APP-FLOW.md §4): Bill Banao is ONE
 // atomic local write. Inside a single Dexie transaction: the receipt number
-// (this device's block, or the D23 fallback), the bill (status final, sync
+// (KB-351: the shop's next number, taken from the server just before - or the offline number), the bill (status final, sync
 // pending) and its items. IndexedDB commits all of it or none of it - a crash
 // or a failed write leaves no bill, no items and no number consumed. The bill
 // is keyed by its localId (a UUID made when the bill started), so finalising
@@ -32,11 +32,13 @@ export interface FinaliseInput {
   readonly discarded?: readonly LearnDiscarded[];
   /** Injected in tests; the clock otherwise. */
   readonly now?: Date;
+  /** KB-351 (D92): the shop's next number from the server (requestBillNumber), or absent - offline, a slow server, an error - and the bill takes this device's offline number. */
+  readonly serverNumber?: string | null;
 }
 
 export interface FinaliseResult {
   readonly receiptNumber: string;
-  readonly source: "block" | "fallback";
+  readonly source: "block" | "fallback" | "counter";
   /** True when this bill was already saved (a second tap) - nothing new written. */
   readonly alreadySaved: boolean;
 }
@@ -53,11 +55,13 @@ export async function finaliseBill(localDb: KiranaBillDB, input: FinaliseInput):
   const finalizedAt = (input.now ?? new Date()).toISOString();
 
   const run = () =>
-    localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.billSearch, localDb.receiptNumberBlocks, localDb.syncState, localDb.shops], async () => {
+    localDb.transaction("rw", [localDb.bills, localDb.billItems, localDb.billSearch, localDb.syncState, localDb.shops], async () => {
       const existing = await localDb.bills.get(input.localId);
       if (existing) return { receiptNumber: existing.receiptNumber, source: existing.receiptNumberSource, alreadySaved: true };
 
-      const receipt = await takeNextNumber(localDb, input.shopId, input.deviceId);
+      const receipt: { receiptNumber: string; source: "counter" | "fallback" } = input.serverNumber
+        ? { receiptNumber: input.serverNumber, source: "counter" }
+        : { receiptNumber: await takeFallbackNumber(localDb, input.deviceId), source: "fallback" };
       const bill: LocalBill = {
         localId: input.localId,
         shopId: input.shopId,

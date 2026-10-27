@@ -9,7 +9,6 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pullShopProducts, syncNow } from "./sync";
 import { loadShopCatalog } from "./shopCatalog";
 import { finaliseBill, type FinaliseInput } from "./finalise";
@@ -157,7 +156,6 @@ describe("KB-330 catalog manage - real local stack", () => {
   it("11. a FINALISED bill keeps the old name after a rename and an archive - on the server, in Dexie and in History (hard rule 2)", async () => {
     const row = await add("Chakki Atta");
     const billDb = new KiranaBillDB(`e2e-manage-bill-${crypto.randomUUID()}`);
-    await reserveBlock(client, billDb, shopId, deviceId);
     const items = parseUtterance("2 kilo chini", SEED_PARSER_CATALOG)!;
     const line: FinalLine = {
       id: "l1", utteranceId: 1, item: { ...items[0]!, catalogId: row.id }, original: { ...items[0]!, catalogId: row.id },

@@ -123,7 +123,7 @@ describe("it never leaves the phone", () => {
     const text = JSON.stringify(sent[0]);
     for (const secret of ["Ramesh", "9876543210", "Chini", "chini", "do kilo", "transcript\""]) expect(text).not.toContain(secret);
     expect(Object.keys(sent[0]!).sort()).toEqual([
-      "bill_id", "bill_local_id", "device_id", "edited_lines", "finalise_to_receipt_ms", "flags_acknowledged", "flags_raised", "line_count", "local_id", "manual_lines", "not_added",
+      "bill_id", "bill_local_id", "device_id", "edited_lines", "finalise_to_receipt_ms", "flags_acknowledged", "flags_raised", "line_count", "local_id", "manual_lines", "not_added", "number_ms",
       "receipt_number", "recorded_at", "removed_lines", "seconds_to_bill", "shop_id", "total_paise", "turns", "utterances", "voice_lines",
     ]);
   });

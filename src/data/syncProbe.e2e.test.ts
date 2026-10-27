@@ -3,7 +3,6 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB, type LocalBill } from "./db";
 import { createShop } from "./shops";
-import { reserveBlock } from "./receiptNumbers";
 import { pushBills, resetProbeState, syncNow } from "./sync";
 
 /**
@@ -54,7 +53,6 @@ describe("KB-345 sync_probe - real local stack", () => {
     const { data, error } = await client.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb345.local`, password: crypto.randomUUID() });
     if (error || !data.user || !data.session) throw new Error(`local signUp failed: ${error?.message ?? "no session"}`);
     shopId = (await createShop(client, { ownerUserId: data.user.id, name: "KB-345 e2e", phone: null, catalogMode: "custom_only" })).id;
-    await reserveBlock(client, dbA, shopId, deviceA);
   });
   afterEach(() => {
     failProbe = false;
@@ -72,7 +70,7 @@ describe("KB-345 sync_probe - real local stack", () => {
     expect(a.error).toBeNull();
     expect(Object.keys(a.data as object).sort()).toEqual(["bill_cancellations", "bill_metrics", "bills", "learning", "receipt_number_blocks", "shop_products", "shops"]);
     expect(a.data).toEqual(b.data);
-    expect((a.data as { receipt_number_blocks: number[] }).receipt_number_blocks[0]).toBe(1); // the block reserved above
+    expect((a.data as { receipt_number_blocks: number[] }).receipt_number_blocks).toEqual([0, 0]); // KB-351: blocks are retired - none reserved any more
   });
 
   it("2. a probe of ANOTHER shop answers nothing (RLS) - never its stamps", async () => {
@@ -84,7 +82,7 @@ describe("KB-345 sync_probe - real local stack", () => {
     resetProbeState();
     requests.length = 0;
     await syncNow(opts(dbA, deviceA, "probe"));
-    expect(requests.length).toBeGreaterThanOrEqual(10); // no baseline yet: the old full pull
+    expect(requests.length).toBeGreaterThanOrEqual(9); // no baseline yet: the old full pull (KB-351: one request fewer, no blocks)
     requests.length = 0;
     await syncNow(opts(dbA, deviceA, "probe"));
     expect(requests).toEqual(["rpc/sync_probe"]);
@@ -131,7 +129,7 @@ describe("KB-345 sync_probe - real local stack", () => {
     vi.setSystemTime(Date.now() + 61_000);
     requests.length = 0;
     await syncNow(opts(dbA, deviceA, "probe"));
-    expect(requests.length).toBeGreaterThanOrEqual(10);
+    expect(requests.length).toBeGreaterThanOrEqual(9);
   });
 
   it("7. if the server has no sync_probe (an older database) the loop pulls in full, as before, and does not keep asking", async () => {
@@ -139,12 +137,12 @@ describe("KB-345 sync_probe - real local stack", () => {
     requests.length = 0;
     await syncNow(opts(dbA, deviceA, "probe"));
     const first = requests.length;
-    expect(first).toBeGreaterThanOrEqual(10);
+    expect(first).toBeGreaterThanOrEqual(9);
     expect(hits(/rpc\/sync_probe/)).toBe(1);
     requests.length = 0;
     await syncNow(opts(dbA, deviceA, "probe"));
     expect(hits(/rpc\/sync_probe/)).toBe(0); // blocked for a while
-    expect(requests.length).toBeGreaterThanOrEqual(10); // but still pulling
+    expect(requests.length).toBeGreaterThanOrEqual(9); // but still pulling
   });
 
   it("8. 'none' pushes and pulls nothing when nothing is pending (the last push before the app is hidden)", async () => {

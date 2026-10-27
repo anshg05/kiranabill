@@ -55,7 +55,7 @@ function row(over: Partial<BillMetricsRow> = {}): BillMetricsRow {
   n += 1;
   return {
     billLocalId: `bill-${n}`, deviceId: "dev-a", receiptNumber: `KB-${String(n).padStart(6, "0")}`, totalPaise: 9000, lineCount: 2,
-    turns: 1, secondsToBill: 12, utterances: [{ path: "fastpath", stopToTranscriptMs: 900, transcriptToItemsMs: 120 }], finaliseToReceiptMs: 200,
+    turns: 1, secondsToBill: 12, utterances: [{ path: "fastpath", stopToTranscriptMs: 900, transcriptToItemsMs: 120 }], finaliseToReceiptMs: 200, numberMs: 120,
     voiceLines: 2, editedLines: 0, manualLines: 0, removedLines: 0, notAdded: 0, flagsRaised: 0, flagsAcknowledged: 0, recordedAt: "2026-10-16T10:00:00.000Z", ...over,
   };
 }

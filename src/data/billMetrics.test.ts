@@ -5,7 +5,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { gateReport } from "@/domain/billMetrics";
 import { KiranaBillDB } from "./db";
-import { finaliseBill } from "./finalise";
+import { finaliseBill } from "./testNumbers";
 import { cancelBillLocal } from "./cancelBill";
 import { listColdStarts, loadGateInputs, recordColdStart, recordFinalised, type FinalisedInput } from "./billMetrics";
 
@@ -56,7 +56,7 @@ describe("recordFinalised", () => {
     expect(text).not.toContain("9876543210");
     expect(text).not.toContain("Chini");
     expect(Object.keys(row).sort()).toEqual([
-      "billLocalId", "deviceId", "editedLines", "finaliseToReceiptMs", "flagsAcknowledged", "flagsRaised", "lineCount", "localId", "manualLines", "notAdded",
+      "billLocalId", "deviceId", "editedLines", "finaliseToReceiptMs", "flagsAcknowledged", "flagsRaised", "lineCount", "localId", "manualLines", "notAdded", "numberMs",
       "receiptNumber", "recordedAt", "removedLines", "secondsToBill", "shopId", "syncStatus", "totalPaise", "turns", "updatedAt", "utterances", "voiceLines",
     ]);
   });

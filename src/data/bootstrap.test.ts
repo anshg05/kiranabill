@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KiranaBillDB } from "./db";
-import { bootstrapOnStart, ensureReceiptBlock, readCachedShop } from "./bootstrap";
+import { bootstrapOnStart, readCachedShop } from "./bootstrap";
 
 // KB-315: orchestration only - the real-stack behaviour is bootstrap.e2e.test.ts.
 
@@ -43,32 +43,5 @@ describe("bootstrap.ts", () => {
     await db.meta.put({ key: "activeShopId", value: shopId });
     const shop = await bootstrapOnStart(noNetworkClient, db, { shopId, deviceId, online: false });
     expect(shop?.id).toBe(shopId);
-  });
-
-  it("ensureReceiptBlock: a usable block of THIS device -> no reservation, no network", async () => {
-    await db.receiptNumberBlocks.put({ id: "blk-A", shopId, deviceId, blockStart: 1, blockEnd: 50, nextNumber: 7, allocatedAt: "x", syncStatus: "synced" });
-    expect(await ensureReceiptBlock(noNetworkClient, db, shopId, deviceId)).toBe("existing");
-  });
-
-  it("ensureReceiptBlock: another device's block does NOT count - it reserves one for this device", async () => {
-    await db.receiptNumberBlocks.put({ id: "blk-OLD", shopId, deviceId: "device-OLD", blockStart: 1, blockEnd: 50, nextNumber: 3, allocatedAt: "x", syncStatus: "synced" });
-    const inserted: unknown[] = [];
-    const client = {
-      from: () => {
-        const builder = {
-          select: () => builder,
-          eq: () => builder,
-          order: () => builder,
-          limit: () => Promise.resolve({ data: [{ block_end: 50 }], error: null }),
-          insert: (row: unknown) => {
-            inserted.push(row);
-            return { select: () => ({ single: () => Promise.resolve({ data: { id: "blk-NEW" }, error: null }) }) };
-          },
-        };
-        return builder;
-      },
-    } as unknown as SupabaseClient;
-    expect(await ensureReceiptBlock(client, db, shopId, deviceId)).toBe("reserved");
-    expect(inserted[0]).toMatchObject({ device_id: deviceId, block_start: 51, block_end: 100 });
   });
 });

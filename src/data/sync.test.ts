@@ -10,7 +10,6 @@ import {
   pushLearnedAliases,
   pullShopProducts,
   pullBills,
-  pullReceiptNumberBlocks,
   startSyncLoop,
   stopSyncLoop,
   isSyncLoopRunning,
@@ -1241,17 +1240,5 @@ describe("sync.ts - KB-315", () => {
     } finally {
       vi.unstubAllGlobals();
     }
-  });
-
-  it("receipt blocks are pulled for THIS device only", async () => {
-    let filters: Record<string, unknown> = {};
-    const client = makeMockClient({
-      receipt_number_blocks: (_op, _payload, f) => {
-        filters = { ...f };
-        return { data: [], error: null };
-      },
-    });
-    await pullReceiptNumberBlocks(client, localDb, "shop-1", "device-A");
-    expect(filters).toEqual({ shop_id: "shop-1", device_id: "device-A" });
   });
 });

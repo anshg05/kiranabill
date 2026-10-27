@@ -485,9 +485,21 @@ Shop details, receipt language, developer mode.
 | Stop → transcript shown | < 1.5 s. **Watch (owner, 18 Oct 2026, `KB-404` check):** localhost median 4.2 s / p95 5.2 s, inflated by `netlify dev` (~1 s per `/voice` call) - measure on the phone in the release-draft session; a ticket only if still over. |
 | Fast-path item on screen | < 300 ms after transcript |
 | LLM-path item on screen | < 4 s after transcript |
-| Finalise → receipt shown | < 500 ms (local write, sync is background) |
+| Finalise → receipt shown | **< 500 ms offline (local write, sync is background); online one bounded round trip is added** (`KB-351`, D92: the shop's next bill number from the server - **cap 1.5 s**, the owner wants it to feel instant, the connection pre-warmed when the first line is added; Mumbai region, estimate 100-250 ms from Nagpur). **`bill_metrics.number_ms` records it; the Pilot numbers panel shows it against a 300 ms line - over ~300 ms median on the phone = propose the zero-wait variant (`SG-21`) before the release.** |
 | App cold start | < 2 s. **Watch (18 Oct 2026):** the localhost p95 of 27 s is dev-server first loads - the phone session gives the real figure. |
 | History (S5) at 40,000 bills — **open** (newest 200) | **≤ 300 ms** on the phone (D61; owner, 7 Oct 2026). Measured 7 Oct 2026, `/__dev/history`: phone (Android 10, Chrome 152) 234 / 72 / 62 ms; laptop over the LAN 35 / 11 / 10 ms |
 | History — **90-day search load** (≈ 9,000 bills; background) | **≤ 2 s** on the phone. Phone 1,624 / 1,187 / 1,145 ms; laptop 278 / 230 / 229 ms |
 | History — **"Search older bills"** (all 40,000) | **≤ 6 s** on the phone, with "Loading older bills…" shown meanwhile. Phone 4,540 / 3,825 ms; laptop 1,072 / 1,031 ms |
 | History — **keystroke → results** | **≤ 50 ms** (D51). Over 9,000: phone median 4.8 · p95 6.9 · max 14.7 ms (laptop 0.8 / 1.3 / 2.8). Over 40,000: phone median 14.1 · p95 16.4 · max 17.3 ms (laptop 5.0 / 6.2 / 7.0) |
+
+### Real-phone figures - the two-phone re-test (owner, 22 Oct 2026)
+
+Recorded from the **Pilot numbers** panel (Settings, Developer mode) on the re-test; **anything over budget becomes a listed item here with its likely cause.** *Not yet measured: to be filled from the owner's phones on the re-test. Nothing below is a phone figure - the notes are the localhost / estimate figures that exist today.*
+
+| Budget | Phone median / p95 | Verdict / cause if over |
+|---|---|---|
+| Stop → transcript | _re-test_ (localhost 4.2 s is dev-server inflated, 18 Oct) | |
+| Fast-path item on screen | _re-test_ | |
+| Finalise → receipt (with `number_ms`) | _re-test_ (estimate: warm round trip 100-250 ms) | |
+| Bill number from the server | _re-test_ (from a wired PC: ~70 ms warm, 0.3-0.9 s cold) | |
+| App cold start | _re-test_ (localhost p95 27 s is dev-server first loads) | |
