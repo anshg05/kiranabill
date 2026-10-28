@@ -79,11 +79,13 @@ describe("a promoted learned alias reaches the parser - in memory only", () => {
     expect(cat.learned).toEqual({});
   });
 
-  it("Gemini-sourced: five needed, not three", async () => {
-    await db.learningEvents.bulkAdd(confirmations(3, { layer: "gemini" }));
+  it("KB-354: Gemini alone never promotes (five, even ten); one fast-path confirmation then does", async () => {
+    await db.learningEvents.bulkAdd(confirmations(5, { layer: "gemini" }));
     expect((await loadShopCatalog(db, shopId)).learned).toEqual({});
-    await db.learningEvents.bulkAdd(confirmations(2, { layer: "gemini" }));
-    expect((await loadShopCatalog(db, shopId)).learned["pale ji"]).toMatchObject({ confidence: 0.8 });
+    await db.learningEvents.bulkAdd(confirmations(5, { layer: "gemini" }));
+    expect((await loadShopCatalog(db, shopId)).learned).toEqual({});
+    await db.learningEvents.bulkAdd(confirmations(1, { layer: "fastpath" }));
+    expect((await loadShopCatalog(db, shopId)).learned["pale ji"]).toMatchObject({ confidence: 1 });
   });
 
   it("another shop's events never reach this shop's parser (hard rule 12)", async () => {
