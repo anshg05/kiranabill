@@ -28,6 +28,8 @@ export class VoiceApiError extends Error {
     readonly kind: VoiceErrorKind,
     message: string,
     readonly status?: number,
+    /** KB-358c: why a 503 was busy - "daily_limit" (today's free limit), "minute_limit" or "busy". */
+    readonly reason?: string,
   ) {
     super(message);
     this.name = "VoiceApiError";
@@ -109,7 +111,8 @@ function postForm(form: FormData, opts: VoiceApiOptions, timeoutMs: number): Pro
       }
       if (!response.ok) {
         const detail = (body as { error?: string } | null)?.error ?? response.statusText;
-        throw new VoiceApiError(kindFor(response.status), detail, response.status);
+        const said = (body as { reason?: unknown } | null)?.reason;
+        throw new VoiceApiError(kindFor(response.status), detail, response.status, said === "daily_limit" || said === "minute_limit" || said === "busy" ? said : undefined);
       }
       opts.onTiming?.({
         requestMs: headersAt - sentAt,

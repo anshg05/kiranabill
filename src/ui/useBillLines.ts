@@ -101,7 +101,7 @@ export interface Customer {
 
 type Action =
   | { type: "add"; lines: readonly BillLine[]; flags: readonly ReviewFlag[]; transcript: string; resolves?: string; focus?: boolean }
-  | { type: "fail"; transcript: string }
+  | { type: "fail"; transcript: string; message?: string }
   | { type: "retrying"; id: string }
   | { type: "retryFailed"; id: string; message: string }
   | { type: "dismiss"; id: string }
@@ -162,7 +162,7 @@ function reduce(state: BillState, action: Action): BillState {
     case "fail":
       return {
         ...state,
-        notAdded: [...state.notAdded, { id: `n${state.nextNotAddedId}`, transcript: action.transcript, retrying: false, message: PARSE_FAILED }],
+        notAdded: [...state.notAdded, { id: `n${state.nextNotAddedId}`, transcript: action.transcript, retrying: false, message: action.message ?? PARSE_FAILED }],
         nextNotAddedId: state.nextNotAddedId + 1,
       };
     case "retrying":
@@ -248,7 +248,8 @@ export interface BillLines {
   /** KB-306: commit a typed name / mobile; returns the message to show, or null when stored. */
   setCustomerName: (text: string) => string | null;
   setCustomerMobile: (text: string) => string | null;
-  fail: (transcript: string) => void;
+  /** A piece of speech nothing could read, kept as "Not added"; `message` says why (default: "Couldn't read the items"). */
+  fail: (transcript: string, message?: string) => void;
   retrying: (id: string) => void;
   retryFailed: (id: string, message: string) => void;
   dismiss: (id: string) => void;
@@ -402,7 +403,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
       dispatch({ type: "add", lines: [{ item, displayName, source: "manual" }], flags: evaluateReviewFlags("", [item], catalog), transcript: "", focus: true }),
     [catalog],
   );
-  const fail = useCallback((transcript: string) => dispatch({ type: "fail", transcript }), []);
+  const fail = useCallback((transcript: string, message?: string) => dispatch({ type: "fail", transcript, message }), []);
   const setCustomerName = useCallback((text: string) => {
     const name = parseCustomerName(text);
     if (!name.ok) return name.error;

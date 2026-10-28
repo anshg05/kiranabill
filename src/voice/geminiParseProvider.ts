@@ -22,6 +22,18 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
  * seen so far were quota (KI-50). The shopkeeper's Retry replaces them. */
 export const GEMINI_TIMEOUT_MS = 6_000;
 
+/** KB-358c: which quota a 429 names - Gemini's quotaId inside error.details[].violations[]. A name only: it must look like one. */
+function quotaIdOf(status: number, bodyText: string): string | undefined {
+  if (status !== 429) return undefined;
+  try {
+    const details = (JSON.parse(bodyText) as { error?: { details?: { violations?: { quotaId?: unknown }[] }[] } }).error?.details ?? [];
+    for (const d of details) for (const v of d.violations ?? []) if (typeof v.quotaId === "string" && /^[A-Za-z0-9_.-]{1,120}$/.test(v.quotaId)) return v.quotaId;
+  } catch {
+    // not JSON - no quota named
+  }
+  return undefined;
+}
+
 const RESPONSE_SCHEMA = {
   type: "array",
   items: {
@@ -125,7 +137,7 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
             // KB-317 (KI-50): a 429 is a quota - on the free tier a DAILY one.
             // D59 (KI-66): a 503 is Google overloaded - transient, also "busy".
             const busy = response.status === 429 || response.status === 503;
-            throw new ProviderError(busy ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status);
+            throw new ProviderError(busy ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status, quotaIdOf(response.status, bodyText));
           }
           const latencyMs = performance.now() - start;
           const data = (await response.json()) as {

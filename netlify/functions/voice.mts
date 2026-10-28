@@ -69,9 +69,12 @@ function providerFailure(step: "Transcription" | "Parse", err: unknown, startedA
   const status = kind === "timeout" ? 504 : kind === "busy" ? 503 : 502;
   // D59 (KI-66): one production line - never the transcript, the provider's body or a URL.
   const provider = err instanceof ProviderError && err.status !== undefined ? err.status : "-";
-  console.warn(`[voice] ${step} failure kind=${kind} status=${status} provider=${provider} ms=${Math.round(performance.now() - startedAt)}`);
+  // KB-358c: for a 429 the NAME of the quota it hit (never the body) - per-day or per-minute is the whole difference to the shopkeeper.
+  const quota = err instanceof ProviderError ? err.quota : undefined;
+  console.warn(`[voice] ${step} failure kind=${kind} status=${status} provider=${provider} ms=${Math.round(performance.now() - startedAt)}${quota ? ` quota=${quota}` : ""}`);
   const error = kind === "timeout" ? `${step} timed out` : kind === "busy" ? `${step} busy` : `${step} failed`;
-  return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, detail: (err as Error).message }), { status });
+  const reason = kind !== "busy" ? undefined : quota && /PerDay/i.test(quota) ? "daily_limit" : quota && /PerMinute/i.test(quota) ? "minute_limit" : "busy";
+  return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, ...(reason ? { reason } : {}), detail: (err as Error).message }), { status });
 }
 
 export default async (req: Request, _context: Context): Promise<Response> => {

@@ -721,7 +721,49 @@ export function splitItemSegments(text: string): string[] {
   return text
     .split(/\baur\b|(?<![\u0900-\u097F])और(?![\u0900-\u097F])|,/i)
     .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+    .filter((segment) => segment.length > 0)
+    .flatMap(splitAtPriceEnds);
+}
+
+const isNumberWord = (word: string): boolean =>
+  /^\d+(\.\d+)?$/.test(word) || HINDI_NUMBERS[word] !== undefined || MULTIPLIERS[word] !== undefined || FIXED_FRACTIONS[word] !== undefined;
+const isCurrencyWord = (word: string): boolean => CURRENCY_FILLERS.has(word) || DEVANAGARI_CURRENCY.has(word);
+const isPriceMarkerWord = (word: string): boolean =>
+  RATE_MARKERS.has(word) || TOTAL_MARKERS.has(word) || DEVANAGARI_RATE_MARKERS.has(word) || DEVANAGARI_TOTAL_MARKERS.has(word);
+
+/**
+ * KB-358a (owner, 28 Oct 2026): Whisper often drops the commas between items, and one text with six numbers is a miss for the
+ * whole order. An item ends where its PRICE PHRASE ends: a currency word (a number was said - or a price word nobody understood)
+ * with an optional "per"/"ka" and unit after it ("56 रुपए किलो", "90 रुपए", "56 rupay per kilo"), or a total / rate marker straight
+ * after a number ("100 ka", "दस वाला"), with an optional unit. The text is split there ONLY when there are at least two pieces
+ * and EVERY piece has a name and a number - otherwise it stays whole, exactly as before ("chini 100 rupay 2 kilo" is one item).
+ */
+function splitAtPriceEnds(segment: string): string[] {
+  const words = splitWords(segment);
+  const ends: number[] = [];
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i]!;
+    let end: number | null = null;
+    if (isCurrencyWord(word)) {
+      if (PER_CONNECTORS.has(words[i + 1] ?? "") && UNIT_ALIASES[words[i + 2] ?? ""] !== undefined) end = i + 2;
+      else end = UNIT_ALIASES[words[i + 1] ?? ""] !== undefined ? i + 1 : i;
+    } else if (isPriceMarkerWord(word) && isNumberWord(words[i - 1]!)) {
+      end = UNIT_ALIASES[words[i + 1] ?? ""] !== undefined ? i + 1 : i;
+    }
+    if (end !== null) {
+      ends.push(end);
+      i = end;
+    }
+  }
+  if (ends.length === 0) return [segment];
+  const pieces: string[] = [];
+  let start = 0;
+  for (const end of ends) {
+    pieces.push(words.slice(start, end + 1).join(" "));
+    start = end + 1;
+  }
+  if (start < words.length) pieces.push(words.slice(start).join(" "));
+  return pieces.length >= 2 && pieces.every(segmentIsComplete) ? pieces : [segment];
 }
 
 /** KB-317 (owner): in a multi-item utterance every segment needs a product
@@ -758,18 +800,25 @@ export function extractSpokenNumberEntries(text: string): readonly SpokenNumberE
  * a line.
  */
 export function parseUtterance(text: string, catalog: ParserCatalog): ParsedItem[] | null {
+  const parts = parseUtteranceParts(text, catalog);
+  return parts.every((part) => part.item !== null) ? parts.map((part) => part.item!) : null;
+}
+
+/** KB-358a: one item's worth of the utterance, and what Layer 1 made of it (null = it could not be read by rule). */
+export interface UtterancePart {
+  readonly text: string;
+  readonly item: ParsedItem | null;
+}
+
+/**
+ * Every piece of an utterance on its own, so one piece Layer 1 cannot read does not cost the pieces it can. When any piece lacks
+ * a product or a number the whole text stays ONE unreadable part - a line is never silently merged, dropped or left without its
+ * number (KB-317). parseUtterance() is exactly "every part readable".
+ */
+export function parseUtteranceParts(text: string, catalog: ParserCatalog): UtterancePart[] {
   const segments = splitItemSegments(text);
-
-  if (segments.length === 0) return null;
-  if (segments.length > 1 && !segments.every(segmentIsComplete)) return null;
-
-  const items: ParsedItem[] = [];
-  for (const segment of segments) {
-    const item = resolveSegment(segment, catalog);
-    if (item === null) return null;
-    items.push(item);
-  }
-  return items;
+  if (segments.length === 0 || (segments.length > 1 && !segments.every(segmentIsComplete))) return [{ text, item: null }];
+  return segments.map((segment) => ({ text: segment, item: resolveSegment(segment, catalog) }));
 }
 
 // ---------------------------------------------------------------------------

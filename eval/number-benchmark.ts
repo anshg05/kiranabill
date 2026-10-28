@@ -49,6 +49,8 @@ interface BenchmarkCase {
   readonly category: string;
   readonly utterance: string;
   readonly expected: ExpectedOutcome;
+  /** KB-358a: a multi-item utterance - one expected outcome per item, in order. `expected` is then unused. */
+  readonly expectedItems?: readonly ExpectedOutcome[];
   readonly note?: string;
 }
 
@@ -64,9 +66,9 @@ function loadCases(): readonly BenchmarkCase[] {
   const raw = readFileSync(path.join(__dirname, "number-benchmark.json"), "utf8");
   const cases = JSON.parse(raw) as BenchmarkCase[];
   // 100 original cases (KB-006) + 10 cross-unit cases (KB-005f, NB101-NB110)
-  // + 19 compound-number cases (KB-302, NB111-NB129) + 42 per-unit cases (KB-358-0, NB130-NB171).
-  if (cases.length !== 171) {
-    throw new Error(`number-benchmark.json: expected exactly 171 cases, found ${cases.length}`);
+  // + 19 compound-number cases (KB-302, NB111-NB129) + 42 per-unit cases (KB-358-0, NB130-NB171) + 13 multi-item cases (KB-358a, NB172-NB184).
+  if (cases.length !== 184) {
+    throw new Error(`number-benchmark.json: expected exactly 184 cases, found ${cases.length}`);
   }
   return cases;
 }
@@ -88,7 +90,15 @@ function matchesExpected(item: ParsedItem, expected: ExpectedOutcome): boolean {
 
 function classify(benchmarkCase: BenchmarkCase): CaseResult {
   const actualItems = parseUtterance(benchmarkCase.utterance, SEED_PARSER_CATALOG);
-  const { expected } = benchmarkCase;
+  const { expected, expectedItems } = benchmarkCase;
+
+  if (expectedItems) {
+    if (actualItems === null) return { benchmarkCase, outcome: "bail", actualItems };
+    // the wrong number of items, or any confident item that is not the expected one, is a confident WRONG
+    if (actualItems.length !== expectedItems.length) return { benchmarkCase, outcome: "wrong", actualItems };
+    const each = actualItems.map((item, i) => (matchesExpected(item, expectedItems[i]!) ? "correct" : isConfident(item) ? "wrong" : "bail"));
+    return { benchmarkCase, outcome: each.includes("wrong") ? "wrong" : each.includes("bail") ? "bail" : "correct", actualItems };
+  }
 
   if (actualItems === null) {
     const outcome: Outcome = expected.safe || benchmarkCase.category === "bail" ? "correct" : "bail";

@@ -21,6 +21,15 @@ export const NOT_ADDED = "Couldn't read the items — Retry below";
 const RETRYABLE = new Set<VoiceApiError["kind"]>(["server", "busy", "rate_limited", "timeout", "network"]);
 const isRetryable = (err: unknown) => err instanceof VoiceApiError && RETRYABLE.has(err.kind);
 
+/** KB-358c: the cause of a failed parse in words - always with a way on (Retry, or add by hand). */
+export function parseFailureMessage(err: unknown): string {
+  if (err instanceof VoiceApiError) {
+    if (err.kind === "busy") return err.reason === "daily_limit" ? "Today's free reading limit is reached — add by hand, or try again tomorrow" : "Reading service is busy — Retry in a minute, or add by hand";
+    if (err.kind === "timeout") return "Took too long — Retry, or add by hand";
+  }
+  return PARSE_FAILED;
+}
+
 export interface OrderResolver {
   /** A heard transcript -> lines on the bill. Throws a shopkeeper-facing error. */
   onTranscript: (transcript: string) => Promise<void>;
@@ -78,6 +87,25 @@ export function useOrderResolver({ shop, bill, parse, onUtterance }: UseOrderRes
         fail(transcript);
         throw new VoiceUserError(NOT_ADDED);
       }
+      // KB-358a: what was read is on the bill; each piece nothing could read is its own "Not added" (own text, own Retry).
+      if (resolved.unresolved.length > 0) {
+        const retryable = resolved.failure === undefined || isRetryable(resolved.failure);
+        if (!retryable && resolved.lines.length === 0) {
+          report(failed());
+          throw resolved.failure; // nothing read, nothing a Retry can fix: the screen shows its own message, nothing is listed (as before)
+        }
+        const message = retryable ? parseFailureMessage(resolved.failure) : messageFor(resolved.failure);
+        if (resolved.lines.length > 0) {
+          add(resolved.lines, resolved.flags, transcript);
+          const lines = resolved.lines.map((l) => ({ name: l.displayName, qty: l.item.qty, unit: l.item.unit, rate: l.item.rate, total: l.item.total }));
+          afterPaint(() => report({ path: resolved.layer, transcript, transcriptToItemsMs: Math.max(0, Math.round(performance.now() - started)), lines }));
+        } else {
+          report(failed());
+        }
+        for (const text of resolved.unresolved) fail(text, message);
+        if (resolved.lines.length === 0) throw new VoiceUserError(message === PARSE_FAILED ? NOT_ADDED : message);
+        return;
+      }
       if (import.meta.env.DEV) {
         console.info("[voice] resolved", {
           layer: resolved.layer,
@@ -108,10 +136,10 @@ export function useOrderResolver({ shop, bill, parse, onUtterance }: UseOrderRes
       void (async () => {
         try {
           const resolved = await resolveUtterance(entry.transcript, { shop, parse });
-          if (resolved.lines.length === 0) retryFailed(id, NO_ITEM_FOUND);
+          if (resolved.lines.length === 0) retryFailed(id, resolved.unresolved.length > 0 ? parseFailureMessage(resolved.failure) : NO_ITEM_FOUND);
           else add(resolved.lines, resolved.flags, entry.transcript, id);
         } catch (err) {
-          retryFailed(id, isRetryable(err) ? PARSE_FAILED : messageFor(err));
+          retryFailed(id, isRetryable(err) ? parseFailureMessage(err) : messageFor(err));
         }
       })();
     },

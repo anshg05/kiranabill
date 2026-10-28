@@ -231,7 +231,7 @@ describe("KB-319 - Retry re-sends the text only", () => {
     await say(get, MISS);
     await tap(retryButton(MISS));
     expect((retryButton(MISS) as HTMLButtonElement).disabled).toBe(false);
-    expect(within(entry(MISS)).getByText("Couldn't read the items")).toBeTruthy();
+    expect(within(entry(MISS)).getByText("Reading service is busy — Retry in a minute, or add by hand")).toBeTruthy(); // KB-358c: a 503 says why
     expect(get().bill.rows).toHaveLength(0);
     expect(pending()).toBe("1 check pending");
   });
@@ -291,7 +291,7 @@ describe("KB-331 - Add by hand on a Not-added entry", () => {
     const get = setup();
     await say(get, MISS);
     await tap(retryButton(MISS));
-    expect(within(entry(MISS)).getByText("Couldn't read the items")).toBeTruthy();
+    expect(within(entry(MISS)).getByText("Reading service is busy — Retry in a minute, or add by hand")).toBeTruthy(); // KB-358c
     expect(addByHand(MISS)).toBeTruthy();
   });
 

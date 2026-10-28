@@ -11,6 +11,8 @@ export class ProviderError extends Error {
     message: string,
     /** D59: the provider's HTTP status, when it answered - for the log line. */
     readonly status?: number,
+    /** KB-358c: the NAME of the quota a 429 hit (Gemini's quotaId, e.g. "...PerDay...") - a name only, never the body. */
+    readonly quota?: string,
   ) {
     super(message);
     this.name = "ProviderError";

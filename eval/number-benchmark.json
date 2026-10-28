@@ -2367,5 +2367,486 @@
       "priceType": null
     },
     "note": "KB-358-0: two quantities"
+  },
+  {
+    "id": "NB172",
+    "category": "multi-item",
+    "utterance": "2 किलो चीनी 56 रुपए किलो 10 किलो गेहु 34 रुपए किलो 2 किलो चावल 90 रुपए",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 11200,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 10,
+        "unit": "kg",
+        "rate": 3400,
+        "total": 34000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      }
+    ],
+    "note": "KB-358a (owner, 28 Oct 2026): the draft-v7 test, spoken with no commas - it went to Gemini, which billed the rice Rs 180."
+  },
+  {
+    "id": "NB173",
+    "category": "multi-item",
+    "utterance": "1 किलो चीनी 56 रुपए किलो, 1 किलो हरा बटाना 56 रुपए किलो, 1 किलो चावल 84 रुपए किलो, 10 किलो गेहु 34 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 8400,
+        "total": 8400,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 10,
+        "unit": "kg",
+        "rate": 3400,
+        "total": 34000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      }
+    ],
+    "note": "KB-358a: the 5:43 PM order, with its commas."
+  },
+  {
+    "id": "NB174",
+    "category": "multi-item",
+    "utterance": "1 किलो चीनी 56 रुपए किलो 1 किलो हरा बटाना 56 रुपए किलो 1 किलो चावल 84 रुपए किलो 10 किलो गेहु 34 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 8400,
+        "total": 8400,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 10,
+        "unit": "kg",
+        "rate": 3400,
+        "total": 34000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      }
+    ],
+    "note": "KB-358a: the same, no commas."
+  },
+  {
+    "id": "NB175",
+    "category": "multi-item",
+    "utterance": "1 kg मुंग दाल 96 रुपई किलो, 1 kg बरबटी दाल 88 रुपई किलो, 2 kg उडद मुगर 130 रुपई किलो, 1 kg मुंग मुगर 110 रुपई किलो, 1 kg चीनी 56 रुपई किलो,",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9600,
+        "total": 9600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 8800,
+        "total": 8800,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 13000,
+        "total": 26000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 11000,
+        "total": 11000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      }
+    ],
+    "note": "KB-358a / b: the 4:38 PM order; 'उडद मुगर' is not in the seed - a custom line at exactly the spoken numbers."
+  },
+  {
+    "id": "NB176",
+    "category": "multi-item",
+    "utterance": "1 kg मुंग दाल 96 रुपई किलो 1 kg बरबटी दाल 88 रुपई किलो 2 kg उडद मुगर 130 रुपई किलो 1 kg मुंग मुगर 110 रुपई किलो 1 kg चीनी 56 रुपई किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9600,
+        "total": 9600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 8800,
+        "total": 8800,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 13000,
+        "total": 26000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 11000,
+        "total": 11000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 5600,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      }
+    ],
+    "note": "KB-358a: the same, no commas."
+  },
+  {
+    "id": "NB177",
+    "category": "multi-item",
+    "utterance": "2 kilo chini 50 rupay 1 kilo atta 40 rupay",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 5000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 4000,
+        "priceType": "total"
+      }
+    ],
+    "note": "KB-358a: two totals, no commas."
+  },
+  {
+    "id": "NB178",
+    "category": "multi-item",
+    "utterance": "2 kilo chawal 100 ka 1 kilo chini 50 ka",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 10000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 5000,
+        "priceType": "total"
+      }
+    ]
+  },
+  {
+    "id": "NB179",
+    "category": "multi-item",
+    "utterance": "3 पालेजी दसवाला 2 किलो चीनी 90 का",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "piece",
+        "rate": 1000,
+        "total": 3000,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      }
+    ],
+    "note": "KB-358a: a wala piece then a ka piece."
+  },
+  {
+    "id": "NB180",
+    "category": "multi-item",
+    "utterance": "2 kilo chini 56 rupay kilo 10 kilo gehu 34 rupay",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5600,
+        "total": 11200,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      },
+      {
+        "safe": false,
+        "qty": 10,
+        "unit": "kg",
+        "rate": null,
+        "total": 3400,
+        "priceType": "total"
+      }
+    ],
+    "note": "KB-358a: a per-kilo price must not leak into the next piece's bare 'rupay' total."
+  },
+  {
+    "id": "NB181",
+    "category": "multi-item",
+    "utterance": "2 kilo chini 56 rupay 10 kilo gehu 34 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 5600,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 10,
+        "unit": "kg",
+        "rate": 3400,
+        "total": 34000,
+        "priceType": "rate",
+        "rateUnit": "kg"
+      }
+    ],
+    "note": "KB-358a: and the other way round."
+  },
+  {
+    "id": "NB182",
+    "category": "multi-item",
+    "utterance": "chini 100 rupay 2 kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": null,
+        "total": 10000,
+        "priceType": "total"
+      }
+    ],
+    "note": "KB-358a: a price first and the quantity after stays ONE item (the remainder '2 kilo' has no name)."
+  },
+  {
+    "id": "NB183",
+    "category": "multi-item",
+    "utterance": "2 kilo chini 56 rupay kilo 5 kg chawal पीस ka",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358a: one piece has an orphaned marker - the whole text is not read by rule (Layer 2 / by hand)."
+  },
+  {
+    "id": "NB184",
+    "category": "multi-item",
+    "utterance": "चीनी, 2 किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358a: an incomplete piece - never a line silently merged or dropped (KB-317)."
   }
 ]

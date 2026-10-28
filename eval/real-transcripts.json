@@ -447,5 +447,42 @@
     ],
     "layer1": "hit",
     "note": "The owner's order that failed on production (Gemini 429). Before KB-358-0 Layer 1 read the last line as Rs 34, not Rs 340, with no flag. Against the base seed; a shop that lacks one of these products goes to Layer 2 (KB-358 a/b)."
+  },
+  {
+    "id": "RT41",
+    "source": "owner, real voice, 28 Oct 2026, the draft-v7 test, spoken with no commas - KB-358a",
+    "transcript": "2 किलो चीनी 56 रुपए किलो 10 किलो गेहु 34 रुपए किलो 2 किलो चावल 90 रुपए",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 2, "unit": "kg", "total": 11200 },
+      { "catalogId": "1", "displayName": "गेहूं", "qty": 10, "unit": "kg", "total": 34000 },
+      { "catalogId": "11", "displayName": "Chawal", "qty": 2, "unit": "kg", "total": 9000 }
+    ],
+    "layer1": "hit",
+    "note": "Gemini billed the rice Rs 180 (2 kg x Rs 90); by rule 'N kilo X Y rupay' is a total of Rs 90. Split after each price phrase, all three pieces are read by rule."
+  },
+  {
+    "id": "RT42",
+    "source": "owner, real voice, 28 Oct 2026, production (4:38 PM screenshot) - KB-358a / b",
+    "transcript": "1 kg मुंग दाल 96 रुपई किलो, 1 kg बरबटी दाल 88 रुपई किलो, 2 kg उडद मुगर 130 रुपई किलो, 1 kg मुंग मुगर 110 रुपई किलो, 1 kg चीनी 56 रुपई किलो,",
+    "expectedLines": [
+      { "catalogId": "18", "displayName": "Moong Daal", "qty": 1, "unit": "kg", "total": 9600 },
+      { "catalogId": "629", "displayName": "बरबटी दाल", "qty": 1, "unit": "kg", "total": 8800 },
+      { "catalogId": null, "displayName": "उडद मुगर", "qty": 2, "unit": "kg", "total": 26000 },
+      { "catalogId": "622", "displayName": "Moong Mogar", "qty": 1, "unit": "kg", "total": 11000 },
+      { "catalogId": "27", "displayName": "Chini", "qty": 1, "unit": "kg", "total": 5600 }
+    ],
+    "layer1": "hit",
+    "note": "Went to Gemini on production. 'उडद मुगर' is not in the base seed: a custom line at exactly 2 kg x Rs 130, flagged 'not in your catalog' (KB-358b)."
+  },
+  {
+    "id": "RT43",
+    "source": "owner, real voice, 28 Oct 2026, production (4:37 PM screenshot) - KB-358a",
+    "transcript": "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो",
+    "expectedLines": [
+      { "catalogId": null, "displayName": "उडत मुगर", "qty": 1, "unit": "kg", "total": 13000 },
+      { "catalogId": "622", "displayName": "Moong Mogar", "qty": 1, "unit": "kg", "total": 11000 }
+    ],
+    "layer1": "miss",
+    "note": "No commas, and two prices misheard ('चैन', 'अठ्यास्थी' = 96, 88). Layer 1 reads the last two pieces; the first two go to Gemini together. The lines listed are what Layer 1 itself reads."
   }
 ]
