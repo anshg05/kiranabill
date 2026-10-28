@@ -25,6 +25,11 @@ describe("serverTimingHeaders", () => {
     expect(serverTimingHeaders({ auth: 1, limit: 1, form: 1 }, 0, 1, { AWS_REGION: "us-east-2\r\nSet-Cookie: x=1" })["X-Kb-Region"]).toBe("unknown");
   });
 
+  it("KB-353: member (the shop-membership wait) is reported between auth and limit", () => {
+    const h = serverTimingHeaders({ auth: 2, member: 640.4, limit: 4, form: 1 }, 0, 9, {});
+    expect(h["Server-Timing"]).toBe("auth;dur=2, member;dur=640, limit;dur=4, form;dur=1, total;dur=9");
+  });
+
   it("NaN and negative parts are dropped", () => {
     const h = serverTimingHeaders({ auth: Number.NaN, limit: -3, form: 5 }, 0, 9, {});
     expect(h["Server-Timing"]).toBe("form;dur=5, total;dur=9");

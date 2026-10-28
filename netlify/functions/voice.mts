@@ -1,7 +1,8 @@
 import type { Config, Context } from "@netlify/functions";
 import { createGroqTranscriptionProvider } from "../../src/voice/groqTranscriptionProvider.js";
 import { createGeminiParseProvider } from "../../src/voice/geminiParseProvider.js";
-import { resolveAuthedRequest } from "./_shared/auth.js";
+import { cachedShop, lookupShop, mayRunUnconfirmed, noteUnconfirmed } from "./_shared/auth.js";
+import { verifyAccessToken } from "./_shared/jwt.js";
 import { checkRateLimit } from "./_shared/rateLimit.js";
 import { serverTimingHeaders } from "./_shared/timing.js";
 import { ProviderError } from "../../src/voice/deadline.js";
@@ -87,18 +88,46 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 500 });
   }
 
+  // KB-353 (D94): the token is verified HERE (no network). Which shop the caller belongs to is remembered per user; on a miss the
+  // question is asked while the audio is read and Groq runs, and the shop's rate-limit counter is only touched AFTER the caller is a
+  // confirmed member - otherwise any signed-in account could burn another shop's quota.
   const authStart = performance.now();
-  const authed = await resolveAuthedRequest(req, supabaseUrl, supabaseAnonKey);
+  const authHeader = req.headers.get("authorization");
+  const caller = await verifyAccessToken(authHeader, supabaseUrl);
   const authMs = performance.now() - authStart;
-  if (!authed) {
+  if (!caller || !authHeader) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const limitStart = performance.now();
-  const allowed = await checkRateLimit(authed.shopId);
-  const limitMs = performance.now() - limitStart;
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
+  let shopId = cachedShop(caller.userId);
+  const memberStart = performance.now();
+  const memberPromise = shopId === null ? lookupShop(authHeader, supabaseUrl, supabaseAnonKey, caller.userId) : null;
+  let memberMs = 0;
+  let limitMs = 0;
+  let confirmation: Promise<Response | null> | null = null;
+  /** null = a confirmed member within the shop's quota; otherwise the response to send. Runs once. */
+  const confirm = (): Promise<Response | null> =>
+    (confirmation ??= (async () => {
+      if (memberPromise) {
+        const found = await memberPromise;
+        memberMs = performance.now() - memberStart;
+        if (!found) {
+          noteUnconfirmed(caller.userId);
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        }
+        shopId = found;
+      }
+      const limitStart = performance.now();
+      const allowed = await checkRateLimit(shopId!);
+      limitMs = performance.now() - limitStart;
+      return allowed ? null : new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
+    })());
+  /** A rejection is only shown to a confirmed member: anyone else gets the 401 / 429, never a hint about the request. */
+  const reject = async (res: Response): Promise<Response> => (await confirm()) ?? res;
+
+  if (shopId !== null) {
+    const denied = await confirm();
+    if (denied) return denied;
   }
 
   let form: FormData;
@@ -106,36 +135,36 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   try {
     form = await req.formData();
   } catch {
-    return new Response(JSON.stringify({ error: "Malformed multipart body" }), { status: 400 });
+    return reject(new Response(JSON.stringify({ error: "Malformed multipart body" }), { status: 400 }));
   }
 
   const formMs = performance.now() - formStart;
   const audio = form.get("audio");
   const metaRaw = form.get("meta");
   if (typeof metaRaw !== "string") {
-    return badRequest("Expected multipart fields 'audio' (binary) and 'meta' (JSON)");
+    return reject(badRequest("Expected multipart fields 'audio' (binary) and 'meta' (JSON)"));
   }
 
   let meta: VoiceRequestMeta;
   try {
     meta = JSON.parse(metaRaw) as VoiceRequestMeta;
   } catch {
-    return new Response(JSON.stringify({ error: "'meta' field is not valid JSON" }), { status: 400 });
+    return reject(new Response(JSON.stringify({ error: "'meta' field is not valid JSON" }), { status: 400 }));
   }
 
   // KB-302 (Q1): a request is EITHER audio (transcribe, optionally parse) OR
   // a transcript (parse only). The slice is validated before any provider is
   // called, so a bad request never costs a Groq or Gemini call.
   const textOnly = meta.transcript !== undefined;
-  if (textOnly && audio !== null) return badRequest("Send either 'audio' or 'meta.transcript', not both");
+  if (textOnly && audio !== null) return reject(badRequest("Send either 'audio' or 'meta.transcript', not both"));
   if (!textOnly && !(audio instanceof Blob)) {
-    return badRequest("Expected multipart fields 'audio' (binary) and 'meta' (JSON)");
+    return reject(badRequest("Expected multipart fields 'audio' (binary) and 'meta' (JSON)"));
   }
   let slice: SliceEntry[] | null = null;
   if (textOnly || meta.parse) {
-    if (meta.catalogSlice === undefined) return badRequest("'parse' requires 'catalogSlice' in meta");
+    if (meta.catalogSlice === undefined) return reject(badRequest("'parse' requires 'catalogSlice' in meta"));
     slice = sanitizeSlice(meta.catalogSlice);
-    if (!slice) return badRequest(`'catalogSlice' must be at most ${SLICE_MAX_ENTRIES} entries with valid, short fields`);
+    if (!slice) return reject(badRequest(`'catalogSlice' must be at most ${SLICE_MAX_ENTRIES} entries with valid, short fields`));
   }
 
   // KB-317 diagnosis: under `netlify dev` only, log each provider attempt
@@ -149,6 +178,8 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   const catalogSlice = (slice ?? []) as CatalogEntry[];
 
   if (textOnly) {
+    const denied = await confirm(); // Gemini never runs for an unconfirmed caller
+    if (denied) return denied;
     const transcript = typeof meta.transcript === "string" ? meta.transcript.trim() : "";
     if (!transcript || transcript.length > TRANSCRIPT_MAX_CHARS) {
       return badRequest(`'transcript' must be 1-${TRANSCRIPT_MAX_CHARS} characters`);
@@ -158,7 +189,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       const parsed = await gemini.parse(transcript, { catalogSlice });
       return new Response(
         JSON.stringify({ transcript, items: parsed.items, usage: parsed.usage, latencyMs: performance.now() - start }),
-        { status: 200, headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs }, enteredAt, performance.now(), process.env) },
+        { status: 200, headers: serverTimingHeaders({ auth: authMs, member: memberMs, limit: limitMs, form: formMs }, enteredAt, performance.now(), process.env) },
       );
     } catch (err) {
       return providerFailure("Parse", err, start, transcript);
@@ -169,12 +200,28 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   const start = performance.now();
   const groq = createGroqTranscriptionProvider(groqApiKey);
 
+  const transcribe = () => groq.transcribe(audioBlob, { language: meta.language, vocabulary: meta.vocabulary });
+  // On a miss Groq starts now, while membership is still being asked (at most a few times a minute per user who turns out to be
+  // no member). It cannot reject: a failure is held until the caller is confirmed, then reported as usual.
+  const early =
+    shopId === null && mayRunUnconfirmed(caller.userId)
+      ? transcribe().then(
+          (value) => ({ value }),
+          (error: unknown) => ({ error }),
+        )
+      : null;
+  const denied = await confirm();
+  if (denied) return denied; // a non-member or an over-quota shop: the transcript is dropped
+
   let transcribeResult;
   try {
-    transcribeResult = await groq.transcribe(audioBlob, {
-      language: meta.language,
-      vocabulary: meta.vocabulary,
-    });
+    if (early) {
+      const settled = await early;
+      if ("error" in settled) throw settled.error;
+      transcribeResult = settled.value;
+    } else {
+      transcribeResult = await transcribe();
+    }
     if (dev) console.info(`[voice-dev] groq: ok in ${Math.round(transcribeResult.latencyMs)} ms (one attempt, no retry, 8 s deadline)`);
   } catch (err) {
     if (dev) console.info(`[voice-dev] groq: failed after ${Math.round(performance.now() - start)} ms - ${(err as Error).message.slice(0, 120)}`);
@@ -185,7 +232,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const latencyMs = performance.now() - start;
     return new Response(JSON.stringify({ transcript: transcribeResult.text, latencyMs }), {
       status: 200,
-      headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region),
+      headers: serverTimingHeaders({ auth: authMs, member: memberMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region),
     });
   }
 
@@ -204,7 +251,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       usage: parseResult.usage,
       latencyMs,
     }),
-    { status: 200, headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region) },
+    { status: 200, headers: serverTimingHeaders({ auth: authMs, member: memberMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region) },
   );
 };
 

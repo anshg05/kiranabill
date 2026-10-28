@@ -45,12 +45,12 @@ export interface VoiceCallTiming {
   bodyMs: number;
   status: number;
   /** The function's own parts (Server-Timing): auth, limit, form, groq, total - only those it sent. */
-  server: Partial<Record<"auth" | "limit" | "form" | "groq" | "total", number>>;
+  server: Partial<Record<"auth" | "member" | "limit" | "form" | "groq" | "total", number>>;
   region: string | null;
   groqRegion: string | null;
 }
 
-const SERVER_PARTS = new Set(["auth", "limit", "form", "groq", "total"]);
+const SERVER_PARTS = new Set(["auth", "member", "limit", "form", "groq", "total"]);
 
 /** Reads a Server-Timing header: "auth;dur=213, total;dur=700". Anything that is not a plain, non-negative number is not a part. */
 export function parseServerTiming(header: string | null): VoiceCallTiming["server"] {
@@ -167,4 +167,25 @@ export async function parseTranscript(transcript: string, opts: ParseTranscriptO
   const body = (await postForm(form, opts, PARSE_TIMEOUT_MS)) as { items?: unknown } | null;
   if (!Array.isArray(body?.items)) throw new VoiceApiError("server", "No items in the parse response");
   return body.items as ParsedItem[];
+}
+
+// KB-353: a tap on the mic wakes /voice (a cold function container, its connection) BEFORE the audio is ready. The request is a
+// bare GET: no token, no body - the function answers 405 before it signs anyone in, so nothing is charged and no provider runs.
+export const WARM_GAP_MS = 20_000;
+let lastWarmAt = -Infinity;
+
+export function resetWarmVoice(): void {
+  lastWarmAt = -Infinity;
+}
+
+export function warmVoice(opts: { endpoint?: string; fetchImpl?: typeof fetch; now?: () => number; online?: () => boolean } = {}): void {
+  const now = (opts.now ?? (() => performance.now()))();
+  const online = opts.online ? opts.online() : typeof navigator === "undefined" || navigator.onLine !== false;
+  if (!online || now - lastWarmAt < WARM_GAP_MS) return;
+  lastWarmAt = now;
+  try {
+    void (opts.fetchImpl ?? fetch)(opts.endpoint ?? "/voice", { method: "GET" }).catch(() => {});
+  } catch {
+    // a warm-up that cannot start is not an error
+  }
 }

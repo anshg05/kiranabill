@@ -12,7 +12,7 @@ import { recordingVocabulary } from "@/domain/vocabulary";
 import { learnedNoteFor, type LearnedMap } from "@/domain/aliasEvidence";
 import { removeLearnedAlias } from "@/data/aliasEvidence";
 import { useShopCatalog } from "./useShopCatalog";
-import { parseTranscript } from "@/data/voiceApi";
+import { parseTranscript, warmVoice } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { usePersistentStorage } from "./usePersistentStorage";
@@ -168,6 +168,7 @@ export function BillingScreen() {
     onCommand: (command) => runBillCommand(command, rows, bill.remove),
     onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
     onVoiceTiming: (t) => void (localDb && recordVoiceTiming(localDb, t)),
+    onMicStart: () => warmVoice(), // KB-353: wake /voice while the person starts speaking
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, start a sync (D38's loop would anyway). Neither is

@@ -512,3 +512,14 @@ First figures from the Pilot numbers panel. **Anything over budget is a listed i
 | Bill number from the server (300 ms) | **155 ms / 269 ms** | within the line |
 | App cold start (2 s) | **529 ms median**, mic enabled at ~836 ms | **FIXED** |
 | Stop → transcript (1.5 s) | **2.4 s - OVER**: server 1.2 s (sign-in check 786 ms, rate limit 39 ms, Groq 324 ms) + network 1.3 s; `/voice` us-east-2, Groq msp, audio 78 KB median | `KB-353` |
+
+### `KB-353` - what the real recordings say about a smaller upload (28 Oct 2026, 54 recordings, Groq, deterministic)
+
+| Opus rate (mono) | Bytes vs the originals | Transcripts that differ | Correct recordings now missing |
+|---|---|---|---|
+| originals (~131 kbps) | 2,446,440 | - | - |
+| 48 kbps | 942,597 (2.6x smaller) | 13 of 54 | 4 |
+| 32 kbps | 648,928 (3.8x smaller) | 16 of 54 | 7 |
+| 24 kbps | 505,096 (4.8x smaller) | 19 of 54 | 9 (1 better) |
+
+The rule "keep a higher bitrate if any recording gets worse" -> **no change to the recorder.** Re-encoding a lossy file is harsher than recording at that rate; only a phone test could settle it. Region: Netlify function region needs the Pro plan; Singapore exists, Mumbai does not (D94 section 6).

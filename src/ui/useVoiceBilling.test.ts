@@ -51,6 +51,20 @@ async function speak(result: { current: ReturnType<typeof useVoiceBilling> }) {
   await waitFor(() => expect(["done", "failed"]).toContain(result.current.view.phase));
 }
 
+describe("KB-353: the mic tap wakes /voice", () => {
+  it("onMicStart runs when a recording STARTS - not on the tap that stops it", async () => {
+    reply(200, { transcript: "do kilo chini" });
+    const onMicStart = vi.fn();
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscript: vi.fn(async () => {}), onMicStart }));
+    await act(async () => result.current.onMicTap());
+    await waitFor(() => expect(result.current.view.phase).toBe("listening"));
+    expect(onMicStart).toHaveBeenCalledTimes(1);
+    await act(async () => result.current.onMicTap());
+    await waitFor(() => expect(["done", "failed"]).toContain(result.current.view.phase));
+    expect(onMicStart).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("KB-339 (D86): spoken commands, before parsing", () => {
   const hooks = () => ({ onTranscript: vi.fn(async () => {}), onTurn: vi.fn(), onTranscribed: vi.fn(), onCommand: vi.fn((): string | null => null) });
   const open = (h: ReturnType<typeof hooks>) => renderHook(() => useVoiceBilling({ accessToken: "jwt", ...h }));

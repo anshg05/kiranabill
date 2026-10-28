@@ -1,12 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const resolveAuthedRequestMock = vi.fn();
+const verifyMock = vi.fn();
+const cachedShopMock = vi.fn();
+const lookupShopMock = vi.fn();
+const mayRunUnconfirmedMock = vi.fn();
+const noteUnconfirmedMock = vi.fn();
 const checkRateLimitMock = vi.fn();
 const transcribeMock = vi.fn();
 const parseMock = vi.fn();
 
+vi.mock("./jwt.js", () => ({ verifyAccessToken: verifyMock }));
 vi.mock("./auth.js", () => ({
-  resolveAuthedRequest: resolveAuthedRequestMock,
+  cachedShop: cachedShopMock,
+  lookupShop: lookupShopMock,
+  mayRunUnconfirmed: mayRunUnconfirmedMock,
+  noteUnconfirmed: noteUnconfirmedMock,
 }));
 vi.mock("./rateLimit.js", () => ({
   checkRateLimit: checkRateLimitMock,
@@ -40,11 +48,10 @@ describe("netlify/functions/voice.mts", () => {
     vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
     vi.stubEnv("GROQ_API_KEY", "groq-key");
     vi.stubEnv("GEMINI_API_KEY", "gemini-key");
-    resolveAuthedRequestMock.mockResolvedValue({
-      userId: "user-1",
-      shopId: "shop-1",
-      client: {},
-    });
+    verifyMock.mockResolvedValue({ userId: "user-1" });
+    cachedShopMock.mockReturnValue("shop-1"); // the ordinary case: a confirmed shop is remembered
+    lookupShopMock.mockResolvedValue("shop-1");
+    mayRunUnconfirmedMock.mockReturnValue(true);
     checkRateLimitMock.mockResolvedValue(true);
   });
 
@@ -59,9 +66,10 @@ describe("netlify/functions/voice.mts", () => {
   });
 
   it("rejects an unauthenticated request with 401 before touching rate limiting or providers", async () => {
-    resolveAuthedRequestMock.mockResolvedValue(null);
+    verifyMock.mockResolvedValue(null);
     const res = await handler(makeRequest({ audio: new Blob(["x"]), meta: "{}" }), {} as never);
     expect(res.status).toBe(401);
+    expect(lookupShopMock).not.toHaveBeenCalled();
     expect(checkRateLimitMock).not.toHaveBeenCalled();
     expect(transcribeMock).not.toHaveBeenCalled();
   });

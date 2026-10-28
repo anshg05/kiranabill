@@ -68,7 +68,7 @@ describe("KB-352 - where stop → transcript goes", () => {
     expect(row(panel, "Recorder stop → audio ready")).toContain("median 40 ms");
     expect(row(panel, "…inside it, the server in all")).toContain("median 700 ms");
     expect(row(panel, "…of which Groq")).toContain("median 400 ms");
-    expect(row(panel, "…of which the sign-in check")).toContain("median 201 ms");
+    expect(row(panel, "…of which checking the token")).toContain("median 201 ms");
     expect(row(panel, "…the rest is the network (request − server)")).toContain("median 2.3 s"); // 3040 - 700
     expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("us-east-2 · Groq: us-east-1");
     expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("audio 24 KB median (audio/webm;codecs=opus)");

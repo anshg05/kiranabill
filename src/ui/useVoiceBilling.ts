@@ -114,6 +114,8 @@ export interface UseVoiceBillingOptions {
   onTranscribed?: (stopToTranscriptMs: number) => void;
   /** KB-352: the split of one successful turn (recorder stop, the request, the server's own parts, both regions) - for the Pilot numbers panel. */
   onVoiceTiming?: (timing: VoiceTimingRow) => void;
+  /** KB-353: a recording is about to start (the screen wakes /voice). */
+  onMicStart?: () => void;
   /** Set while voice can't run yet for a non-network reason (the shop's
    * catalog still loading) - shown as the disabled reason. */
   notReadyReason?: string | null;
@@ -265,6 +267,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
         setNotice(null);
         setTranscript(null);
         setPhase("requesting");
+        opts.onMicStart?.();
         await capture.start();
       }
     })();

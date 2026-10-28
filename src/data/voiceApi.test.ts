@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
-import { PARSE_TIMEOUT_MS, parseServerTiming, parseTranscript, TRANSCRIBE_TIMEOUT_MS, transcribeAudio, VoiceApiError, type VoiceCallTiming } from "./voiceApi";
+import { PARSE_TIMEOUT_MS, parseServerTiming, resetWarmVoice, warmVoice, parseTranscript, TRANSCRIBE_TIMEOUT_MS, transcribeAudio, VoiceApiError, type VoiceCallTiming } from "./voiceApi";
 
 function respond(status: number, body: unknown): typeof fetch {
   return vi.fn().mockResolvedValue(
@@ -148,6 +148,10 @@ describe("KB-319: client timeouts", () => {
 // KB-352 (owner, 28 Oct 2026): the split of stop -> transcript - what the PHONE saw of one /voice call: the audio, the time until the first
 // byte of the answer (the upload + the server + the way back), reading the answer, and the server's own Server-Timing and regions.
 describe("KB-352: what one /voice call cost, as the phone saw it", () => {
+  it("KB-353: parseServerTiming also reads the membership wait", () => {
+    expect(parseServerTiming("auth;dur=2, member;dur=640, total;dur=900")).toEqual({ auth: 2, member: 640, total: 900 });
+  });
+
   it("parseServerTiming reads the standard header; junk and missing parts give nothing, never NaN", () => {
     expect(parseServerTiming("auth;dur=213, limit;dur=4, form;dur=10, groq;dur=431, total;dur=700")).toEqual({ auth: 213, limit: 4, form: 10, groq: 431, total: 700 });
     expect(parseServerTiming(null)).toEqual({});
@@ -176,5 +180,50 @@ describe("KB-352: what one /voice call cost, as the phone saw it", () => {
     const failed: VoiceCallTiming[] = [];
     await errorOf(transcribeAudio(audio, { accessToken: "jwt", fetchImpl: respond(502, { error: "x" }), onTiming: (t) => failed.push(t) }));
     expect(failed).toEqual([]);
+  });
+});
+
+// KB-353 (owner, 28 Oct 2026): a tap on the mic wakes /voice and its connection BEFORE the audio is ready. The warm-up carries
+// no token and no body - nothing to sign in, nothing to charge, no provider to call.
+describe("warmVoice", () => {
+  const fresh = () => {
+    resetWarmVoice();
+    return vi.fn().mockResolvedValue(new Response("", { status: 405 })) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
+  };
+
+  it("one bare GET to /voice: no Authorization header, no body, no credentials", () => {
+    const f = fresh();
+    warmVoice({ fetchImpl: f });
+    expect(f).toHaveBeenCalledTimes(1);
+    const [url, init] = (f as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(url).toBe("/voice");
+    expect(init.method).toBe("GET");
+    expect(init.headers).toBeUndefined();
+    expect(init.body).toBeUndefined();
+  });
+
+  it("at most once every 20 s (a second tap inside the window sends nothing), then again", () => {
+    const f = fresh();
+    let t = 1000;
+    warmVoice({ fetchImpl: f, now: () => t });
+    t += 19_999;
+    warmVoice({ fetchImpl: f, now: () => t });
+    expect(f).toHaveBeenCalledTimes(1);
+    t += 2;
+    warmVoice({ fetchImpl: f, now: () => t });
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  it("offline: nothing is sent", () => {
+    const f = fresh();
+    warmVoice({ fetchImpl: f, online: () => false });
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("a failing warm-up is swallowed - it never reaches the user", async () => {
+    resetWarmVoice();
+    const f = vi.fn().mockRejectedValue(new Error("down")) as unknown as typeof fetch;
+    expect(() => warmVoice({ fetchImpl: f })).not.toThrow();
+    await new Promise((r) => setTimeout(r, 0));
   });
 });
