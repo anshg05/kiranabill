@@ -67,6 +67,13 @@ describe("groqTranscriptionProvider", () => {
     expect(file.name).toBe("audio.webm");
   });
 
+  it("KB-352: the provider's own region header is passed up (for the Pilot numbers panel); without one it is null", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, headers: new Headers({ "x-groq-region": "us-east-1" }), json: async () => ({ text: "chawal" }) }));
+    expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).region).toBe("us-east-1");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, headers: new Headers(), json: async () => ({ text: "chawal" }) }));
+    expect((await createGroqTranscriptionProvider("k").transcribe(new Blob(["a"]), {})).region).toBeNull();
+  });
+
   it("sends the auth header, model, language and audio file", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

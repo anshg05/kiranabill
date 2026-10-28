@@ -33,7 +33,15 @@ export function useShopCatalog(db: KiranaBillDB | null, shopId: string | undefin
     let active = true;
     void loadShopCatalog(db, shopId)
       .then((c) => {
-        if (active) setCatalog((old) => (old && JSON.stringify(old) === JSON.stringify(c) ? old : c));
+        // KB-352: nothing changed -> the same object; only usage counts moved (every bill does that) -> a new catalog but the SAME `entries`,
+        // so the parser built from them is not rebuilt.
+        if (active) {
+          setCatalog((old) => {
+            if (!old) return c;
+            if (JSON.stringify(old.entries) !== JSON.stringify(c.entries)) return c;
+            return JSON.stringify(old) === JSON.stringify(c) ? old : { ...c, entries: old.entries };
+          });
+        }
       })
       .catch((err: unknown) => console.warn("[catalog] load failed:", err instanceof Error ? err.message : err));
     return () => {

@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
-import { PARSE_TIMEOUT_MS, parseTranscript, TRANSCRIBE_TIMEOUT_MS, transcribeAudio, VoiceApiError } from "./voiceApi";
+import { PARSE_TIMEOUT_MS, parseServerTiming, parseTranscript, TRANSCRIBE_TIMEOUT_MS, transcribeAudio, VoiceApiError, type VoiceCallTiming } from "./voiceApi";
 
 function respond(status: number, body: unknown): typeof fetch {
   return vi.fn().mockResolvedValue(
@@ -142,5 +142,39 @@ describe("KB-319: client timeouts", () => {
     const result = parseTranscript("x", { accessToken: "jwt", catalogSlice: [], fetchImpl });
     await vi.advanceTimersByTimeAsync(3_500);
     expect(await result).toEqual([]);
+  });
+});
+
+// KB-352 (owner, 28 Oct 2026): the split of stop -> transcript - what the PHONE saw of one /voice call: the audio, the time until the first
+// byte of the answer (the upload + the server + the way back), reading the answer, and the server's own Server-Timing and regions.
+describe("KB-352: what one /voice call cost, as the phone saw it", () => {
+  it("parseServerTiming reads the standard header; junk and missing parts give nothing, never NaN", () => {
+    expect(parseServerTiming("auth;dur=213, limit;dur=4, form;dur=10, groq;dur=431, total;dur=700")).toEqual({ auth: 213, limit: 4, form: 10, groq: 431, total: 700 });
+    expect(parseServerTiming(null)).toEqual({});
+    expect(parseServerTiming("garbage, auth;dur=abc, total;dur=-5, cache;desc=hit, form;dur=7.6")).toEqual({ form: 8 });
+  });
+
+  it("onTiming gets the audio size and type, the request and body times, the server parts and both regions", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ transcript: "do kilo chini" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", "Server-Timing": "auth;dur=200, limit;dur=5, form;dur=9, groq;dur=400, total;dur=640", "X-Kb-Region": "us-east-2", "X-Kb-Groq-Region": "us-east-1" },
+      }),
+    ) as unknown as typeof fetch;
+    const got: VoiceCallTiming[] = [];
+    await transcribeAudio(new Blob(["x".repeat(2048)], { type: "audio/webm;codecs=opus" }), { accessToken: "jwt", fetchImpl, onTiming: (t) => got.push(t) });
+    expect(got).toHaveLength(1);
+    expect(got[0]).toMatchObject({ audioBytes: 2048, audioType: "audio/webm;codecs=opus", status: 200, server: { auth: 200, groq: 400, total: 640 }, region: "us-east-2", groqRegion: "us-east-1" });
+    for (const v of [got[0]!.requestMs, got[0]!.bodyMs]) expect(Number.isFinite(v) && v >= 0).toBe(true);
+  });
+
+  it("a server that sends no timing (an older deploy) still gives the phone's own numbers; a failed call reports nothing", async () => {
+    const got: VoiceCallTiming[] = [];
+    await transcribeAudio(audio, { accessToken: "jwt", fetchImpl: respond(200, { transcript: "x" }), onTiming: (t) => got.push(t) });
+    expect(got[0]!.server).toEqual({});
+    expect(got[0]!.region).toBeNull();
+    const failed: VoiceCallTiming[] = [];
+    await errorOf(transcribeAudio(audio, { accessToken: "jwt", fetchImpl: respond(502, { error: "x" }), onTiming: (t) => failed.push(t) }));
+    expect(failed).toEqual([]);
   });
 });

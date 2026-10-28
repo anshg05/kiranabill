@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { transcribeAudio, VoiceApiError } from "@/data/voiceApi";
+import { transcribeAudio, VoiceApiError, type VoiceCallTiming } from "@/data/voiceApi";
+import type { VoiceTimingRow } from "@/data/voiceTimings";
 import { matchCommand, type BillCommand } from "@/domain/commands";
 import { useVoiceCapture } from "./useVoiceCapture";
 import { useBrowserOnline } from "./useBrowserOnline";
@@ -111,6 +112,8 @@ export interface UseVoiceBillingOptions {
   onCommand?: (command: BillCommand) => string | null;
   /** KB-404: stop -> transcript in whole ms, just before the transcript is handed on (not for an empty transcript). */
   onTranscribed?: (stopToTranscriptMs: number) => void;
+  /** KB-352: the split of one successful turn (recorder stop, the request, the server's own parts, both regions) - for the Pilot numbers panel. */
+  onVoiceTiming?: (timing: VoiceTimingRow) => void;
   /** Set while voice can't run yet for a non-network reason (the shop's
    * catalog still loading) - shown as the disabled reason. */
   notReadyReason?: string | null;
@@ -157,6 +160,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
       if (capture.phase === "listening") {
         const stoppedAt = performance.now();
         const audio = await capture.stop();
+        const stopToBlobMs = performance.now() - stoppedAt;
         if (!audio) {
           setPhase("failed");
           setMessage("Didn't catch anything — try again");
@@ -166,6 +170,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
         setNotice(null);
         const language = devLanguage();
         let text: string;
+        let call: VoiceCallTiming | null = null;
         try {
           text = (
             await transcribeAudio(audio, {
@@ -173,6 +178,7 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
               language,
               vocabulary: opts.vocabulary,
               endpoint: opts.endpoint,
+              onTiming: (t) => void (call = t),
             })
           ).trim();
         } catch (err) {
@@ -194,6 +200,10 @@ export function useVoiceBilling(opts: UseVoiceBillingOptions): VoiceBilling {
           pointerDownToTapMs: pointerDownToTapRef.current === null ? null : Math.round(pointerDownToTapRef.current),
           stopToTranscriptMs: Math.round(performance.now() - stoppedAt),
         };
+        if (call) {
+          const c: VoiceCallTiming = call;
+          opts.onVoiceTiming?.({ at: new Date().toISOString(), audioBytes: c.audioBytes, audioType: c.audioType, stopToBlobMs, requestMs: c.requestMs, bodyMs: c.bodyMs, totalMs: timings.stopToTranscriptMs, server: c.server, region: c.region, groqRegion: c.groqRegion });
+        }
         if (import.meta.env.DEV) {
           console.info("[voice]", { lang: language ?? "auto", ...timings, transcript: text });
         }

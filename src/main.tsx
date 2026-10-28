@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { App } from "@/app/App";
 import { startServiceWorker } from "@/pwa/register";
 import "./index.css";
+import { markCold } from "@/ui/coldMarks";
+
+// KB-352: every import above has been parsed and run - the bundle is ready (cold-start milestone "js").
+markCold("js");
 
 const root = createRoot(document.getElementById("root")!);
 // DEV ONLY (KB-305, NI-28): the type-ahead bench for a real phone. A build-time

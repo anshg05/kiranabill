@@ -155,20 +155,6 @@ export async function learnFromSavedBill(localDb: KiranaBillDB, billLocalId: str
 
 /** Recovery on start (and after every save): learns each FINAL bill of this
  * shop that has no marker yet. Returns how many were learned. */
-/**
- * What runs when a bill is saved (the billing screen): learn from it, THEN reload the parser's catalog - so an alias this
- * bill just promoted is read from the very next utterance on. The reload runs whether or not the learning worked (the
- * bill is saved either way; a failed learning is retried on the next start).
- */
-export async function learnThenReload(localDb: KiranaBillDB, shopId: string, reload: () => void | Promise<void>): Promise<void> {
-  try {
-    await learnPendingBills(localDb, shopId);
-  } catch (err) {
-    console.warn("[learning] failed (the bill is saved; retried on next start):", err);
-  }
-  await reload();
-}
-
 export async function learnPendingBills(localDb: KiranaBillDB, shopId: string, nowMs: number = Date.now()): Promise<number> {
   // KB-326 (D66): not before this phone's first learning pull. A fresh row (hit count 1) would be pushed over the
   // server's (5). The bills wait, unlearned (no marker), and the sync cycle learns them right after the pull.

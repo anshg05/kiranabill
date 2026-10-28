@@ -492,14 +492,14 @@ Shop details, receipt language, developer mode.
 | History — **"Search older bills"** (all 40,000) | **≤ 6 s** on the phone, with "Loading older bills…" shown meanwhile. Phone 4,540 / 3,825 ms; laptop 1,072 / 1,031 ms |
 | History — **keystroke → results** | **≤ 50 ms** (D51). Over 9,000: phone median 4.8 · p95 6.9 · max 14.7 ms (laptop 0.8 / 1.3 / 2.8). Over 40,000: phone median 14.1 · p95 16.4 · max 17.3 ms (laptop 5.0 / 6.2 / 7.0) |
 
-### Real-phone figures - the two-phone re-test (owner, 22 Oct 2026)
+### Real-phone figures - the two-phone re-test on `draft-v3` (owner, 28 Oct 2026, real phone, real cloud DB)
 
-Recorded from the **Pilot numbers** panel (Settings, Developer mode) on the re-test; **anything over budget becomes a listed item here with its likely cause.** *Not yet measured: to be filled from the owner's phones on the re-test. Nothing below is a phone figure - the notes are the localhost / estimate figures that exist today.*
+First figures from the Pilot numbers panel. **Anything over budget is a listed item with its likely cause** (the causes are READ FROM THE CODE and the Netlify settings, NOT yet measured on the phone - `draft-v4` has the split).
 
-| Budget | Phone median / p95 | Verdict / cause if over |
+| Budget | Phone median / p95 | Verdict / likely cause |
 |---|---|---|
-| Stop → transcript | _re-test_ (localhost 4.2 s is dev-server inflated, 18 Oct) | |
-| Fast-path item on screen | _re-test_ | |
-| Finalise → receipt (with `number_ms`) | _re-test_ (estimate: warm round trip 100-250 ms) | |
-| Bill number from the server | _re-test_ (from a wired PC: ~70 ms warm, 0.3-0.9 s cold) | |
-| App cold start | _re-test_ (localhost p95 27 s is dev-server first loads) | |
+| Stop → transcript (budget 1.5 s) | **3.1 s / 7.5 s - OVER** | `/voice` runs in **us-east-2 (Ohio)**; each call is India → Ohio, then Ohio → Mumbai for the sign-in check (a fresh connection per call), then Groq; the upload and a cold function add to the tail. `draft-v4` splits it: audio size, recorder, request, the server's sign-in / rate-limit / upload / Groq, the network left. |
+| Fast-path item on screen (300 ms) | not reported | re-measure on `draft-v4` |
+| Finalise → receipt, voice bills (500 ms) | **19.3 s / 44.8 s - OVER (blocker)** | not reproduced on a PC (~250 ms). Learning, the catalog reload, the sync and the receipt's PNG / PDF started with the receipt; moved after the paint in `KB-352`. The phase timings in `draft-v4` say where it really goes. |
+| Bill number from the server (300 ms) | **173 ms median** (p95 showed `NaN`: fixed in `KB-352`) | within the line; the cap is 1.5 s. |
+| App cold start (2 s) | **3.4 s / 28 s - OVER** | `getSession()` refreshes an expired token over the network with no deadline - the app waited on "Loading…". `KB-352`: 1.5 s, then offline mode, online again when the answer arrives. `draft-v4` adds the milestones. |

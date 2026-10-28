@@ -92,3 +92,18 @@ describe("useShopCatalog", () => {
     expect(priceOf(result)).toBe(4500);
   });
 });
+
+describe("useShopCatalog - the parser is rebuilt only when the products changed (KB-352)", () => {
+  it("a pull that only moved usage counts (every bill does) keeps the very same `entries` array - the 481-product parser is not rebuilt for it", async () => {
+    const db = open();
+    await seedChini(db, 4500);
+    const { result } = renderHook(() => useShopCatalog(db, SHOP));
+    await waitFor(() => expect(priceOf(result)).toBe(4500));
+    const first = result.current.catalog!;
+    await db.shopProducts.update("p-chini", { useCount: 9 });
+    await act(async () => noteCatalogPulled(db.name));
+    await waitFor(() => expect(result.current.catalog!.usageById["p-chini"]?.useCount).toBe(9));
+    expect(result.current.catalog).not.toBe(first); // the usage moved - the vocabulary and the Catalog order read it
+    expect(result.current.catalog!.entries).toBe(first.entries); // ...but the entries (what the parser is built from) are the same object
+  });
+});

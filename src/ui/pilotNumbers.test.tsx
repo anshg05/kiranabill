@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { KiranaBillDB, type LocalBillMetrics } from "@/data/db";
 import { recordColdStart } from "@/data/billMetrics";
+import { recordPhases } from "@/data/phaseTimings";
+import { recordVoiceTiming } from "@/data/voiceTimings";
 import { isReviewCaptureOn } from "@/data/reviewCapture";
 import { PilotNumbers } from "./PilotNumbers";
 
@@ -47,6 +49,91 @@ const open = (reconcile?: () => Promise<{ checked: number; problems: { receiptNu
   });
 };
 const line = (panel: HTMLElement, label: string) => within(panel).getByText(label).closest("li") as HTMLElement;
+
+describe("KB-352 - where stop → transcript goes", () => {
+  const row = (panel: HTMLElement, label: string) => line(panel, label).textContent!;
+  it("no turns yet: every line says 'no samples yet'", async () => {
+    const panel = await open();
+    expect(row(panel, "Whole: stop → transcript")).toContain("no samples yet");
+    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("no samples yet");
+  });
+
+  it("the whole wait is split into the recorder, the request, the server's own parts and the network that is left; regions and audio size are named", async () => {
+    for (const [i, total] of [2100, 3100, 7500].entries()) {
+      await recordVoiceTiming(db, { at: `2026-10-28T10:0${i}:00.000Z`, audioBytes: 24_576, audioType: "audio/webm;codecs=opus", stopToBlobMs: 40, requestMs: total - 60, bodyMs: 3, totalMs: total, server: { auth: 200 + i, limit: 5, form: 9, groq: 400, total: 700 }, region: "us-east-2", groqRegion: "us-east-1" });
+    }
+    const panel = await open();
+    await waitFor(() => expect(row(panel, "Whole: stop → transcript")).toContain("median 3.1 s"));
+    expect(row(panel, "Whole: stop → transcript")).toContain("p95 7.5 s");
+    expect(row(panel, "Recorder stop → audio ready")).toContain("median 40 ms");
+    expect(row(panel, "…inside it, the server in all")).toContain("median 700 ms");
+    expect(row(panel, "…of which Groq")).toContain("median 400 ms");
+    expect(row(panel, "…of which the sign-in check")).toContain("median 201 ms");
+    expect(row(panel, "…the rest is the network (request − server)")).toContain("median 2.3 s"); // 3040 - 700
+    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("us-east-2 · Groq: us-east-1");
+    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("audio 24 KB median (audio/webm;codecs=opus)");
+    expect(panel.textContent).not.toContain("NaN");
+  });
+
+  it("an older server that sends no timing: the phone's own numbers show, the server lines say 'no samples yet', Groq 'not reported'", async () => {
+    await recordVoiceTiming(db, { at: "2026-10-28T10:00:00.000Z", requestMs: 1500, totalMs: 1600, server: {}, region: "us-east-2", groqRegion: null });
+    const panel = await open();
+    await waitFor(() => expect(row(panel, "Request: send → first byte of the answer")).toContain("median 1.5 s"));
+    expect(row(panel, "…of which Groq")).toContain("no samples yet");
+    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("Groq: not reported");
+  });
+});
+
+describe("KB-352 - where the app start goes", () => {
+  const row = (panel: HTMLElement, label: string) => line(panel, label).textContent!;
+  it("no starts yet: every step says 'no samples yet'", async () => {
+    const panel = await open();
+    expect(row(panel, "JS parsed and run")).toContain("no samples yet");
+    expect(row(panel, "Mic enabled")).toContain("no samples yet");
+    expect(row(panel, "Opened from the service worker")).toContain("no samples yet");
+  });
+
+  it("each step shows when it happened (median, p95) and how long it took after the step before it", async () => {
+    await recordColdStart(db, 3400, "2026-10-28T10:00:00.000Z", { html: 300, js: 900, auth: 3100, db: 3200, shop: 3250, catalog: 3300, mic: 3400, sw: 1 });
+    await recordColdStart(db, 2200, "2026-10-28T11:00:00.000Z", { html: 250, js: 800, auth: 1900, db: 2000, shop: 2050, catalog: 2100, mic: 2200, sw: 1 });
+    await recordColdStart(db, 30_000, "2026-10-28T12:00:00.000Z", { html: 400, js: 1000, auth: 27_000, db: 27_100, shop: 27_150, catalog: 27_200, mic: 27_300, sw: 0 });
+    const panel = await open();
+    await waitFor(() => expect(row(panel, "Sign-in check answered")).toContain("at median 3.1 s"));
+    expect(row(panel, "Sign-in check answered")).toContain("this step +2.2 s"); // 3100 - 900 and 1900 - 800 and 26000: the median step is 2.2 s
+    expect(row(panel, "Sign-in check answered")).toContain("p95 27 s");
+    expect(row(panel, "JS parsed and run")).toContain("at median 900 ms");
+    expect(row(panel, "Opened from the service worker")).toContain("2 of 3 starts");
+    expect(panel.textContent).not.toContain("NaN");
+  });
+});
+
+describe("KB-352 - where the time goes after Bill Banao", () => {
+  const row = (panel: HTMLElement, label: string) => line(panel, label).textContent!;
+  it("no bills yet: every phase says 'no samples yet' - nothing invented", async () => {
+    const panel = await open();
+    for (const label of ["Waiting for the bill number", "The one local write", "Reading the receipt back", "Receipt painted (after it was read)", "After the receipt: learning", "After the receipt: catalog reload", "After the receipt: sync"]) {
+      expect(row(panel, label)).toContain("no samples yet");
+    }
+  });
+
+  it("each phase shows its median and p95 over this phone's bills; the three after the receipt are named as such", async () => {
+    const data: Array<[number, number, number, number, number, number, number]> = [
+      [170, 10, 4, 60, 40, 30, 800],
+      [180, 12, 5, 70, 50, 35, 1200],
+      [160, 11, 4, 65, 45, 33, 40_000], // a slow sync, after the receipt
+    ];
+    for (const [i, d] of data.entries()) await recordPhases(db, `b${i}`, { number: d[0], write: d[1], read: d[2], paint: d[3], learning: d[4], reload: d[5], sync: d[6] });
+    const panel = await open();
+    await waitFor(() => expect(row(panel, "Waiting for the bill number")).toContain("median 170 ms"));
+    expect(row(panel, "Waiting for the bill number")).toContain("3 samples");
+    expect(row(panel, "The one local write")).toContain("median 11 ms");
+    expect(row(panel, "Receipt painted (after it was read)")).toContain("median 65 ms");
+    expect(row(panel, "After the receipt: learning")).toContain("median 45 ms");
+    expect(row(panel, "After the receipt: sync")).toContain("median 1.2 s");
+    expect(row(panel, "After the receipt: sync")).toContain("p95 40 s");
+    expect(panel.textContent).not.toContain("NaN");
+  });
+});
 
 describe("the release gate lines", () => {
   it("nothing yet: says so and invents no number", async () => {
@@ -149,6 +236,26 @@ describe("the four budgets", () => {
     expect(row("Bill number from the server (part of the line above)")).toContain("median 120 ms");
     expect(row("App cold start")).toContain("budget < 2 s");
     expect(row("App cold start")).toContain("2 samples");
+  });
+
+  it("KB-352: rows written before bill numbers were timed (no numberMs at all), or with a missing value, give 'no samples yet' - never NaN", async () => {
+    for (let i = 0; i < 3; i++) await bill({ numberMs: undefined as never });
+    await bill({ numberMs: Number.NaN as never });
+    const panel = await open();
+    const text = line(panel, "Bill number from the server (part of the line above)").textContent!;
+    expect(text).toContain("no samples yet");
+    expect(panel.textContent).not.toContain("NaN");
+  });
+
+  it("KB-352: one or two samples still show a real median and p95 - a number, never NaN", async () => {
+    await bill({ numberMs: 173 });
+    await bill({ numberMs: undefined as never });
+    const panel = await open();
+    const text = line(panel, "Bill number from the server (part of the line above)").textContent!;
+    expect(text).toContain("median 173 ms");
+    expect(text).toContain("p95 173 ms");
+    expect(text).toContain("1 sample");
+    expect(panel.textContent).not.toContain("NaN");
   });
 
   it("a budget with no samples says 'no samples yet' - never a made-up number", async () => {

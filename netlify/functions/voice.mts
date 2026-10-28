@@ -3,6 +3,7 @@ import { createGroqTranscriptionProvider } from "../../src/voice/groqTranscripti
 import { createGeminiParseProvider } from "../../src/voice/geminiParseProvider.js";
 import { resolveAuthedRequest } from "./_shared/auth.js";
 import { checkRateLimit } from "./_shared/rateLimit.js";
+import { serverTimingHeaders } from "./_shared/timing.js";
 import { ProviderError } from "../../src/voice/deadline.js";
 import type { CatalogEntry } from "../../src/domain/catalog.js";
 
@@ -77,6 +78,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
 
+  const enteredAt = performance.now(); // KB-352: where this function's own time goes (Server-Timing)
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const groqApiKey = process.env.GROQ_API_KEY;
@@ -85,23 +87,29 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 500 });
   }
 
+  const authStart = performance.now();
   const authed = await resolveAuthedRequest(req, supabaseUrl, supabaseAnonKey);
+  const authMs = performance.now() - authStart;
   if (!authed) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
+  const limitStart = performance.now();
   const allowed = await checkRateLimit(authed.shopId);
+  const limitMs = performance.now() - limitStart;
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429 });
   }
 
   let form: FormData;
+  const formStart = performance.now();
   try {
     form = await req.formData();
   } catch {
     return new Response(JSON.stringify({ error: "Malformed multipart body" }), { status: 400 });
   }
 
+  const formMs = performance.now() - formStart;
   const audio = form.get("audio");
   const metaRaw = form.get("meta");
   if (typeof metaRaw !== "string") {
@@ -150,7 +158,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       const parsed = await gemini.parse(transcript, { catalogSlice });
       return new Response(
         JSON.stringify({ transcript, items: parsed.items, usage: parsed.usage, latencyMs: performance.now() - start }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs }, enteredAt, performance.now(), process.env) },
       );
     } catch (err) {
       return providerFailure("Parse", err, start, transcript);
@@ -177,7 +185,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const latencyMs = performance.now() - start;
     return new Response(JSON.stringify({ transcript: transcribeResult.text, latencyMs }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region),
     });
   }
 
@@ -196,7 +204,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
       usage: parseResult.usage,
       latencyMs,
     }),
-    { status: 200, headers: { "Content-Type": "application/json" } },
+    { status: 200, headers: serverTimingHeaders({ auth: authMs, limit: limitMs, form: formMs, groq: transcribeResult.latencyMs }, enteredAt, performance.now(), process.env, transcribeResult.region) },
   );
 };
 

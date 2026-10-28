@@ -41,7 +41,11 @@ import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
 import { requestBillNumber, warmServer } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
-import { learnPendingBills, learnThenReload } from "@/data/learnBill";
+import { learnPendingBills } from "@/data/learnBill";
+import { recordPhases } from "@/data/phaseTimings";
+import { recordVoiceTiming } from "@/data/voiceTimings";
+import { runAfterSave } from "./afterSave";
+import { coldPhases, markCold } from "./coldMarks";
 import { AddItemSheet } from "./AddItemSheet";
 import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
@@ -113,7 +117,8 @@ export function BillingScreen() {
   // KB-311: reload() after a Catalog save - new lines use the new price; lines already on the bill keep their own.
   // KB-350: also reloaded by every sync pull that moved the catalog, shop settings or learning (another phone's change).
   const { catalog: shopCatalog, reload: reloadCatalog, pulls: catalogPulls } = useShopCatalog(localDb ?? null, shop?.id);
-  const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog]);
+  // KB-352: rebuilt only when the products themselves changed - a bill that only moves usage counts keeps the same `entries`.
+  const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog?.entries]);
   const vocabulary = useMemo(
     () => (shopCatalog ? recordingVocabulary(shopCatalog.entries, shopCatalog.usageById) : []),
     [shopCatalog],
@@ -162,6 +167,7 @@ export function BillingScreen() {
     // KB-339 (D86): a spoken command, decided before parsing - "hatao" removes the last line (Undo brings it back); the rest only hint.
     onCommand: (command) => runBillCommand(command, rows, bill.remove),
     onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
+    onVoiceTiming: (t) => void (localDb && recordVoiceTiming(localDb, t)),
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, start a sync (D38's loop would anyway). Neither is
@@ -174,14 +180,25 @@ export function BillingScreen() {
   const protectStorage = usePersistentStorage(deviceDb);
   // KB-401 (D67): a waiting app update waits while the draft or the catalog is still loading.
   useUpdateGate(bill.ready && parser !== null);
-  const onSaved = useCallback(() => {
-    protectStorage();
-    void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
-    if (!localDb || !shop || !deviceId) return;
-    // KB-323: an alias this bill just promoted reads from the next utterance on (learnThenReload reloads the catalog after learning).
-    void learnThenReload(localDb, shop.id, () => reloadCatalog())
-      .finally(() => void syncNow({ client: supabase, localDb, shopId: shop.id, deviceId, pull: "probe" }).catch((err: unknown) => console.warn("[finalise] sync failed:", err)));
-  }, [deviceId, discardDraft, localDb, protectStorage, shop]);
+  // KB-352 (owner, 28 Oct 2026): this runs a frame AFTER the receipt has painted (useFinalise starts it), never awaited by Bill Banao.
+  // Learning, then the catalog reload (an alias this bill promoted reads from the next utterance on), then the sync - one step at a time,
+  // each in an idle moment and each timed for the Pilot numbers panel. Only the two tiny local writes are immediate.
+  const onSaved = useCallback(
+    (_result: unknown, billLocalId: string) => {
+      protectStorage();
+      void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
+      if (!localDb || !shop || !deviceId) return;
+      return runAfterSave(
+        {
+          learn: () => learnPendingBills(localDb, shop.id),
+          reload: () => reloadCatalog(),
+          sync: () => syncNow({ client: supabase, localDb, shopId: shop.id, deviceId, pull: "probe" }),
+        },
+        (phases) => void recordPhases(localDb, billLocalId, phases),
+      );
+    },
+    [deviceId, discardDraft, localDb, protectStorage, shop],
+  );
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
     if (!localDb || !shop) return;
@@ -217,14 +234,24 @@ export function BillingScreen() {
     void finalise(draft);
   }, [draft, finalise, wiring]);
   // App cold start (budget < 2 s): once per page load - process start to the billing screen interactive with the mic enabled.
+  // KB-352: with the milestones on the way (the page, the JS, the sign-in check, the local database, the shop, the catalog, the mic).
+  useEffect(() => {
+    if (shop) markCold("shop");
+  }, [shop]);
+  const micReady = Boolean(accessToken) && parser !== null && bill.ready;
+  useEffect(() => {
+    if (parser && bill.ready) markCold("catalog");
+    if (micReady) markCold("mic");
+  }, [parser, bill.ready, micReady]);
   const coldStartDone = useRef(false);
   useEffect(() => {
-    if (!localDb || !parser || !bill.ready || coldStartDone.current) return;
+    // With a live session the start is complete when the mic is enabled; with none (offline) the mic never will be - the billing screen is.
+    if (!localDb || !parser || !bill.ready || coldStartDone.current || (accessToken && !micReady)) return;
     coldStartDone.current = true;
     const nav = typeof performance.getEntriesByType === "function" ? (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined) : undefined;
     if (!nav || (nav.type !== "navigate" && nav.type !== "reload")) return; // a back/forward restore is not a cold start
-    afterPaint(() => void recordColdStart(localDb, performance.now()));
-  }, [localDb, parser, bill.ready]);
+    afterPaint(() => void recordColdStart(localDb, performance.now(), undefined, { ...coldPhases(), html: nav.responseEnd, ...(navigator.serviceWorker?.controller ? { sw: 1 } : { sw: 0 }) }));
+  }, [localDb, parser, bill.ready, accessToken, micReady]);
   const onNewBill = useCallback(() => {
     resetBill();
     clearSaved();

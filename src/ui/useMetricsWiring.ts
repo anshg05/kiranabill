@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { recordFinalised, type FinaliseSnapshot } from "@/data/billMetrics";
+import { recordPhases } from "@/data/phaseTimings";
 import type { KiranaBillDB } from "@/data/db";
 import { captureUtterance, isReviewCaptureOn, purgeReviewCapture, subscribeReviewMode } from "@/data/reviewCapture";
 import type { UtteranceMetric } from "@/domain/billMetrics";
@@ -26,7 +27,7 @@ export interface WiringInput {
   /** Lines removed and not brought back. */
   removed: number;
   /** The bill just saved (the receipt is showing), or null. */
-  saved: { readonly localId: string; readonly numberMs?: number | null } | null;
+  saved: { readonly localId: string; readonly numberMs?: number | null; readonly phases?: { readonly numberWaitMs: number; readonly writeMs: number; readonly readMs: number; readonly savedAtMs: number } } | null;
 }
 
 interface Pending {
@@ -97,6 +98,8 @@ export function useMetricsWiring(input: WiringInput) {
     if (!p || !saved || saved.localId !== p.localId || !localDb || !shopId || !deviceId) return;
     pending.current = null;
     afterPaint(() => {
+      // KB-352: where the time between the tap and the painted receipt went (this phone only).
+      if (saved.phases) void recordPhases(localDb, p.localId, { number: saved.phases.numberWaitMs, write: saved.phases.writeMs, read: saved.phases.readMs, paint: performance.now() - saved.phases.savedAtMs });
       void recordFinalised(localDb, shopId, {
         billLocalId: p.localId,
         deviceId,

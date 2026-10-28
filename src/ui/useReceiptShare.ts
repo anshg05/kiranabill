@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { isIos } from "./platform";
+import { afterPaintOrSoon } from "./afterPaint";
+import { whenIdle } from "./idle";
 import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
@@ -70,18 +72,28 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
     const receipt = saved?.receipt;
     if (!saved || !receipt) return;
     let live = true;
-    render(receipt)
-      .then(({ png, pdf }) => {
+    let cancelIdle = () => {};
+    // KB-352: the PNG and the PDF (fonts, canvas, a PDF) are the heaviest thing that starts with the receipt - made after it has painted,
+    // in an idle moment, so they can never hold the paint up. The share buttons say "Preparing the receipt…" until they are ready.
+    afterPaintOrSoon(() => {
+      if (!live) return;
+      cancelIdle = whenIdle(() => {
         if (!live) return;
-        setFiles({
-          localId: saved.localId,
-          png: new File([png], `Bill-${receipt.receiptNumber}.png`, { type: "image/png" }),
-          pdf: new File([pdf], `Bill-${receipt.receiptNumber}.pdf`, { type: "application/pdf" }),
-        });
-      })
-      .catch((err: unknown) => console.warn("[share] render failed:", err instanceof Error ? err.message : err));
+        render(receipt)
+          .then(({ png, pdf }) => {
+            if (!live) return;
+            setFiles({
+              localId: saved.localId,
+              png: new File([png], `Bill-${receipt.receiptNumber}.png`, { type: "image/png" }),
+              pdf: new File([pdf], `Bill-${receipt.receiptNumber}.pdf`, { type: "application/pdf" }),
+            });
+          })
+          .catch((err: unknown) => console.warn("[share] render failed:", err instanceof Error ? err.message : err));
+      }, 1000);
+    });
     return () => {
       live = false;
+      cancelIdle();
     };
   }, [saved, render]);
 

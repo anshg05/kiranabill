@@ -8,5 +8,5 @@ export interface TranscriptionProvider {
       vocabulary?: string[]; // shop-scoped phrase biasing
       language?: string;
     },
-  ): Promise<{ text: string; confidence?: number; latencyMs: number }>;
+  ): Promise<{ text: string; confidence?: number; latencyMs: number; /** KB-352: the provider's own region header, when it sends one. */ region?: string | null }>;
 }

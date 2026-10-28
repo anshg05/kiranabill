@@ -7,6 +7,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB } from "@/data/db";
 import { finaliseBill } from "@/data/testNumbers";
+import { listPhases } from "@/data/phaseTimings";
 import { setReviewCapture, listReviewCapture } from "@/data/reviewCapture";
 import type { BillRow } from "./useBillLines";
 import { useMetricsWiring, type WiringInput } from "./useMetricsWiring";
@@ -55,6 +56,17 @@ describe("one voice bill, end to end", () => {
     expect(Number.isInteger(row.finaliseToReceiptMs)).toBe(true);
     expect(Number.isInteger(row.secondsToBill)).toBe(true);
     expect(row.numberMs).toBeNull(); // no server number for this bill
+  });
+
+  it("KB-352: the paint phase is written with the save's phases (number wait, local write, receipt read) - device-only, per bill", async () => {
+    const { billLocalId, result, rerender, base } = setup();
+    act(() => result.current.beforeFinalise());
+    await save(billLocalId);
+    rerender({ ...base, saved: { localId: billLocalId, phases: { numberWaitMs: 170, writeMs: 12, readMs: 4, savedAtMs: performance.now() } } });
+    await waitFor(async () => expect((await listPhases(db)).length).toBe(1));
+    const row = (await listPhases(db))[0]!;
+    expect(row).toMatchObject({ billLocalId, number: 170, write: 12, read: 4 });
+    expect(Number.isFinite(row.paint) && row.paint! >= 0).toBe(true);
   });
 
   it("KB-351: the server round trip for the bill number is written with the bill's row (number_ms); an offline-numbered bill has none", async () => {

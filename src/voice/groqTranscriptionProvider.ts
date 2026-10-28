@@ -107,7 +107,7 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
 
           const data = (await response.json()) as { text: string; segments?: { no_speech_prob: number }[] };
           // verbose_json's text starts with a space; trimmed so /voice returns what it always did.
-          return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs };
+          return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs, region: response.headers?.get("x-groq-region") ?? null };
         },
         () => new ProviderError("timeout", `Groq transcription timed out after ${GROQ_TIMEOUT_MS} ms`),
       );

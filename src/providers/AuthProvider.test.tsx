@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { SupabaseClient, Session, User } from "@supabase/supabase-js";
 import { AuthRetryableFetchError, AuthApiError } from "@supabase/supabase-js";
-import { AuthProvider, useAuth } from "./AuthProvider";
+import { AuthProvider, AUTH_WAIT_MS, useAuth } from "./AuthProvider";
 import { DeviceDB, getActiveUserId, setActiveUserId } from "@/data/device";
 
 function makeSession(overrides: Partial<User> = {}): Session {
@@ -243,5 +243,89 @@ describe("AuthProvider - offline session (KB-315)", () => {
     });
     expect(result.current.mode).toBe("signedOut");
     expect(await getActiveUserId(deviceDb)).toBeNull();
+  });
+});
+
+// KB-352 (owner, 28 Oct 2026): app cold start was 3.4 s median and 28 s at p95 (budget 2 s). getSession() refreshes an EXPIRED access token
+// (they last an hour) over the network, with no deadline - a slow mobile network kept the app on "Loading…". A remembered user now gets the
+// offline-session path after a short wait (billing works from local data) and is upgraded to online the moment the refresh arrives.
+describe("AuthProvider - the cold start does not wait for the network (KB-352)", () => {
+  afterEach(() => vi.useRealTimers());
+
+  function slowClient() {
+    let resolveSession: (v: unknown) => void = () => {};
+    const getSession = vi.fn(() => new Promise((resolve) => void (resolveSession = resolve)));
+    const client = {
+      auth: {
+        getSession,
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+    } as unknown as SupabaseClient;
+    return { client, resolveSession: (v: unknown) => resolveSession(v) };
+  }
+  const wrapperFor = (client: SupabaseClient, deviceDb: DeviceDB) => ({ children }: { children: React.ReactNode }) => <AuthProvider client={client} deviceDb={deviceDb}>{children}</AuthProvider>;
+
+  it("a refresh that is slow + a remembered user: after the wait the app opens in offline mode for that user", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    await setActiveUserId(deviceDb, "user-remembered");
+    const { client } = slowClient();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperFor(client, deviceDb) });
+    await act(async () => void (await vi.advanceTimersByTimeAsync(AUTH_WAIT_MS - 100)));
+    expect(result.current.loading).toBe(true); // not before the wait is over
+    await act(async () => void (await vi.advanceTimersByTimeAsync(200)));
+    expect(result.current.loading).toBe(false);
+    expect(result.current).toMatchObject({ mode: "offline", userId: "user-remembered", session: null });
+  });
+
+  it("...and the moment the refresh arrives with a session, it is online again (voice, sync) - real timers: the device DB write needs them", async () => {
+    vi.useRealTimers();
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    await setActiveUserId(deviceDb, "user-remembered");
+    const { client, resolveSession } = slowClient();
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperFor(client, deviceDb) });
+    await waitFor(() => expect(result.current.mode).toBe("offline"), { timeout: AUTH_WAIT_MS + 1500 });
+    const session = makeSession({ id: "user-remembered" });
+    await act(async () => resolveSession({ data: { session } }));
+    await waitFor(() => expect(result.current.mode).toBe("online"));
+    expect(result.current.session?.access_token).toBe("fake-access-token");
+  });
+
+  it("...a refresh that finally FAILS for good (token rejected) signs out; a network failure stays offline", async () => {
+    for (const [error, expected] of [[new AuthApiError("Invalid Refresh Token", 400, "refresh_token_not_found"), "signedOut"], [new AuthRetryableFetchError("Failed to fetch", 0), "offline"]] as const) {
+      const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+      await setActiveUserId(deviceDb, "user-remembered");
+      const { client, resolveSession } = slowClient();
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const { result, unmount } = renderHook(() => useAuth(), { wrapper: wrapperFor(client, deviceDb) });
+      await act(async () => void (await vi.advanceTimersByTimeAsync(AUTH_WAIT_MS + 100)));
+      await act(async () => {
+        resolveSession({ data: { session: null }, error });
+        await vi.advanceTimersByTimeAsync(500); // fake-indexeddb needs a few ticks
+      });
+      expect(result.current.mode).toBe(expected);
+      unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  it("no remembered user (the very first sign-in): there is nothing local to open - it keeps waiting, never invents a user", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    const { client } = slowClient();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperFor(client, deviceDb) });
+    await act(async () => void (await vi.advanceTimersByTimeAsync(AUTH_WAIT_MS * 10)));
+    expect(result.current.loading).toBe(true);
+    expect(result.current.userId).toBeNull();
+  });
+
+  it("a fast answer is used as before - no offline detour", async () => {
+    const deviceDb = new DeviceDB("dev-" + crypto.randomUUID());
+    await setActiveUserId(deviceDb, "user-remembered");
+    const mock = makeMockClient(makeSession({ id: "user-remembered" }));
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapperFor(mock.client, deviceDb) });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.mode).toBe("online");
   });
 });

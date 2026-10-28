@@ -240,19 +240,23 @@ const COLD_KEY = "coldStarts";
 const COLD_KEEP = 20;
 
 /** App cold start (budget < 2 s): one sample per page load, kept on this phone only (it belongs to no bill). */
-export async function recordColdStart(localDb: KiranaBillDB, ms: number, at: string = new Date().toISOString()): Promise<void> {
+/** KB-352: the milestones of that start, ms since the page began (js, auth, db, shop, catalog, mic - see ui/coldMarks.ts) plus the page's own load. */
+export type ColdPhases = Readonly<Record<string, number>>;
+
+export async function recordColdStart(localDb: KiranaBillDB, ms: number, at: string = new Date().toISOString(), phases?: ColdPhases): Promise<void> {
   try {
     const list = await listColdStarts(localDb);
-    await localDb.meta.put({ key: COLD_KEY, value: JSON.stringify([...list, { ms: Math.round(ms), at }].slice(-COLD_KEEP)) });
+    const clean = phases ? Object.fromEntries(Object.entries(phases).filter(([, v]) => typeof v === "number" && Number.isFinite(v) && v >= 0).map(([k, v]) => [k, Math.round(v)])) : undefined;
+    await localDb.meta.put({ key: COLD_KEY, value: JSON.stringify([...list, { ms: Math.round(ms), at, ...(clean && Object.keys(clean).length > 0 ? { phases: clean } : {}) }].slice(-COLD_KEEP)) });
   } catch (err) {
     console.warn("[metrics] cold start not recorded:", err instanceof Error ? err.name : "error");
   }
 }
 
-export async function listColdStarts(localDb: KiranaBillDB): Promise<{ ms: number; at: string }[]> {
+export async function listColdStarts(localDb: KiranaBillDB): Promise<{ ms: number; at: string; phases?: ColdPhases }[]> {
   try {
     const parsed: unknown = JSON.parse((await localDb.meta.get(COLD_KEY))?.value ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((x): x is { ms: number; at: string } => typeof x?.ms === "number" && typeof x?.at === "string") : [];
+    return Array.isArray(parsed) ? parsed.filter((x): x is { ms: number; at: string; phases?: ColdPhases } => typeof x?.ms === "number" && typeof x?.at === "string") : [];
   } catch {
     return [];
   }

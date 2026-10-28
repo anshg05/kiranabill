@@ -351,3 +351,29 @@ describe("useVoiceBilling", () => {
     expect(result.current.view.disabledReason).toBeNull();
   });
 });
+
+describe("KB-352: the split of stop -> transcript is reported for each turn", () => {
+  it("a transcribed turn reports the audio, the recorder stop, the request, the server's parts and the regions - and no transcript", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ transcript: "do kilo chini" }), {
+      status: 200,
+      headers: { "Server-Timing": "auth;dur=210, limit;dur=5, form;dur=9, groq;dur=420, total;dur=700", "X-Kb-Region": "us-east-2" },
+    }));
+    const onVoiceTiming = vi.fn();
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscript: vi.fn(async () => {}), onVoiceTiming }));
+    await speak(result);
+    expect(onVoiceTiming).toHaveBeenCalledTimes(1);
+    const t = onVoiceTiming.mock.calls[0]![0];
+    expect(t).toMatchObject({ audioBytes: 5, audioType: "audio/webm;codecs=opus", server: { auth: 210, groq: 420, total: 700 }, region: "us-east-2" });
+    for (const k of ["stopToBlobMs", "requestMs", "bodyMs", "totalMs"]) expect(Number.isFinite(t[k]) && t[k] >= 0, k).toBe(true);
+    expect(t.totalMs).toBeGreaterThanOrEqual(t.requestMs);
+    expect(JSON.stringify(t)).not.toContain("chini");
+  });
+
+  it("a failed transcription reports nothing", async () => {
+    reply(502, { error: "Transcription failed" });
+    const onVoiceTiming = vi.fn();
+    const { result } = renderHook(() => useVoiceBilling({ accessToken: "jwt", onTranscript: vi.fn(async () => {}), onVoiceTiming }));
+    await speak(result);
+    expect(onVoiceTiming).not.toHaveBeenCalled();
+  });
+});

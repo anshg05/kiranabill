@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listColdStarts, loadGateInputs, type ReconcileResult } from "@/data/billMetrics";
+import { listPhases, type PhaseName, type PhaseRow } from "@/data/phaseTimings";
+import { listVoiceTimings, type VoiceTimingRow } from "@/data/voiceTimings";
 import type { LocalReviewCapture } from "@/data/db";
 import { clearReviewCapture, isReviewCaptureOn, listReviewCapture, setReviewCapture } from "@/data/reviewCapture";
 import type { KiranaBillDB } from "@/data/db";
@@ -16,6 +18,7 @@ const TARGET_ZERO_EDIT = 80;
 const BUDGET_MS = { stop: 1500, fast: 300, llm: 4000, finalise: 500, cold: 2000, number: 300 } as const;
 
 const ms = (v: number): string => {
+  if (!Number.isFinite(v)) return "-";
   if (v < 1000) return `${Math.round(v)} ms`;
   const s = v / 1000;
   return Number.isInteger(s) ? `${s} s` : `${s.toFixed(1)} s`;
@@ -32,6 +35,73 @@ function Line({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+const PHASE_LINES: readonly (readonly [PhaseName, string])[] = [
+  ["number", "Waiting for the bill number"],
+  ["write", "The one local write"],
+  ["read", "Reading the receipt back"],
+  ["paint", "Receipt painted (after it was read)"],
+  ["learning", "After the receipt: learning"],
+  ["reload", "After the receipt: catalog reload"],
+  ["sync", "After the receipt: sync"],
+];
+function phaseLine(rows: readonly PhaseRow[], name: PhaseName): string {
+  const xs = rows.flatMap((r) => (typeof r[name] === "number" && Number.isFinite(r[name]) ? [r[name]!] : []));
+  return xs.length === 0 ? "no samples yet" : `median ${ms(median(xs)!)} · p95 ${ms(percentile(xs, 95)!)} · ${plural(xs.length, "sample", "samples")}`;
+}
+
+const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
+type VoicePick = (r: VoiceTimingRow) => number | undefined;
+const VOICE_LINES: readonly (readonly [string, VoicePick])[] = [
+  ["Whole: stop → transcript", (r) => r.totalMs],
+  ["Recorder stop → audio ready", (r) => r.stopToBlobMs],
+  ["Request: send → first byte of the answer", (r) => r.requestMs],
+  ["…inside it, the server in all", (r) => r.server.total],
+  ["…of which the sign-in check", (r) => r.server.auth],
+  ["…of which the rate limit", (r) => r.server.limit],
+  ["…of which reading the upload", (r) => r.server.form],
+  ["…of which Groq", (r) => r.server.groq],
+  ["…the rest is the network (request − server)", (r) => (r.server.total === undefined ? undefined : Math.max(0, r.requestMs - r.server.total))],
+  ["Reading the answer", (r) => r.bodyMs],
+];
+function voiceLine(rows: readonly VoiceTimingRow[], pick: VoicePick): string {
+  const xs = rows.flatMap((r) => {
+    const v = pick(r);
+    return typeof v === "number" && Number.isFinite(v) ? [v] : [];
+  });
+  return xs.length === 0 ? "no samples yet" : `median ${ms(median(xs)!)} · p95 ${ms(percentile(xs, 95)!)} · ${plural(xs.length, "sample", "samples")}`;
+}
+function regionLine(rows: readonly VoiceTimingRow[]): string {
+  const last = [...rows].reverse().find((r) => r.region !== null);
+  const audio = rows.flatMap((r) => (typeof r.audioBytes === "number" ? [r.audioBytes] : []));
+  const size = audio.length === 0 ? "" : ` · audio ${kb(median(audio)!)} median (${rows.find((r) => r.audioType)?.audioType ?? "?"})`;
+  if (!last) return "no samples yet";
+  const groq = [...rows].reverse().find((r) => r.groqRegion !== null)?.groqRegion;
+  return `${last.region} · Groq: ${groq ?? "not reported"}${size}`;
+}
+
+const COLD_STEPS: readonly (readonly [string, string])[] = [
+  ["html", "Page HTML arrived"],
+  ["js", "JS parsed and run"],
+  ["auth", "Sign-in check answered"],
+  ["db", "Local database and shop opened"],
+  ["shop", "Billing screen has its shop"],
+  ["catalog", "Catalog and draft ready"],
+  ["mic", "Mic enabled"],
+];
+function coldLine(starts: readonly { phases?: Readonly<Record<string, number>> }[], key: string): string {
+  const at: number[] = [];
+  const step: number[] = [];
+  for (const s of starts) {
+    const p = s.phases;
+    const v = p?.[key];
+    if (typeof v !== "number" || !Number.isFinite(v)) continue;
+    at.push(v);
+    const before = COLD_STEPS.slice(0, COLD_STEPS.findIndex(([k]) => k === key)).map(([k]) => p?.[k]).filter((x): x is number => typeof x === "number" && Number.isFinite(x));
+    step.push(v - (before.length > 0 ? Math.max(...before) : 0));
+  }
+  return at.length === 0 ? "no samples yet" : `at median ${ms(median(at)!)} (this step +${ms(Math.max(0, median(step)!))}) · p95 ${ms(percentile(at, 95)!)} · ${plural(at.length, "sample", "samples")}`;
+}
+
 const meets = (ok: boolean | null) => (ok === null ? "no data yet" : ok ? "meets the target" : "above the target");
 const budgetLine = (spread: Spread, budget: number) =>
   spread.n === 0 ? `budget < ${ms(budget)} · no samples yet` : `budget < ${ms(budget)} · median ${ms(spread.median!)} · p95 ${ms(spread.p95!)} · ${plural(spread.n, "sample", "samples")}`;
@@ -45,7 +115,9 @@ interface Props {
 
 export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
   const [report, setReport] = useState<GateReport | null>(null);
-  const [cold, setCold] = useState<{ ms: number }[]>([]);
+  const [cold, setCold] = useState<{ ms: number; phases?: Readonly<Record<string, number>> }[]>([]);
+  const [phases, setPhases] = useState<PhaseRow[]>([]);
+  const [voice, setVoice] = useState<VoiceTimingRow[]>([]);
   const [pairs, setPairs] = useState<{ capture: LocalReviewCapture; receipt: string | null }[]>([]);
   const [reviewOn, setReviewOn] = useState(false);
   const [check, setCheck] = useState<ReconcileResult | "asking" | null>(null);
@@ -54,6 +126,8 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
     const { inputs, cancellations } = await loadGateInputs(localDb, shopId);
     setReport(gateReport(inputs, cancellations));
     setCold(await listColdStarts(localDb));
+    setPhases(await listPhases(localDb));
+    setVoice(await listVoiceTimings(localDb));
     setReviewOn(await isReviewCaptureOn(localDb, shopId));
     const captures = await listReviewCapture(localDb, shopId);
     const bills = await localDb.bills.bulkGet(captures.map((c) => c.billLocalId));
@@ -118,6 +192,38 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
           <Line label="Finalise → receipt">{budgetLine(r.finaliseToReceipt, BUDGET_MS.finalise)}</Line>
           <Line label="Bill number from the server (part of the line above)">{budgetLine(r.number, BUDGET_MS.number)} · only bills that got a server number</Line>
           <Line label="App cold start">{budgetLine(coldSpread, BUDGET_MS.cold)} (this phone)</Line>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className={heading}>Where stop → transcript goes (this phone)</h4>
+        <p className="mt-1 text-[13px] text-ink-soft">The last {voice.length === 0 ? "voice turns" : plural(voice.length, "voice turn", "voice turns")} on this phone, each split into the recording, the request (the way there, the server, the way back) and what the server itself reports.</p>
+        <ul className="mt-1 flex flex-col gap-3">
+          {VOICE_LINES.map(([label, pick]) => (
+            <Line key={label} label={label}>{voiceLine(voice, pick)}</Line>
+          ))}
+          <Line label="Where /voice runs · where Groq answers from">{regionLine(voice)}</Line>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className={heading}>Where the app start goes (this phone)</h4>
+        <p className="mt-1 text-[13px] text-ink-soft">Each step: when it happened, counted from the start of the page load (median over this phone&apos;s starts), and how long that step took after the one before it.</p>
+        <ul className="mt-1 flex flex-col gap-3">
+          {COLD_STEPS.map(([key, label]) => (
+            <Line key={key} label={label}>{coldLine(cold, key)}</Line>
+          ))}
+          <Line label="Opened from the service worker">{cold.filter((c) => c.phases?.sw !== undefined).length === 0 ? "no samples yet" : `${cold.filter((c) => c.phases?.sw === 1).length} of ${plural(cold.filter((c) => c.phases?.sw !== undefined).length, "start", "starts")}`}</Line>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className={heading}>Where the time goes after Bill Banao (this phone)</h4>
+        <p className="mt-1 text-[13px] text-ink-soft">The last {phases.length === 0 ? "bills" : plural(phases.length, "bill", "bills")} made on this phone. The first four are before the receipt shows (the sum is "Finalise → receipt"); the last three run AFTER it, in idle time.</p>
+        <ul className="mt-1 flex flex-col gap-3">
+          {PHASE_LINES.map(([name, label]) => (
+            <Line key={name} label={label}>{phaseLine(phases, name)}</Line>
+          ))}
         </ul>
       </div>
 

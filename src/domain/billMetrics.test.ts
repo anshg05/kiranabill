@@ -114,6 +114,17 @@ describe("gateReport - the last 20 ELIGIBLE voice bills", () => {
     expect(g.finaliseToReceipt).toEqual({ median: 200, p95: 300, n: 2 });
   });
 
+  it("KB-352: a missing or non-finite time (an older row has no numberMs at all) is not a sample - never NaN", () => {
+    const g = gateReport([bill({ numberMs: undefined as never }), bill({ numberMs: Number.NaN as never }), bill({ numberMs: 150 })], []);
+    expect(g.number).toEqual({ median: 150, p95: 150, n: 1 });
+    expect(gateReport([bill({ numberMs: undefined as never })], []).number).toEqual({ median: null, p95: null, n: 0 });
+    // the same guard holds for every timing line
+    const h = gateReport([bill({ finaliseToReceiptMs: undefined as never, utterances: [{ path: "fastpath", stopToTranscriptMs: undefined as never, transcriptToItemsMs: Number.NaN }] })], []);
+    expect(h.finaliseToReceipt.n).toBe(0);
+    expect(h.latency.stopToTranscript.n).toBe(0);
+    expect(h.latency.fastpathToItems.n).toBe(0);
+  });
+
   it("an empty window says so: nothing is invented", () => {
     const g = gateReport([], []);
     expect(g.voice.n).toBe(0);

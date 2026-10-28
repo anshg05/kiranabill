@@ -19,6 +19,7 @@ import { openShopDb, type KiranaBillDB, type LocalShop } from "@/data/db";
 import { getOrCreateDeviceId, type DeviceDB } from "@/data/device";
 import { bootstrapAfterOnboarding, bootstrapOnStart, readCachedShop } from "@/data/bootstrap";
 import { startSyncLoop, stopSyncLoop, type OnlineEventSource } from "@/data/sync";
+import { markCold } from "@/ui/coldMarks";
 
 // KB-315 (docs/12-PARKED.md KI-32, docs/07-DECISIONS.md D38): wiring only -
 // no new screens (KB-301 / KB-313). Opens THIS user's local database, reads
@@ -103,6 +104,7 @@ export function ShopProvider({ children, userId, online, deviceDb, client = supa
       if (current) {
         setShop(current);
         setLoading(false);
+        markCold("db"); // KB-352: the local database is open and the cached shop is in hand - billing can start
       }
 
       let refreshFailed = false;

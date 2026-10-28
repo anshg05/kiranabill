@@ -128,7 +128,8 @@ export function gateReport(inputs: readonly GateInput[], cancellations: readonly
   const withoutHands = win.filter((i) => i.metrics.manualLines === 0);
   const zero = withoutHands.filter((i) => i.metrics.editedLines === 0 && i.metrics.removedLines === 0 && i.metrics.notAdded === 0).length;
 
-  const num = (xs: readonly (number | null)[]) => xs.filter((x): x is number => x !== null);
+  // KB-352: only a real number is a sample - an older row has no value at all (undefined), and NaN must never reach a median.
+  const num = (xs: readonly (number | null | undefined)[]) => xs.filter((x): x is number => typeof x === "number" && Number.isFinite(x));
   const voiceSeconds = median(win.map((i) => i.metrics.secondsToBill));
   const typedSeconds = median(typed.map((i) => i.metrics.secondsToBill));
   let verdict: string;
