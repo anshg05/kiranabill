@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 28 Oct 2026 (rev 141) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
+**Last updated:** 28 Oct 2026 (rev 142) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -163,6 +163,13 @@ Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-o
 - After the pilot starts: `KB-320`, `KB-322`, `KB-333`.
 
 ---
+
+## Production release 28 Oct 2026 - rollback target and redirect URLs (owner approved: code `37e48cc`, deploy from HEAD)
+
+- **Rollback target (recorded BEFORE the `[deploy]` marker):** the production deploy that is live today is **`6ac0b4f59e01a9000802865b`** (context production, state ready, built from `6e29cf2` "KI-61", published 3 Oct 2026; site `kiranabilling`, id `73e3f7d0-7f12-434e-813e-36a1dcc0d982`). Read from the Netlify API on 28 Oct 2026.
+- **Rollback steps (no build, no credits):** Netlify -> Projects -> `kiranabilling` -> **Deploys** -> open deploy `6ac0b4f59e01a9000802865b` (3 Oct, `6e29cf2`) -> **Publish deploy**. That republishes its files AND its functions (the old `/voice`). Then check `/` and Settings show the old build. Do not roll back by reverting git: a revert commit would need another `[deploy]` marker and credits.
+- **What a rollback leaves behind:** nothing in the database is undone. The migrations pushed since (D55 section 5: all additive) stay; the old app ignores the new columns and tables. Phones that already updated to the new service worker take the old one on their next launch like any update. A bill number the new app issued stays a valid number.
+- **Redirect URLs (Supabase -> Authentication -> URL configuration), decision 28 Oct:** change NOTHING now. `KB-355` (voice speed) will need drafts again, so keep `https://*--kiranabilling.netlify.app/**` (the safe single-`*` form, D58 section 6). **After the LAST draft** the owner removes it AND `https://kiranabilling.netlify.app/**`, leaving the exact `https://kiranabilling.netlify.app/` (D82).
 
 ## Draft deploy — checks (owner)
 
