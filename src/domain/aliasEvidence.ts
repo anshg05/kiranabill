@@ -11,6 +11,8 @@ const CORRECTION = 40; // KB-336: the shopkeeper changed the product himself - o
 const SUPPRESS = 20;
 const REMOVE = 100;
 const PROMOTE = 80;
+// KB-354: what Gemini evidence ALONE can reach. Promotion needs one confirmation that is not a Gemini guess.
+const GEMINI_ONLY_CAP = 70;
 const RETIRE = 30;
 
 /** The single-device rule, unchanged: first confirmation 0.5 (= base + 0.2), then +0.2 each. */
@@ -49,6 +51,9 @@ export interface LearnedMap {
 
 export const aliasKeyOf = (text: string): string => text.trim().toLowerCase();
 
+/** A confirmation a person or the parser's own match stands behind: fast-path, manual, or a KB-336 correction. Unknown = Gemini. */
+const isFirmConfirmation = (e: AliasEvent): boolean => e.eventType === "alias_confirmed" && (e.sourceLayer === "fastpath" || e.sourceLayer === "manual" || e.sourceLayer === "correction");
+
 const weightOf = (e: AliasEvent): number => {
   if (e.eventType === "alias_suppressed") return -SUPPRESS;
   if (e.eventType === "alias_removed") return -REMOVE;
@@ -69,14 +74,15 @@ export function deriveAliases(events: readonly AliasEvent[]): DerivedAlias[] {
   const out: DerivedAlias[] = [];
   for (const [aliasKey, list] of byAlias) {
     list.sort(newerFirst);
-    const perProduct = new Map<string, { sum: number; newest: string; newestId: string }>();
+    const perProduct = new Map<string, { sum: number; firm: boolean; newest: string; newestId: string }>();
     for (const e of list) {
-      const cur = perProduct.get(e.shopProductId) ?? { sum: 0, newest: e.createdAt, newestId: e.localId };
+      const cur = perProduct.get(e.shopProductId) ?? { sum: 0, firm: false, newest: e.createdAt, newestId: e.localId };
       cur.sum += weightOf(e);
+      cur.firm ||= isFirmConfirmation(e);
       perProduct.set(e.shopProductId, cur);
     }
-    // A product's confidence: base + the evidence, capped at 1 AFTER summing. Winner: the highest, then the newest event.
-    const scored = [...perProduct].map(([catalogId, v]) => ({ catalogId, raw: Math.min(BASE + v.sum, 100), newest: v.newest, newestId: v.newestId }));
+    // A product's confidence: base + the evidence, capped at 1 AFTER summing (KB-354: at 0.7 when no firm confirmation backs it). Winner: the highest, then the newest event.
+    const scored = [...perProduct].map(([catalogId, v]) => ({ catalogId, raw: Math.min(BASE + v.sum, v.firm ? 100 : GEMINI_ONLY_CAP), newest: v.newest, newestId: v.newestId }));
     scored.sort((a, b) => b.raw - a.raw || (a.newest === b.newest ? (a.newestId < b.newestId ? 1 : -1) : a.newest < b.newest ? 1 : -1));
     const winner = scored[0]!;
     out.push({

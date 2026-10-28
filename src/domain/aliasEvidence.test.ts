@@ -53,16 +53,72 @@ describe("deriveAliases - the same numbers the single-device rule gave", () => {
 });
 
 describe("Gemini-sourced confirmations count +0.1 (owner, 17 Oct 2026)", () => {
-  it("three Gemini confirmations are NOT promoted; five are", () => {
-    const g = () => confirm({ sourceLayer: "gemini" });
-    expect(promotedAliases(deriveAliases([g(), g(), g()]))).toEqual([]);
-    expect(one([g(), g(), g(), g()])!.confidence).toBe(0.7);
-    expect(promotedAliases(deriveAliases([g(), g(), g(), g(), g()])).map((a) => a.aliasKey)).toEqual(["pale ji"]);
-  });
   it("a manual correction is as strong as a fast-path confirmation; an unknown source is treated as Gemini (the cautious side)", () => {
     expect(one([confirm({ sourceLayer: "manual" })])!.confidence).toBe(0.5);
     expect(one([confirm({ sourceLayer: "something-new" })])!.confidence).toBe(0.4);
     expect(one([confirm({ sourceLayer: null })])!.confidence).toBe(0.4);
+  });
+});
+
+// KB-354 (owner, 28 Oct 2026, safety): "रिन साबुन -> Bath Sabun" and "चावल -> Basmati" were learned from uncorrected Gemini guesses
+// alone - silently wrong every time after (the KI-52 class). Gemini evidence alone may reach 0.7 at most; promotion (>= 0.8) needs
+// at least one confirmation from a fast-path match, a manual pick, or a KB-336 correction.
+describe("KB-354: Gemini evidence alone never promotes an alias", () => {
+  const g = (over: Partial<AliasEvent> = {}) => confirm({ sourceLayer: "gemini", ...over });
+  it("five, ten, fifty Gemini confirmations stay at 0.7 and are never promoted", () => {
+    for (const k of [4, 5, 10, 50]) {
+      const events = Array.from({ length: k }, () => g());
+      expect(one(events)!.confidence).toBe(0.7);
+      expect(promotedAliases(deriveAliases(events))).toEqual([]);
+    }
+  });
+  it("an unknown or missing source counts as Gemini, so it cannot promote alone either", () => {
+    const events = Array.from({ length: 8 }, (_, i) => confirm({ sourceLayer: i % 2 ? null : "something-new" }));
+    expect(promotedAliases(deriveAliases(events))).toEqual([]);
+  });
+  it("the same Gemini evidence PLUS one fast-path, manual or correction confirmation promotes", () => {
+    for (const layer of ["fastpath", "manual", "correction"]) {
+      const events = [...Array.from({ length: 5 }, () => g()), confirm({ sourceLayer: layer })];
+      expect(promotedAliases(deriveAliases(events))).toHaveLength(1);
+    }
+  });
+  it("one fast-path confirmation does not need Gemini help: the single-device numbers are unchanged", () => {
+    expect(one([confirm(), confirm(), confirm()])!.confidence).toBe(0.9);
+    expect(one([g(), g(), g(), confirm(), confirm()])!.confidence).toBeGreaterThanOrEqual(0.8);
+  });
+  it("an alias promoted on Gemini alone before this rule is demoted by the next derivation (same events, no stored state)", () => {
+    const old = Array.from({ length: 5 }, () => g());
+    expect(old.length * 10 + 30).toBeGreaterThanOrEqual(80); // the old arithmetic would have promoted it
+    expect(promotedAliases(deriveAliases(old))).toEqual([]);
+  });
+  it("the non-Gemini confirmation must belong to a bill that still stands: cancelled, it no longer lifts the cap", () => {
+    const fast = confirm();
+    const base = [...Array.from({ length: 5 }, () => g()), fast];
+    expect(promotedAliases(deriveAliases(base))).toHaveLength(1);
+    expect(promotedAliases(deriveAliases([...base.slice(0, 5), { ...fast, cancelled: true }]))).toEqual([]);
+  });
+  it("a suppression or removal is not a confirmation: it never lifts the cap", () => {
+    const events = [...Array.from({ length: 6 }, () => g()), suppress({ sourceLayer: "fastpath" })];
+    expect(promotedAliases(deriveAliases(events))).toEqual([]);
+  });
+  it("the cap is per product: Gemini for one product does not borrow another product's fast-path evidence", () => {
+    const events = [...Array.from({ length: 6 }, () => g({ shopProductId: "rin" })), confirm({ shopProductId: "bath" })];
+    const a = one(events)!;
+    expect(a.catalogId).toBe("rin"); // 0.7 beats 0.5
+    expect(a.confidence).toBe(0.7);
+    expect(promotedAliases(deriveAliases(events))).toEqual([]);
+  });
+  it("suppression still retires a Gemini-only alias, and order and devices still do not matter", () => {
+    const gone = one([g(), g(), g(), suppress(), suppress(), suppress()])!;
+    expect(gone.active).toBe(false);
+    const events = [g(), g(), g(), g(), g(), g(), confirm(), suppress(), g({ cancelled: true })];
+    const expected = JSON.stringify(deriveAliases(events));
+    expect(JSON.stringify(deriveAliases([...events].reverse()))).toBe(expected);
+  });
+  it("the two live cases: the same phrase confirmed only by Gemini guesses is not a learned alias", () => {
+    const rin = Array.from({ length: 5 }, () => g({ alias: "रिन साबुन", shopProductId: "bath-sabun" }));
+    const chawal = Array.from({ length: 5 }, () => g({ alias: "चावल", shopProductId: "basmati" }));
+    expect(promotedAliases(deriveAliases([...rin, ...chawal]))).toEqual([]);
   });
 });
 
