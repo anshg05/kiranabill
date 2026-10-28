@@ -503,3 +503,12 @@ First figures from the Pilot numbers panel. **Anything over budget is a listed i
 | Finalise → receipt, voice bills (500 ms) | **19.3 s / 44.8 s - OVER (blocker)** | not reproduced on a PC (~250 ms). Learning, the catalog reload, the sync and the receipt's PNG / PDF started with the receipt; moved after the paint in `KB-352`. The phase timings in `draft-v4` say where it really goes. |
 | Bill number from the server (300 ms) | **173 ms median** (p95 showed `NaN`: fixed in `KB-352`) | within the line; the cap is 1.5 s. |
 | App cold start (2 s) | **3.4 s / 28 s - OVER** | `getSession()` refreshes an expired token over the network with no deadline - the app waited on "Loading…". `KB-352`: 1.5 s, then offline mode, online again when the answer arrives. `draft-v4` adds the milestones. |
+
+### Real-phone figures - `draft-v4` (owner, 28 Oct 2026, real phone, real cloud DB)
+
+| Budget | Phone median / p95 | Verdict |
+|---|---|---|
+| Finalise → receipt (500 ms) | last 5 bills: number 101 ms + write 14 + read 13 + paint 23 = **~0.15 s**; median 263 ms (the p95 44.8 s is pre-fix samples still in the window) | **FIXED** (learning 143 ms, reload 0, sync 2.1 s - all after the receipt) |
+| Bill number from the server (300 ms) | **155 ms / 269 ms** | within the line |
+| App cold start (2 s) | **529 ms median**, mic enabled at ~836 ms | **FIXED** |
+| Stop → transcript (1.5 s) | **2.4 s - OVER**: server 1.2 s (sign-in check 786 ms, rate limit 39 ms, Groq 324 ms) + network 1.3 s; `/voice` us-east-2, Groq msp, audio 78 KB median | `KB-353` |
