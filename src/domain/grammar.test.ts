@@ -532,11 +532,11 @@ describe("diagnoseUtterance - self-consistency with parseUtterance across every 
     ...(numberBenchmarkCases as Array<{ utterance: string }>).map((c) => c.utterance),
   ];
 
-  it("loaded both fixtures - 25 + 129 = 154 utterances (KB-005f added NB101-NB110, KB-302 NB111-NB129)", () => {
-    expect(allUtterances).toHaveLength(154);
+  it("loaded both fixtures - 25 + 171 = 196 utterances (KB-005f added NB101-NB110, KB-302 NB111-NB129, KB-358-0 NB130-NB171)", () => {
+    expect(allUtterances).toHaveLength(196);
   });
 
-  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 154 cases", () => {
+  it("diagnoseUtterance().hit agrees with (parseUtterance() !== null) for every one of the 196 cases", () => {
     const disagreements: string[] = [];
     for (const utterance of allUtterances) {
       const diagnosticHit = diagnoseUtterance(utterance, SEED_PARSER_CATALOG).hit;

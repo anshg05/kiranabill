@@ -143,14 +143,18 @@ const COUNT_UNITS = new Set([
 
 const RATE_MARKERS = new Set(["wala", "wali"]);
 const TOTAL_MARKERS = new Set(["ka", "ki"]);
-const CURRENCY_FILLERS = new Set(["rupay", "rupaye", "rupaya", "rupee", "rupees", "rs"]);
+const CURRENCY_FILLERS = new Set(["rupay", "rupaye", "rupaya", "rupai", "rupaiya", "rupya", "rupee", "rupees", "rs"]);
+
+// KB-358-0: the words that join a price to a unit: "56 rupay PER kilo", "56 KA kilo", "56 रुपए प्रति किलो". With a unit straight
+// after them the number is a RATE per that unit (foldPerUnit); with no unit after, "ka" stays a total (D47).
+const PER_CONNECTORS = new Set(["per", "प्रति", "पर", "ka", "ki", "का", "की", "के"]);
 
 // KB-317: the Devanagari markers. Unlike the Latin ones they count as markers
 // ONLY straight after a number - का/की/के are everyday grammar inside names
 // ("सरसों का तेल", "नहाने का साबुन"), so anywhere else they stay part of the name.
 const DEVANAGARI_RATE_MARKERS = new Set(["वाला", "वाले", "वाली", "वला"]);
 const DEVANAGARI_TOTAL_MARKERS = new Set(["का", "की", "के"]);
-const DEVANAGARI_CURRENCY = new Set(["रुपए", "रुपये", "रुपया", "रुपे", "रूपए", "रूपये", "रूपया", "रु"]);
+const DEVANAGARI_CURRENCY = new Set(["रुपए", "रुपये", "रुपया", "रुपे", "रूपए", "रूपये", "रूपया", "रु", "रुपई", "रूपई", "रुपैया"]);
 
 // KI-44: Whisper glues a number word to wala ("दसवाला", "daswala").
 const GLUE_SUFFIXES = ["वाला", "वाले", "वाली", "wala", "wali"] as const;
@@ -228,6 +232,8 @@ type Classified =
   | { readonly type: "rate" }
   | { readonly type: "total" }
   | { readonly type: "currency" }
+  /** KB-358-0: the unit a price is PER ("56 रुपए किलो"); folded from [currency] [connector] unit, see foldPerUnit. */
+  | { readonly type: "perUnit"; readonly unit: string }
   | { readonly type: "word"; readonly raw: string };
 
 function splitWords(text: string): string[] {
@@ -235,6 +241,7 @@ function splitWords(text: string): string[] {
   // real transcript arrives this way) - insert a boundary between a digit
   // run and an adjacent letter run, either direction, before tokenizing.
   const spaced = text
+    .replace(/₹\s*(\d+(?:\.\d+)?)/g, "$1 रुपए") // KB-358-0: "₹56" is "56 रुपए"
     .replace(/(\d)([a-zA-Zऀ-ॿ])/g, "$1 $2")
     .replace(/([a-zA-Zऀ-ॿ])(\d)/g, "$1 $2");
   // KB-317: a "." between two digits is a decimal point ("3.5" is one
@@ -378,7 +385,7 @@ function classifySegment(words: readonly string[]): Classified[] {
     i += 1;
   }
 
-  return composeNumbers(out);
+  return foldPerUnit(composeNumbers(out));
 }
 
 // KB-317: a digit number with more than 3 decimals can't be a quantity
@@ -441,12 +448,39 @@ function composeNumbers(tokens: readonly Classified[]): Classified[] {
   return out;
 }
 
+/**
+ * KB-358-0 (owner, 28 Oct 2026): "34 रुपए किलो", "34 का किलो", "34 per kilo", "34 रुपए प्रति किलो" - a number, then a currency
+ * word and/or a connector, then a UNIT, is a price PER that unit. Before this the trailing unit was dropped and "10 किलो गेहूं
+ * 34 रुपए किलो" became a total of Rs 34. A number with no unit after ("34 रुपए", "34 ka") is untouched: that stays a total (D47).
+ */
+function foldPerUnit(tokens: readonly Classified[]): Classified[] {
+  const out: Classified[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]!;
+    out.push(token);
+    if (token.type !== "num") continue;
+    let j = i + 1;
+    let joined = false;
+    if (tokens[j]?.type === "currency") (joined = true), j++;
+    const connector = tokens[j];
+    if (connector && (connector.type === "total" || (connector.type === "word" && PER_CONNECTORS.has(connector.raw)))) (joined = true), j++;
+    const unit = tokens[j];
+    if (joined && unit?.type === "unit") {
+      out.push({ type: "perUnit", unit: unit.unit });
+      i = j;
+    }
+  }
+  return out;
+}
+
 interface NumEntry {
   readonly value: number;
   readonly attachedUnit: string | null;
   readonly isRate: boolean;
   readonly isTotal: boolean;
   readonly isCurrency: boolean;
+  /** KB-358-0: the unit this number is a price per, or null. */
+  readonly perUnit: string | null;
 }
 
 function extractNums(classified: readonly Classified[]): NumEntry[] {
@@ -461,6 +495,7 @@ function extractNums(classified: readonly Classified[]): NumEntry[] {
       isRate: next?.type === "rate",
       isTotal: next?.type === "total",
       isCurrency: next?.type === "currency",
+      perUnit: next?.type === "perUnit" ? next.unit : null,
     });
   }
   return entries;
@@ -573,6 +608,18 @@ function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | nul
   // never invent, on an unknown or unpriced product).
   if (nums.length === 0) {
     return { spokenName, ...match, qty: null, unit: "", rate: null, rateUnit: null, total: 0, priceType: "unknown" };
+  }
+
+  // KB-358-0: "N rupay <unit>" is a rate per that unit - read before the wala / ka rules.
+  const perEntry = nums.find((n) => n.perUnit !== null);
+  if (perEntry) {
+    if (nums.length !== 2) return null;
+    const qtyEntry = nums.find((n) => n !== perEntry)!;
+    // Only the SAME unit: grams against a per-kilo price (or a bare count against any unit) is not guessed.
+    if (qtyEntry.attachedUnit !== perEntry.perUnit) return null;
+    const { qty, unit } = qtyAndUnit(qtyEntry);
+    const ratePaise = rupeesToPaise(perEntry.value);
+    return { spokenName, ...match, qty, unit, rate: ratePaise, rateUnit: unit, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
   }
 
   const rateEntry = nums.find((n) => n.isRate);
@@ -753,6 +800,7 @@ export type MissReason =
   | "incompatible unit for default price"
   | "ambiguous two-number utterance"
   | "number with more than 3 decimals"
+  | "a rate unit that is not the quantity's unit"
   | "a segment lacks a product or a number";
 
 export interface ParseDiagnostics {
@@ -771,6 +819,13 @@ function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | nu
   if (hasOrphanedMarker(classified, nums)) return "orphaned marker";
 
   if (nums.length === 0) return null; // Rule 5b - always a hit, never a bail
+
+  // KB-358-0: mirrors resolveSegment's per-unit rule.
+  const perEntry = nums.find((n) => n.perUnit !== null);
+  if (perEntry) {
+    if (nums.length !== 2) return nums.length < 2 ? "rate marker with no separate quantity" : "too many numbers or conflicting units";
+    return nums.find((n) => n !== perEntry)!.attachedUnit === perEntry.perUnit ? null : "a rate unit that is not the quantity's unit";
+  }
 
   const rateEntry = nums.find((n) => n.isRate);
   const totalEntry = nums.find((n) => n.isTotal);

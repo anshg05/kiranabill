@@ -1767,5 +1767,605 @@
       "priceType": "default"
     },
     "note": "KB-302 (owner, round 2). Devanagari form of NB127."
+  },
+  {
+    "id": "NB130",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB131",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपये किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB132",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपई किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB133",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपए का किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB134",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपए प्रति किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB135",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 का किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB136",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB137",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 per kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB138",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी ₹56 किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB139",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rupai kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB140",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rupay per kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB141",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rs kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB142",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रु किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB143",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rupaye kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB144",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 rupay ka kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 11200,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0 (owner, 28 Oct 2026): a price followed by its unit is a RATE per that unit; before, the unit was dropped and the line read as a total of Rs 56."
+  },
+  {
+    "id": "NB145",
+    "category": "per-unit",
+    "utterance": "10 किलो गेहु 34 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 10,
+      "unit": "kg",
+      "rate": 3400,
+      "rateUnit": "kg",
+      "total": 34000,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0: the owner's live case - read as Rs 34 before, silently."
+  },
+  {
+    "id": "NB146",
+    "category": "per-unit",
+    "utterance": "2 kg उडद मुगर 130 रुपई किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 13000,
+      "rateUnit": "kg",
+      "total": 26000,
+      "priceType": "rate"
+    },
+    "note": "KB-358-0: the owner's 4:38 PM order, one line."
+  },
+  {
+    "id": "NB147",
+    "category": "per-unit",
+    "utterance": "10 kilo gehu 34 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 10,
+      "unit": "kg",
+      "rate": 3400,
+      "rateUnit": "kg",
+      "total": 34000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB148",
+    "category": "per-unit",
+    "utterance": "500 gram jeera 2 rupay gram",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 200,
+      "rateUnit": "gm",
+      "total": 100000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB149",
+    "category": "per-unit",
+    "utterance": "500 ग्राम जीरा 2 रुपए प्रति ग्राम",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 200,
+      "rateUnit": "gm",
+      "total": 100000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB150",
+    "category": "per-unit",
+    "utterance": "2 liter doodh 60 rupay liter",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "liter",
+      "rate": 6000,
+      "rateUnit": "liter",
+      "total": 12000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB151",
+    "category": "per-unit",
+    "utterance": "2 लीटर दूध 60 रुपए लीटर",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "liter",
+      "rate": 6000,
+      "rateUnit": "liter",
+      "total": 12000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB152",
+    "category": "per-unit",
+    "utterance": "2 लीटर दूध 60 का लीटर",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "liter",
+      "rate": 6000,
+      "rateUnit": "liter",
+      "total": 12000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB153",
+    "category": "per-unit",
+    "utterance": "3 packet biscuit 10 rupay packet",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "packet",
+      "rate": 1000,
+      "rateUnit": "packet",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB154",
+    "category": "per-unit",
+    "utterance": "3 पैकेट बिस्कुट 10 रुपए पैकेट",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "packet",
+      "rate": 1000,
+      "rateUnit": "packet",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB155",
+    "category": "per-unit",
+    "utterance": "3 पैकेट बिस्कुट 10 का पैकेट",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "packet",
+      "rate": 1000,
+      "rateUnit": "packet",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB156",
+    "category": "per-unit",
+    "utterance": "6 piece nimbu 5 rupay piece",
+    "expected": {
+      "safe": false,
+      "qty": 6,
+      "unit": "piece",
+      "rate": 500,
+      "rateUnit": "piece",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB157",
+    "category": "per-unit",
+    "utterance": "6 नग नींबू 5 रुपए नग",
+    "expected": {
+      "safe": false,
+      "qty": 6,
+      "unit": "piece",
+      "rate": 500,
+      "rateUnit": "piece",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB158",
+    "category": "per-unit",
+    "utterance": "6 piece nimbu 5 per piece",
+    "expected": {
+      "safe": false,
+      "qty": 6,
+      "unit": "piece",
+      "rate": 500,
+      "rateUnit": "piece",
+      "total": 3000,
+      "priceType": "rate"
+    }
+  },
+  {
+    "id": "NB159",
+    "category": "per-unit",
+    "utterance": "2 kilo chawal 90 rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 9000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB160",
+    "category": "per-unit",
+    "utterance": "2 किलो चीनी 56 रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 5600,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB161",
+    "category": "per-unit",
+    "utterance": "5 किलो चावल 200 का",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB162",
+    "category": "per-unit",
+    "utterance": "chawal 100 ka",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB163",
+    "category": "per-unit",
+    "utterance": "100 का चावल",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB164",
+    "category": "per-unit",
+    "utterance": "500 gram jeera 56 rupay kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: grams quantity against a per-kilo price - a different unit, never guessed"
+  },
+  {
+    "id": "NB165",
+    "category": "per-unit",
+    "utterance": "500 ग्राम जीरा 60 रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: same, Devanagari"
+  },
+  {
+    "id": "NB166",
+    "category": "per-unit",
+    "utterance": "2 लीटर दूध 60 रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: liters against kilos"
+  },
+  {
+    "id": "NB167",
+    "category": "per-unit",
+    "utterance": "2 चीनी 56 रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: a bare count against a per-kilo price"
+  },
+  {
+    "id": "NB168",
+    "category": "per-unit",
+    "utterance": "56 रुपए किलो चीनी",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: a rate with no quantity"
+  },
+  {
+    "id": "NB169",
+    "category": "per-unit",
+    "utterance": "2 kilo chini 56 wala 56 rupay kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: two rates"
+  },
+  {
+    "id": "NB170",
+    "category": "per-unit",
+    "utterance": "2 kilo chini 56 rupay kilo 100 ka",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: a rate and a total"
+  },
+  {
+    "id": "NB171",
+    "category": "per-unit",
+    "utterance": "2 kilo 3 kilo chini 56 rupay kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-358-0: two quantities"
   }
 ]

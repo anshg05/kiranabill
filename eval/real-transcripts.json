@@ -434,5 +434,18 @@
     "layer1": "miss",
     "audio": "2026-09-30T04-18-50-835Z.webm",
     "note": "Whisper hallucinated on silence; no_speech_prob 0.8955 (KB-317 commit 5)."
+  },
+  {
+    "id": "RT40",
+    "source": "owner, real voice, 28 Oct 2026, production (5:43 PM screenshot) - KB-358-0",
+    "transcript": "1 किलो चीनी 56 रुपए किलो, 1 किलो हरा बटाना 56 रुपए किलो, 1 किलो चावल 84 रुपए किलो, 10 किलो गेहु 34 रुपए किलो",
+    "expectedLines": [
+      { "catalogId": "27", "displayName": "Chini", "qty": 1, "unit": "kg", "total": 5600 },
+      { "catalogId": "626", "displayName": "हरा बटाना", "qty": 1, "unit": "kg", "total": 5600 },
+      { "catalogId": "11", "displayName": "Chawal", "qty": 1, "unit": "kg", "total": 8400 },
+      { "catalogId": "1", "displayName": "गेहूं", "qty": 10, "unit": "kg", "total": 34000 }
+    ],
+    "layer1": "hit",
+    "note": "The owner's order that failed on production (Gemini 429). Before KB-358-0 Layer 1 read the last line as Rs 34, not Rs 340, with no flag. Against the base seed; a shop that lacks one of these products goes to Layer 2 (KB-358 a/b)."
   }
 ]

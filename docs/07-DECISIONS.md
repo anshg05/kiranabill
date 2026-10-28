@@ -2168,6 +2168,37 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 3. **How the source layer gets set (checked 28 Oct, before the fix).** `resolveUtterance` (`data/voiceBilling.ts`) labels lines `fastpath` only when the WHOLE utterance hit Layer 1 with every line matched; anything else goes to Layer 2 and EVERY line of it is labelled `voice`, which `learnFromBill` records as `gemini`. An unedited line of such an utterance confirms the alias (owner's rule from KB-307: not editing is acceptance). So "रिन साबुन" got `gemini` correctly - the layer was right; the rule that a run of such acceptances could promote was the hole. **Arithmetic:** in the derivation a Gemini confirmation is +0.10 from a 0.30 base, so promotion on Gemini alone needed FIVE, not three. "Three" is the legacy single-device figure (`recordAliasConfirmation`: 0.5, 0.7, 0.9) which is still written into each event as `promoted` / `confidence_after`. Nothing reads those fields to decide anything (the parser uses only the derivation); they are an audit record of the old single-device rule and are not changed.
 4. **Cost, stated - and how little can lift the cap in practice.** Hand-added lines never teach (KB-307 decision 4), so a "manual" confirmation exists in the rules but not yet in the data. A Gemini-resolved phrase is therefore lifted in practice only by a `KB-336` correction (the shopkeeper picks the product himself) or by a fast-path hit on the same phrase (the parser matching it phonetically to the product). Until then the parser does not use it and the line keeps coming back through Layer 2 as before. That is the intended trade: the app never silently repeats a guess. If it proves too strict on the phone, the lever is a different rule, not a lower cap - owner's call.
 
+### D96 — "N rupay <unit>" is a RATE per that unit (built as `KB-358-0`, a hotfix) 🟢
+
+**Owner, 28 Oct 2026 - a silent wrong number in production.** The live fast path read "10 किलो गेहूं 34 रुपए किलो" as a TOTAL of Rs 34 (should be 10 x Rs 34 = Rs 340), with no flag: the unit after the price was dropped and "N rupay" with a quantity is a total (D47). `bench:numbers` had no such case, so its "0 wrong" never covered it; with the 42 cases added here the OLD grammar scores 33 WRONG.
+1. **Rule (`domain/grammar.ts`, `foldPerUnit`).** A number followed by a currency word and/or a connector (`का` `की` `के` `ka` `ki` `per` `प्रति` `पर`) and then a UNIT is a price per that unit. The unit must be the SAME as the quantity's unit; then rate = the number, total = qty x rate through the existing rate path (`priceType "rate"`, same as "wala"). Anything else bails to Layer 2: a different unit (500 gram at a per-kilo price, liters against kilos), a bare count against a unit, no quantity, two quantities, three or more numbers. The two count units "packet"/"piece" are NOT treated as interchangeable here (D14's `dozen` makes that unsafe); same word only.
+2. **What does not change (D47).** No unit after the price - "100 का चावल", "chawal 100 ka", "2 kilo chawal 90 rupay", "5 किलो चावल 200 का" - stays a TOTAL.
+3. **Phrasings covered** (kilo, and the same for gram / liter / packet / piece, Roman and Devanagari): `56 रुपए किलो`, `रुपये`, `रुपई`, `रुपए का किलो`, `रुपए प्रति किलो`, `56 का किलो`, `56 rupay kilo`, `56 per kilo`, `56 rupay per kilo`, `56 rupai kilo`, `56 rs kilo`, `56 रु किलो`, `₹56 किलो` (the glyph is rewritten to "56 रुपए" before tokenising). New currency spellings: `रुपई` `रूपई` `रुपैया` `rupai` `rupaiya` `rupya`.
+4. **Tests.** `src/domain/grammarPerUnit.test.ts` (57 cases, 36 red before the change), `src/data/voiceBillingPerUnit.test.ts` (the owner's 5:43 and 4:38 PM orders through the shipped routing), `bench:numbers` NB130-NB171 (category `per-unit`; 129 -> 171 cases, **0 WRONG**), `eval:real` RT40 (the 5:43 PM order). 11 plants: 10 caught; the 11th survived because the clause it broke was unreachable (a number with a rate or total marker can never also carry the quantity's unit), so the clause was removed instead.
+5. **Already-saved bills.** The full transcript is not stored (and `spoken_name` holds the product words only), so the bug cannot be found by its text. Read-only query for the Supabase SQL editor:
+
+```sql
+-- READ-ONLY. Final bills, voice lines Layer 1 priced as a TOTAL, quantity above 1. The bug's signature: billed far below
+-- quantity x the shop's own price. A legitimate "2 kilo chawal 90 rupay" is a total too - read the list, do not trust it blindly.
+select b.receipt_number, b.finalized_at, b.customer_name,
+       i.line_no, i.display_name, i.qty, i.unit,
+       i.total_paise                          as billed_paise,
+       round(i.total_paise / nullif(i.qty, 0)) as implied_per_unit_paise,
+       p.suggested_price_paise                as shop_price_paise,
+       round(i.qty * p.suggested_price_paise) as qty_x_shop_price_paise,
+       i.was_edited
+from bill_items i
+join bills b on b.id = i.bill_id
+left join shop_products p on p.id = i.shop_product_id
+where b.status = 'final'
+  and i.source = 'fastpath' and i.price_type = 'total' and i.rate_paise is null
+  and i.qty > 1
+  -- and b.shop_id = '<your shop id>'          -- optional
+order by b.finalized_at desc;
+```
+
+   A line it lists is either this bug or a genuine "N kilo X Y rupay" total; the first shows `billed_paise` close to ONE unit's price while `qty` is above 1 (`implied_per_unit_paise` far below `shop_price_paise`). A bill that needs correcting is cancelled and reissued (hard rule 2) - never edited.
+
 ---
 
 ## Superseded
