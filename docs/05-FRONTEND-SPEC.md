@@ -523,3 +523,7 @@ First figures from the Pilot numbers panel. **Anything over budget is a listed i
 | 24 kbps | 505,096 (4.8x smaller) | 19 of 54 | 9 (1 better) |
 
 The rule "keep a higher bitrate if any recording gets worse" -> **no change to the recorder.** Re-encoding a lossy file is harsher than recording at that rate; only a phone test could settle it. Region: Netlify function region needs the Pro plan; Singapore exists, Mumbai does not (D94 section 6).
+
+### `KB-353` - re-measured on `draft-v5` (owner's phone, 28 Oct 2026)
+
+Token check median 2 ms (p95 1.0 s = a cold key fetch); shop question 0 ms when remembered (p95 967 ms on a miss); stop -> transcript median 2.1 s (was 2.4 s) = server 1.1 s (Groq 580 ms, rate limit 45 ms) + network 1.1 s; audio 130 KB median; Bill Banao ~260 ms; app start: mic enabled at ~1.0 s median. Budget for stop -> transcript is 1.5 s; the gap is `KB-355`.
