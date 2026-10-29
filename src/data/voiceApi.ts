@@ -112,7 +112,7 @@ function postForm(form: FormData, opts: VoiceApiOptions, timeoutMs: number): Pro
       if (!response.ok) {
         const detail = (body as { error?: string } | null)?.error ?? response.statusText;
         const said = (body as { reason?: unknown } | null)?.reason;
-        throw new VoiceApiError(kindFor(response.status), detail, response.status, said === "daily_limit" || said === "minute_limit" || said === "busy" || said === "setup" ? said : undefined);
+        throw new VoiceApiError(kindFor(response.status), detail, response.status, said === "daily_limit" || said === "minute_limit" || said === "busy" || said === "setup" || said === "billing" ? said : undefined);
       }
       opts.onTiming?.({
         requestMs: headersAt - sentAt,

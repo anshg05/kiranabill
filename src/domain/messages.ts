@@ -122,6 +122,7 @@ export const MESSAGES = {
   "items.quotaToday": m("Today's free reading limit is reached — add by hand, or try again tomorrow", "आज की मुफ़्त पढ़ने की सीमा पूरी हो गई — खुद जोड़ें, या कल फिर कोशिश करें", "Aaj ki muft padhne ki seema poori ho gayi — khud jodein, ya kal phir koshish karein"),
   "items.busyRetry": m("Reading service is busy — Retry in a minute, or add by hand", "पढ़ने वाली सेवा व्यस्त है — एक मिनट बाद ‘फिर कोशिश’ दबाएं, या खुद जोड़ें", "Padhne wali service busy hai — ek minute baad ‘Phir koshish’ dabayein, ya khud jodein"),
   "items.slowRetry": m("Took too long — Retry, or add by hand", "देर हो गई — ‘फिर कोशिश’ दबाएं, या खुद जोड़ें", "Der ho gayi — ‘Phir koshish’ dabayein, ya khud jodein"),
+  "items.billingProblem": m("AI reading has no credit — add by hand, and tell support", "एआई से पढ़ने का क्रेडिट नहीं है — खुद जोड़ें, और सपोर्ट को बताएं", "AI se padhne ka credit nahi hai — khud jodein, aur support ko batayein"),
   "items.setupProblem": m("AI reading isn't set up right — add by hand, and tell support", "एआई से पढ़ना ठीक से चालू नहीं है — खुद जोड़ें, और सपोर्ट को बताएं", "AI se padhna theek se chalu nahi hai — khud jodein, aur support ko batayein"),
   "items.unreadableRetry": m("Couldn't read the items — Retry below", "सामान पढ़ नहीं पाए — नीचे ‘फिर कोशिश’ दबाएं", "Saaman padh nahi paaye — neeche ‘Phir koshish’ dabayein"),
   "save.failed": m("Couldn't save the bill — try again", "बिल सेव नहीं हो पाया — फिर कोशिश करें", "Bill save nahi ho paaya — phir koshish karein"),

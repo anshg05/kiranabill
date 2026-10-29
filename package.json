@@ -22,7 +22,8 @@
     "backup:probe": "tsx scripts/backup/backup.ts --probe --no-alert",
     "backup:rehearse": "tsx scripts/backup/rehearseRestore.ts",
     "test:rls": "tsx scripts/rls-negative-tests.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "smoke:voice": "tsx scripts/smoke-voice.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",

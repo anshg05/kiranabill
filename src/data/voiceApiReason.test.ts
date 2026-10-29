@@ -16,5 +16,6 @@ describe("VoiceApiError.reason", () => {
     expect(((await failWith(503, { error: "x", reason: "<script>" })) as VoiceApiError).reason).toBeUndefined();
     // KB-360: a setup problem is a 502 with reason "setup" (an app that has not updated shows today's generic text)
     expect(await failWith(502, { error: "Parse failed", reason: "setup" })).toMatchObject({ kind: "server", status: 502, reason: "setup" });
+    expect(await failWith(502, { error: "Parse failed", reason: "billing" })).toMatchObject({ kind: "server", status: 502, reason: "billing" });
   });
 });

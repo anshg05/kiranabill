@@ -8,7 +8,11 @@
     "strict": true,
     "noEmit": true,
     "tsBuildInfoFile": "../node_modules/.tmp/scripts.tsbuildinfo",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    /* smoke-voice.ts runs the app's own voiceApi, which imports via @/ */
+    "baseUrl": "..",
+    "paths": { "@/*": ["src/*"] }
   },
   "include": ["*.ts", "backup/*.ts"]
 }

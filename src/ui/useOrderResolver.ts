@@ -25,6 +25,7 @@ const isRetryable = (err: unknown) => err instanceof VoiceApiError && RETRYABLE.
  * entry, the status line under the total and a failed Retry (one function, one message). */
 export function parseFailureMessage(err: unknown): string {
   if (err instanceof VoiceApiError) {
+    if (err.reason === "billing") return "AI reading has no credit — add by hand, and tell support";
     if (err.reason === "setup") return "AI reading isn't set up right — add by hand, and tell support";
     if (err.kind === "busy") return err.reason === "daily_limit" ? "Today's free reading limit is reached — add by hand, or try again tomorrow" : "Reading service is busy — Retry in a minute, or add by hand";
     if (err.kind === "timeout") return "Took too long — Retry, or add by hand";

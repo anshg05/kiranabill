@@ -183,7 +183,8 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
             // KB-360: a 404 (this key's project has no such model), 401 / 403 (not signed in / the API is not enabled), or a 400 that says the KEY is
             // wrong is a SETUP problem - nothing a Retry can fix. Any other 400 is our own request's fault: a plain failure.
             const google = googleErrorOf(bodyText);
-            const setup = response.status === 404 || response.status === 401 || response.status === 403 || (response.status === 400 && google.keyProblem);
+            // A 402 is billing / prepaid credit (29 Oct 2026: draft-v9, every call) - also nothing a Retry can fix; voice.mts names it "billing".
+            const setup = response.status === 404 || response.status === 401 || response.status === 403 || response.status === 402 || (response.status === 400 && google.keyProblem);
             const named = google.status || google.reason ? { status: google.status, reason: google.reason } : undefined;
             throw new ProviderError(busy ? "busy" : setup ? "setup" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status, quotaIdOf(response.status, bodyText), named);
           }
@@ -192,7 +193,9 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
             candidates: { content: { parts: { text: string }[] } }[];
             usageMetadata: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number };
           };
-          const rawText = data.candidates[0]!.content.parts[0]!.text;
+          // The answer is the last text part that is not a thought (a thinking model may send thought parts first, or a signature-only part after).
+          const parts = data.candidates[0]!.content.parts as { text?: string; thought?: boolean }[];
+          const rawText = [...parts].reverse().find((p) => typeof p.text === "string" && !p.thought)!.text!;
           const rawItems = JSON.parse(rawText) as GeminiRawItem[];
           const items = rawItems.map((raw) => mapToParsedItem(raw, catalogSlice));
           const usage: TokenUsage = {

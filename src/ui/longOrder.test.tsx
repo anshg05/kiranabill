@@ -30,6 +30,8 @@ const BUSY = "Reading service is busy — Retry in a minute, or add by hand";
 const SLOW = "Took too long — Retry, or add by hand";
 const SETUP = "AI reading isn't set up right — add by hand, and tell support";
 
+const BILLING = "AI reading has no credit — add by hand, and tell support";
+
 const answer = (code: number, body: Record<string, unknown> = { error: "x" }) => new Response(JSON.stringify(body), { status: code });
 const mungdal: ParsedItem = { spokenName: "मुंगडाल", catalogId: "18", isCustom: false, matchStatus: "matched", qty: 1, unit: "kg", rate: 9600, rateUnit: "kg", total: 9600, priceType: "rate" };
 
@@ -182,6 +184,7 @@ describe("KB-360: ONE message for one cause - the entry, the status line under t
     ["Google busy", () => answer(503, { error: "Parse busy", reason: "busy" }), BUSY],
     ["too slow", () => answer(504), SLOW],
     ["an AI setup problem (a bad key / a disabled API / a model this key cannot use)", () => answer(502, { error: "Parse failed", reason: "setup" }), SETUP],
+    ["no billing credit (Google 402)", () => answer(502, { error: "Parse failed", reason: "billing" }), BILLING],
   ];
   it.each(cases)("a ONE-piece order, %s: the entry and the status line say the same thing", async (_label, respond, text) => {
     fetchMock.mockResolvedValueOnce(respond());
@@ -216,6 +219,7 @@ describe("parseFailureMessage: the cause in words", () => {
     expect(parseFailureMessage(new VoiceApiError("timeout", "x", 504))).toBe(SLOW);
     expect(parseFailureMessage(new VoiceApiError("server", "x", 502))).toBe("Couldn't read the items");
     expect(parseFailureMessage(new VoiceApiError("server", "Parse failed", 502, "setup"))).toBe(SETUP);
+    expect(parseFailureMessage(new VoiceApiError("server", "Parse failed", 502, "billing"))).toBe(BILLING);
     expect(parseFailureMessage(new VoiceApiError("network", "x"))).toBe("Couldn't read the items");
     expect(parseFailureMessage(new Error("boom"))).toBe("Couldn't read the items");
   });

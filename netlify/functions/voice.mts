@@ -79,7 +79,7 @@ function providerFailure(step: "Transcription" | "Parse", err: unknown, startedA
   );
   const error = kind === "timeout" ? `${step} timed out` : kind === "busy" ? `${step} busy` : `${step} failed`;
   const reason =
-    kind === "setup" ? "setup" : kind !== "busy" ? undefined : quota && /PerDay/i.test(quota) ? "daily_limit" : quota && /PerMinute/i.test(quota) ? "minute_limit" : "busy";
+    kind === "setup" ? (provider === 402 ? "billing" : "setup") : kind !== "busy" ? undefined : quota && /PerDay/i.test(quota) ? "daily_limit" : quota && /PerMinute/i.test(quota) ? "minute_limit" : "busy";
   return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, ...(reason ? { reason } : {}), detail: (err as Error).message }), { status });
 }
 

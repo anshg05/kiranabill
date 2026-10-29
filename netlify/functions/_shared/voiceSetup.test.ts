@@ -87,6 +87,14 @@ describe("KB-360: the model, the log and the setup answer", () => {
     expect(String(warn.mock.calls[0]![0])).not.toMatch(/secret|body|any-shaped/);
   });
 
+  it("a 402 from Google (billing / credit) -> 502 with reason 'billing'", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    parseMock.mockRejectedValueOnce(new ProviderError("setup", "Gemini parse failed: 402 {...}", 402, undefined, { status: "RESOURCE_EXHAUSTED" }));
+    const res = await handler(textOnly(), {} as never);
+    expect(res.status).toBe(502);
+    expect(await res.json()).toMatchObject({ error: "Parse failed", reason: "billing" });
+  });
+
   it("the Google status alone (no reason) is logged as it is; a 429 keeps its quota name before it", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     parseMock.mockRejectedValueOnce(new ProviderError("busy", "x", 429, "GenerateRequestsPerDayPerProjectPerModel-FreeTier", { status: "RESOURCE_EXHAUSTED" }));
