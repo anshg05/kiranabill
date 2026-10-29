@@ -21,6 +21,7 @@ import {
   parseMoneyInput,
   parseQtyInput,
   pendingChecks,
+  checkHeadline,
   unitChoices,
   type BillEntry,
   type UtteranceRecord,
@@ -527,13 +528,48 @@ describe("billFlags", () => {
     expect(keyOf(edited)).not.toBe(before);
   });
 
-  it("KB-304: pendingChecks counts unacknowledged HIGH flags only", () => {
+  it("KB-304 / KB-363b: pendingChecks counts LINES (and order blocks) with an unacknowledged HIGH flag - one per line, not one per reason", () => {
     const first = utterance(1, "2 kilo chini 5 wala", ["a"]); // HIGH unusual_rate + unusual_total
     const second = utterance(2, "2 kilo chini 5 wala", ["b"]); // + MEDIUM already_on_bill
     const flags = billFlags([...first.entries, ...second.entries], [first.record, second.record], SEED_PARSER_CATALOG.entries);
-    expect(flags.filter((f) => f.severity === "HIGH")).toHaveLength(4);
-    expect(pendingChecks(flags, new Set())).toBe(4);
-    expect(pendingChecks(flags, new Set([flags[0]!.key]))).toBe(3);
+    const high = flags.filter((f) => f.severity === "HIGH");
+    expect(high).toHaveLength(4);
+    expect(pendingChecks(flags, new Set())).toBe(2);
+    const lineA = high.filter((f) => f.lineId === "a");
+    expect(pendingChecks(flags, new Set([lineA[0]!.key]))).toBe(2); // one reason of two is not the line
+    expect(pendingChecks(flags, new Set(lineA.map((f) => f.key)))).toBe(1);
+    expect(pendingChecks(flags, new Set(high.map((f) => f.key)))).toBe(0);
+  });
+
+  it("KB-363b: a bill-level group (several reasons about what was said) is ONE check", () => {
+    const u = utterance(1, "1 kilo besan", ["a"]);
+    const hi = (code: "number_dropped" | "qty_dropped" | "number_misaligned") => ({ id: `bill-${code}`, code, severity: "HIGH" as const, message: "x", itemIndex: null });
+    const record = { ...u.record, flags: [hi("number_dropped"), hi("qty_dropped"), hi("number_misaligned")] };
+    const flags = billFlags(u.entries, [record], SEED_PARSER_CATALOG.entries);
+    expect(flags).toHaveLength(3);
+    expect(pendingChecks(flags, new Set())).toBe(1);
+  });
+
+  it("KB-363b: a line's own HIGH reasons and an order-level reason anchored on it are ONE check", () => {
+    const u = utterance(1, "2 kilo chini 5 wala", ["a"]); // HIGH unusual_rate + unusual_total
+    const record = { ...u.record, flags: [...u.record.flags, { id: "bill-number_dropped-3", code: "number_dropped" as const, severity: "HIGH" as const, message: "x", itemIndex: null }] };
+    const flags = billFlags(u.entries, [record], SEED_PARSER_CATALOG.entries);
+    expect(flags.filter((f) => f.severity === "HIGH")).toHaveLength(3);
+    expect(pendingChecks(flags, new Set())).toBe(1);
+  });
+
+  it("KB-363b: checkHeadline - the most important reason, short", () => {
+    const f = (code: string, message: string, lineId: string | null) => ({ code, message, lineId }) as never;
+    // a number problem on a line -> one short sentence, whatever the number reasons were
+    expect(checkHeadline([f("number_dropped", "Heard 10", "a"), f("number_unconsumed", "Two numbers", "a")])).toBe("Check this line's numbers");
+    // about what was said (no single line) -> the plural
+    expect(checkHeadline([f("number_misaligned", "Couldn't match", null), f("qty_dropped", "Heard a quantity", null)])).toBe("Check these lines' numbers");
+    // the AI disagreeing with the spoken price is the most specific reason - its own sentence wins over the generic one
+    expect(checkHeadline([f("number_unconsumed", "Two numbers", "a"), f("layer2_disagrees", "Heard 1 kg for ₹110, but the AI wrote 1 kg for ₹1,100 — check this line.", "a")])).toContain("but the AI wrote");
+    // any other single reason keeps its own sentence
+    expect(checkHeadline([f("unusual_rate", "Rate ₹5/kg — usually ₹45. Check?", "a")])).toBe("Rate ₹5/kg — usually ₹45. Check?");
+    // two non-number reasons: the first (they are already in order of importance)
+    expect(checkHeadline([f("unusual_rate", "Rate", "a"), f("unusual_total", "Total", "a")])).toBe("Rate");
   });
 
   it("a different qty in another utterance is not 'already on the bill'", () => {

@@ -5877,5 +5877,2019 @@
       "priceType": null
     },
     "note": "KB-361: Roman, an unread price word."
+  },
+  {
+    "id": "NB402",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी एक सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 10000,
+      "rateUnit": "kg",
+      "total": 10000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB403",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी एक सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB404",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी एक सौ अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 18800,
+      "rateUnit": "kg",
+      "total": 18800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB405",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी एक सो रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB406",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी एक सो दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB407",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी एक सो अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 18800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB408",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी एक सौं रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 10000,
+      "rateUnit": "kg",
+      "total": 10000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB409",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी एक सौं दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB410",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी एक सौं अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 18800,
+      "rateUnit": "kg",
+      "total": 18800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB411",
+    "category": "hundreds",
+    "utterance": "2 kilo chini ek sau rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB412",
+    "category": "hundreds",
+    "utterance": "1 kilo chini ek sau das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB413",
+    "category": "hundreds",
+    "utterance": "2 kilo chini ek sau atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 18800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB414",
+    "category": "hundreds",
+    "utterance": "1 kilo chini ek so rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 10000,
+      "rateUnit": "kg",
+      "total": 10000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB415",
+    "category": "hundreds",
+    "utterance": "2 kilo chini ek so das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB416",
+    "category": "hundreds",
+    "utterance": "1 kilo chini ek so atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 18800,
+      "rateUnit": "kg",
+      "total": 18800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB417",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी दो सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB418",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी दो सौ दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 21000,
+      "rateUnit": "kg",
+      "total": 21000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB419",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी दो सौ अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 28800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB420",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी दो सो रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 20000,
+      "rateUnit": "kg",
+      "total": 20000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB421",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी दो सो दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 21000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB422",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी दो सो अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 28800,
+      "rateUnit": "kg",
+      "total": 28800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB423",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी दो सौं रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB424",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी दो सौं दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 21000,
+      "rateUnit": "kg",
+      "total": 21000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB425",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी दो सौं अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 28800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB426",
+    "category": "hundreds",
+    "utterance": "1 kilo chini do sau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 20000,
+      "rateUnit": "kg",
+      "total": 20000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB427",
+    "category": "hundreds",
+    "utterance": "2 kilo chini do sau das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 21000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB428",
+    "category": "hundreds",
+    "utterance": "1 kilo chini do sau atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 28800,
+      "rateUnit": "kg",
+      "total": 28800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB429",
+    "category": "hundreds",
+    "utterance": "2 kilo chini do so rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 20000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB430",
+    "category": "hundreds",
+    "utterance": "1 kilo chini do so das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 21000,
+      "rateUnit": "kg",
+      "total": 21000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB431",
+    "category": "hundreds",
+    "utterance": "2 kilo chini do so atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 28800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB432",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी तीन सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 30000,
+      "rateUnit": "kg",
+      "total": 30000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB433",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी तीन सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 31000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB434",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी तीन सौ अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 38800,
+      "rateUnit": "kg",
+      "total": 38800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB435",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी तीन सो रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 30000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB436",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी तीन सो दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 31000,
+      "rateUnit": "kg",
+      "total": 31000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB437",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी तीन सो अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 38800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB438",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी तीन सौं रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 30000,
+      "rateUnit": "kg",
+      "total": 30000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB439",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी तीन सौं दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 31000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB440",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी तीन सौं अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 38800,
+      "rateUnit": "kg",
+      "total": 38800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB441",
+    "category": "hundreds",
+    "utterance": "2 kilo chini teen sau rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 30000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB442",
+    "category": "hundreds",
+    "utterance": "1 kilo chini teen sau das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 31000,
+      "rateUnit": "kg",
+      "total": 31000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB443",
+    "category": "hundreds",
+    "utterance": "2 kilo chini teen sau atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 38800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB444",
+    "category": "hundreds",
+    "utterance": "1 kilo chini teen so rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 30000,
+      "rateUnit": "kg",
+      "total": 30000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB445",
+    "category": "hundreds",
+    "utterance": "2 kilo chini teen so das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 31000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB446",
+    "category": "hundreds",
+    "utterance": "1 kilo chini teen so atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 38800,
+      "rateUnit": "kg",
+      "total": 38800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB447",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी चार सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 40000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB448",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी चार सौ दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 41000,
+      "rateUnit": "kg",
+      "total": 41000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB449",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी चार सौ अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 48800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB450",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी चार सो रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 40000,
+      "rateUnit": "kg",
+      "total": 40000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB451",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी चार सो दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 41000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB452",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी चार सो अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 48800,
+      "rateUnit": "kg",
+      "total": 48800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB453",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी चार सौं रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 40000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB454",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी चार सौं दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 41000,
+      "rateUnit": "kg",
+      "total": 41000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB455",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी चार सौं अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 48800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB456",
+    "category": "hundreds",
+    "utterance": "1 kilo chini char sau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 40000,
+      "rateUnit": "kg",
+      "total": 40000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB457",
+    "category": "hundreds",
+    "utterance": "2 kilo chini char sau das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 41000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB458",
+    "category": "hundreds",
+    "utterance": "1 kilo chini char sau atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 48800,
+      "rateUnit": "kg",
+      "total": 48800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB459",
+    "category": "hundreds",
+    "utterance": "2 kilo chini char so rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 40000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB460",
+    "category": "hundreds",
+    "utterance": "1 kilo chini char so das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 41000,
+      "rateUnit": "kg",
+      "total": 41000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB461",
+    "category": "hundreds",
+    "utterance": "2 kilo chini char so atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 48800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB462",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी पाँच सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 50000,
+      "rateUnit": "kg",
+      "total": 50000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB463",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी पाँच सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 51000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB464",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी पाँच सौ अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 58800,
+      "rateUnit": "kg",
+      "total": 58800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB465",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी पाँच सो रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 50000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB466",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी पाँच सो दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 51000,
+      "rateUnit": "kg",
+      "total": 51000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB467",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी पाँच सो अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 58800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB468",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी पाँच सौं रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 50000,
+      "rateUnit": "kg",
+      "total": 50000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB469",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी पाँच सौं दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 51000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB470",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी पाँच सौं अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 58800,
+      "rateUnit": "kg",
+      "total": 58800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB471",
+    "category": "hundreds",
+    "utterance": "2 kilo chini paanch sau rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 50000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB472",
+    "category": "hundreds",
+    "utterance": "1 kilo chini paanch sau das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 51000,
+      "rateUnit": "kg",
+      "total": 51000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB473",
+    "category": "hundreds",
+    "utterance": "2 kilo chini paanch sau atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 58800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB474",
+    "category": "hundreds",
+    "utterance": "1 kilo chini paanch so rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 50000,
+      "rateUnit": "kg",
+      "total": 50000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB475",
+    "category": "hundreds",
+    "utterance": "2 kilo chini paanch so das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 51000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB476",
+    "category": "hundreds",
+    "utterance": "1 kilo chini paanch so atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 58800,
+      "rateUnit": "kg",
+      "total": 58800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB477",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी छह सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 60000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB478",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी छह सौ दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 61000,
+      "rateUnit": "kg",
+      "total": 61000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB479",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी छह सौ अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 68800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB480",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी छह सो रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 60000,
+      "rateUnit": "kg",
+      "total": 60000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB481",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी छह सो दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 61000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB482",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी छह सो अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 68800,
+      "rateUnit": "kg",
+      "total": 68800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB483",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी छह सौं रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 60000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB484",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी छह सौं दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 61000,
+      "rateUnit": "kg",
+      "total": 61000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB485",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी छह सौं अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 68800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB486",
+    "category": "hundreds",
+    "utterance": "1 kilo chini chhe sau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 60000,
+      "rateUnit": "kg",
+      "total": 60000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB487",
+    "category": "hundreds",
+    "utterance": "2 kilo chini chhe sau das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 61000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB488",
+    "category": "hundreds",
+    "utterance": "1 kilo chini chhe sau atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 68800,
+      "rateUnit": "kg",
+      "total": 68800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB489",
+    "category": "hundreds",
+    "utterance": "2 kilo chini chhe so rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 60000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB490",
+    "category": "hundreds",
+    "utterance": "1 kilo chini chhe so das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 61000,
+      "rateUnit": "kg",
+      "total": 61000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB491",
+    "category": "hundreds",
+    "utterance": "2 kilo chini chhe so atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 68800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB492",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी सात सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 70000,
+      "rateUnit": "kg",
+      "total": 70000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB493",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी सात सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 71000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB494",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी सात सौ अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 78800,
+      "rateUnit": "kg",
+      "total": 78800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB495",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी सात सो रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 70000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB496",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी सात सो दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 71000,
+      "rateUnit": "kg",
+      "total": 71000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB497",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी सात सो अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 78800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB498",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी सात सौं रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 70000,
+      "rateUnit": "kg",
+      "total": 70000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB499",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी सात सौं दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 71000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB500",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी सात सौं अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 78800,
+      "rateUnit": "kg",
+      "total": 78800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB501",
+    "category": "hundreds",
+    "utterance": "2 kilo chini saat sau rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 70000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB502",
+    "category": "hundreds",
+    "utterance": "1 kilo chini saat sau das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 71000,
+      "rateUnit": "kg",
+      "total": 71000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB503",
+    "category": "hundreds",
+    "utterance": "2 kilo chini saat sau atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 78800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB504",
+    "category": "hundreds",
+    "utterance": "1 kilo chini saat so rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 70000,
+      "rateUnit": "kg",
+      "total": 70000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB505",
+    "category": "hundreds",
+    "utterance": "2 kilo chini saat so das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 71000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB506",
+    "category": "hundreds",
+    "utterance": "1 kilo chini saat so atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 78800,
+      "rateUnit": "kg",
+      "total": 78800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB507",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी आठ सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 80000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB508",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी आठ सौ दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 81000,
+      "rateUnit": "kg",
+      "total": 81000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB509",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी आठ सौ अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 88800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB510",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी आठ सो रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 80000,
+      "rateUnit": "kg",
+      "total": 80000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB511",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी आठ सो दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 81000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB512",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी आठ सो अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 88800,
+      "rateUnit": "kg",
+      "total": 88800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB513",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी आठ सौं रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 80000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB514",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी आठ सौं दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 81000,
+      "rateUnit": "kg",
+      "total": 81000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB515",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी आठ सौं अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 88800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB516",
+    "category": "hundreds",
+    "utterance": "1 kilo chini aath sau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 80000,
+      "rateUnit": "kg",
+      "total": 80000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB517",
+    "category": "hundreds",
+    "utterance": "2 kilo chini aath sau das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 81000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB518",
+    "category": "hundreds",
+    "utterance": "1 kilo chini aath sau atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 88800,
+      "rateUnit": "kg",
+      "total": 88800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB519",
+    "category": "hundreds",
+    "utterance": "2 kilo chini aath so rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 80000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB520",
+    "category": "hundreds",
+    "utterance": "1 kilo chini aath so das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 81000,
+      "rateUnit": "kg",
+      "total": 81000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB521",
+    "category": "hundreds",
+    "utterance": "2 kilo chini aath so atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 88800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB522",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी नौ सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 90000,
+      "rateUnit": "kg",
+      "total": 90000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB523",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी नौ सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 91000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB524",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी नौ सौ अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 98800,
+      "rateUnit": "kg",
+      "total": 98800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB525",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी नौ सो रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 90000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB526",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी नौ सो दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 91000,
+      "rateUnit": "kg",
+      "total": 91000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB527",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी नौ सो अट्ठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 98800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB528",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी नौ सौं रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 90000,
+      "rateUnit": "kg",
+      "total": 90000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB529",
+    "category": "hundreds",
+    "utterance": "2 किलो चीनी नौ सौं दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 91000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB530",
+    "category": "hundreds",
+    "utterance": "1 किलो चीनी नौ सौं अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 98800,
+      "rateUnit": "kg",
+      "total": 98800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB531",
+    "category": "hundreds",
+    "utterance": "2 kilo chini nau sau rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 90000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB532",
+    "category": "hundreds",
+    "utterance": "1 kilo chini nau sau das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 91000,
+      "rateUnit": "kg",
+      "total": 91000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB533",
+    "category": "hundreds",
+    "utterance": "2 kilo chini nau sau atthaasi rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 98800,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB534",
+    "category": "hundreds",
+    "utterance": "1 kilo chini nau so rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 90000,
+      "rateUnit": "kg",
+      "total": 90000,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB535",
+    "category": "hundreds",
+    "utterance": "2 kilo chini nau so das rupay",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": null,
+      "total": 91000,
+      "priceType": "total"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB536",
+    "category": "hundreds",
+    "utterance": "1 kilo chini nau so atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 98800,
+      "rateUnit": "kg",
+      "total": 98800,
+      "priceType": "rate"
+    },
+    "note": "KB-363a: a hundred-compound (\"एक सो दस\" = 110): every spelling of सौ (सौ / सो / सौं, sau / so) after a hundreds word, with and without a tail under 100, as ONE number. A price per kilo (even idx) or a total (odd idx)."
+  },
+  {
+    "id": "NB537",
+    "category": "hundreds-guard",
+    "utterance": "so kilo chini",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-363a guard: a bare Roman so is an ordinary word, never 100."
+  },
+  {
+    "id": "NB538",
+    "category": "hundreds-guard",
+    "utterance": "सो किलो चीनी",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-363a guard: a bare सो is an ordinary word, never 100."
+  },
+  {
+    "id": "NB539",
+    "category": "hundreds-guard",
+    "utterance": "chini so kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-363a guard: so after a word is an ordinary word, never 100."
+  },
+  {
+    "id": "NB540",
+    "category": "hundreds-guard",
+    "utterance": "2 kilo chini so",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4500,
+      "total": 9000,
+      "priceType": "default"
+    },
+    "note": "KB-363a guard: a stray so after a unit and a name is an ordinary word - the line is 2 kg at the catalog price, never 100."
   }
 ]

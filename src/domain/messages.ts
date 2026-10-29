@@ -95,6 +95,10 @@ export const MESSAGES = {
   "flag.qtyDropped": m("Heard a quantity of {n} but it's missing from the bill. Check?", "मात्रा {n} सुनी, पर बिल में नहीं है। देख लें?", "Matra {n} suni, par bill mein nahi hai. Dekh lein?"),
   "flag.twoNumbers": m(`Two numbers were heard for "{name}" but only one was used. Check?`, `“{name}” के लिए दो संख्याएँ सुनीं, एक ही इस्तेमाल हुई। देख लें?`, `“{name}” ke liye do numbers sune, ek hi use hua. Dekh lein?`),
   "flag.alreadyOnBill": m(`"{name}" is already on the bill with the same quantity and price — added again? Check.`, `“{name}” पहले से बिल में है, वही मात्रा और भाव — दोबारा जोड़ा? देख लें।`, `“{name}” pehle se bill mein hai, wahi matra aur bhav — dobara joda? Dekh lein.`),
+  "flag.checkLine": m("Check this line's numbers", "इस लाइन की संख्याएँ देख लें", "Is line ke numbers dekh lein"),
+  "flag.checkLines": m("Check these lines' numbers", "इन लाइनों की संख्याएँ देख लें", "In lines ke numbers dekh lein"),
+  "flag.checked": m("Checked — {name}", "देख लिया — {name}", "Dekh liya — {name}"),
+  "flag.thisOrder": m("this order", "यह ऑर्डर", "yeh order"),
   "flag.cantMatch": m("Couldn't match every number to its item in what was said — check each line's numbers.", "सब संख्याएँ सामान से मिल नहीं पाईं — हर लाइन की संख्या देख लें।", "Saare numbers saaman se mil nahi paaye — har line ke numbers dekh lein."),
 
   // ---- Learned names (KB-323)

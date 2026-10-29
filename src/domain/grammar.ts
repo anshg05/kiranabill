@@ -82,6 +82,10 @@ const MULTIPLIERS: Record<string, number> = {
   hazaar: 1000, हज़ार: 1000, हजार: 1000,
 };
 
+// KB-363a (owner, 29 Oct 2026): Whisper also writes सौ as "सो" / "सौं" (Roman "so"). These are real words elsewhere ("so", "सो
+// गया"), so they are a hundred ONLY straight after a plain number ("एक सो दस" = 110); bare, they stay ordinary words.
+const HUNDRED_SPELLINGS_AFTER_NUMBER = new Set(["सो", "सौं", "so"]);
+
 // KB-302 (owner): saadhe N = N + 0.5 ("saadhe teen" = 3.5). Needs a following
 // number; bare, it stays an ordinary word.
 // KB-317: every spelling Whisper writes (ड and ढ are different letters; the
@@ -310,6 +314,13 @@ function classifySegment(words: readonly string[]): Classified[] {
 
     if (MULTIPLIERS[word] !== undefined) {
       out.push({ type: "num", value: MULTIPLIERS[word], multiplier: MULTIPLIERS[word] });
+      i += 1;
+      continue;
+    }
+
+    const before = out[out.length - 1];
+    if (HUNDRED_SPELLINGS_AFTER_NUMBER.has(word) && before?.type === "num" && before.multiplier === undefined) {
+      out.push({ type: "num", value: 100, multiplier: 100 });
       i += 1;
       continue;
     }

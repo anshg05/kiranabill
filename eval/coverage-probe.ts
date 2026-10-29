@@ -42,7 +42,7 @@ function main(): void {
   const allCases = [...voiceCases, ...numberCases];
 
   if (voiceCases.length !== 25) throw new Error(`voice-cases.json: expected 25 cases, found ${voiceCases.length}`);
-  if (numberCases.length !== 401) throw new Error(`number-benchmark.json: expected 401 cases (100 + KB-005f's 10 + KB-302's 19 + KB-358-0's 42 + KB-358a's 13 + KB-361's 217), found ${numberCases.length}`);
+  if (numberCases.length !== 540) throw new Error(`number-benchmark.json: expected 540 cases (100 + KB-005f's 10 + KB-302's 19 + KB-358-0's 42 + KB-358a's 13 + KB-361's 217 + KB-363a's 139), found ${numberCases.length}`);
 
   console.log(`Fast-path coverage probe (KB-009) - ${allCases.length} cases (${voiceCases.length} eval + ${numberCases.length} number-benchmark)\n`);
 

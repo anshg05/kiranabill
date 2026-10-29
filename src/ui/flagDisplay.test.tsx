@@ -96,13 +96,25 @@ describe("KB-304 - HIGH: inline sentence, icon, 'Theek hai', blocks until acknow
     expect(pending()).toBe("1 check pending");
   });
 
-  it("'Theek hai': pending 0; the sentence stays visible, marked '✓ Theek hai'", () => {
+  it("before Theek hai the line has the red edge (the check is loud)", () => {
+    render(<Harness utterances={[layer1(RT20)]} />);
+    expect(document.querySelectorAll("[class*='border-l-danger']").length).toBeGreaterThan(0);
+  });
+
+  it("'Theek hai' (KB-363b): pending 0; the warning COLLAPSES to a tiny ✓ - the line looks normal; the detail opens on a tap", () => {
     render(<Harness utterances={[layer1(RT20)]} />);
     act(() => table().getByRole("button", { name: /^Theek hai/ }).click());
     expect(pending()).toBeNull();
-    const flag = table().getByText(DUP).closest("[data-severity]") as HTMLElement;
-    expect(within(flag).getByText("✓ Theek hai")).toBeTruthy();
-    expect(within(flag).queryByRole("button", { name: /^Theek hai/ })).toBeNull();
+    expect(table().queryByText(DUP)).toBeNull();
+    expect(table().queryByRole("button", { name: /^Theek hai/ })).toBeNull();
+    expect(table().queryByText("✓ Theek hai")).toBeNull();
+    expect(document.querySelectorAll("[class*='border-l-[3px]']")).toHaveLength(0); // the red (or grey) edge goes too - the line looks normal
+    const tick = table().getByRole("button", { name: "Checked — Chakki Aata" });
+    expect(tick.textContent).toBe("✓");
+    expect(tick.getAttribute("aria-expanded")).toBe("false");
+    act(() => tick.click());
+    expect(tick.getAttribute("aria-expanded")).toBe("true");
+    expect(table().getByText(DUP)).toBeTruthy();
   });
 
   it("an edit to the line lapses its acknowledgement: qty 3 clears the duplicate; back to 2, it returns UN-acknowledged", () => {
@@ -117,18 +129,19 @@ describe("KB-304 - HIGH: inline sentence, icon, 'Theek hai', blocks until acknow
 
   it("Undo of a removed line restores its acknowledgement (same line, same numbers)", () => {
     render(<Harness utterances={[layer1("2 kilo chini 5 wala")]} />); // HIGH unusual_rate + unusual_total
-    expect(pending()).toBe("2 checks pending");
-    for (const b of table().getAllByRole("button", { name: /^Theek hai/ })) act(() => b.click());
+    expect(pending()).toBe("1 check pending"); // KB-363b: two reasons on one line = ONE warning, ONE Theek hai
+    expect(table().getAllByRole("button", { name: /^Theek hai/ })).toHaveLength(1);
+    act(() => table().getByRole("button", { name: /^Theek hai/ }).click());
     expect(pending()).toBeNull();
     act(() => table().getByRole("button", { name: "Remove Chini" }).click());
     act(() => within(screen.getByRole("status")).getByRole("button", { name: "Undo" }).click());
     expect(pending()).toBeNull();
-    expect(table().getAllByText("✓ Theek hai")).toHaveLength(2);
+    expect(table().getAllByRole("button", { name: "Checked — Chini" })).toHaveLength(1);
   });
 });
 
 describe("KB-304 - bill-level flags: a block under the utterance's last line, with its transcript", () => {
-  it("KI-45's recorded Gemini shape ('500 ग्राम जीरा' -> 0.5 gm): three HIGH bill-level checks under Surf Excel", () => {
+  it("KI-45's recorded Gemini shape ('500 ग्राम जीरा' -> 0.5 gm): three HIGH bill-level reasons = ONE warning and ONE Theek hai under Surf Excel (KB-363b)", () => {
     const ki45 = layer2("500 ग्राम जीरा और एक पैकेट सर्फ एक्सल", [
       gemini({ spokenName: "जीरा", catalogId: "104", qty: 0.5, unit: "gm", rate: 40000, rateUnit: "kg", total: 20 }),
       gemini({ spokenName: "सर्फ एक्सल", catalogId: "189", qty: 1, unit: "packet", rate: 6000, rateUnit: "piece", total: 6000 }),
@@ -139,8 +152,31 @@ describe("KB-304 - bill-level flags: a block under the utterance's last line, wi
     expect(rows[2]!.textContent).toContain("Surf Excel");
     const block = rows[3]!;
     expect(block.textContent).toContain("Heard: “500 ग्राम जीरा और एक पैकेट सर्फ एक्सल”");
-    expect(within(block).getAllByRole("button", { name: /^Theek hai/ })).toHaveLength(3);
-    expect(pending()).toBe("3 checks pending");
+    expect(within(block).getAllByRole("button", { name: /^Theek hai/ })).toHaveLength(1);
+    expect(block.textContent).toContain("Check these lines' numbers");
+    expect(block.textContent).not.toContain("Couldn't match every number");
+    expect(pending()).toBe("1 check pending");
+    // after Theek hai the warning AND the Heard text collapse; the detail is one tap away
+    act(() => within(block).getByRole("button", { name: /^Theek hai/ }).click());
+    expect(pending()).toBeNull();
+    expect(table().queryByText(/Heard: “500/)).toBeNull();
+    expect(table().queryByText("Check these lines' numbers")).toBeNull();
+    act(() => within(table().getAllByRole("row")[3]!).getByRole("button", { name: /^Checked/ }).click());
+    expect(table().getByText(/Heard: “500/)).toBeTruthy();
+    expect(table().getByText(/Couldn't match every number/)).toBeTruthy();
+  });
+
+  it("KB-363b: a line's OWN reasons (unusual rate + total) and a reason about what was said are still ONE check, ONE Theek hai", () => {
+    const u = layer1("2 kilo chini 5 wala");
+    u.flags.push({ id: "bill-number_dropped-9", code: "number_dropped", severity: "HIGH", message: 'Heard "7" but it doesn\'t appear on any line. Did you mean to add it?', itemIndex: null });
+    render(<Harness utterances={[u]} />);
+    expect(pending()).toBe("1 check pending");
+    expect(table().getAllByRole("button", { name: /^Theek hai/ })).toHaveLength(1);
+    expect(table().getAllByText("Check these lines' numbers")).toHaveLength(1);
+    act(() => table().getByRole("button", { name: /^Theek hai/ }).click());
+    expect(pending()).toBeNull();
+    expect(table().queryByRole("button", { name: /^Theek hai/ })).toBeNull();
+    expect(table().queryByText("Check these lines' numbers")).toBeNull();
   });
 
   it("number_misaligned (Gemini put the numbers on the wrong items): one HIGH bill-level check", () => {
@@ -150,7 +186,7 @@ describe("KB-304 - bill-level flags: a block under the utterance's last line, wi
     ]);
     render(<Harness utterances={[swapped]} />);
     const block = table().getAllByRole("row")[3]!;
-    expect(block.textContent).toContain("Couldn't match every number to its item");
+    expect(block.textContent).toContain("Check these lines' numbers");
     expect(pending()).toBe("1 check pending");
   });
 });

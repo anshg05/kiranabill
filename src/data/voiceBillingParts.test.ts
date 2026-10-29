@@ -64,6 +64,21 @@ describe("KB-360: only NO match at all makes a custom line - an ambiguous one ne
   });
 });
 
+describe("KB-363 (owner, 29 Oct 2026): 'एक सो दस' is 110 - the owner's phone sentence raises no warning at all", () => {
+  const SAID = "एक किलो मुंग मोगर एक सो दस रुपए किलो";
+  const geminiLine: ParsedItem = { spokenName: "मुंग मोगर", catalogId: "622", isCustom: false, matchStatus: "matched", qty: 1, unit: "kg", rate: 11000, rateUnit: "kg", total: 11000, priceType: "rate" };
+  it("whichever layer reads it (Layer 1 by rule, or Gemini's correct 1 kg x Rs 110): one line at Rs 110 and no HIGH flag", async () => {
+    const r = await run(SAID, async () => [geminiLine]);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ qty: 1, unit: "kg", rate: 11000, total: 11000 });
+    expect(r.flags.filter((f) => f.severity === "HIGH")).toEqual([]);
+  });
+  it("Gemini's answer for it, sent whole to Layer 2 (a text Layer 1 left alone): still no number flag - the checker reads 110 once", async () => {
+    const r = await run("मुंग मोगर " + SAID.replace("मुंग मोगर ", ""), async () => [geminiLine]);
+    expect(r.flags.filter((f) => f.severity === "HIGH")).toEqual([]);
+  });
+});
+
 describe("KB-362 (owner, 29 Oct 2026): a price per kilo said WITHOUT 'rupees', after the quantity, is never a quantity", () => {
   const OWNER = "1 किलो मूंग दाल 96 किलो 1 किलो बर्बटी दाल 88 किलो 1 किलो उडद मोगर 130 किलो 1 किलो मूंग मोगर 110 किलो";
   it.each([OWNER, "1 किलो मूंग दाल 96 किलो", "2 किलो चीनी 45 किलो", "एक किलो चीनी पैंतालीस किलो"])("Layer 1 does not read %s by rule (it never becomes 96 kg) - the text goes to Layer 2 whole", async (t) => {

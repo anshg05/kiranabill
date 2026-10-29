@@ -34,8 +34,8 @@ const lines = (t = "2 kilo chini"): (BillLine & { id: string })[] =>
   parseUtterance(t, SEED_PARSER_CATALOG)!.map((item, i) => ({ id: `l${i}`, item, displayName: SEED_PARSER_CATALOG.byId.get(item.catalogId!)!.displayName, source: "fastpath" as const }));
 const base = { lines: [] as (BillLine & { id: string })[], onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
 const voice = (over: Partial<VoiceView> = {}): VoiceView => ({ phase: "idle", transcript: null, message: null, elapsedMs: 0, disabledReason: null, ...over });
-const highFlag = (message: string): ShownFlag =>
-  ({ id: "f1", code: "number_dropped", severity: "HIGH", message, itemIndex: null, lineId: null, utteranceId: 1, anchorLineId: "l0", transcript: "do kilo chini", key: "k1", acknowledged: false }) as ShownFlag;
+const highFlag = (message: string, code = "duplicate_line"): ShownFlag =>
+  ({ id: "f1", code, severity: "HIGH", message, itemIndex: null, lineId: null, utteranceId: 1, anchorLineId: "l0", transcript: "do kilo chini", key: "k1", acknowledged: false }) as ShownFlag;
 const use = (l: Language) => act(() => setScreenLanguage(l));
 
 describe("the mic and the recording text", () => {
@@ -119,6 +119,13 @@ describe("flags: the sentence is translated, the buttons that must not change do
     expect(sentence).toContain("5");
     expect(screen.getAllByRole("button", { name: /Theek hai/ }).length).toBeGreaterThan(0);
     expect(screen.getByText(say("checks.one", { n: 1 }, l))).toBeTruthy();
+  });
+  // KB-363b: a number reason is ONE short sentence, in the chosen language
+  it.each(LANGUAGES)("the short number sentence in %s", (l) => {
+    use(l);
+    render(<BillView {...base} lines={lines()} flags={[highFlag(english, "number_dropped")]} pending={1} onAcknowledge={() => {}} onFinalise={() => {}} />);
+    expect(screen.getAllByText(say("flag.checkLines", {}, l)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(english)).toBeNull();
   });
 });
 

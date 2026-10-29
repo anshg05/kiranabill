@@ -121,7 +121,7 @@ describe("KB-307 - when Bill Banao is enabled", () => {
     await tapBillBanao();
     expect(document.activeElement?.textContent).toBe("Theek hai");
     expect(document.activeElement?.getAttribute("aria-label")).toMatch(/^Theek hai — Chini/);
-    expect(screen.getByTestId("flag-announcer").textContent).toBe("2 checks pending.");
+    expect(screen.getByTestId("flag-announcer").textContent).toMatch(/1 check pending\.$/); // KB-363b: two reasons on the Chini line = one check
     expect(await db.bills.count()).toBe(0);
   });
 

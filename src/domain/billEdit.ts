@@ -350,10 +350,35 @@ export function billFlags(entries: readonly BillEntry[], utterances: readonly Ut
   return flags;
 }
 
-/** KB-304: the "N checks pending" count - HIGH flags not yet acknowledged
- * (the same rule as reviewFlags.canFinalize). */
+/**
+ * KB-363b (owner, 29 Oct 2026): at most ONE warning per line - and one for what was said when the reasons are about the whole
+ * utterance - with ONE "Theek hai". Every HIGH flag of a line (or of an utterance's bill-level group) belongs to the same check;
+ * the shopkeeper acknowledges them together, and each keeps its own record (finalBill).
+ */
+export function checkGroupKey(f: Pick<PlacedFlag, "lineId" | "anchorLineId">): string {
+  return f.lineId ?? f.anchorLineId; // a reason about what was said joins the check of the line it is shown under
+}
+
+/** Reasons that are all "the numbers heard do not fit the lines" - shown as one short sentence, not four. */
+const NUMBER_REASONS: ReadonlySet<string> = new Set(["number_dropped", "qty_dropped", "number_unconsumed", "number_misaligned"]);
+
+/**
+ * The one sentence a check shows: the AI contradicting the spoken price (specific, so its own words) first; then any number
+ * reason as "Check this line's numbers" (a line) / "Check these lines' numbers" (what was said); else the first other reason, as it
+ * is. (The full list stays in the record and one tap away behind the ✓.)
+ */
+export function checkHeadline(highs: readonly (Pick<ReviewFlag, "code" | "message"> & { readonly lineId?: string | null })[]): string {
+  const specific = highs.find((f) => f.code === "layer2_disagrees");
+  if (specific) return specific.message;
+  const numbers = highs.filter((f) => NUMBER_REASONS.has(f.code));
+  if (numbers.length > 0) return numbers.some((f) => !f.lineId) ? "Check these lines' numbers" : "Check this line's numbers";
+  return highs[0]!.message;
+}
+
+/** KB-304 / KB-363b: the "N checks pending" count - LINES (and order blocks) with a HIGH flag not yet acknowledged (the same rule
+ * as reviewFlags.canFinalize: a check is cleared when all its flags are). */
 export function pendingChecks(flags: readonly PlacedFlag[], acknowledged: ReadonlySet<string>): number {
-  return flags.filter((f) => f.severity === "HIGH" && !acknowledged.has(f.key)).length;
+  return new Set(flags.filter((f) => f.severity === "HIGH" && !acknowledged.has(f.key)).map(checkGroupKey)).size;
 }
 
 /**

@@ -5,7 +5,7 @@ import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex"
 import type { ParsedItem } from "@/domain/grammar";
 import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
-import { customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
+import { checkGroupKey, checkHeadline, customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
 import { amountNeeded } from "@/domain/finalBill";
 import { sumPaise } from "@/domain/money";
 import { recordingVocabulary } from "@/domain/vocabulary";
@@ -536,32 +536,57 @@ function AmountNeeded({ need }: { need: "price" | "quantity" }) {
 }
 
 /**
- * KB-304: one HIGH flag - 05 §2: a red inline sentence and a "Theek hai"
- * acknowledge button (13-DESIGN §6b: 1px DANGER border, transparent). Never
- * colour alone (05 §9): a triangle icon and, for screen readers, "Must check".
- * Acknowledged, the sentence stays readable, muted, marked "✓ Theek hai".
+ * KB-304 + KB-363b (owner, 29 Oct 2026): ONE HIGH check per line (or per what was said) - 05 §2: a red inline sentence, the most
+ * important reason, short, and ONE "Theek hai" acknowledge button (13-DESIGN §6b: 1px DANGER border, transparent). Never colour
+ * alone (05 §9): a triangle icon and, for screen readers, "Must check". Acknowledged, the warning AND the "Heard: ..." text collapse
+ * to a tiny ✓ - the line looks normal; a tap on the ✓ shows every reason. The full list stays in the record (finalBill) either way.
  */
-function HighFlag({ flag, name, onAcknowledge }: { flag: ShownFlag; name: string | null; onAcknowledge: (flag: ShownFlag) => void }) {
+function HighCheck({ flags, name, transcript, onAcknowledge }: { flags: readonly ShownFlag[]; name: string | null; transcript: string | null; onAcknowledge: (flags: readonly ShownFlag[]) => void }) {
   const { t, tx } = useT();
-  const sentence = tx(flag.message);
+  const [open, setOpen] = useState(false);
+  if (flags.every((f) => f.acknowledged)) {
+    return (
+      <div data-severity="HIGH" className="text-[13px] text-ink-soft">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={t("flag.checked", { name: name ?? t("flag.thisOrder") })}
+          onClick={() => setOpen((o) => !o)}
+          className="flex size-11 shrink-0 items-center justify-center rounded-[6px] font-medium"
+        >
+          ✓
+        </button>
+        {open && (
+          <div>
+            {transcript && <p>{t("flag.heard", { text: transcript })}</p>}
+            <ul>
+              {flags.map((f) => (
+                <li key={f.key}>{tx(f.message)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  }
+  const sentence = tx(checkHeadline(flags));
   return (
-    <div data-severity="HIGH" className={`flex flex-wrap items-center gap-x-2 text-[13px] ${flag.acknowledged ? "text-ink-soft" : "text-danger"}`}>
-      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
-      <span className="sr-only">{t("flag.mustCheck")} </span>
-      <span>{sentence}</span>
-      {flag.acknowledged ? (
-        <span className="font-medium">{t("flag.ok")}</span>
-      ) : (
+    <div>
+      {transcript && <p className="text-[13px] text-ink-soft">{t("flag.heard", { text: transcript })}</p>}
+      <div data-severity="HIGH" className="flex flex-wrap items-center gap-x-2 text-[13px] text-danger">
+        <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+        <span className="sr-only">{t("flag.mustCheck")} </span>
+        <span>{sentence}</span>
         <button
           type="button"
           data-pending-target
           aria-label={t("flag.okLabel", { text: `${name ? `${name}: ` : ""}${sentence}` })}
-          onClick={() => onAcknowledge(flag)}
+          onClick={() => onAcknowledge(flags.filter((f) => !f.acknowledged))}
           className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger"
         >
           {t("flag.okButton")}
         </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -601,18 +626,15 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
   );
 }
 
-/** A line's (or an utterance's) flags: every HIGH sentence, then one REVIEW
- * badge and one note dot for the rest. */
-function FlagList({ flags, name, onAcknowledge }: { flags: readonly ShownFlag[]; name: string | null; onAcknowledge: (flag: ShownFlag) => void }) {
+/** A line's (or an utterance's) flags: ONE HIGH check for all its HIGH reasons, then one REVIEW
+ * badge and one note dot for the rest. `transcript` is the "Heard: ..." text of a bill-level group (it collapses with the check). */
+function FlagList({ flags, name, transcript = null, onAcknowledge }: { flags: readonly ShownFlag[]; name: string | null; transcript?: string | null; onAcknowledge: (flags: readonly ShownFlag[]) => void }) {
   const medium = flags.filter((f) => f.severity === "MEDIUM").map((f) => f.message);
   const low = flags.filter((f) => f.severity === "LOW").map((f) => f.message);
+  const high = flags.filter((f) => f.severity === "HIGH");
   return (
     <div className="flex flex-col gap-1 py-1">
-      {flags
-        .filter((f) => f.severity === "HIGH")
-        .map((f) => (
-          <HighFlag key={f.key} flag={f} name={name} onAcknowledge={onAcknowledge} />
-        ))}
+      {high.length > 0 && <HighCheck flags={high} name={name} transcript={transcript} onAcknowledge={onAcknowledge} />}
       {(medium.length > 0 || low.length > 0) && (
         <div className="flex flex-wrap items-start gap-2">
           {medium.length > 0 && <FlagNote severity="MEDIUM" name={name ?? "this order"} messages={medium} />}
@@ -807,8 +829,9 @@ export function BillView({
   // the window was resized (owner's real-Chrome check).
   const wide = useMediaQuery("(min-width: 48rem)");
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
-  const lineFlags = (id: string) => flags.filter((f) => f.lineId === id);
   const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
+  // KB-363b: a line's own reasons and the reasons about what was said (anchored under the utterance's last line) are ONE check
+  const lineFlags = (id: string) => [...flags.filter((f) => f.lineId === id), ...billLevelAfter(id)];
   const nameOfLine = new Map(lines.map((l) => [l.id, l.displayName]));
   const hasHigh = (id: string) => lineFlags(id).filter((f) => f.severity === "HIGH");
 
@@ -820,13 +843,16 @@ export function BillView({
     const fresh = flags.filter((f) => f.severity === "HIGH" && !f.acknowledged && !announced.current.has(f.key));
     for (const f of flags) announced.current.add(f.key);
     if (fresh.length) {
-      const said = fresh.map((f) => (f.lineId ? `${nameOfLine.get(f.lineId)}: ${tx(f.message)}` : tx(f.message))).join(" ");
+      // one sentence per check (KB-363b), not one per reason
+      const groups = new Map<string, ShownFlag[]>();
+      for (const f of fresh) groups.set(checkGroupKey(f), [...(groups.get(checkGroupKey(f)) ?? []), f]);
+      const said = [...groups.values()].map((g) => (g[0]!.lineId ? `${nameOfLine.get(g[0]!.lineId)}: ${tx(checkHeadline(g))}` : tx(checkHeadline(g)))).join(" ");
       setAnnouncement(`${said} ${checksText(pending, t)}.`);
     }
     // nameOfLine is derived from lines, which flags already follow
   }, [flags, pending]);
-  const acknowledge = (flag: ShownFlag) => {
-    onAcknowledge?.(flag.key);
+  const acknowledge = (group: readonly ShownFlag[]) => {
+    for (const f of group) onAcknowledge?.(f.key);
     setAnnouncement(`${t("checks.checked")} ${checksText(pending - 1, t)}.`);
   };
   // KB-323 (D81): a line the parser read through a learned alias says so, with one tap to undo it - visible, never blocking.
@@ -873,18 +899,8 @@ export function BillView({
           </div>
         )}
         {!note && notThis.has(id) && <p className="py-1 text-[13px] text-ink-soft">{t("learned.forgotten", { name })}</p>}
-        {own.length > 0 && <FlagList flags={own} name={name} onAcknowledge={acknowledge} />}
+        {own.length > 0 && <FlagList flags={own} name={name} transcript={billLevelAfter(id)[0]?.transcript ?? null} onAcknowledge={acknowledge} />}
       </>
-    );
-  };
-  const billLevelBlock = (id: string) => {
-    const after = billLevelAfter(id);
-    if (after.length === 0) return null;
-    return (
-      <div className="py-1">
-        <p className="text-[13px] text-ink-soft">{t("flag.heard", { text: after[0]!.transcript })}</p>
-        <FlagList flags={after} name={null} onAcknowledge={acknowledge} />
-      </div>
     );
   };
   // 05 §2: a line with an unacknowledged HIGH flag gets a 3px DANGER left
@@ -897,7 +913,7 @@ export function BillView({
     if (needOf(id)) return "border-l-[3px] border-l-danger";
     const high = hasHigh(id);
     if (high.length === 0) return "";
-    return high.some((f) => !f.acknowledged) ? "border-l-[3px] border-l-danger" : "border-l-[3px] border-l-line";
+    return high.some((f) => !f.acknowledged) ? "border-l-[3px] border-l-danger" : ""; // KB-363b: once checked, the line looks normal
   };
 
   // KB-303: the editable pieces of a line. `view` keeps field ids unique -
@@ -1084,7 +1100,6 @@ export function BillView({
                   {rateOf("card", id, line, displayName)}
                 </div>
                 {flagsBlock(id, displayName)}
-                {billLevelBlock(id)}
               </li>
             ))}
           </ul>
@@ -1117,13 +1132,6 @@ export function BillView({
                   <tr key={`${id}-flags`} className="border-b border-line bg-surface">
                     <td colSpan={6} className={`px-4 ${edge(id)}`}>
                       {flagsBlock(id, displayName)}
-                    </td>
-                  </tr>
-                ),
-                billLevelAfter(id).length > 0 && (
-                  <tr key={`${id}-heard`} className="border-b border-line bg-surface">
-                    <td colSpan={6} className="border-l-[3px] border-l-danger px-4">
-                      {billLevelBlock(id)}
                     </td>
                   </tr>
                 ),
