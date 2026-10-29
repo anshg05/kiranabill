@@ -530,6 +530,12 @@ function nameHasPriceWord(classified: readonly Classified[]): boolean {
   return classified.some((token) => token.type === "word" && DEVANAGARI_CURRENCY.has(token.raw));
 }
 
+/** KB-359: did this piece of speech contain a price word whose number could not be read (see nameHasPriceWord)? */
+export function pieceHasUnreadPrice(text: string): boolean {
+  const words = splitWords(text);
+  return words.length > 0 && nameHasPriceWord(classifySegment(words));
+}
+
 function extractSpokenName(classified: readonly Classified[]): string {
   return classified
     .filter((token): token is { type: "word"; raw: string } => token.type === "word")

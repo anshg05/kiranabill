@@ -64,6 +64,36 @@ describe("KB-360: only NO match at all makes a custom line - an ambiguous one ne
   });
 });
 
+describe("KB-362 (owner, 29 Oct 2026): a price per kilo said WITHOUT 'rupees', after the quantity, is never a quantity", () => {
+  const OWNER = "1 किलो मूंग दाल 96 किलो 1 किलो बर्बटी दाल 88 किलो 1 किलो उडद मोगर 130 किलो 1 किलो मूंग मोगर 110 किलो";
+  it.each([OWNER, "1 किलो मूंग दाल 96 किलो", "2 किलो चीनी 45 किलो", "एक किलो चीनी पैंतालीस किलो"])("Layer 1 does not read %s by rule (it never becomes 96 kg) - the text goes to Layer 2 whole", async (t) => {
+    const asked: string[] = [];
+    const r = await run(t, async (text) => (asked.push(text), []));
+    expect(asked).toEqual([t]);
+    expect(r.lines).toEqual([]);
+  });
+});
+
+describe("KB-359: Gemini's answer is checked against the piece it was asked about", () => {
+  const priced = (over: Partial<ParsedItem>): ParsedItem => ({ spokenName: "zzyzx khaas", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "unknown", ...over });
+
+  it("A: a total spoken ('90 rupay') that the AI wrote as a RATE (Rs 450) -> the AI's line is shown with a HIGH flag on it", async () => {
+    const r = await run("5 kilo zzyzx khaas 90 rupay", async () => [priced({ rate: 9000, rateUnit: "kg", total: 45000, priceType: "rate" })]);
+    expect(r.lines[0]!.item).toMatchObject({ qty: 5, total: 45000 });
+    expect(r.flags.filter((f) => f.code === "layer2_disagrees")).toEqual([expect.objectContaining({ severity: "HIGH", itemIndex: 0 })]);
+  });
+  it("A: the AI agrees with what was spoken -> no such flag", async () => {
+    const r = await run("5 kilo zzyzx khaas 90 rupay", async () => [priced({ total: 9000, priceType: "total" })]);
+    expect(r.flags.some((f) => f.code === "layer2_disagrees")).toBe(false);
+  });
+  it("B: 'चैन रुपए किलो' (a price nobody can read) and the AI invents Rs 60 -> the line has NO price ('price needed'), the quantity stays, no flag", async () => {
+    const r = await run("एक किलो मुँगडाल चैन रुपए किलो", async () => [{ ...custom("मुंगडाल", 1), rate: 6000, total: 6000 }]);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ qty: 1, unit: "kg", rate: null, total: null, priceType: "unknown" });
+    expect(r.flags.some((f) => f.code === "layer2_disagrees")).toBe(false);
+  });
+});
+
 describe("KB-358a: only the unresolved pieces go to Layer 2, together", () => {
   it("the 4:37 PM order: Gemini sees the two unreadable pieces and nothing else; its lines join the two Layer 1 lines", async () => {
     const asked: string[] = [];

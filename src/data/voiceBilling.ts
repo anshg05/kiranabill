@@ -2,6 +2,7 @@ import type { CatalogEntry } from "@/domain/catalog";
 import { buildCatalogSlice, type ParserCatalog } from "@/domain/catalogIndex";
 import { parseUtteranceParts, type ParsedItem } from "@/domain/grammar";
 import { settleLayer2Items } from "@/domain/layer2";
+import { checkLayer2AgainstSpoken } from "@/domain/layer2Check";
 import { checkLayer2NumberOrder, evaluateReviewFlags, type ReviewCode, type ReviewFlag } from "@/domain/reviewFlags";
 
 // KB-302: steps 3-6 of the one-turn flow (16-APP-FLOW.md section 3;
@@ -107,7 +108,10 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
     return { layer: fastLines.length > 0 ? "fastpath" : "voice", lines: fastLines, flags, timings: { layer1Ms, layer2Ms: performance.now() - layer2Start }, unresolved: left.map((p) => p.text), failure };
   }
   const layer2Ms = performance.now() - layer2Start;
-  const settled = settleLayer2Items(proposed, deps.shop);
+  const settledRaw = settleLayer2Items(proposed, deps.shop);
+  // KB-359: the AI's line against what Layer 1 could read of the same piece (a price it cannot back is dropped; a different one is flagged)
+  const checked = checkLayer2AgainstSpoken(left, settledRaw.lines);
+  const settled = { lines: checked.lines, flags: [...settledRaw.flags, ...checked.flags] };
 
   // KB-317 commit 5 (owner): a line with no catalog match AND no qty, rate or
   // total is nothing the shopkeeper said - Whisper's silence hallucination

@@ -50,6 +50,7 @@ export type ReviewCode =
   | "qty_dropped"
   | "number_unconsumed"
   | "number_misaligned"
+  | "layer2_disagrees"
   | "duplicate_line"
   | "already_on_bill";
 
