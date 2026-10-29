@@ -3,7 +3,7 @@
 // the real netlify/functions/voice.mts (auth, shop lookup, rate limit, GEMINI_MODEL, the provider) -> the real Gemini, with a throwaway user
 // on the local Supabase stack. Run it before every draft and release that touches Layer 2:
 //     npm run smoke:voice
-// It spends 6 Gemini calls (declared below; they share production's quota if the key is the same - keep it <= 10) and starts/stops
+// It spends 7 Gemini calls (declared below; they share production's quota if the key is the same - keep it <= 10) and starts/stops
 // `netlify functions:serve` itself. Needs the local Docker stack (npx supabase start) and GEMINI_API_KEY / GEMINI_MODEL / GROQ_API_KEY in .env.local.
 // It proves the key in .env.local - NOT the key in Netlify; the owner's first signed-in call on the deployed draft proves that one.
 import { spawn, spawnSync } from "node:child_process";
@@ -38,6 +38,7 @@ const cases: Case[] = [
   { label: "an unreadable price is never invented", say: "एक किलो मुँगडाल चैन रुपए किलो",
     check: (i) => (i.length < 1 ? "no line" : i.some((x) => x.priceType !== "unknown" && (x.rate ?? 0) > 0 && x.matchStatus !== "matched") ? "invented a price" : null) },
   { label: "a plain priced line", say: "2 किलो चीनी 45 रुपए किलो", check: (i) => (i.length === 1 && i[0]!.qty === 2 && i[0]!.rate === 4500 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.rate]))}`) },
+  { label: "'एक सो दस' is 110 (the owner's phone test, 29 Oct)", say: "एक किलो मुंग मोगर एक सो दस रुपए किलो", check: (i) => (i.length === 1 && i[0]!.qty === 1 && i[0]!.rate === 11000 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.rate]))}`) },
   { label: "a total, not a rate", say: "5 किलो चीनी 225 रुपए", check: (i) => (i.length === 1 && i[0]!.qty === 5 && i[0]!.total === 22500 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.rate, x.total]))}`) },
 ];
 

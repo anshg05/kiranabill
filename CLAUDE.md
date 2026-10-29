@@ -116,7 +116,7 @@ Full reasoning and rejected alternatives: `docs/11-STACK-DECISIONS.md`.
 npm test              # Vitest - unit tests in parallel (capped at 3 workers in vite.config.ts - the official VERIFY run), then perf tests alone (D35); no Docker needed
 npm run test:e2e      # real local Docker stack - REQUIRED for any sync or schema ticket (D37)
 npm run test:rls      # RLS negative tests, real local Postgres
-npm run smoke:voice   # LIVE Layer-2 smoke (6 real Gemini calls through the real /voice, local stack) - before every draft/release that touches Layer 2 (D99 item 13)
+npm run smoke:voice   # LIVE Layer-2 smoke (7 real Gemini calls through the real /voice, local stack) - before every draft/release that touches Layer 2 (D99 item 13)
 npm run typecheck     # tsc -b: src/, netlify/, eval/, scripts/, vite.config.ts (D40) - NOT `npx tsc --noEmit`
 npm run lint          # ESLint on every TS file: domain boundary + 5 core correctness rules
 npm run dev           # dev server
