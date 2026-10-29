@@ -2178,14 +2178,19 @@ must ask it to). No migration. Closes `KI-40` and `KI-68` once the owner's phone
 5. **Already-saved bills.** The full transcript is not stored (and `spoken_name` holds the product words only), so the bug cannot be found by its text. Read-only query for the Supabase SQL editor:
 
 ```sql
--- READ-ONLY. Final bills, voice lines Layer 1 priced as a TOTAL, quantity above 1. The bug's signature: billed far below
--- quantity x the shop's own price. A legitimate "2 kilo chawal 90 rupay" is a total too - read the list, do not trust it blindly.
+-- READ-ONLY (fixed 29 Oct 2026 - the first version named a column that does not exist; this one was run on the local stack).
+-- Final bills, voice lines Layer 1 priced as a TOTAL, quantity above 1. The bug's signature: billed far below quantity x the
+-- shop's own price for that unit. 'suspect' marks those; a genuine "2 kilo chawal 90 rupay" total is in the list too without it
+-- (or with it, if you simply charged much less than the list price) - read the list, do not trust it blindly.
 select b.receipt_number, b.finalized_at, b.customer_name,
        i.line_no, i.display_name, i.qty, i.unit,
-       i.total_paise                          as billed_paise,
+       i.total_paise                           as billed_paise,
        round(i.total_paise / nullif(i.qty, 0)) as implied_per_unit_paise,
-       p.suggested_price_paise                as shop_price_paise,
-       round(i.qty * p.suggested_price_paise) as qty_x_shop_price_paise,
+       p.price_paise                           as shop_price_paise,
+       p.unit                                  as shop_unit,
+       round(i.qty * p.price_paise)            as qty_x_shop_price_paise,
+       case when p.price_paise is not null and i.unit = p.unit and i.total_paise < 0.7 * i.qty * p.price_paise
+            then 'LOOKS LIKE THE BUG' end      as suspect,
        i.was_edited
 from bill_items i
 join bills b on b.id = i.bill_id
@@ -2193,8 +2198,8 @@ left join shop_products p on p.id = i.shop_product_id
 where b.status = 'final'
   and i.source = 'fastpath' and i.price_type = 'total' and i.rate_paise is null
   and i.qty > 1
-  -- and b.shop_id = '<your shop id>'          -- optional
-order by b.finalized_at desc;
+  -- and b.shop_id = '<your shop id>'   -- optional: only your shop
+order by suspect nulls last, b.finalized_at desc;
 ```
 
    A line it lists is either this bug or a genuine "N kilo X Y rupay" total; the first shows `billed_paise` close to ONE unit's price while `qty` is above 1 (`implied_per_unit_paise` far below `shop_price_paise`). A bill that needs correcting is cancelled and reissued (hard rule 2) - never edited.
