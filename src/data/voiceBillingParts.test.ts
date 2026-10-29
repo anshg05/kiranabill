@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ParsedItem } from "@/domain/grammar";
+import { prepareParserCatalog } from "@/domain/catalogIndex";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { resolveUtterance } from "./voiceBilling";
 
@@ -44,6 +45,22 @@ describe("KB-358b: a fully spoken price makes a line even when the product is un
       await run(t, async (text) => (asked.push(text), []));
       expect(asked, t).toHaveLength(1);
     }
+  });
+});
+
+describe("KB-360: only NO match at all makes a custom line - an ambiguous one never does", () => {
+  it("two close products for the same spoken name (the owner's हरा बटाना, 29 Oct) + a full rate: the piece goes to Layer 2, never a custom line", async () => {
+    const hara = SEED_PARSER_CATALOG.entries.find((e) => e.id === "626")!;
+    const shop = prepareParserCatalog([...SEED_PARSER_CATALOG.entries, { ...hara, id: "9002" }]);
+    const asked: string[] = [];
+    const r = await resolveUtterance("1 किलो हरा बटाना 56 रुपए किलो", { shop, parse: async (text) => (asked.push(text), []) });
+    expect(asked).toHaveLength(1);
+    expect(r.lines).toEqual([]);
+  });
+  it("a name that matches NOTHING, with a full rate, is still a custom line (KB-358b)", async () => {
+    const r = await run("2 kg zzyzx khaas 130 rupay kilo");
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ catalogId: null, qty: 2, rate: 13000, total: 26000 });
   });
 });
 

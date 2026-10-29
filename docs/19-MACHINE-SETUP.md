@@ -182,6 +182,12 @@ npx supabase migration list --linked
 
 Every row must show the same id under both `local` and `remote`. An empty `remote` means the migration has not been pushed.
 
+### "JWT issued at future" in the e2e suite (KB-360)
+
+One e2e file failed at the start of a full run with PostgREST's "JWT issued at future" three times (28 and 29 Oct); every re-run passed. It is not a code bug.
+`npm run test:e2e` first checks that the local Supabase containers' clocks (auth and database; the PostgREST image has no `date`) agree with this PC's to within a second, and stops with the fix if not: close Docker Desktop -> `wsl --shutdown` -> start Docker Desktop again -> `npx supabase start` (and `w32tm /resync` in an administrator PowerShell if the PC's own clock is off - a Docker VM's clock often drifts after the PC sleeps).
+**Honest limit:** the third flake happened with that check passing, so it does not catch the cause. If the suite fails with this message, re-run it once; if it fails again, resync the clock as above and tell Claude.
+
 ### Expected `supabase status` noise on this Windows setup
 
 `npx supabase status` exiting 0 is what matters. On this machine it also reports some services stopped or restarting — all expected and harmless for this project (observed 26 Sep 2026):

@@ -201,7 +201,7 @@ that isn't whole paise is dropped, never rounded. Then `reviewFlags` runs, plus 
 alignment** check (`number_misaligned`, HIGH): each line's spoken numbers must appear in the transcript
 after the previous line's (NI-26).
 
-**Model:** `gemini-2.5-flash-lite` — verified live and still the cheapest Flash-Lite variant as of `KB-205` (20 Sep 2026). See `07-DECISIONS.md` D27; re-check before assuming this pricing still holds.
+**Model:** `gemini-3.5-flash-lite` (29 Oct 2026, `KB-360`, `07-DECISIONS.md` D99) - the `GEMINI_MODEL` Netlify variable, an exact name, never a `-latest` alias, chosen by measuring (`npm run eval:layer2`). `gemini-2.5-flash-lite` (D27, `KB-205`) is no longer offered to new Google projects and is being retired.
 
 ---
 

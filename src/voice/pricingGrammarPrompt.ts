@@ -9,7 +9,10 @@
 // encode the same resolutions, not the original contradictory text, or
 // Layer 1 and Layer 2 could disagree on identical input. Each rule below
 // is annotated with which D13 point it encodes.
-export const PRICING_GRAMMAR_PROMPT = `You extract billing line items from Hindi/Hinglish kirana
+import { CANONICAL_DEVANAGARI } from "../domain/numberWords";
+
+/** The prompt exactly as it shipped until KB-360 (29 Oct 2026) - byte for byte. */
+export const PRICING_GRAMMAR_PROMPT_V1 = `You extract billing line items from Hindi/Hinglish kirana
 (grocery shop) speech. You are given a transcript and a short list of candidate catalog
 products (id, display name, unit, suggested price in paise). Return ONLY a JSON array of
 line items, one per distinct product+price mentioned. No markdown, no extra text.
@@ -88,3 +91,26 @@ genuinely names a product not among the given candidates, still return the line 
 catalogId: null.
 
 Return ONLY the JSON array. No markdown fences, no commentary.`;
+
+/**
+ * KB-360 (owner, 29 Oct 2026). Measured on the Layer-2 gold set (eval/layer2-models.ts, 30 cases x 3 runs): EVERY model invents a number for a
+ * price it cannot read ("चैन रुपए किलो" -> Rs 4, 60, 100). This rule - with three examples that are deliberately NOT in the gold set - cut that to 0 on
+ * the chosen model. A line with no readable price is priced by the shopkeeper before Bill Banao (hard rule 5: the app never invents a number).
+ */
+export const RULE_6_UNREADABLE_PRICE = `
+RULE 6 - a price that was SAID but that you cannot read with certainty. If the speaker clearly gave a price (a number word followed by
+rupay / rupaye / रुपए / ka / wala / "per kilo") but the number word is garbled or is not a number you recognise, do NOT guess a number and
+do NOT use the catalog price. Keep the item with the quantity and unit that WERE said and return rate:null, total:0, priceType:"unknown".
+A misheard price is never better than no price. Digits are never garbled: "do kilo aata 56 rupay kilo" is rate 5600.
+"do kilo aata chaubay rupay kilo" -> qty:2, unit:"kg", rate:null, total:0, priceType:"unknown"
+"एक लीटर तेल सोलठ रुपए" -> qty:1, unit:"liter", rate:null, total:0, priceType:"unknown"
+"teen kilo chawal pachh rupay" -> qty:3, unit:"kg", rate:null, total:0, priceType:"unknown"
+`;
+
+/** Every Hindi number word 1-100 (the shop's Layer 1 reads the same list - domain/numberWords.ts). */
+export const HINDI_NUMBER_LIST = `
+Hindi numerals 1-100 (Devanagari; Whisper may spell them differently - read them by sound): ${CANONICAL_DEVANAGARI.map((w, i) => `${w}=${i + 1}`).join(" ")}
+`;
+
+/** What Layer 2 sends as its system prompt. */
+export const PRICING_GRAMMAR_PROMPT = PRICING_GRAMMAR_PROMPT_V1 + RULE_6_UNREADABLE_PRICE + HINDI_NUMBER_LIST;

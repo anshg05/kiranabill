@@ -312,5 +312,8 @@ export function redact(text: string): string {
     .replace(/sb_(?:secret|publishable)_[A-Za-z0-9_-]{10,}/g, "<key>")
     .replace(/gh[opsu]_[A-Za-z0-9]{20,}/g, "<token>")
     .replace(/AIza[0-9A-Za-z_-]{20,}/g, "<key>")
+    .replace(/\bAQ\.[0-9A-Za-z_-]{16,}/g, "<key>") // Google's newer key shape (KB-360) - and the next shape is caught by WHERE a key appears, below
+    .replace(/\b([A-Za-z0-9_]*API[_-]?KEY|apikey)\b(["']?\s*[=:]\s*)("[^"]*"|'[^']*'|\S+)/gi, "$1$2<redacted>")
+    .replace(/([?&]key=)[^&\s"']+/gi, "$1<redacted>")
     .replace(/gsk_[A-Za-z0-9]{20,}/g, "<key>");
 }

@@ -50,6 +50,7 @@ const NUMBER_CODES = new Set<ReviewCode>(["number_dropped", "qty_dropped", "numb
 function isCompleteCustom(item: ParsedItem): boolean {
   return (
     item.catalogId === null &&
+    item.matchStatus === "none" && // KB-360: NO product matched at all - an ambiguous match (two close products) is never a custom line
     item.spokenName.trim() !== "" &&
     item.qty !== null &&
     item.unit !== "" &&

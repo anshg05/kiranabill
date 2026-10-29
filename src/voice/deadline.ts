@@ -4,15 +4,18 @@
 // limit, so /voice returns a clean error instead of being killed.
 
 /** A provider call that didn't succeed, by what /voice should answer:
- * timeout -> 504, busy (the provider's own 429) -> 503, failed -> 502. */
+ * timeout -> 504, busy (the provider's own 429 / 503) -> 503, failed -> 502, and setup (KB-360: a key that is wrong, an API that is
+ * not enabled, a model this key's project cannot use - nothing a Retry can fix) -> 502 with reason "setup". */
 export class ProviderError extends Error {
   constructor(
-    readonly kind: "timeout" | "busy" | "failed",
+    readonly kind: "timeout" | "busy" | "failed" | "setup",
     message: string,
     /** D59: the provider's HTTP status, when it answered - for the log line. */
     readonly status?: number,
     /** KB-358c: the NAME of the quota a 429 hit (Gemini's quotaId, e.g. "...PerDay...") - a name only, never the body. */
     readonly quota?: string,
+    /** KB-360: Google's own error NAMES (error.status e.g. NOT_FOUND, the first details[].reason e.g. SERVICE_DISABLED) - names only, never a message or the body. */
+    readonly google?: { readonly status?: string; readonly reason?: string },
   ) {
     super(message);
     this.name = "ProviderError";

@@ -2,6 +2,7 @@ import type { ParseProvider, TokenUsage } from "@/voice/parseProvider";
 import type { ParsedItem, MatchStatus, PriceType } from "@/domain/grammar";
 import { PRICING_GRAMMAR_PROMPT } from "@/voice/pricingGrammarPrompt";
 import { ProviderError, withDeadline } from "@/voice/deadline";
+import { DEFAULT_GEMINI_MODEL } from "@/voice/geminiModel";
 
 // gemini-2.5-flash-lite, confirmed live and current (docs/11-STACK-DECISIONS.md
 // SD-006 warned its retirement date and successor pricing needed real
@@ -13,7 +14,9 @@ import { ProviderError, withDeadline } from "@/voice/deadline";
 // cost-model/moat argument was computed against 2.5's pricing. Using a
 // newer model here would silently invalidate that cost model - out of
 // scope for this ticket to redo.
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
+// KB-360 (29 Oct 2026): that model is no longer offered to new projects; the model is a variable now (voice.mts reads GEMINI_MODEL) and the
+// default is geminiModel.ts's - chosen by measurement (eval/layer2-models.ts, D99).
+const GEMINI_MODEL = DEFAULT_GEMINI_MODEL;
 const geminiUrl = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 /** KB-360: what a caller may change per provider. The default is the model the shop has always used until KB-360 picks the new one. */
@@ -32,7 +35,31 @@ export interface GeminiProviderOptions {
  * outliers 12.9 s / 20.4 s (KI-58). No automatic retry: three attempts plus
  * the old 0.5 / 1 s sleeps (19.5 s) can't fit the client's 8 s, and the 5xx
  * seen so far were quota (KI-50). The shopkeeper's Retry replaces them. */
-export const GEMINI_TIMEOUT_MS = 6_000;
+export const GEMINI_TIMEOUT_MS = 10_000;
+
+/** An UPPER_SNAKE name (Google's status / reason vocabulary) - anything else is not a name and is dropped, so nothing else can reach a log. */
+const NAME = /^[A-Z][A-Z0-9_]{1,60}$/;
+
+interface GoogleError {
+  readonly status?: string;
+  readonly reason?: string;
+  /** Used to classify only; never logged. */
+  readonly keyProblem: boolean;
+}
+
+/** KB-360: error.status and the first details[].reason of Google's error body, as NAMES. A body that is not JSON names nothing. */
+function googleErrorOf(bodyText: string): GoogleError {
+  try {
+    const e = (JSON.parse(bodyText) as { error?: { status?: unknown; message?: unknown; details?: { reason?: unknown }[] } }).error;
+    const status = typeof e?.status === "string" && NAME.test(e.status) ? e.status : undefined;
+    const reasonRaw = (e?.details ?? []).map((d) => d.reason).find((r) => typeof r === "string" && NAME.test(r));
+    const reason = typeof reasonRaw === "string" ? reasonRaw : undefined;
+    const keyProblem = (reason?.startsWith("API_KEY") ?? false) || (typeof e?.message === "string" && /api key (not valid|expired)/i.test(e.message));
+    return { status, reason, keyProblem };
+  } catch {
+    return { keyProblem: false };
+  }
+}
 
 /** KB-358c: which quota a 429 names - Gemini's quotaId inside error.details[].violations[]. A name only: it must look like one. */
 function quotaIdOf(status: number, bodyText: string): string | undefined {
@@ -104,6 +131,7 @@ export type GeminiAttemptLog = (a: { attempt: number; status: number | "network-
 
 export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAttemptLog, options: GeminiProviderOptions = {}): ParseProvider {
   const url = geminiUrl(options.model ?? GEMINI_MODEL);
+  // The key is passed through exactly as given - no prefix, length or shape check anywhere (KB-360: Google's keys changed shape once already).
   return {
     name: "gemini-flash-lite",
     async parse(transcript, opts) {
@@ -152,7 +180,12 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
             // KB-317 (KI-50): a 429 is a quota - on the free tier a DAILY one.
             // D59 (KI-66): a 503 is Google overloaded - transient, also "busy".
             const busy = response.status === 429 || response.status === 503;
-            throw new ProviderError(busy ? "busy" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status, quotaIdOf(response.status, bodyText));
+            // KB-360: a 404 (this key's project has no such model), 401 / 403 (not signed in / the API is not enabled), or a 400 that says the KEY is
+            // wrong is a SETUP problem - nothing a Retry can fix. Any other 400 is our own request's fault: a plain failure.
+            const google = googleErrorOf(bodyText);
+            const setup = response.status === 404 || response.status === 401 || response.status === 403 || (response.status === 400 && google.keyProblem);
+            const named = google.status || google.reason ? { status: google.status, reason: google.reason } : undefined;
+            throw new ProviderError(busy ? "busy" : setup ? "setup" : "failed", `Gemini parse failed: ${response.status} ${bodyText}`, response.status, quotaIdOf(response.status, bodyText), named);
           }
           const latencyMs = performance.now() - start;
           const data = (await response.json()) as {

@@ -21,14 +21,14 @@ export type VoiceErrorKind =
  * clean error normally arrives first; this is the backstop for the network,
  * a cold function, or auth. */
 export const TRANSCRIBE_TIMEOUT_MS = 12_000;
-export const PARSE_TIMEOUT_MS = 8_000;
+export const PARSE_TIMEOUT_MS = 12_000; // KB-360: a few seconds past the server's 10 s Gemini deadline (the new model answers in 2.5-6.5 s)
 
 export class VoiceApiError extends Error {
   constructor(
     readonly kind: VoiceErrorKind,
     message: string,
     readonly status?: number,
-    /** KB-358c: why a 503 was busy - "daily_limit" (today's free limit), "minute_limit" or "busy". */
+    /** KB-358c: why a 503 was busy - "daily_limit" (today's free limit), "minute_limit" or "busy"; KB-360: "setup" (a 502 - the key / API / model is not set up right). */
     readonly reason?: string,
   ) {
     super(message);
@@ -112,7 +112,7 @@ function postForm(form: FormData, opts: VoiceApiOptions, timeoutMs: number): Pro
       if (!response.ok) {
         const detail = (body as { error?: string } | null)?.error ?? response.statusText;
         const said = (body as { reason?: unknown } | null)?.reason;
-        throw new VoiceApiError(kindFor(response.status), detail, response.status, said === "daily_limit" || said === "minute_limit" || said === "busy" ? said : undefined);
+        throw new VoiceApiError(kindFor(response.status), detail, response.status, said === "daily_limit" || said === "minute_limit" || said === "busy" || said === "setup" ? said : undefined);
       }
       opts.onTiming?.({
         requestMs: headersAt - sentAt,

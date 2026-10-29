@@ -1,6 +1,7 @@
 import type { Config, Context } from "@netlify/functions";
 import { createGroqTranscriptionProvider } from "../../src/voice/groqTranscriptionProvider.js";
 import { createGeminiParseProvider } from "../../src/voice/geminiParseProvider.js";
+import { resolveGeminiModel } from "../../src/voice/geminiModel.js";
 import { cachedShop, lookupShop, mayRunUnconfirmed, noteUnconfirmed } from "./_shared/auth.js";
 import { verifyAccessToken } from "./_shared/jwt.js";
 import { checkRateLimit } from "./_shared/rateLimit.js";
@@ -71,9 +72,14 @@ function providerFailure(step: "Transcription" | "Parse", err: unknown, startedA
   const provider = err instanceof ProviderError && err.status !== undefined ? err.status : "-";
   // KB-358c: for a 429 the NAME of the quota it hit (never the body) - per-day or per-minute is the whole difference to the shopkeeper.
   const quota = err instanceof ProviderError ? err.quota : undefined;
-  console.warn(`[voice] ${step} failure kind=${kind} status=${status} provider=${provider} ms=${Math.round(performance.now() - startedAt)}${quota ? ` quota=${quota}` : ""}`);
+  // KB-360: Google's own error NAMES (status, reason - e.g. NOT_FOUND, SERVICE_DISABLED); never a message, the body or the key.
+  const google = err instanceof ProviderError ? err.google : undefined;
+  console.warn(
+    `[voice] ${step} failure kind=${kind} status=${status} provider=${provider} ms=${Math.round(performance.now() - startedAt)}${quota ? ` quota=${quota}` : ""}${google?.status ? ` google=${google.status}` : ""}${google?.reason ? ` reason=${google.reason}` : ""}`,
+  );
   const error = kind === "timeout" ? `${step} timed out` : kind === "busy" ? `${step} busy` : `${step} failed`;
-  const reason = kind !== "busy" ? undefined : quota && /PerDay/i.test(quota) ? "daily_limit" : quota && /PerMinute/i.test(quota) ? "minute_limit" : "busy";
+  const reason =
+    kind === "setup" ? "setup" : kind !== "busy" ? undefined : quota && /PerDay/i.test(quota) ? "daily_limit" : quota && /PerMinute/i.test(quota) ? "minute_limit" : "busy";
   return new Response(JSON.stringify({ ...(transcript === undefined ? {} : { transcript }), error, ...(reason ? { reason } : {}), detail: (err as Error).message }), { status });
 }
 
@@ -173,9 +179,13 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   // KB-317 diagnosis: under `netlify dev` only, log each provider attempt
   // (status, ms) so a slow or failed order can be explained afterwards.
   const dev = process.env.NETLIFY_DEV === "true";
+  // KB-360: the model is the GEMINI_MODEL variable (an exact name, never an alias); a value that is refused is said once and the default is used.
+  const { model, ignored } = resolveGeminiModel(process.env.GEMINI_MODEL);
+  if (ignored) console.warn("[voice] GEMINI_MODEL ignored: not an exact model name (an alias or a malformed value); using the default");
   const gemini = createGeminiParseProvider(
     geminiApiKey,
     dev ? (a) => console.info(`[voice-dev] gemini attempt ${a.attempt}: ${a.status} in ${a.ms} ms`) : undefined,
+    { model },
   );
   // The provider reads only id / displayName / unit / suggestedPricePaise.
   const catalogSlice = (slice ?? []) as CatalogEntry[];
@@ -190,6 +200,10 @@ export default async (req: Request, _context: Context): Promise<Response> => {
     const start = performance.now();
     try {
       const parsed = await gemini.parse(transcript, { catalogSlice });
+      // KB-360: one line per call - which model, how long, what it cost in tokens (numbers and the model's name only).
+      console.info(
+        `[voice] parse ok model=${model} ms=${Math.round(performance.now() - start)} in=${parsed.usage.promptTokens} out=${parsed.usage.completionTokens} thoughts=${Math.max(0, parsed.usage.totalTokens - parsed.usage.promptTokens - parsed.usage.completionTokens)}`,
+      );
       return new Response(
         JSON.stringify({ transcript, items: parsed.items, usage: parsed.usage, latencyMs: performance.now() - start }),
         { status: 200, headers: serverTimingHeaders({ auth: authMs, member: memberMs, limit: limitMs, form: formMs }, enteredAt, performance.now(), process.env) },

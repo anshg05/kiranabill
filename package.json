@@ -9,7 +9,7 @@
     "typecheck": "tsc -b",
     "preview": "vite preview",
     "test": "vitest run --project unit --project perf",
-    "test:e2e": "vitest run --project e2e",
+    "test:e2e": "tsx scripts/check-docker-clock.ts && vitest run --project e2e",
     "seed:catalog": "tsx scripts/build-catalog-seed.ts",
     "eval": "tsx eval/run-eval.ts",
     "eval:real": "tsx eval/real-transcripts.ts",

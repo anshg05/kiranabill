@@ -123,7 +123,7 @@ describe("KB-319: client timeouts", () => {
     await vi.advanceTimersByTimeAsync(PARSE_TIMEOUT_MS);
     expect((await result).kind).toBe("timeout");
     expect(calls[0]!.aborted).toBe(true);
-    expect(PARSE_TIMEOUT_MS).toBe(8_000);
+    expect(PARSE_TIMEOUT_MS).toBe(12_000); // KB-360: a few seconds past the server's 10 s Gemini deadline
   });
 
   it("a body that stalls after the headers also times out", async () => {

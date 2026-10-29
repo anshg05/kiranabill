@@ -354,4 +354,22 @@ describe("redact: nothing secret reaches a log", () => {
     }
   });
   it("leaves ordinary lines alone", () => expect(redact("backup ok: 11 tables, 2 users")).toBe("backup ok: 11 tables, 2 users"));
+
+  // KB-360 (owner, 29 Oct 2026): Google's new keys are "AQ."-shaped, not "AIza" - and the next format will be something else again. A key is masked by
+  // WHERE it appears (an *_API_KEY variable, an x-goog-api-key header, a key= query), whatever it looks like, and the known shapes are masked anywhere.
+  it("masks an API key by where it is, whatever its shape", () => {
+    const odd = ["Zq", "9", "-not-a-known-prefix", "_", "0123456789"].join("");
+    for (const line of [`GEMINI_API_KEY=${odd}`, `GROQ_API_KEY: ${odd}`, `x-goog-api-key: ${odd}`, `curl https://x/y?alt=sse&key=${odd}&z=1`, `{"apiKey":"${odd}"}`, `api_key = '${odd}'`]) {
+      expect(redact(line), line).not.toContain(odd);
+    }
+  });
+  it("masks a key of Google's new shape (AQ.) and the old one (AIza) anywhere in a line", () => {
+    const aq = ["AQ", ".", "Ab8RN6Jx_k-QwErTyUiOpAsDf", "GhJkLzXcVbNm1234567890"].join("");
+    const old = ["AI", "za", "SyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q"].join("");
+    expect(redact(`failed with ${aq} here`)).not.toContain(aq);
+    expect(redact(`failed with ${old} here`)).not.toContain(old);
+  });
+  it("still leaves a UUID, a commit id and a plain sentence about keys alone", () => {
+    for (const line of ["shop 3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e done", "commit 37e48cc0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6", "the key was rotated yesterday"]) expect(redact(line)).toBe(line);
+  });
 });

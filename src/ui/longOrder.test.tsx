@@ -28,6 +28,7 @@ const UNREADABLE = "कि एक किलो मुँगडाल चैन �
 const QUOTA = "Today's free reading limit is reached — add by hand, or try again tomorrow";
 const BUSY = "Reading service is busy — Retry in a minute, or add by hand";
 const SLOW = "Took too long — Retry, or add by hand";
+const SETUP = "AI reading isn't set up right — add by hand, and tell support";
 
 const answer = (code: number, body: Record<string, unknown> = { error: "x" }) => new Response(JSON.stringify(body), { status: code });
 const mungdal: ParsedItem = { spokenName: "मुंगडाल", catalogId: "18", isCustom: false, matchStatus: "matched", qty: 1, unit: "kg", rate: 9600, rateUnit: "kg", total: 9600, priceType: "rate" };
@@ -85,10 +86,12 @@ async function say(get: () => Api, transcript: string): Promise<unknown> {
 const leftovers = () => screen.queryAllByText(/^Not added: “/).map((el) => el.closest("li") as HTMLElement);
 
 describe("KB-358: a long order that fails keeps what was read, and each unread piece is its own entry", () => {
-  it("the 4:37 PM order, Gemini over its DAILY limit: 2 lines on the bill, 2 entries (each its own text), the limit said in words, no throw", async () => {
+  it("the 4:37 PM order, Gemini over its DAILY limit: 2 lines on the bill, 2 entries (each its own text), the SAME words in the status line under the total", async () => {
     fetchMock.mockResolvedValueOnce(answer(503, { error: "Parse busy", reason: "daily_limit" }));
     const get = setup();
-    expect(await say(get, U437)).toBeNull();
+    const said = await say(get, U437);
+    expect(said).toBeInstanceOf(VoiceUserError); // KB-360: the status line shows it - one message everywhere
+    expect((said as Error).message).toBe(QUOTA);
     expect(get().bill.rows).toHaveLength(2);
     expect(get().bill.rows.map((r) => r.item.total)).toEqual([13000, 11000]);
     const li = leftovers();
@@ -159,7 +162,8 @@ describe("KB-358: a failure no Retry can fix (the session expired) never loses w
   it("2 lines on the bill, the 2 unread pieces listed with the real message", async () => {
     fetchMock.mockResolvedValueOnce(answer(401));
     const get = setup();
-    expect(await say(get, U437)).toBeNull();
+    const said = await say(get, U437);
+    expect((said as Error).message).toBe("Session expired — sign out and sign in again");
     expect(get().bill.rows).toHaveLength(2);
     for (const l of leftovers()) expect(within(l).getByText("Session expired — sign out and sign in again")).toBeTruthy();
     expect(leftovers()).toHaveLength(2);
@@ -172,6 +176,38 @@ describe("KB-358: a failure no Retry can fix (the session expired) never loses w
   });
 });
 
+describe("KB-360: ONE message for one cause - the entry, the status line under the total, and Retry", () => {
+  const cases: [string, () => Response, string][] = [
+    ["today's free limit", () => answer(503, { error: "Parse busy", reason: "daily_limit" }), QUOTA],
+    ["Google busy", () => answer(503, { error: "Parse busy", reason: "busy" }), BUSY],
+    ["too slow", () => answer(504), SLOW],
+    ["an AI setup problem (a bad key / a disabled API / a model this key cannot use)", () => answer(502, { error: "Parse failed", reason: "setup" }), SETUP],
+  ];
+  it.each(cases)("a ONE-piece order, %s: the entry and the status line say the same thing", async (_label, respond, text) => {
+    fetchMock.mockResolvedValueOnce(respond());
+    const get = setup();
+    const said = await say(get, "2 kuch naya");
+    expect((said as Error).message).toBe(text);
+    expect(within(leftovers()[0]!).getByText(text)).toBeTruthy();
+  });
+  it.each(cases)("a failed Retry, %s: the entry takes the same words", async (_label, respond, text) => {
+    fetchMock.mockResolvedValueOnce(answer(502)); // the first try: a plain failure
+    const get = setup();
+    await say(get, "2 kuch naya");
+    fetchMock.mockResolvedValueOnce(respond());
+    await act(async () => screen.getAllByRole("button", { name: /^Retry “/ })[0]!.click());
+    await act(async () => void (await new Promise((r) => setTimeout(r, 20))));
+    expect(within(leftovers()[0]!).getByText(text)).toBeTruthy();
+  });
+  it("a plain failure keeps today's two texts: the entry 'Couldn't read the items', the status line 'Couldn't read the items — Retry below'", async () => {
+    fetchMock.mockResolvedValueOnce(answer(502));
+    const get = setup();
+    const said = await say(get, "2 kuch naya");
+    expect((said as Error).message).toBe("Couldn't read the items — Retry below");
+    expect(within(leftovers()[0]!).getByText("Couldn't read the items")).toBeTruthy();
+  });
+});
+
 describe("parseFailureMessage: the cause in words", () => {
   it("busy / today's limit / slow / anything else", () => {
     expect(parseFailureMessage(new VoiceApiError("busy", "Parse busy", 503, "daily_limit"))).toBe(QUOTA);
@@ -179,6 +215,7 @@ describe("parseFailureMessage: the cause in words", () => {
     expect(parseFailureMessage(new VoiceApiError("busy", "Parse busy", 503))).toBe(BUSY);
     expect(parseFailureMessage(new VoiceApiError("timeout", "x", 504))).toBe(SLOW);
     expect(parseFailureMessage(new VoiceApiError("server", "x", 502))).toBe("Couldn't read the items");
+    expect(parseFailureMessage(new VoiceApiError("server", "Parse failed", 502, "setup"))).toBe(SETUP);
     expect(parseFailureMessage(new VoiceApiError("network", "x"))).toBe("Couldn't read the items");
     expect(parseFailureMessage(new Error("boom"))).toBe("Couldn't read the items");
   });

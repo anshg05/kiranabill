@@ -21,14 +21,19 @@ export const NOT_ADDED = "Couldn't read the items — Retry below";
 const RETRYABLE = new Set<VoiceApiError["kind"]>(["server", "busy", "rate_limited", "timeout", "network"]);
 const isRetryable = (err: unknown) => err instanceof VoiceApiError && RETRYABLE.has(err.kind);
 
-/** KB-358c: the cause of a failed parse in words - always with a way on (Retry, or add by hand). */
+/** KB-358c / KB-360: the cause of a failed parse in words - always with a way on (Retry, or add by hand). The SAME text goes on the "Not added"
+ * entry, the status line under the total and a failed Retry (one function, one message). */
 export function parseFailureMessage(err: unknown): string {
   if (err instanceof VoiceApiError) {
+    if (err.reason === "setup") return "AI reading isn't set up right — add by hand, and tell support";
     if (err.kind === "busy") return err.reason === "daily_limit" ? "Today's free reading limit is reached — add by hand, or try again tomorrow" : "Reading service is busy — Retry in a minute, or add by hand";
     if (err.kind === "timeout") return "Took too long — Retry, or add by hand";
   }
   return PARSE_FAILED;
 }
+
+/** The status line under the total: a plain failure points at the Retry below; a cause says itself. */
+const statusFor = (message: string): string => (message === PARSE_FAILED ? NOT_ADDED : message);
 
 export interface OrderResolver {
   /** A heard transcript -> lines on the bill. Throws a shopkeeper-facing error. */
@@ -84,8 +89,9 @@ export function useOrderResolver({ shop, bill, parse, onUtterance }: UseOrderRes
       } catch (err) {
         report(failed());
         if (!isRetryable(err)) throw err;
-        fail(transcript);
-        throw new VoiceUserError(NOT_ADDED);
+        const message = parseFailureMessage(err);
+        fail(transcript, message);
+        throw new VoiceUserError(statusFor(message));
       }
       // KB-358a: what was read is on the bill; each piece nothing could read is its own "Not added" (own text, own Retry).
       if (resolved.unresolved.length > 0) {
@@ -103,8 +109,8 @@ export function useOrderResolver({ shop, bill, parse, onUtterance }: UseOrderRes
           report(failed());
         }
         for (const text of resolved.unresolved) fail(text, message);
-        if (resolved.lines.length === 0) throw new VoiceUserError(message === PARSE_FAILED ? NOT_ADDED : message);
-        return;
+        // KB-360: the status line under the total says the same as the entries - whether or not some lines were read
+        throw new VoiceUserError(retryable ? statusFor(message) : message);
       }
       if (import.meta.env.DEV) {
         console.info("[voice] resolved", {

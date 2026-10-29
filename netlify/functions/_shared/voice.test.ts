@@ -29,7 +29,7 @@ vi.mock("../../../src/voice/geminiParseProvider.js", () => ({
 const handler = (await import("../voice.mts")).default;
 const { ProviderError } = await import("../../../src/voice/deadline.js");
 const GROQ_TIMEOUT_MS = 8_000; // groqTranscriptionProvider.ts (mocked above); its own test pins the value
-const GEMINI_TIMEOUT_MS = 6_000; // geminiParseProvider.ts, likewise
+const GEMINI_TIMEOUT_MS = 10_000; // geminiParseProvider.ts, likewise (KB-360: the 2.5 / 3.x models answer in 2.5-6.5 s)
 
 function makeRequest(fields: Record<string, string | Blob> | null, method = "POST") {
   if (fields === null) return new Request("https://example.com/voice", { method });

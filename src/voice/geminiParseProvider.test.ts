@@ -76,7 +76,7 @@ describe("geminiParseProvider", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const call = fetchMock.mock.calls[0]!;
     const [url, init] = call;
-    expect(url).toContain("gemini-2.5-flash-lite:generateContent");
+    expect(url).toContain("gemini-3.5-flash-lite:generateContent"); // KB-360: the model the owner picked after measuring
     // D59: the key travels in a header - a URL that reaches an error or a log never carries it.
     expect(url).not.toContain("real-key");
     expect(url).not.toContain("key=");
@@ -183,7 +183,7 @@ describe("geminiParseProvider", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("KB-319: an attempt still unanswered at 6 s is a 'timeout' - its request is aborted, onAttempt says 'timeout'", async () => {
+  it("KB-319: an attempt still unanswered at the deadline (10 s since KB-360; was 6 s) is a 'timeout' - its request is aborted, onAttempt says 'timeout'", async () => {
     vi.useFakeTimers();
     let signal: AbortSignal | undefined;
     // A fetch that never answers and ignores its signal - the deadline must not depend on the abort.
@@ -196,7 +196,7 @@ describe("geminiParseProvider", () => {
     expect(await result).toMatchObject({ kind: "timeout" });
     expect(signal?.aborted).toBe(true);
     expect(seen).toEqual(["timeout"]);
-    expect(GEMINI_TIMEOUT_MS).toBe(6_000);
+    expect(GEMINI_TIMEOUT_MS).toBe(10_000);
   });
 
   it("does not retry a non-retryable 400 (Gemini's real auth-failure shape, not 401)", async () => {

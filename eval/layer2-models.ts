@@ -19,8 +19,7 @@ import { settleLayer2Items } from "../src/domain/layer2.js";
 import { lineTotalPaise } from "../src/domain/money.js";
 import { SEED_PARSER_CATALOG } from "../src/domain/seedCatalog.js";
 import { createGeminiParseProvider } from "../src/voice/geminiParseProvider.js";
-import { PRICING_GRAMMAR_PROMPT } from "../src/voice/pricingGrammarPrompt.js";
-import { CANONICAL_DEVANAGARI } from "../src/domain/numberWords.js";
+import { HINDI_NUMBER_LIST, PRICING_GRAMMAR_PROMPT, PRICING_GRAMMAR_PROMPT_V1, RULE_6_UNREADABLE_PRICE } from "../src/voice/pricingGrammarPrompt.js";
 import { ProviderError } from "../src/voice/deadline.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -35,24 +34,15 @@ const PRICE: Record<string, { in: number; out: number; note?: string }> = {
 };
 
 /**
- * Prompt variants measured against the shipped prompt (same schema). "rule6" adds a rule for a price that was SAID but cannot be read
- * (never a guessed number, never the catalog price) with three held-out examples (none is in the gold set); "numbers" also lists every
- * Hindi number word 1-100 in place of the short legacy list.
+ * Prompt variants (KB-360, 29 Oct 2026): "base" is the prompt as it shipped until then, "rule6" adds the rule for a price that was SAID but cannot be
+ * read (never a guessed number, never the catalog price), "numbers" also lists every Hindi number word 1-100, and "final" is what is SHIPPED now
+ * (= "numbers"). The measurement that chose the rule is in docs/07-DECISIONS.md D99.
  */
-const RULE6 = `
-RULE 6 - a price that was SAID but that you cannot read with certainty. If the speaker clearly gave a price (a number word followed by
-rupay / rupaye / रुपए / ka / wala / "per kilo") but the number word is garbled or is not a number you recognise, do NOT guess a number and
-do NOT use the catalog price. Keep the item with the quantity and unit that WERE said and return rate:null, total:0, priceType:"unknown".
-A misheard price is never better than no price. Digits are never garbled: "do kilo aata 56 rupay kilo" is rate 5600.
-"do kilo aata chaubay rupay kilo" -> qty:2, unit:"kg", rate:null, total:0, priceType:"unknown"
-"एक लीटर तेल सोलठ रुपए" -> qty:1, unit:"liter", rate:null, total:0, priceType:"unknown"
-"teen kilo chawal pachh rupay" -> qty:3, unit:"kg", rate:null, total:0, priceType:"unknown"
-`;
-const NUMBER_LIST = `\nHindi numerals 1-100 (Devanagari; Whisper may spell them differently - read them by sound): ${CANONICAL_DEVANAGARI.map((w, i) => `${w}=${i + 1}`).join(" ")}\n`;
 const PROMPTS: Record<string, string> = {
-  base: PRICING_GRAMMAR_PROMPT,
-  rule6: PRICING_GRAMMAR_PROMPT + RULE6,
-  numbers: PRICING_GRAMMAR_PROMPT + RULE6 + NUMBER_LIST,
+  base: PRICING_GRAMMAR_PROMPT_V1,
+  rule6: PRICING_GRAMMAR_PROMPT_V1 + RULE_6_UNREADABLE_PRICE,
+  numbers: PRICING_GRAMMAR_PROMPT_V1 + RULE_6_UNREADABLE_PRICE + HINDI_NUMBER_LIST,
+  final: PRICING_GRAMMAR_PROMPT,
 };
 
 type TotalRule = number | "default" | "none";
@@ -84,7 +74,7 @@ function arg(name: string, fallback: string): string {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1]! : fallback;
 }
 
-const variant = arg("prompt", "base");
+const variant = arg("prompt", "final");
 if (!(variant in PROMPTS)) throw new Error(`unknown --prompt ${variant}`);
 const rescore = arg("rescore", ""); // re-score saved answers (the --out files, comma-separated) - no API calls
 let models = arg("models", "gemini-3.1-flash-lite").split(",").filter(Boolean);
@@ -177,6 +167,10 @@ async function probeOff(model: string, sample: Case): Promise<Record<string, unk
 }
 
 const cases = loadCases().filter((c) => only.length === 0 || only.includes(c.id));
+if (!rescore) {
+  const planned = cases.length * runs * models.length * thinkingModes.length;
+  console.log(`THIS RUN MAKES UP TO ${planned} API CALLS. The free tier allows 500 a day PER MODEL for the whole Google project - production's Layer 2 shares it (29 Oct 2026: a measurement used the day's 500 and left the app with the "today's free limit" message). Use --cases / --runs to keep it small.`);
+}
 console.log(rescore ? `Re-scoring saved answers from ${rescore.split(",").length} file(s) - no API calls` : `Layer-2 model measurement: ${cases.length} cases x ${runs} run(s) x ${thinkingModes.join("/")} x ${models.join(", ")}; the key is set (${KEY.length} chars) and never printed`);
 
 const stopped = new Set<string>();
