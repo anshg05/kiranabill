@@ -8,7 +8,7 @@ import { resolveUtterance } from "./voiceBilling";
 // and what Layer 1 read is already on the bill. A piece with a spoken quantity, unit, name and price is a line even when the
 // product is not in the catalog (exactly the spoken numbers) - and never reaches Gemini.
 
-const U437 = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
+const U437 = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यासथा रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
 const U438 = "1 kg मुंग दाल 96 रुपई किलो, 1 kg बरबटी दाल 88 रुपई किलो, 2 kg उडद मुगर 130 रुपई किलो, 1 kg मुंग मुगर 110 रुपई किलो, 1 kg चीनी 56 रुपई किलो,";
 const SPOKEN = "2 किलो चीनी 56 रुपए किलो 10 किलो गेहु 34 रुपए किलो 2 किलो चावल 90 रुपए";
 
@@ -53,7 +53,7 @@ describe("KB-358a: only the unresolved pieces go to Layer 2, together", () => {
     const r = await run(U437, async (text) => (asked.push(text), [custom("मुंगडाल", 1), custom("बरबटी दाल", 2)]));
     expect(asked).toHaveLength(1);
     expect(asked[0]).toContain("चैन");
-    expect(asked[0]).toContain("अठ्यास्थी");
+    expect(asked[0]).toContain("अठ्यासथा");
     expect(asked[0]).not.toContain("130");
     expect(asked[0]).not.toContain("110");
     expect(r.layer).toBe("voice");
@@ -81,7 +81,7 @@ describe("KB-358a: only the unresolved pieces go to Layer 2, together", () => {
     expect(r.lines.every((l) => l.source === "fastpath")).toBe(true);
     expect(r.unresolved).toHaveLength(2);
     expect(r.unresolved[0]).toContain("चैन");
-    expect(r.unresolved[1]).toContain("अठ्यास्थी");
+    expect(r.unresolved[1]).toContain("अठ्यासथा");
     expect(r.failure).toBe(boom);
   });
 
@@ -99,7 +99,7 @@ describe("KB-358a: only the unresolved pieces go to Layer 2, together", () => {
 
   it("nothing readable at all and several pieces: no throw - every piece is its own leftover", async () => {
     const boom = new Error("429");
-    const r = await run("कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो", async () => { throw boom; });
+    const r = await run("कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यासथा रुपए किलो", async () => { throw boom; });
     expect(r.lines).toEqual([]);
     expect(r.unresolved).toHaveLength(2);
     expect(r.failure).toBe(boom);

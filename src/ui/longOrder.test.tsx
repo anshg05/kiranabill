@@ -22,8 +22,8 @@ afterEach(async () => {
 });
 
 const catalog = SEED_PARSER_CATALOG.entries;
-const U437 = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
-const UNREADABLE = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो";
+const U437 = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यासथा रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
+const UNREADABLE = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यासथा रुपए किलो";
 
 const QUOTA = "Today's free reading limit is reached — add by hand, or try again tomorrow";
 const BUSY = "Reading service is busy — Retry in a minute, or add by hand";
@@ -94,7 +94,7 @@ describe("KB-358: a long order that fails keeps what was read, and each unread p
     const li = leftovers();
     expect(li).toHaveLength(2);
     expect(li[0]!.textContent).toContain("चैन");
-    expect(li[1]!.textContent).toContain("अठ्यास्थी");
+    expect(li[1]!.textContent).toContain("अठ्यासथा");
     expect(li[0]!.textContent).not.toContain("130");
     for (const l of li) expect(within(l).getByText(QUOTA)).toBeTruthy();
     expect(get().bill.pending).toBe(2);
@@ -141,7 +141,7 @@ describe("KB-358: a long order that fails keeps what was read, and each unread p
     expect(leftovers()).toHaveLength(1);
     const meta = JSON.parse(((fetchMock.mock.calls[1]![1] as RequestInit).body as FormData).get("meta") as string) as { transcript: string };
     expect(meta.transcript).toContain("चैन");
-    expect(meta.transcript).not.toContain("अठ्यास्थी");
+    expect(meta.transcript).not.toContain("अठ्यासथा");
   });
 
   it("a failed Retry names the cause too", async () => {

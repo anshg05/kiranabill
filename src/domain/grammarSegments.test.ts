@@ -8,7 +8,9 @@ import { SEED_PARSER_CATALOG } from "./seedCatalog";
 
 const U543 = "1 किलो चीनी 56 रुपए किलो, 1 किलो हरा बटाना 56 रुपए किलो, 1 किलो चावल 84 रुपए किलो, 10 किलो गेहु 34 रुपए किलो";
 const U543_NO_COMMAS = U543.replace(/,/g, "");
-const U437 = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
+const U437_REAL = "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो";
+// the same order with the second price spelled so that NO table knows it (since KB-361 "अठ्यास्थी" is 88): a price word nobody understood
+const U437 = U437_REAL.replace("अठ्यास्थी", "अठ्यासथा");
 const U438 = "1 kg मुंग दाल 96 रुपई किलो, 1 kg बरबटी दाल 88 रुपई किलो, 2 kg उडद मुगर 130 रुपई किलो, 1 kg मुंग मुगर 110 रुपई किलो, 1 kg चीनी 56 रुपई किलो,";
 const SPOKEN = "2 किलो चीनी 56 रुपए किलो 10 किलो गेहु 34 रुपए किलो 2 किलो चावल 90 रुपए"; // the owner's draft-v7 test, no commas
 
@@ -73,13 +75,19 @@ describe("parseUtteranceParts: every piece on its own (KB-358a)", () => {
   it("the 4:37 PM order (no commas): two pieces with a price word nobody understood, two readable", () => {
     const parts = parseUtteranceParts(U437, SEED_PARSER_CATALOG);
     expect(parts).toHaveLength(4);
-    // "चैन" / "अठ्यास्थी" are 96 and 88 misheard: no number was spoken, so none is invented
-    expect(parts[0]!.item).toMatchObject({ qty: 1, unit: "kg", total: null });
-    expect(parts[1]!.item).toMatchObject({ qty: 2, unit: "kg", total: null });
+    // "चैन" and the stand-in word are prices nobody understood: no number was spoken, so none is invented - the pieces are unread
+    expect(parts[0]!.item).toBeNull();
+    expect(parts[1]!.item).toBeNull();
     expect(parts[2]!.item).toMatchObject({ catalogId: null, qty: 1, unit: "kg", rate: 13000, total: 13000, priceType: "rate" });
     expect(parts[3]!.item).toMatchObject({ catalogId: "622", qty: 1, unit: "kg", rate: 11000, total: 11000 });
     expect(parts[0]!.text).toContain("चैन");
     expect(parts[2]!.text).toContain("130");
+  });
+  it("the real 4:37 PM order after KB-361: only 'चैन' is unread; 'अठ्यास्थी' is the owner's 88", () => {
+    const parts = parseUtteranceParts(U437_REAL, SEED_PARSER_CATALOG);
+    expect(parts).toHaveLength(4);
+    expect(parts[0]!.item).toBeNull(); // "चैन रुपए किलो": a price was said and not understood - never the catalog price
+    expect(parts[1]!.item).toMatchObject({ qty: 2, unit: "kg", rate: 8800, total: 17600, priceType: "rate" });
   });
   it("one piece that cannot be read is null; the others still are", () => {
     const parts = parseUtteranceParts("2 kilo chini 56 rupay kilo 5 kg chawal पीस ka", SEED_PARSER_CATALOG); // the 2nd has an orphaned marker (NB077)

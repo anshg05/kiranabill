@@ -2848,5 +2848,3034 @@
       "priceType": null
     },
     "note": "KB-358a: an incomplete piece - never a line silently merged or dropped (KB-317)."
+  },
+  {
+    "id": "NB185",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी एक रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 100,
+      "total": 200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-361 (owner, 29 Oct 2026): every number 1-100 as a per-kilo price, Devanagari."
+  },
+  {
+    "id": "NB186",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी दो रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 200,
+      "total": 400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB187",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तीन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 300,
+      "total": 600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB188",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चार रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 400,
+      "total": 800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB189",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पाँच रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 500,
+      "total": 1000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB190",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 600,
+      "total": 1200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB191",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सात रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 700,
+      "total": 1400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB192",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी आठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 800,
+      "total": 1600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB193",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी नौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 900,
+      "total": 1800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB194",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी दस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1000,
+      "total": 2000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB195",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी ग्यारह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1100,
+      "total": 2200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB196",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बारह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1200,
+      "total": 2400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB197",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तेरह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1300,
+      "total": 2600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB198",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौदह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1400,
+      "total": 2800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB199",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पंद्रह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1500,
+      "total": 3000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB200",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सोलह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1600,
+      "total": 3200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB201",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्रह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1700,
+      "total": 3400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB202",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अठारह रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1800,
+      "total": 3600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB203",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उन्नीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1900,
+      "total": 3800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB204",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2000,
+      "total": 4000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB205",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इक्कीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2100,
+      "total": 4200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB206",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बाईस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2200,
+      "total": 4400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB207",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तेईस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2300,
+      "total": 4600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB208",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौबीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2400,
+      "total": 4800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB209",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पच्चीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2500,
+      "total": 5000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB210",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छब्बीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2600,
+      "total": 5200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB211",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्ताईस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2700,
+      "total": 5400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB212",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अट्ठाईस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2800,
+      "total": 5600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB213",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उनतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2900,
+      "total": 5800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB214",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3000,
+      "total": 6000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB215",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इकतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3100,
+      "total": 6200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB216",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बत्तीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3200,
+      "total": 6400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB217",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तैंतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3300,
+      "total": 6600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB218",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौंतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3400,
+      "total": 6800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB219",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पैंतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3500,
+      "total": 7000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB220",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छत्तीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3600,
+      "total": 7200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB221",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सैंतीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3700,
+      "total": 7400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB222",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अड़तीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3800,
+      "total": 7600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB223",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उनतालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3900,
+      "total": 7800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB224",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4000,
+      "total": 8000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB225",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इकतालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4100,
+      "total": 8200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB226",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बयालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4200,
+      "total": 8400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB227",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तैंतालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4300,
+      "total": 8600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB228",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौवालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4400,
+      "total": 8800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB229",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पैंतालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4500,
+      "total": 9000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB230",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छियालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4600,
+      "total": 9200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB231",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सैंतालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4700,
+      "total": 9400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB232",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अड़तालीस रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4800,
+      "total": 9600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB233",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उनचास रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4900,
+      "total": 9800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB234",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पचास रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 10000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB235",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इक्यावन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5100,
+      "total": 10200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB236",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बावन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5200,
+      "total": 10400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB237",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तिरपन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5300,
+      "total": 10600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB238",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौवन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5400,
+      "total": 10800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB239",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पचपन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5500,
+      "total": 11000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB240",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छप्पन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "total": 11200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB241",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्तावन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5700,
+      "total": 11400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB242",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अट्ठावन रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5800,
+      "total": 11600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB243",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उनसठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5900,
+      "total": 11800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB244",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी साठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6000,
+      "total": 12000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB245",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इकसठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6100,
+      "total": 12200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB246",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बासठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6200,
+      "total": 12400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB247",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तिरसठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6300,
+      "total": 12600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB248",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौंसठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6400,
+      "total": 12800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB249",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पैंसठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6500,
+      "total": 13000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB250",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छियासठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6600,
+      "total": 13200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB251",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सड़सठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6700,
+      "total": 13400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB252",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अड़सठ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6800,
+      "total": 13600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB253",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उनहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6900,
+      "total": 13800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB254",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7000,
+      "total": 14000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB255",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इकहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7100,
+      "total": 14200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB256",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7200,
+      "total": 14400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB257",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तिहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7300,
+      "total": 14600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB258",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7400,
+      "total": 14800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB259",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पचहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7500,
+      "total": 15000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB260",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छिहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7600,
+      "total": 15200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB261",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सतहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7700,
+      "total": 15400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB262",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अठहत्तर रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7800,
+      "total": 15600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB263",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी उन्यासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7900,
+      "total": 15800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB264",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अस्सी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "total": 16000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB265",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इक्यासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8100,
+      "total": 16200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB266",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बयासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8200,
+      "total": 16400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB267",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तिरासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8300,
+      "total": 16600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB268",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौरासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8400,
+      "total": 16800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB269",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पचासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8500,
+      "total": 17000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB270",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छियासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8600,
+      "total": 17200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB271",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्तासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8700,
+      "total": 17400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB272",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अट्ठासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8800,
+      "total": 17600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB273",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी नवासी रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8900,
+      "total": 17800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB274",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी नब्बे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 18000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB275",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी इक्यानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9100,
+      "total": 18200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB276",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी बानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9200,
+      "total": 18400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB277",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी तिरानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9300,
+      "total": 18600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB278",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी चौरानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9400,
+      "total": 18800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB279",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी पचानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9500,
+      "total": 19000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB280",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी छियानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9600,
+      "total": 19200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB281",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सत्तानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9700,
+      "total": 19400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB282",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी अट्ठानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9800,
+      "total": 19600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB283",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी निन्यानवे रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9900,
+      "total": 19800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB284",
+    "category": "number-words",
+    "utterance": "2 किलो चीनी सौ रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 10000,
+      "total": 20000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB285",
+    "category": "number-words",
+    "utterance": "2 kilo chini ek rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 100,
+      "total": 200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-361: every number 1-100 as a per-kilo price, Roman (the first standard spelling)."
+  },
+  {
+    "id": "NB286",
+    "category": "number-words",
+    "utterance": "2 kilo chini do rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 200,
+      "total": 400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB287",
+    "category": "number-words",
+    "utterance": "2 kilo chini teen rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 300,
+      "total": 600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB288",
+    "category": "number-words",
+    "utterance": "2 kilo chini char rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 400,
+      "total": 800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB289",
+    "category": "number-words",
+    "utterance": "2 kilo chini paanch rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 500,
+      "total": 1000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB290",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhe rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 600,
+      "total": 1200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB291",
+    "category": "number-words",
+    "utterance": "2 kilo chini saat rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 700,
+      "total": 1400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB292",
+    "category": "number-words",
+    "utterance": "2 kilo chini aath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 800,
+      "total": 1600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB293",
+    "category": "number-words",
+    "utterance": "2 kilo chini nau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 900,
+      "total": 1800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB294",
+    "category": "number-words",
+    "utterance": "2 kilo chini das rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1000,
+      "total": 2000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB295",
+    "category": "number-words",
+    "utterance": "2 kilo chini gyarah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1100,
+      "total": 2200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB296",
+    "category": "number-words",
+    "utterance": "2 kilo chini barah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1200,
+      "total": 2400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB297",
+    "category": "number-words",
+    "utterance": "2 kilo chini terah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1300,
+      "total": 2600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB298",
+    "category": "number-words",
+    "utterance": "2 kilo chini chaudah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1400,
+      "total": 2800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB299",
+    "category": "number-words",
+    "utterance": "2 kilo chini pandrah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1500,
+      "total": 3000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB300",
+    "category": "number-words",
+    "utterance": "2 kilo chini solah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1600,
+      "total": 3200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB301",
+    "category": "number-words",
+    "utterance": "2 kilo chini satrah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1700,
+      "total": 3400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB302",
+    "category": "number-words",
+    "utterance": "2 kilo chini atharah rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1800,
+      "total": 3600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB303",
+    "category": "number-words",
+    "utterance": "2 kilo chini unnees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 1900,
+      "total": 3800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB304",
+    "category": "number-words",
+    "utterance": "2 kilo chini bees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2000,
+      "total": 4000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB305",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikkees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2100,
+      "total": 4200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB306",
+    "category": "number-words",
+    "utterance": "2 kilo chini baees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2200,
+      "total": 4400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB307",
+    "category": "number-words",
+    "utterance": "2 kilo chini teis rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2300,
+      "total": 4600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB308",
+    "category": "number-words",
+    "utterance": "2 kilo chini chaubees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2400,
+      "total": 4800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB309",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachchees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2500,
+      "total": 5000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB310",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhabbees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2600,
+      "total": 5200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB311",
+    "category": "number-words",
+    "utterance": "2 kilo chini sattaees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2700,
+      "total": 5400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB312",
+    "category": "number-words",
+    "utterance": "2 kilo chini atthaees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2800,
+      "total": 5600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB313",
+    "category": "number-words",
+    "utterance": "2 kilo chini untees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 2900,
+      "total": 5800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB314",
+    "category": "number-words",
+    "utterance": "2 kilo chini tees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3000,
+      "total": 6000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB315",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikattis rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3100,
+      "total": 6200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB316",
+    "category": "number-words",
+    "utterance": "2 kilo chini battees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3200,
+      "total": 6400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB317",
+    "category": "number-words",
+    "utterance": "2 kilo chini taintees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3300,
+      "total": 6600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB318",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauntees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3400,
+      "total": 6800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB319",
+    "category": "number-words",
+    "utterance": "2 kilo chini paintees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3500,
+      "total": 7000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB320",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhattees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3600,
+      "total": 7200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB321",
+    "category": "number-words",
+    "utterance": "2 kilo chini saintees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3700,
+      "total": 7400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB322",
+    "category": "number-words",
+    "utterance": "2 kilo chini adtees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3800,
+      "total": 7600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB323",
+    "category": "number-words",
+    "utterance": "2 kilo chini untaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 3900,
+      "total": 7800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB324",
+    "category": "number-words",
+    "utterance": "2 kilo chini chaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4000,
+      "total": 8000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB325",
+    "category": "number-words",
+    "utterance": "2 kilo chini iktaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4100,
+      "total": 8200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB326",
+    "category": "number-words",
+    "utterance": "2 kilo chini bayaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4200,
+      "total": 8400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB327",
+    "category": "number-words",
+    "utterance": "2 kilo chini taintaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4300,
+      "total": 8600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB328",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauwaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4400,
+      "total": 8800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB329",
+    "category": "number-words",
+    "utterance": "2 kilo chini paintaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4500,
+      "total": 9000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB330",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhiyaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4600,
+      "total": 9200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB331",
+    "category": "number-words",
+    "utterance": "2 kilo chini saintaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4700,
+      "total": 9400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB332",
+    "category": "number-words",
+    "utterance": "2 kilo chini adtaalees rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4800,
+      "total": 9600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB333",
+    "category": "number-words",
+    "utterance": "2 kilo chini unchaas rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4900,
+      "total": 9800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB334",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachaas rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 10000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB335",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikyaavan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5100,
+      "total": 10200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB336",
+    "category": "number-words",
+    "utterance": "2 kilo chini baavan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5200,
+      "total": 10400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB337",
+    "category": "number-words",
+    "utterance": "2 kilo chini tirpan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5300,
+      "total": 10600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB338",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauvan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5400,
+      "total": 10800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB339",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachpan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5500,
+      "total": 11000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB340",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhappan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5600,
+      "total": 11200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB341",
+    "category": "number-words",
+    "utterance": "2 kilo chini sattaavan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5700,
+      "total": 11400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB342",
+    "category": "number-words",
+    "utterance": "2 kilo chini atthaavan rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5800,
+      "total": 11600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB343",
+    "category": "number-words",
+    "utterance": "2 kilo chini unsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 5900,
+      "total": 11800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB344",
+    "category": "number-words",
+    "utterance": "2 kilo chini saath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6000,
+      "total": 12000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB345",
+    "category": "number-words",
+    "utterance": "2 kilo chini iksath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6100,
+      "total": 12200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB346",
+    "category": "number-words",
+    "utterance": "2 kilo chini baasath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6200,
+      "total": 12400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB347",
+    "category": "number-words",
+    "utterance": "2 kilo chini tirsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6300,
+      "total": 12600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB348",
+    "category": "number-words",
+    "utterance": "2 kilo chini chaunsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6400,
+      "total": 12800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB349",
+    "category": "number-words",
+    "utterance": "2 kilo chini painsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6500,
+      "total": 13000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB350",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhiyaasath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6600,
+      "total": 13200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB351",
+    "category": "number-words",
+    "utterance": "2 kilo chini sadsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6700,
+      "total": 13400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB352",
+    "category": "number-words",
+    "utterance": "2 kilo chini adsath rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6800,
+      "total": 13600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB353",
+    "category": "number-words",
+    "utterance": "2 kilo chini unhattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 6900,
+      "total": 13800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB354",
+    "category": "number-words",
+    "utterance": "2 kilo chini sattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7000,
+      "total": 14000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB355",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikhattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7100,
+      "total": 14200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB356",
+    "category": "number-words",
+    "utterance": "2 kilo chini bahattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7200,
+      "total": 14400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB357",
+    "category": "number-words",
+    "utterance": "2 kilo chini tihattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7300,
+      "total": 14600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB358",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauhattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7400,
+      "total": 14800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB359",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachhattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7500,
+      "total": 15000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB360",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhihattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7600,
+      "total": 15200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB361",
+    "category": "number-words",
+    "utterance": "2 kilo chini sathattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7700,
+      "total": 15400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB362",
+    "category": "number-words",
+    "utterance": "2 kilo chini athhattar rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7800,
+      "total": 15600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB363",
+    "category": "number-words",
+    "utterance": "2 kilo chini unyaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7900,
+      "total": 15800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB364",
+    "category": "number-words",
+    "utterance": "2 kilo chini assi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "total": 16000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB365",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikyaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8100,
+      "total": 16200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB366",
+    "category": "number-words",
+    "utterance": "2 kilo chini bayaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8200,
+      "total": 16400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB367",
+    "category": "number-words",
+    "utterance": "2 kilo chini tiraasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8300,
+      "total": 16600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB368",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauraasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8400,
+      "total": 16800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB369",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8500,
+      "total": 17000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB370",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhiyaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8600,
+      "total": 17200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB371",
+    "category": "number-words",
+    "utterance": "2 kilo chini sattaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8700,
+      "total": 17400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB372",
+    "category": "number-words",
+    "utterance": "2 kilo chini atthaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8800,
+      "total": 17600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB373",
+    "category": "number-words",
+    "utterance": "2 kilo chini navaasi rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8900,
+      "total": 17800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB374",
+    "category": "number-words",
+    "utterance": "2 kilo chini nabbe rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 18000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB375",
+    "category": "number-words",
+    "utterance": "2 kilo chini ikyaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9100,
+      "total": 18200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB376",
+    "category": "number-words",
+    "utterance": "2 kilo chini baanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9200,
+      "total": 18400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB377",
+    "category": "number-words",
+    "utterance": "2 kilo chini tiraanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9300,
+      "total": 18600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB378",
+    "category": "number-words",
+    "utterance": "2 kilo chini chauraanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9400,
+      "total": 18800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB379",
+    "category": "number-words",
+    "utterance": "2 kilo chini pachaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9500,
+      "total": 19000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB380",
+    "category": "number-words",
+    "utterance": "2 kilo chini chhiyaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9600,
+      "total": 19200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB381",
+    "category": "number-words",
+    "utterance": "2 kilo chini sattaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9700,
+      "total": 19400,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB382",
+    "category": "number-words",
+    "utterance": "2 kilo chini atthaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9800,
+      "total": 19600,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB383",
+    "category": "number-words",
+    "utterance": "2 kilo chini ninyaanve rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9900,
+      "total": 19800,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB384",
+    "category": "number-words",
+    "utterance": "2 kilo chini sau rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 10000,
+      "total": 20000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    }
+  },
+  {
+    "id": "NB385",
+    "category": "number-words",
+    "utterance": "4 किलो चावल डेढ़ सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 15000,
+      "priceType": "total"
+    },
+    "note": "KB-361: hundreds as a bare total (4 kg for Rs N)."
+  },
+  {
+    "id": "NB386",
+    "category": "number-words",
+    "utterance": "4 किलो चावल ढाई सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 25000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB387",
+    "category": "number-words",
+    "utterance": "4 किलो चावल सवा सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 12500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB388",
+    "category": "number-words",
+    "utterance": "4 किलो चावल पौने दो सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 17500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB389",
+    "category": "number-words",
+    "utterance": "4 किलो चावल साढ़े तीन सौ रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 35000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB390",
+    "category": "number-words",
+    "utterance": "4 किलो चावल एक सौ दस रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 11000,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB391",
+    "category": "number-words",
+    "utterance": "4 किलो चावल एक सौ छप्पन रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 15600,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB392",
+    "category": "number-words",
+    "utterance": "4 किलो चावल दो सौ अठासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 28800,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB393",
+    "category": "number-words",
+    "utterance": "4 किलो चावल दो सौ अठ्यासी रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 28800,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB394",
+    "category": "number-words",
+    "utterance": "4 किलो चावल तीन सौ पचपन रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 35500,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB395",
+    "category": "number-words",
+    "utterance": "4 किलो चावल चार सौ निन्यानवे रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 49900,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB396",
+    "category": "number-words",
+    "utterance": "4 किलो चावल नौ सौ निन्यानवे रुपए",
+    "expected": {
+      "safe": false,
+      "qty": 4,
+      "unit": "kg",
+      "rate": null,
+      "total": 99900,
+      "priceType": "total"
+    }
+  },
+  {
+    "id": "NB397",
+    "category": "unread-price",
+    "utterance": "4 किलो चावल दो सौ अठाली रुपए",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-361: a price word nobody understood ('अठाली' is not 88): the old grammar billed Rs 200. Never a number - not read by rule."
+  },
+  {
+    "id": "NB398",
+    "category": "unread-price",
+    "utterance": "1 किलो उडद मुगर एक सौ अठाली रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-361: the same with a per-kilo price - never Rs 100 a kilo."
+  },
+  {
+    "id": "NB399",
+    "category": "unread-price",
+    "utterance": "एक किलो मूंग दाल चैन रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-361: a price said and not understood must never become the catalog price."
+  },
+  {
+    "id": "NB400",
+    "category": "unread-price",
+    "utterance": "2 किलो चीनी छियाणवे रुपए किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-361: an unknown spelling of 96."
+  },
+  {
+    "id": "NB401",
+    "category": "unread-price",
+    "utterance": "1 kilo moong daal chain rupay",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-361: Roman, an unread price word."
   }
 ]

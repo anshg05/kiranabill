@@ -1,0 +1,556 @@
+[
+  {
+    "id": "G01",
+    "source": "RT07 (owner, real)",
+    "transcript": "2 किलो चीनी 3 पालेजी 10 वाला 1 किलो बेसन",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "52",
+        "qty": 3,
+        "unit": "piece",
+        "total": 3000
+      },
+      {
+        "catalogId": "4",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G02",
+    "source": "RT09 (owner, real): Whisper repeated a segment",
+    "transcript": "दो किलो शक्कर दो किलो शक्कर पांगलेजी तीन दस वाला",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "52",
+        "qty": 3,
+        "unit": "piece",
+        "total": 3000
+      }
+    ]
+  },
+  {
+    "id": "G03",
+    "source": "RT23 (owner, real)",
+    "transcript": "1 किलो मुंग दाल 1 किलो मसूल दाल 1 किलो तूअल दाल 1 किलो चना",
+    "expect": [
+      {
+        "catalogId": [
+          "18",
+          "625"
+        ],
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "19",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "16",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "24",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G04",
+    "source": "RT28 (owner, real): 'खाब' for 'का'",
+    "transcript": "5 किलो चावल 30 खाब",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 5,
+        "unit": "kg",
+        "total": 3000
+      }
+    ]
+  },
+  {
+    "id": "G05",
+    "source": "RT31 (owner, real): 'एक सौ अस्सी' garbled",
+    "transcript": "साबुन एक सोस्सी रुपए",
+    "mode": "okOrBail",
+    "expect": [
+      {
+        "catalogId": "614",
+        "qty": null,
+        "unit": "",
+        "total": 18000
+      }
+    ]
+  },
+  {
+    "id": "G06",
+    "source": "RT33 (owner, real): no number heard at all",
+    "transcript": "सबुनिक स्वस्थिरुप है",
+    "mode": "noNumbers",
+    "expect": []
+  },
+  {
+    "id": "G07",
+    "source": "RT35-39 (owner, real): silence hallucination",
+    "transcript": "झाल",
+    "mode": "noNumbers",
+    "expect": []
+  },
+  {
+    "id": "G08",
+    "source": "owner, draft-v7 (28 Oct): Gemini billed Rs 180",
+    "transcript": "2 किलो चावल 90 रुपए",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 2,
+        "unit": "kg",
+        "total": 9000
+      }
+    ]
+  },
+  {
+    "id": "G09",
+    "source": "owner, draft-v7: no commas",
+    "transcript": "2 किलो चीनी 56 रुपए किलो 10 किलो गेहु 34 रुपए किलो 2 किलो चावल 90 रुपए",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": 11200
+      },
+      {
+        "catalogId": "1",
+        "qty": 10,
+        "unit": "kg",
+        "total": 34000
+      },
+      {
+        "catalogId": "11",
+        "qty": 2,
+        "unit": "kg",
+        "total": 9000
+      }
+    ]
+  },
+  {
+    "id": "G10",
+    "source": "owner, production (28 Oct): read as Rs 34 by Layer 1",
+    "transcript": "10 किलो गेहु 34 रुपए किलो",
+    "expect": [
+      {
+        "catalogId": "1",
+        "qty": 10,
+        "unit": "kg",
+        "total": 34000
+      }
+    ]
+  },
+  {
+    "id": "G11",
+    "source": "owner, 5:43 PM",
+    "transcript": "1 किलो चीनी 56 रुपए किलो, 1 किलो हरा बटाना 56 रुपए किलो, 1 किलो चावल 84 रुपए किलो, 10 किलो गेहु 34 रुपए किलो",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 1,
+        "unit": "kg",
+        "total": 5600
+      },
+      {
+        "catalogId": "626",
+        "qty": 1,
+        "unit": "kg",
+        "total": 5600
+      },
+      {
+        "catalogId": "11",
+        "qty": 1,
+        "unit": "kg",
+        "total": 8400
+      },
+      {
+        "catalogId": "1",
+        "qty": 10,
+        "unit": "kg",
+        "total": 34000
+      }
+    ]
+  },
+  {
+    "id": "G12",
+    "source": "owner, 4:38 PM (Gemini answered it on 28 Oct)",
+    "transcript": "1 kg मुंग दाल 96 रुपई किलो, 1 kg बरबटी दाल 88 रुपई किलो, 2 kg उडद मुगर 130 रुपई किलो, 1 kg मुंग मुगर 110 रुपई किलो, 1 kg चीनी 56 रुपई किलो,",
+    "expect": [
+      {
+        "catalogId": [
+          "18",
+          "625"
+        ],
+        "qty": 1,
+        "unit": "kg",
+        "total": 9600
+      },
+      {
+        "catalogId": "629",
+        "qty": 1,
+        "unit": "kg",
+        "total": 8800
+      },
+      {
+        "catalogId": [
+          null,
+          "624"
+        ],
+        "qty": 2,
+        "unit": "kg",
+        "total": 26000
+      },
+      {
+        "catalogId": "622",
+        "qty": 1,
+        "unit": "kg",
+        "total": 11000
+      },
+      {
+        "catalogId": "27",
+        "qty": 1,
+        "unit": "kg",
+        "total": 5600
+      }
+    ]
+  },
+  {
+    "id": "G13",
+    "source": "owner, 4:37 PM, the two pieces Layer 1 cannot read (misheard prices 96 and 88)",
+    "transcript": "कि एक किलो मुंगडाल चैन रुपए किलो, दो किलो बरबटी दाल अठ्यास्थी रुपए किलो",
+    "mode": "okOrBail",
+    "expect": [
+      {
+        "catalogId": [
+          "18",
+          "625"
+        ],
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "629",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G14",
+    "source": "owner, 29 Oct (KB-362): name first, price-less",
+    "transcript": "बरबटी दाल एक किलो मूंग दाल दो किलो हरा बटाना एक किलो",
+    "expect": [
+      {
+        "catalogId": "629",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": [
+          "18",
+          "625"
+        ],
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "626",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G15",
+    "source": "KB-362: quantity first, price-less",
+    "transcript": "एक किलो बरबटी दाल दो किलो मूंग दाल एक किलो हरा बटाना",
+    "expect": [
+      {
+        "catalogId": "629",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": [
+          "18",
+          "625"
+        ],
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "626",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G16",
+    "source": "KB-362 adversarial: quantity first, two items",
+    "transcript": "दो किलो चीनी एक किलो चावल",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "11",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G17",
+    "source": "KB-362 adversarial: name first, two items",
+    "transcript": "चीनी दो किलो चावल एक किलो",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "11",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G18",
+    "source": "KB-362 adversarial: name first, three items",
+    "transcript": "चावल एक किलो चीनी दो किलो आटा तीन किलो",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "2",
+        "qty": 3,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G19",
+    "source": "a priced item then a price-less one",
+    "transcript": "2 किलो चीनी 56 रुपए किलो एक किलो चावल",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": 11200
+      },
+      {
+        "catalogId": "11",
+        "qty": 1,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G20",
+    "source": "a bare total",
+    "transcript": "आधा किलो बेसन 40 रुपए",
+    "expect": [
+      {
+        "catalogId": "4",
+        "qty": 0.5,
+        "unit": "kg",
+        "total": 4000
+      }
+    ]
+  },
+  {
+    "id": "G21",
+    "source": "wala, Whisper spelling",
+    "transcript": "तीन पालेजी दस वाला",
+    "expect": [
+      {
+        "catalogId": "52",
+        "qty": 3,
+        "unit": "piece",
+        "total": 3000
+      }
+    ]
+  },
+  {
+    "id": "G22",
+    "source": "a fraction",
+    "transcript": "साढ़े तीन किलो चीनी",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 3.5,
+        "unit": "kg",
+        "total": "default"
+      }
+    ]
+  },
+  {
+    "id": "G23",
+    "source": "a fraction with a total",
+    "transcript": "paune do kilo chawal 80 ka",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 1.75,
+        "unit": "kg",
+        "total": 8000
+      }
+    ]
+  },
+  {
+    "id": "G24",
+    "source": "Roman, two items",
+    "transcript": "do kilo chini aur teen kilo chawal 90 rupay",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 2,
+        "unit": "kg",
+        "total": "default"
+      },
+      {
+        "catalogId": "11",
+        "qty": 3,
+        "unit": "kg",
+        "total": 9000
+      }
+    ]
+  },
+  {
+    "id": "G25",
+    "source": "KB-361: a number word Layer 1 does not read yet (88)",
+    "transcript": "एक किलो चीनी अठ्यासी रुपए किलो",
+    "expect": [
+      {
+        "catalogId": "27",
+        "qty": 1,
+        "unit": "kg",
+        "total": 8800
+      }
+    ]
+  },
+  {
+    "id": "G26",
+    "source": "KB-361: 96 as a bare total",
+    "transcript": "दो किलो चावल छियानवे रुपए",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 2,
+        "unit": "kg",
+        "total": 9600
+      }
+    ]
+  },
+  {
+    "id": "G27",
+    "source": "KB-361: 42 as a rate",
+    "transcript": "तीन किलो आटा बयालीस रुपए किलो",
+    "expect": [
+      {
+        "catalogId": "2",
+        "qty": 3,
+        "unit": "kg",
+        "total": 12600
+      }
+    ]
+  },
+  {
+    "id": "G28",
+    "source": "KB-361: 288 as a bare total",
+    "transcript": "चार किलो चावल दो सौ अठासी रुपए",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 4,
+        "unit": "kg",
+        "total": 28800
+      }
+    ]
+  },
+  {
+    "id": "G29",
+    "source": "bench bail: two bare numbers, no marker (NB096)",
+    "transcript": "चीनी 30 40",
+    "mode": "noNumbers",
+    "expect": []
+  },
+  {
+    "id": "G30",
+    "source": "a rate by 'wala', Roman",
+    "transcript": "do kilo chawal 50 wala",
+    "expect": [
+      {
+        "catalogId": "11",
+        "qty": 2,
+        "unit": "kg",
+        "total": 10000
+      }
+    ]
+  }
+]

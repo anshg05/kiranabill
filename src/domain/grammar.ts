@@ -29,6 +29,7 @@
  */
 
 import { normalizeDevanagari, type ParserCatalog } from "./catalogIndex.js";
+import { NUMBER_WORDS } from "./numberWords";
 import { lineTotalPaise, lineTotalPaiseScaled, rupeesToPaise, type Paise } from "./money.js";
 import { matchProduct } from "./validator.js";
 
@@ -67,19 +68,9 @@ export interface ParsedItem {
   readonly priceType: PriceType;
 }
 
-// Hindi numerals, verbatim from docs/14-LEGACY-REFERENCE.md section 3.
-const HINDI_NUMBERS: Record<string, number> = {
-  ek: 1, एक: 1, do: 2, दो: 2, teen: 3, तीन: 3, char: 4, chaar: 4, चार: 4,
-  paanch: 5, panch: 5, पांच: 5, paach: 5, पाच: 5, chhe: 6, chhah: 6, छह: 6,
-  saat: 7, सात: 7, aath: 8, आठ: 8, nau: 9, nav: 9, नौ: 9, das: 10, दस: 10,
-  gyarah: 11, ग्यारह: 11, barah: 12, बारह: 12, terah: 13, तेरह: 13,
-  chaudah: 14, चौदह: 14, pandrah: 15, पंद्रह: 15, solah: 16, सोलह: 16,
-  satrah: 17, सत्रह: 17, atharah: 18, अठारह: 18, unnees: 19, उन्नीस: 19,
-  bees: 20, बीस: 20, pachees: 25, पचीस: 25, tees: 30, तीस: 30,
-  chaalees: 40, चालीस: 40, pachaas: 50, pachas: 50, पचास: 50,
-  saath: 60, साठ: 60, sattar: 70, सत्तर: 70, assi: 80, अस्सी: 80,
-  nabbe: 90, नब्बे: 90,
-};
+// Hindi numerals: every word 1-100 and its spellings (KB-361, domain/numberWords.ts - exact lookup, never fuzzy). The table the
+// legacy app had (docs/14-LEGACY-REFERENCE.md section 3) is a subset of it, with the same values.
+const HINDI_NUMBERS: Readonly<Record<string, number>> = NUMBER_WORDS;
 
 // KB-302 (owner): multiplier words. Not plain numbers - they combine with the
 // number token IMMEDIATELY before them ("paanch sau" = 500, "5 सौ" = 500,
@@ -105,6 +96,7 @@ const FIXED_FRACTIONS: Record<string, number> = {
   paav: 0.25, पाव: 0.25, pav: 0.25,
   dedh: 1.5, डेढ: 1.5, डेड: 1.5, deedh: 1.5,
   dhai: 2.5, ढाई: 2.5, ढाइ: 2.5, डाई: 2.5, dhaai: 2.5,
+  paun: 0.75, pauna: 0.75, पौन: 0.75, पौना: 0.75, // KB-361: three quarters ("पौन किलो")
 };
 
 // sawa/paune modify whichever number word follows ("paune do" = 2 - 0.25).
@@ -529,6 +521,15 @@ function hasOrphanedMarker(classified: readonly Classified[], nums: readonly Num
   return rateMarkers > attachedRate || totalMarkers > attachedTotal || currencyMarkers > attachedCurrency;
 }
 
+/**
+ * KB-361 (found 29 Oct 2026): a Devanagari currency word that is NOT straight after a number stays a plain word, so it lands in the
+ * product name ("चावल अठासी रुपए"): a price WAS said but part of it is not understood, and what is left would be billed as the whole
+ * price (Rs 200 for "दो सौ अठासी") or replaced by the catalog's. The piece is not read by rule - never guessed.
+ */
+function nameHasPriceWord(classified: readonly Classified[]): boolean {
+  return classified.some((token) => token.type === "word" && DEVANAGARI_CURRENCY.has(token.raw));
+}
+
 function extractSpokenName(classified: readonly Classified[]): string {
   return classified
     .filter((token): token is { type: "word"; raw: string } => token.type === "word")
@@ -598,6 +599,7 @@ function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | nul
   // number (its neighbouring word failed to parse) must bail, not fall
   // through to a confident default-price guess.
   if (hasOrphanedMarker(classified, nums)) return null;
+  if (nameHasPriceWord(classified)) return null;
 
   const spokenName = extractSpokenName(classified);
 
@@ -866,6 +868,7 @@ function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | nu
   const nums = extractNums(classified);
 
   if (hasOrphanedMarker(classified, nums)) return "orphaned marker";
+  if (nameHasPriceWord(classified)) return "orphaned marker";
 
   if (nums.length === 0) return null; // Rule 5b - always a hit, never a bail
 

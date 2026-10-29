@@ -13,6 +13,7 @@
     "seed:catalog": "tsx scripts/build-catalog-seed.ts",
     "eval": "tsx eval/run-eval.ts",
     "eval:real": "tsx eval/real-transcripts.ts",
+    "eval:layer2": "tsx eval/layer2-models.ts",
     "eval:audio": "tsx eval/real-audio.ts",
     "try": "tsx scripts/try.ts",
     "bench:numbers": "tsx eval/number-benchmark.ts",

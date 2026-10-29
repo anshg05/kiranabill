@@ -14,7 +14,19 @@ import { ProviderError, withDeadline } from "@/voice/deadline";
 // newer model here would silently invalidate that cost model - out of
 // scope for this ticket to redo.
 const GEMINI_MODEL = "gemini-2.5-flash-lite";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const geminiUrl = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+/** KB-360: what a caller may change per provider. The default is the model the shop has always used until KB-360 picks the new one. */
+export interface GeminiProviderOptions {
+  /** An exact model name (never a "-latest" alias). */
+  readonly model?: string;
+  /** Passed as generationConfig.thinkingConfig as it is (a model family takes a budget or a level) - undefined sends nothing. */
+  readonly thinkingConfig?: Readonly<Record<string, unknown>>;
+  /** The call's deadline; production keeps GEMINI_TIMEOUT_MS. Only the measurement script (eval/layer2-models.ts) lengthens it. */
+  readonly timeoutMs?: number;
+  /** A different system prompt - only the measurement script tries one; production always sends PRICING_GRAMMAR_PROMPT. */
+  readonly systemPrompt?: string;
+}
 
 /** KB-319 (owner, D50): ONE attempt, cut at 6 s - measured normal 1.6-3.5 s,
  * outliers 12.9 s / 20.4 s (KI-58). No automatic retry: three attempts plus
@@ -90,7 +102,8 @@ function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): Pa
  * voice.mts passes a logger under `netlify dev` only; production passes none. */
 export type GeminiAttemptLog = (a: { attempt: number; status: number | "network-error" | "timeout"; ms: number }) => void;
 
-export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAttemptLog): ParseProvider {
+export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAttemptLog, options: GeminiProviderOptions = {}): ParseProvider {
+  const url = geminiUrl(options.model ?? GEMINI_MODEL);
   return {
     name: "gemini-flash-lite",
     async parse(transcript, opts) {
@@ -103,24 +116,26 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
       const userContent = `Candidate products:\n${JSON.stringify(catalogSlice)}\n\nTranscript: ${transcript}`;
 
       const body = {
-        systemInstruction: { parts: [{ text: PRICING_GRAMMAR_PROMPT }] },
+        systemInstruction: { parts: [{ text: options.systemPrompt ?? PRICING_GRAMMAR_PROMPT }] },
         contents: [{ role: "user", parts: [{ text: userContent }] }],
         generationConfig: {
           temperature: 0.1,
           responseMimeType: "application/json",
           responseSchema: RESPONSE_SCHEMA,
+          ...(options.thinkingConfig ? { thinkingConfig: options.thinkingConfig } : {}),
         },
       };
 
       const start = performance.now();
       const log = (status: number | "network-error" | "timeout") => onAttempt?.({ attempt: 1, status, ms: Math.round(performance.now() - start) });
+      const timeoutMs = options.timeoutMs ?? GEMINI_TIMEOUT_MS;
       return withDeadline(
-        GEMINI_TIMEOUT_MS,
+        timeoutMs,
         async (signal) => {
           let response: Response;
           try {
             // D59: the key in a header, never in the URL an error or log may carry.
-            response = await fetch(GEMINI_URL, {
+            response = await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
               body: JSON.stringify(body),
@@ -156,7 +171,7 @@ export function createGeminiParseProvider(apiKey: string, onAttempt?: GeminiAtte
         },
         () => {
           log("timeout");
-          return new ProviderError("timeout", `Gemini parse timed out after ${GEMINI_TIMEOUT_MS} ms`);
+          return new ProviderError("timeout", `Gemini parse timed out after ${timeoutMs} ms`);
         },
       );
     },

@@ -479,10 +479,11 @@
     "source": "owner, real voice, 28 Oct 2026, production (4:37 PM screenshot) - KB-358a",
     "transcript": "कि एक किलो मुँगडाल चैन रुपए किलो दो किलो बरबटी दाल अठ्यास्थी रुपए किलो एक किलो उड़त मुगर 130 रुपए किलो एक किलो मुँग मोहगर 110 रुपए किलो",
     "expectedLines": [
+      { "catalogId": "629", "displayName": "बरबटी दाल", "qty": 2, "unit": "kg", "total": 17600 },
       { "catalogId": null, "displayName": "उडत मुगर", "qty": 1, "unit": "kg", "total": 13000 },
       { "catalogId": "622", "displayName": "Moong Mogar", "qty": 1, "unit": "kg", "total": 11000 }
     ],
     "layer1": "miss",
-    "note": "No commas, and two prices misheard ('चैन', 'अठ्यास्थी' = 96, 88). Layer 1 reads the last two pieces; the first two go to Gemini together. The lines listed are what Layer 1 itself reads."
+    "note": "No commas, and one price misheard ('चैन' = 96). After KB-361 'अठ्यास्थी' is read as 88 (the owner's word), so Layer 1 reads three of the four pieces; only the first goes to Gemini. The lines listed are what Layer 1 itself reads."
   }
 ]
