@@ -99,3 +99,31 @@ describe("Check B - a price was said but could not be read", () => {
     expect(checkLayer2AgainstSpoken(pieces, two).lines).toEqual(two);
   });
 });
+
+describe("Check C (KB-366, A27 / A47 / A49) - a quantity nobody said is dropped, never invented", () => {
+  const piece = (text: string) => part(text, null);
+  it("a price only ('लाइजॉल 110 रुपए'): the AI's 'quantity 1' is dropped, the spoken total stays (D47)", () => {
+    const g = line({ qty: 1, unit: "piece", total: 11000, priceType: "total" });
+    const r = checkLayer2AgainstSpoken([piece("लाइजॉल 110 रुपए")], [g]);
+    expect(r.lines[0]!.item).toMatchObject({ qty: null, unit: "", total: 11000, priceType: "total" });
+    expect(r.flags).toEqual([]);
+  });
+  it("a quantity that WAS said is kept (एक, 2, आधा किलो, सवा)", () => {
+    for (const [text, qty, unit] of [["एक लाइजॉल 110 रुपए", 1, "piece"], ["2 किलो चीनी", 2, "kg"], ["आधा किलो चीनी", 0.5, "kg"], ["सवा किलो चीनी", 1.25, "kg"]] as const) {
+      const r = checkLayer2AgainstSpoken([piece(text)], [line({ qty, unit, total: 11000, priceType: "total" })]);
+      expect(r.lines[0]!.item.qty, text).toBe(qty);
+    }
+  });
+  it("a per-kilo price with no quantity is 1 kg - the owner's ruling (A28, A33): kept", () => {
+    const g = line({ qty: 1, unit: "kg", rate: 11000, rateUnit: "kg", total: 11000, priceType: "rate" });
+    expect(checkLayer2AgainstSpoken([piece("फुटाने 110 रुपए किलो")], [g]).lines[0]!.item).toMatchObject({ qty: 1, unit: "kg", total: 11000 });
+  });
+  it("the shop's own price needs a quantity: 'चीनी' alone with the AI's invented 1 kg -> no quantity, no total (Quantity needed)", () => {
+    const g = line({ qty: 1, unit: "kg", rate: 4500, rateUnit: "kg", total: 4500, priceType: "default" });
+    expect(checkLayer2AgainstSpoken([piece("चीनी")], [g]).lines[0]!.item).toMatchObject({ qty: null, unit: "", total: null, priceType: "default" });
+  });
+  it("lines that cannot be paired with pieces are left alone", () => {
+    const g = line({ qty: 1, unit: "piece", total: 11000, priceType: "total" });
+    expect(checkLayer2AgainstSpoken([piece("लाइजॉल 110 रुपए"), piece("x")], [g]).lines[0]).toEqual(g);
+  });
+});

@@ -35,18 +35,20 @@ async function retry<T>(call: () => Promise<T>, attempts = 4): Promise<T> {
   }
 }
 const freeze = process.argv.includes("--freeze");
+// --frozen-text: no Groq - the FROZEN Whisper text goes through the real Layer 2 (fresh Gemini answers). Tests a fix on the same text.
+const frozenText = process.argv.includes("--frozen-text");
 const only = arg("only")?.split(",");
 const maxGemini = Number(arg("max-gemini") ?? 30);
 
 const { orders: all, frozen } = readOrders();
 const audioOf = (id: string) => (existsSync(AUDIO_DIR) ? readdirSync(AUDIO_DIR).find((f) => f.startsWith(`${id}.`)) : undefined);
-const orders = all.filter((o) => (!only || only.includes(o.id)) && audioOf(o.id));
+const orders = all.filter((o) => (!only || only.includes(o.id)) && (frozenText ? !!o.transcript : audioOf(o.id)));
 const skipped = all.filter((o) => !orders.includes(o) && (!only || only.includes(o.id)));
 if (orders.length === 0) {
   console.error("No order with both a recording (eval/acceptance/audio) and an expected bill (orders.json). Import, fill the sheet, accept:build first.");
   process.exit(1);
 }
-console.log(`accept:live - ${orders.length} Groq transcription(s), at most ${maxGemini} Gemini call(s); ${skipped.length} order(s) have no recording here and are skipped${freeze ? "; --freeze" : ""}`);
+console.log(`accept:live - ${frozenText ? "0 Groq transcription(s) (frozen text)" : `${orders.length} Groq transcription(s)`}, at most ${maxGemini} Gemini call(s); ${skipped.length} order(s) have no recording here and are skipped${freeze ? "; --freeze" : ""}`);
 
 const voice = await startLocalVoice();
 const verdicts: OrderVerdict[] = [];
@@ -55,14 +57,17 @@ const answered: Record<string, unknown> = {};
 let geminiCalls = 0;
 try {
   for (const o of orders) {
-    const file = audioOf(o.id)!;
-    const ext = path.extname(file).slice(1);
-    const blob = new Blob([readFileSync(path.join(AUDIO_DIR, file))], { type: MIME[ext] ?? "application/octet-stream" });
     let transcript: string;
     try {
-      // Groq answers "busy" when recordings are sent back to back (14 of 50 on 30 Oct): pace the calls and retry with a back-off
-      transcript = await retry(() => transcribeAudio(blob, { accessToken: voice.accessToken, endpoint: voice.endpoint, language: "hi" }));
-      await sleep(PACE_MS);
+      if (frozenText) transcript = o.transcript!;
+      else {
+        const file = audioOf(o.id)!;
+        const ext = path.extname(file).slice(1);
+        const blob = new Blob([readFileSync(path.join(AUDIO_DIR, file))], { type: MIME[ext] ?? "application/octet-stream" });
+        // Groq answers "busy" when recordings are sent back to back (14 of 50 on 30 Oct): pace the calls and retry with a back-off
+        transcript = await retry(() => transcribeAudio(blob, { accessToken: voice.accessToken, endpoint: voice.endpoint, language: "hi" }));
+        await sleep(PACE_MS);
+      }
     } catch (e) {
       console.log(`ERR   ${o.id} ${o.category}: transcription failed (${(e as Error).message})`);
       verdicts.push({ id: o.id, exact: false, wrong: [], missing: ["transcription failed"], extra: [], inexact: [], notAddedOk: false, unexpectedChecks: false, silentWrong: 0 });

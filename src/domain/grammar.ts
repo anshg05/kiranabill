@@ -98,7 +98,7 @@ const SAADHE_WORDS = new Set(["saadhe", "saade", "sadhe", "साढे", "स�
 const FIXED_FRACTIONS: Record<string, number> = {
   aadha: 0.5, आधा: 0.5, adha: 0.5,
   paav: 0.25, पाव: 0.25, pav: 0.25,
-  dedh: 1.5, डेढ: 1.5, डेड: 1.5, deedh: 1.5,
+  dedh: 1.5, डेढ: 1.5, डेड: 1.5, देड: 1.5, deedh: 1.5, // देड: Whisper's spelling (A37)
   dhai: 2.5, ढाई: 2.5, ढाइ: 2.5, डाई: 2.5, dhaai: 2.5,
   paun: 0.75, pauna: 0.75, पौन: 0.75, पौना: 0.75, // KB-361: three quarters ("पौन किलो")
 };
@@ -119,6 +119,8 @@ const CHATAAK_WORDS = new Set(["chataak", "chatak"]);
 
 const UNIT_ALIASES: Record<string, string> = {
   kg: "kg", kilo: "kg", kilogram: "kg", kilograms: "kg", किलो: "kg",
+  // KB-365: the spellings Whisper really wrote for the owner's voice (A24 "किल", A19 "कीलो", A14 "किलों"; exact, never fuzzy)
+  किल: "kg", कीलो: "kg", किलों: "kg", केलो: "kg",
   gram: "gm", grams: "gm", gm: "gm", g: "gm", ग्राम: "gm",
   liter: "liter", litre: "liter", ltr: "liter", l: "liter", लीटर: "liter", लिटर: "liter",
   ml: "ml", मिली: "ml",
@@ -541,6 +543,12 @@ function nameHasPriceWord(classified: readonly Classified[]): boolean {
   return classified.some((token) => token.type === "word" && DEVANAGARI_CURRENCY.has(token.raw));
 }
 
+/** KB-366: did the piece say a price PER unit ("110 रुपए किलो")? Such a price with no quantity means 1 of that unit (owner ruling). */
+export function pieceHasPerUnitPrice(text: string): boolean {
+  const words = splitWords(text);
+  return words.length > 0 && classifySegment(words).some((t) => t.type === "perUnit");
+}
+
 /** KB-359: did this piece of speech contain a price word whose number could not be read (see nameHasPriceWord)? */
 export function pieceHasUnreadPrice(text: string): boolean {
   const words = splitWords(text);
@@ -642,13 +650,21 @@ function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | nul
   // KB-358-0: "N rupay <unit>" is a rate per that unit - read before the wala / ka rules.
   const perEntry = nums.find((n) => n.perUnit !== null);
   if (perEntry) {
-    if (nums.length !== 2) return null;
-    const qtyEntry = nums.find((n) => n !== perEntry)!;
-    // Only the SAME unit: grams against a per-kilo price (or a bare count against any unit) is not guessed.
-    if (qtyEntry.attachedUnit !== perEntry.perUnit) return null;
-    const { qty, unit } = qtyAndUnit(qtyEntry);
+    if (nums.length > 2) return null;
     const ratePaise = rupeesToPaise(perEntry.value);
-    return { spokenName, ...match, qty, unit, rate: ratePaise, rateUnit: unit, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
+    // KB-365 (owner ruling, 30 Oct 2026): a per-kilo price with NO quantity is 1 of that unit ("मूंग मोगर 110 रुपए किलो" = 1 kg at Rs 110)
+    if (nums.length === 1) return { spokenName, ...match, qty: 1, unit: perEntry.perUnit!, rate: ratePaise, rateUnit: perEntry.perUnit, total: ratePaise, priceType: "rate" };
+    const qtyEntry = nums.find((n) => n !== perEntry)!;
+    const { qty, unit } = qtyAndUnit(qtyEntry);
+    if (qtyEntry.attachedUnit === perEntry.perUnit) {
+      return { spokenName, ...match, qty, unit, rate: ratePaise, rateUnit: unit, total: lineTotalPaise(qty, ratePaise), priceType: "rate" };
+    }
+    // KB-366: grams against a per-kilo price (ml against per-litre) is exact arithmetic, not a guess: 500 g at Rs 56 a kilo = Rs 28.
+    // The rate keeps its own unit; the total is scaled by D36's exact rule. Any other mix (a kilo against a per-gram price, a bare count) is not guessed.
+    if (qtyEntry.attachedUnit !== null && unitScale(qtyEntry.attachedUnit, perEntry.perUnit!) === -3) {
+      return { spokenName, ...match, qty, unit, rate: ratePaise, rateUnit: perEntry.perUnit, total: lineTotalPaiseScaled(qty, ratePaise, -3), priceType: "rate" };
+    }
+    return null;
   }
 
   const rateEntry = nums.find((n) => n.isRate);
@@ -998,8 +1014,11 @@ function diagnoseSegment(rawSegment: string, pc: ParserCatalog): MissReason | nu
   // KB-358-0: mirrors resolveSegment's per-unit rule.
   const perEntry = nums.find((n) => n.perUnit !== null);
   if (perEntry) {
-    if (nums.length !== 2) return nums.length < 2 ? "rate marker with no separate quantity" : "too many numbers or conflicting units";
-    return nums.find((n) => n !== perEntry)!.attachedUnit === perEntry.perUnit ? null : "a rate unit that is not the quantity's unit";
+    if (nums.length > 2) return "too many numbers or conflicting units";
+    if (nums.length === 1) return null; // KB-365: no quantity = 1 unit
+    const qtyUnit = nums.find((n) => n !== perEntry)!.attachedUnit;
+    if (qtyUnit === perEntry.perUnit) return null;
+    return qtyUnit !== null && unitScale(qtyUnit, perEntry.perUnit!) === -3 ? null : "a rate unit that is not the quantity's unit";
   }
 
   const rateEntry = nums.find((n) => n.isRate);

@@ -158,7 +158,9 @@ export function compareOrder(id: string, expected: ExpectedBill, actual: ActualB
   actual.lines.forEach((l, j) => {
     if (taken.has(j)) return;
     extra.push(`${l.item.spokenName} was not expected`);
-    noteWrong(`an extra line: ${l.item.spokenName}`, j);
+    // an extra line with no quantity and no price shows "Price needed" and blocks Bill Banao: visible, and no wrong number
+    if (l.item.qty === null && (l.item.priceType === "unknown" || l.item.total === null)) inexact.push(`an extra empty line: ${l.item.spokenName}`);
+    else noteWrong(`an extra line: ${l.item.spokenName}`, j);
   });
   const notAddedOk = actual.unresolved === expected.notAdded;
   const unexpectedChecks = actual.checks > expected.checks;

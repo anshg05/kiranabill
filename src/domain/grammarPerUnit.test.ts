@@ -73,12 +73,10 @@ describe("what stays a TOTAL (D47: a bare 'ka' / 'rupay' with no unit after it)"
 });
 
 describe("what bails (to Layer 2 / by hand) rather than guess", () => {
+  // KB-365 / KB-366 (30 Oct 2026): grams against a per-kilo price is now EXACT arithmetic and a per-kilo price with no quantity is 1 kg - see grammarWhisperSpellings.test.ts
   const bails = [
-    "500 gram jeera 56 rupay kilo", // grams quantity, per-kilo price: a different unit
-    "500 ग्राम जीरा 60 रुपए किलो",
     "2 लीटर दूध 60 रुपए किलो", // liters against kilos
     "2 चीनी 56 रुपए किलो", // a bare count against a per-kilo price
-    "56 रुपए किलो चीनी", // a rate with no quantity at all
     "2 kilo chini 56 wala 56 rupay kilo", // two rates
     "2 kilo chini 56 rupay kilo 100 ka", // a rate and a total
     "2 kilo 3 kilo chini 56 rupay kilo", // two quantities

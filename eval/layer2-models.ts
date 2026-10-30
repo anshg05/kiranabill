@@ -74,7 +74,10 @@ function arg(name: string, fallback: string): string {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1]! : fallback;
 }
 
-const variant = arg("prompt", "final");
+// --prompt-file <path>: a system prompt kept in a text file (e.g. the shipped prompt of an earlier commit, to measure a change against it)
+const promptFile = arg("prompt-file", "");
+if (promptFile) PROMPTS["file"] = readFileSync(promptFile, "utf8");
+const variant = promptFile ? "file" : arg("prompt", "final");
 if (!(variant in PROMPTS)) throw new Error(`unknown --prompt ${variant}`);
 const rescore = arg("rescore", ""); // re-score saved answers (the --out files, comma-separated) - no API calls
 let models = arg("models", "gemini-3.1-flash-lite").split(",").filter(Boolean);

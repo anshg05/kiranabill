@@ -552,5 +552,50 @@
         "total": 10000
       }
     ]
+  },
+  {
+    "id": "G31",
+    "source": "KB-366 (A47): a price only - no quantity may be invented (D47); a per-kilo price alone is 1 kg",
+    "transcript": "फुटाने 110 रुपए किलो, लाइजॉल 110 रुपए",
+    "expect": [
+      {
+        "catalogId": "609",
+        "qty": 1,
+        "unit": "kg",
+        "total": 11000
+      },
+      {
+        "catalogId": "200",
+        "qty": null,
+        "unit": "",
+        "total": 11000
+      }
+    ]
+  },
+  {
+    "id": "G33",
+    "source": "KB-366 (owner ruling): a per-kilo price with no quantity is 1 kg",
+    "transcript": "बेसन 90 रुपए किलो",
+    "expect": [
+      {
+        "catalogId": "4",
+        "qty": 1,
+        "unit": "kg",
+        "total": 9000
+      }
+    ]
+  },
+  {
+    "id": "G34",
+    "source": "KB-366 (A49): a total with no quantity stays no quantity",
+    "transcript": "लाइजॉल 110 रुपए",
+    "expect": [
+      {
+        "catalogId": "200",
+        "qty": null,
+        "unit": "",
+        "total": 11000
+      }
+    ]
   }
 ]

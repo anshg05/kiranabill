@@ -32,8 +32,9 @@ describe("tier A: a frozen transcript through the shipped resolver", () => {
     const text = "2 kilo kuch aur chini"; // not read by rule -> Layer 2
     const exp: ExpectedBill = { lines: [{ name: "चीनी", qty: 2, unit: "kg", price: { kind: "default" } }], notAdded: 0, checks: 0 };
     expect((await verdict(text, exp, { [text]: [answer({})] })).exact).toBe(true);
-    // a WRONG recorded answer is caught
-    expect((await verdict(text, exp, { [text]: [answer({ qty: 3, total: 13500 })] })).wrong).toHaveLength(1);
+    // a WRONG recorded answer is caught (a price nobody said; an unspoken quantity never reaches the bill any more - Check C, KB-366)
+    expect((await verdict(text, exp, { [text]: [answer({ rate: 6000, total: 12000, priceType: "rate" })] })).wrong).toHaveLength(1);
+    expect((await verdict(text, exp, { [text]: [answer({ qty: 3, total: 13500 })] })).wrong).toEqual([]);
   });
   it("a text with no recorded answer is an error that says how to record it - never a silent pass", async () => {
     await expect(replayLayer2({})("anything", [])).rejects.toThrow(/accept:live -- --freeze/);

@@ -88,6 +88,13 @@ checks: 1
     expect(answered.orders[0]!.ownerCheck).toBeUndefined();
   });
 
+  it("SKIP: a block with a '# SKIP: reason' line is kept out of the gate and says why (the owner's call, or Whisper heard other words)", () => {
+    const r = sheet("## A41 x\nsaid: heard text\n# SKIP: not needed now (owner)\n- 1 kg चीनी\nchecks: 0\n");
+    expect(r.errors).toEqual([]);
+    expect(r.orders[0]).toMatchObject({ id: "A41", expected: null, skipped: "not needed now (owner)" });
+    expect(r.orders[0]!.ownerCheck).toBeUndefined();
+  });
+
   it("duplicate ids and ids that are not A01..A99 are errors", () => {
     expect(sheet("## A01 x\nsaid: x\n- 1 kg चीनी\n## A01 x\nsaid: y\n- 1 kg चीनी\n").errors.join()).toMatch(/twice/);
     expect(sheet("## B1 x\nsaid: x\n").errors.join()).toMatch(/id/);

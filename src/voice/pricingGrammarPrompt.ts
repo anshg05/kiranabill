@@ -42,13 +42,15 @@ RULE 2 - "ka"/"ki" means the number is the LINE TOTAL, not a rate.
 RULE 3 - a bare price with no "wala"/"ka" is also the TOTAL, never a rate.
 "5 kg aata 170 rupay" -> qty:5, unit:"kg", rate:null, total:17000, priceType:"total"
 
-RULE 2/3, no quantity or unit spoken at all (D13 point 1 - the source material
-contradicted itself here; this is the resolved rule, not the original text):
-If a total price is spoken but no quantity and no unit are spoken, and the product
-matches exactly one of the given candidates, use qty:1 of THAT CANDIDATE'S OWN unit.
-If the product does not match any given candidate, use qty:null, unit:"".
-"namak 20 rupay ka" (namak's own unit is kg) -> qty:1, unit:"kg", total:2000
-"ajwain 10 ki" (ajwain's own unit is gm) -> qty:1, unit:"gm", total:1000
+RULE 2/3, no quantity or unit spoken at all (D47, owner 29 Sep 2026 - it supersedes
+D13 point 1, which this text used to follow; KB-366 brings the prompt in line):
+If a total price is spoken but no quantity and no unit are spoken, return qty:null,
+unit:"" and the spoken total - never a quantity nobody said, whether or not the
+product matches one of the given candidates.
+"namak 20 rupay ka" -> qty:null, unit:"", rate:null, total:2000, priceType:"total"
+"ajwain 10 ki" -> qty:null, unit:"", rate:null, total:1000, priceType:"total"
+BUT if TWO bare numbers are spoken for one item and nothing says which is the quantity and which the price, do NOT guess: return
+qty:null, unit:"", rate:null, total:0, priceType:"unknown" ("aata 20 70" -> exactly that).
 
 RULE 4 - the SAME product spoken again at a DIFFERENT price is a SEPARATE line item.
 Never merge or average two different prices for the same product into one line.
@@ -107,10 +109,31 @@ A misheard price is never better than no price. Digits are never garbled: "do ki
 "teen kilo chawal pachh rupay" -> qty:3, unit:"kg", rate:null, total:0, priceType:"unknown"
 `;
 
+/** KB-366: never invent a quantity (the prompt itself said "qty:1" - D13 - until 30 Oct 2026); a per-kilo price alone is 1 kg (the owner's ruling). */
+export const RULE_7_NO_INVENTED_QUANTITY = `
+RULE 7 - never invent a quantity. If no quantity is spoken for an item, qty must be null and unit "" - do not assume 1, whether the
+price is spoken or not. ONE exception, the owner's ruling: a price said PER kilo / litre with no quantity ("110 rupay kilo") is
+1 of that unit: qty:1, unit:"kg" (or "liter"), rate = that price, priceType:"rate". This exception needs a price you can actually
+read (digits, or a number word you recognise): if the number word is garbled, RULE 6 wins - never guess it.
+"phutane 110 rupay kilo" -> qty:1, unit:"kg", rate:11000, total:11000, priceType:"rate"
+"ek lizol 110 rupay" -> qty:1, unit:"piece", rate:null, total:11000, priceType:"total"
+"lizol 110 rupay" -> qty:null, unit:"", rate:null, total:11000, priceType:"total"
+`;
+
+/** KB-366 (A40): "Total Gold tel" was matched to "Ruchi Gold Oil" and billed at its catalog price. */
+export const RULE_8_DIFFERENT_BRAND = `
+RULE 8 - a different product is not the catalog product. Set catalogId only when the spoken name IS that candidate - the same product
+and brand; a spelling mistake, a Hindi / English form or a mishearing of the SAME name still matches. A different BRAND or a variant
+that is not among the candidates ("total gold tel" when only "Ruchi Gold Oil" is listed; "santoor handwash" when only Dettol and
+Lifebuoy handwash are listed) is NOT that candidate: catalogId:null, and then NEVER use a catalog price for it - use the spoken price,
+or return rate:null, total:0, priceType:"unknown".
+"ek liter total gold tel" (no total gold among the candidates) -> catalogId:null, qty:1, unit:"liter", rate:null, total:0, priceType:"unknown"
+`;
+
 /** Every Hindi number word 1-100 (the shop's Layer 1 reads the same list - domain/numberWords.ts). */
 export const HINDI_NUMBER_LIST = `
 Hindi numerals 1-100 (Devanagari; Whisper may spell them differently - read them by sound): ${CANONICAL_DEVANAGARI.map((w, i) => `${w}=${i + 1}`).join(" ")}
 `;
 
 /** What Layer 2 sends as its system prompt. */
-export const PRICING_GRAMMAR_PROMPT = PRICING_GRAMMAR_PROMPT_V1 + RULE_6_UNREADABLE_PRICE + HINDI_NUMBER_LIST;
+export const PRICING_GRAMMAR_PROMPT = PRICING_GRAMMAR_PROMPT_V1 + RULE_6_UNREADABLE_PRICE + RULE_7_NO_INVENTED_QUANTITY + RULE_8_DIFFERENT_BRAND + HINDI_NUMBER_LIST;

@@ -66,9 +66,9 @@ function loadCases(): readonly BenchmarkCase[] {
   const raw = readFileSync(path.join(__dirname, "number-benchmark.json"), "utf8");
   const cases = JSON.parse(raw) as BenchmarkCase[];
   // 100 original cases (KB-006) + 10 cross-unit cases (KB-005f, NB101-NB110)
-  // + 19 compound-number cases (KB-302, NB111-NB129) + 42 per-unit cases (KB-358-0, NB130-NB171) + 13 multi-item cases (KB-358a, NB172-NB184) + 212 number-word cases (KB-361, NB185-NB396) + 5 unread-price cases (KB-361, NB397-NB401) + 138 hundred-compound cases (KB-363a, NB402-NB641).
-  if (cases.length !== 641) {
-    throw new Error(`number-benchmark.json: expected exactly 641 cases, found ${cases.length}`);
+  // + 19 compound-number cases (KB-302, NB111-NB129) + 42 per-unit cases (KB-358-0, NB130-NB171) + 13 multi-item cases (KB-358a, NB172-NB184) + 212 number-word cases (KB-361, NB185-NB396) + 5 unread-price cases (KB-361, NB397-NB401) + 138 hundred-compound cases (KB-363a, NB402-NB652).
+  if (cases.length !== 652) {
+    throw new Error(`number-benchmark.json: expected exactly 652 cases, found ${cases.length}`);
   }
   return cases;
 }

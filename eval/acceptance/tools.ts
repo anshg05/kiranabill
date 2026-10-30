@@ -33,6 +33,8 @@ export interface BuildResult {
   readonly file: OrdersFile | null;
   /** Blocks with nothing filled in. */
   readonly pending: string[];
+  /** Blocks kept out of the gate on purpose, with the reason. */
+  readonly skipped: { id: string; reason: string }[];
 }
 
 /** The sheet -> orders.json. A frozen transcript and the frozen flag survive a rebuild; any error leaves the old file alone. */
@@ -41,11 +43,16 @@ export function buildOrders(sheetText: string, prev: OrdersFile): BuildResult {
   const known = new Map(slots().map((s) => [s.id, s]));
   const errors = [...parsed.errors];
   for (const o of parsed.orders) if (!known.has(o.id)) errors.push(`${o.id}: not one of the ${known.size} slots (A01..A${known.size})`);
-  if (errors.length > 0) return { errors, file: null, pending: [] };
+  if (errors.length > 0) return { errors, file: null, pending: [], skipped: [] };
   const before = new Map(prev.orders.map((o) => [o.id, o]));
   const orders: AcceptanceOrder[] = [];
   const pending: string[] = [];
+  const skipped: { id: string; reason: string }[] = [];
   for (const o of parsed.orders) {
+    if (o.skipped !== undefined) {
+      skipped.push({ id: o.id, reason: o.skipped });
+      continue;
+    }
     if (!o.expected) {
       pending.push(o.id);
       continue;
@@ -53,5 +60,5 @@ export function buildOrders(sheetText: string, prev: OrdersFile): BuildResult {
     orders.push({ id: o.id, category: known.get(o.id)!.category, said: o.said, transcript: before.get(o.id)?.transcript ?? null, expected: o.expected });
   }
   orders.sort((a, b) => a.id.localeCompare(b.id));
-  return { errors: [], file: { frozen: prev.frozen, orders }, pending };
+  return { errors: [], file: { frozen: prev.frozen, orders }, pending, skipped };
 }

@@ -85,15 +85,18 @@ export function settleLayer2Items(items: readonly ParsedItem[], shop: ParserCata
       // A spoken "wala" rate is per the spoken unit, read literally (D36, as grammar.ts).
       const unit = raw.unit || "piece";
       const rate = paiseOrNull(raw.rate);
+      let rateUnit = rate === null ? null : unit;
+      let total = rate === null || qty === null ? null : lineTotalPaise(qty, rate);
+      // KB-366 (A38): "500 g at Rs 56 a KILO" came back as unit gm, rate 5600 and Gemini's own total 2800 - read literally that is 500 x 5600 =
+      // Rs 28,000. Gemini's total is still never trusted; but when it equals EXACTLY the per-kilo (per-litre) reading and not the literal
+      // one, the rate was a per-kilo price. Anything else keeps the literal reading (the HIGH checks still warn).
+      const per = unit === "gm" ? "kg" : unit === "ml" ? "liter" : null;
+      if (per && rate !== null && qty !== null && typeof raw.total === "number" && raw.total !== total && raw.total === lineTotalPaiseScaled(qty, rate, -3)) {
+        rateUnit = per;
+        total = raw.total;
+      }
       return {
-        item: {
-          ...base,
-          unit,
-          rate,
-          rateUnit: rate === null ? null : unit,
-          total: rate === null || qty === null ? null : lineTotalPaise(qty, rate),
-          priceType: "rate",
-        },
+        item: { ...base, unit, rate, rateUnit, total, priceType: "rate" },
         displayName,
       };
     }

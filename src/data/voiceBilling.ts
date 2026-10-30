@@ -55,6 +55,7 @@ function isCompleteCustom(item: ParsedItem): boolean {
     item.spokenName.trim() !== "" &&
     item.qty !== null &&
     item.unit !== "" &&
+    item.unit !== "piece" && // KB-366 (A42): "piece" is what a bare number defaults to - "30 60 वाला" is NOT 30 pieces at Rs 60. An explicit "2 piece" goes to Layer 2.
     item.rate !== null &&
     item.total !== null &&
     item.total > 0 &&

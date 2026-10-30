@@ -134,6 +134,7 @@ checks: 0
 
 ## A19 long-priceless
 said: � 2 kg उड़त मोगर, एक kg मोंग मोगर, एक kg बरबटी दाल, एक kg चना दाल, एक kg लाल मिर्ची पैकेट �
+# SKIP: Whisper added two items the owner did not say (the first transcription of the same audio was right) - re-record to bring it back
 - 2 kg उड़द मोगर
 - 1 kg मूंग मोगर
 - 1 kg बरबटी दाल
@@ -212,6 +213,7 @@ checks: 0
 
 ## A27 mixed
 said: डेटॉल साबुन सेट 1, 185 रुपए, संतूर साबुन सेट 1, 140 रुपए, डेटॉल हैंड वाश 1, 100 रुपए, लाइजॉल 1, 110 रुपए, हारपी केक 100 रुपए, रिन साबुन एक सेट 100 रुपए फेना साबुन 5 50 रुपए फेना डिटरजन 3 किलो 300 रुपए फेना डिटरजन 5 किलो 500 रुपए
+# SKIP: Whisper wrote 'हारपी केक' for Harpic (matched Cake) - re-record to bring it back
 - 1 piece डेटॉल साबुन सेट =185
 - 1 piece संतूर साबुन सेट =140
 - 1 piece डेटॉल हैंडवॉश =100
@@ -227,7 +229,7 @@ checks: 0
 said: मुग मोगर 110 रुपई किलो उड़द मोगर 130 रुपई किलो चावल 5 किलो 288
 - 1 kg मूंग मोगर @110
 - 1 kg उड़द मोगर @130
-- चावल =288
+- 5 kg चावल =288
 checks: 0
 
 ## A29 number-words
@@ -256,6 +258,7 @@ checks: 0
 
 ## A32 number-words
 said: मोह थेक किलो 1200 रुपए किलो काबशाने किलो 120 रुपए किलो काबशाने चना एक किलो मीडियम वाला शोगुपी किलो है आटा 1 किलो 40 रूपए किलो कि मुंदाली किलोट 98 11 किलो 98 कर दो
+# SKIP: Whisper garbled the audio differently on each run - re-record to bring it back
 - 1 kg मोठ @130
 - 1 kg काबुली चना @120
 - 1 kg काबुली चना मीडियम @100
@@ -265,6 +268,7 @@ checks: 0
 
 ## A33 number-words
 said: को फल्ली दान 140 रुपए किलोस रुपए किलो सब्सक्राइब किलो को तुआल लाल 140 रुपए गिलो खंडा तुआल पिक लो कि फुटानी 120 रुपए किलो लंडल 120 रुपए किलो
+# SKIP: Whisper wrote 180 for 80 and 140 for 120 - re-record to bring it back
 - 1 kg फल्ली दाना @140
 - 1 kg फल्ली दाना @150
 - 1 kg तुअर दाल @140
@@ -275,6 +279,7 @@ checks: 0
 
 ## A34 units-fractions
 said: पावा किलो मूंग दाल छैननो रुपए किलो तेल एक पैकेट एक सो जालिस वाला तेल एक लीटर एक सो पचास रुपए बनसल
+# SKIP: Whisper wrote 'पावा' (1/4) for 'सवा' (1 1/4) - re-record to bring it back
 - 1.25 kg मूंग दाल @96
 - 1 packet तेल @140
 - 1 liter बंसल तेल @150
@@ -282,6 +287,7 @@ checks: 0
 
 ## A35 units-fractions
 said: तेल पैकेट एक फॉल्चून 160 रुपए, मदर डिलाइट तेल एक लिटर 150 रुपए, आधा किलो रवा पैकेट 23 रुपए
+# SKIP: Whisper wrote 'फॉल्चून' for Fortune (matched a generic oil pouch) - re-record to bring it back
 - 1 packet फॉर्च्यून तेल =160
 - 1 liter मदर डिलाइट तेल =150
 - 0.5 kg रवा =23
@@ -310,6 +316,7 @@ checks: 0
 
 ## A39 repeated
 said: 220 2010 को 2 Kg शक्कर 2 Kg एक किलो आटा एक किलो आटा रवा एक किलो मैं भरि एक एक बंच सलवश्य पैकेट एक लीटर 150 रुपए एक बंच सलवश्य पैकेट एक लीटर
+# SKIP: Whisper dropped the repeated items - re-record to bring it back
 - 2 kg शक्कर
 - 2 kg शक्कर
 - 1 kg आटा
@@ -332,6 +339,7 @@ checks: 1
 
 ## A41 repeated
 said: 2 किलो चनादाल, 2 किलो चनादाल, लास्ट वाला चनादाल हटा दो, 1 किलो बेसन, 1 किलो आटा, 1 लिटर बंसल 150 रुपए
+# SKIP: owner, 30 Oct 2026: a spoken 'remove the last one' is not needed now
 - 2 kg चना दाल
 - 1 kg बेसन
 - 1 kg आटा

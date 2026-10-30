@@ -143,6 +143,20 @@ describe("KB-364: what the first live run showed the comparer was unfair about",
   });
 });
 
+describe("an extra line with no number at all is a visible empty line, not a wrong number (A45)", () => {
+  it("an unpriced, quantity-less extra line is inexact (the shopkeeper removes it - it shows Price needed)", () => {
+    const empty = chini({ spokenName: "थूप", catalogId: "204", qty: null, unit: "", rate: null, rateUnit: null, total: null, priceType: "unknown" });
+    const v = run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([chini(), empty]));
+    expect(v.wrong).toEqual([]);
+    expect(v.extra).toHaveLength(1);
+    expect(v.exact).toBe(false);
+  });
+  it("an extra line WITH a price or a quantity is still wrong", () => {
+    const v = run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([chini(), chawal()]));
+    expect(v.wrong).toHaveLength(1);
+  });
+});
+
 describe("NOT exact but NOT wrong: the app did not guess", () => {
   it("a missing line", () => {
     const v = run(exp([line("चीनी", 2, "kg", { kind: "default" }), line("चावल", 5, "kg", { kind: "default" })]), bill([chini()]));

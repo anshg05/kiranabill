@@ -211,3 +211,22 @@ describe("the all-readable case is unchanged", () => {
     expect(r.unresolved).toEqual([]);
   });
 });
+
+describe("KB-366 (A42): a custom line needs an EXPLICIT unit word - a bare number is not a quantity", () => {
+  it("'दन्त कान 30 60 वाला' (30 = the pack size) is NOT 30 pieces at Rs 60 = Rs 1,800: Layer 1 accepts nothing, the text goes to Layer 2", async () => {
+    const asked: string[] = [];
+    const r = await run("दन्त कान 30 60 वाला", async (text) => (asked.push(text), []));
+    expect(r.lines).toEqual([]);
+    expect(asked).toEqual(["दन्त कान 30 60 वाला"]);
+  });
+  it("with a spoken unit it is still a custom line (KB-358b)", async () => {
+    const r = await run("2 kg zzyzx khaas 130 rupay kilo");
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ qty: 2, unit: "kg", total: 26000 });
+  });
+  it("Layer 2 gives a quantity nobody said for a price-only piece: the bill line has NO quantity (Check C through the real resolver)", async () => {
+    const r = await run("kuch naya 110 rupay", async () => [{ spokenName: "kuch naya", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: null, rateUnit: null, total: 11000, priceType: "total" }]);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ qty: null, unit: "", total: 11000 });
+  });
+});

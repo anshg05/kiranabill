@@ -24,4 +24,5 @@ for (const c of CATEGORIES) {
   const n = r.file.orders.filter((o) => o.category === c.id).length;
   console.log(`  ${n === c.count ? "ok " : "-- "} ${c.title}: ${n}/${c.count}`);
 }
-console.log(`${r.file.orders.filter((o) => o.transcript !== null).length} have a frozen transcript. Next: npm run accept:live -- --freeze`);
+for (const s of r.skipped) console.log(`  skipped ${s.id}: ${s.reason}`);
+console.log(`${r.file.orders.filter((o) => !!o.transcript).length} have a frozen transcript. Next: npm run accept:live -- --freeze`);

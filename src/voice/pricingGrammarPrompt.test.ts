@@ -30,3 +30,30 @@ describe("the shipped prompt", () => {
     expect(PRICING_GRAMMAR_PROMPT.length).toBeLessThan(10_000);
   });
 });
+
+describe("KB-366 (30 Oct 2026): the prompt agrees with D47 and never invents a quantity or a brand", () => {
+  it("RULE 2/3 no longer says 'qty:1 of THAT CANDIDATE'S OWN unit' (D13 point 1, superseded by D47)", () => {
+    expect(PRICING_GRAMMAR_PROMPT).not.toContain("use qty:1 of THAT CANDIDATE'S OWN unit");
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/total price is spoken but no quantity[\s\S]*qty:null, unit:""/);
+  });
+  it("two bare numbers that cannot be told apart are never guessed (G29 'चीनी 30 40' showed Gemini pricing it Rs 40 once in two runs)", () => {
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/TWO bare numbers[\s\S]*do NOT guess/);
+    expect(PRICING_GRAMMAR_PROMPT).toContain('"aata 20 70"');
+  });
+  it("RULE 7: never invent a quantity; a price per kilo with no quantity is 1 kg (the owner's ruling)", () => {
+    expect(PRICING_GRAMMAR_PROMPT).toContain("RULE 7");
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/never invent a quantity/i);
+    expect(PRICING_GRAMMAR_PROMPT).toContain('"phutane 110 rupay kilo"');
+    // the exception must not turn a garbled price into a guess (G13 priced "चैन रुपए किलो" at Rs 100 in 2 of 2 runs without this sentence)
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/needs a price you can actually\s+read[\s\S]*RULE 6 wins/);
+  });
+  it("RULE 8: a different brand is not the catalog product, and never takes its price", () => {
+    expect(PRICING_GRAMMAR_PROMPT).toContain("RULE 8");
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/different BRAND/);
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/catalogId:null/);
+  });
+  it("the new examples are not the gold-set cases", () => {
+    const added = PRICING_GRAMMAR_PROMPT.slice(PRICING_GRAMMAR_PROMPT_V1.length);
+    for (const c of goldCases) expect(added, c.id).not.toContain(c.transcript);
+  });
+});

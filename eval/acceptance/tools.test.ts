@@ -64,3 +64,13 @@ said: बेसन एक किलो
     expect(r.file).toBeNull();
   });
 });
+
+describe("buildOrders - skipped blocks", () => {
+  it("a SKIP block is not an order, is not 'pending', and is reported with its reason", () => {
+    const r = buildOrders("## A01 x\nsaid: a\n- 1 kg चीनी\n## A02 x\nsaid: b\n# SKIP: Whisper heard other words\n- 1 kg चावल\n## A03 x\nsaid:\n", { frozen: false, orders: [] });
+    expect(r.errors).toEqual([]);
+    expect(r.file!.orders.map((o) => o.id)).toEqual(["A01"]);
+    expect(r.pending).toEqual(["A03"]);
+    expect(r.skipped).toEqual([{ id: "A02", reason: "Whisper heard other words" }]);
+  });
+});

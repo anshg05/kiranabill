@@ -11,6 +11,8 @@ export interface SheetOrder {
   readonly expected: ExpectedBill | null;
   /** The question for the owner when the block carries a "# OWNER CHECK: ..." line - it stays pending until that line is removed. */
   readonly ownerCheck?: string;
+  /** Why the block is kept out of the gate ("# SKIP: reason": the owner's call, or Whisper heard other words). */
+  readonly skipped?: string;
 }
 
 export interface ParsedSheet {
@@ -88,6 +90,7 @@ export function parseSheet(text: string): ParsedSheet {
     let checks = 0;
     let notAdded = 0;
     let ownerCheck: string | undefined;
+    let skipped: string | undefined;
     const lines: ExpectedLine[] = [];
     let bad = false;
     const fail = (why: string) => (errors.push(`${id}: ${why}`), (bad = true));
@@ -95,6 +98,8 @@ export function parseSheet(text: string): ParsedSheet {
       const line = raw.trim();
       const oc = /^#\s*OWNER CHECK:?\s*(.*)$/i.exec(line);
       if (oc) ownerCheck = oc[1] || "check this order";
+      const sk = /^#\s*SKIP(?:PED)?:?\s*(.*)$/i.exec(line);
+      if (sk) skipped = sk[1] || "skipped";
       if (!line || line.startsWith("#")) continue;
       if (/^said:/i.test(line)) said = line.slice(5).trim();
       else if (/^checks:/i.test(line)) {
@@ -109,8 +114,8 @@ export function parseSheet(text: string): ParsedSheet {
       } else fail(`lines start with "- " ("${line.slice(0, 30)}")`);
     }
     if (bad) continue;
-    const pending = ownerCheck !== undefined || (said === "" && lines.length === 0 && notAdded === 0);
-    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks }, ...(ownerCheck !== undefined ? { ownerCheck } : {}) });
+    const pending = ownerCheck !== undefined || skipped !== undefined || (said === "" && lines.length === 0 && notAdded === 0);
+    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks }, ...(ownerCheck !== undefined ? { ownerCheck } : {}), ...(skipped !== undefined ? { skipped } : {}) });
   }
   if (blocks.length === 0 && text.trim() !== "") errors.push(`no "## A01 ..." block found`);
   return { orders, errors };

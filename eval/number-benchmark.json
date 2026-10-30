@@ -2261,28 +2261,30 @@
     "category": "per-unit",
     "utterance": "500 gram jeera 56 rupay kilo",
     "expected": {
-      "safe": true,
-      "qty": null,
-      "unit": null,
-      "rate": null,
-      "total": null,
-      "priceType": null
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 2800,
+      "priceType": "rate"
     },
-    "note": "KB-358-0: grams quantity against a per-kilo price - a different unit, never guessed"
+    "note": "KB-366 (30 Oct 2026): grams against a per-kilo price is exact arithmetic - 500 g at Rs 56 a kilo = Rs 28 (it billed Rs 28,000 through Layer 2 before). Was a deliberate bail (KB-358-0)."
   },
   {
     "id": "NB165",
     "category": "per-unit",
     "utterance": "500 ग्राम जीरा 60 रुपए किलो",
     "expected": {
-      "safe": true,
-      "qty": null,
-      "unit": null,
-      "rate": null,
-      "total": null,
-      "priceType": null
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 6000,
+      "rateUnit": "kg",
+      "total": 3000,
+      "priceType": "rate"
     },
-    "note": "KB-358-0: same, Devanagari"
+    "note": "KB-366: same, Devanagari - 500 g at Rs 60 a kilo = Rs 30."
   },
   {
     "id": "NB166",
@@ -2317,14 +2319,15 @@
     "category": "per-unit",
     "utterance": "56 रुपए किलो चीनी",
     "expected": {
-      "safe": true,
-      "qty": null,
-      "unit": null,
-      "rate": null,
-      "total": null,
-      "priceType": null
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 5600,
+      "rateUnit": "kg",
+      "total": 5600,
+      "priceType": "rate"
     },
-    "note": "KB-358-0: a rate with no quantity"
+    "note": "KB-365 (owner ruling, 30 Oct 2026): a per-kilo price with no quantity is 1 kg. Was a deliberate bail (KB-358-0)."
   },
   {
     "id": "NB169",
@@ -12121,5 +12124,169 @@
       "priceType": null
     },
     "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a quantity-first start with a name-first end)"
+  },
+  {
+    "id": "NB642",
+    "category": "whisper-spellings",
+    "utterance": "2 कीलो चीनी",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4500,
+      "total": 9000,
+      "priceType": "default",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): Whisper's कीलो is kilo (A19)"
+  },
+  {
+    "id": "NB643",
+    "category": "whisper-spellings",
+    "utterance": "5 किलों चावल",
+    "expected": {
+      "safe": false,
+      "qty": 5,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 25000,
+      "priceType": "default",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): Whisper's किलों is kilo (A14)"
+  },
+  {
+    "id": "NB644",
+    "category": "whisper-spellings",
+    "utterance": "3 केलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": 3,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 27000,
+      "priceType": "default",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): केलो is kilo"
+  },
+  {
+    "id": "NB645",
+    "category": "whisper-spellings",
+    "utterance": "2 किल बेसन",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 18000,
+      "priceType": "default",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): Whisper's truncated किल is kilo (A24)"
+  },
+  {
+    "id": "NB646",
+    "category": "whisper-spellings",
+    "utterance": "देड किलो चीनी",
+    "expected": {
+      "safe": false,
+      "qty": 1.5,
+      "unit": "kg",
+      "rate": 4500,
+      "total": 6750,
+      "priceType": "default",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): Whisper's देड is डेढ (A37)"
+  },
+  {
+    "id": "NB647",
+    "category": "whisper-spellings",
+    "utterance": "तूवर दाल 2 किलो 150 रुपे किल",
+    "expected": {
+      "safe": false,
+      "qty": 2,
+      "unit": "kg",
+      "rate": 15000,
+      "total": 30000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): A24: Rs 150 a KILO (Rs 300), never Rs 150 total"
+  },
+  {
+    "id": "NB648",
+    "category": "whisper-spellings",
+    "utterance": "500 ग्राम बेसन 80 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 500,
+      "unit": "gm",
+      "rate": 8000,
+      "total": 4000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): A38 class: 500 g at Rs 80 a kilo = Rs 40 (was Rs 40,000 through Layer 2)"
+  },
+  {
+    "id": "NB649",
+    "category": "whisper-spellings",
+    "utterance": "250 ग्राम चीनी 48 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 250,
+      "unit": "gm",
+      "rate": 4800,
+      "total": 1200,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): 250 g at Rs 48 a kilo = Rs 12"
+  },
+  {
+    "id": "NB650",
+    "category": "whisper-spellings",
+    "utterance": "चीनी 50 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 5000,
+      "total": 5000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): owner ruling: a per-kilo price with no quantity is 1 kg (A28, A33)"
+  },
+  {
+    "id": "NB651",
+    "category": "whisper-spellings",
+    "utterance": "besan 90 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "total": 9000,
+      "priceType": "rate",
+      "rateUnit": "kg"
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): the same, Roman"
+  },
+  {
+    "id": "NB652",
+    "category": "whisper-spellings",
+    "utterance": "2 किलो चीनी 5 रुपए ग्राम",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-365 / KB-366 (30 Oct 2026, the first acceptance run): a KILO against a per-GRAM price is still never guessed"
   }
 ]
