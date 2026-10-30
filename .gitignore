@@ -24,3 +24,6 @@ supabase/snippets/
 kb-backup-*
 *.gpg
 KiranaBill-BACKUP-PRIVATE-KEY*
+
+# KB-364: the owner's recorded voice (the expected bills and frozen text ARE committed)
+eval/acceptance/audio/

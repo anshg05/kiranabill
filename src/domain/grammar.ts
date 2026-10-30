@@ -604,6 +604,16 @@ function resolveUnattachedTotal(totalPaise: Paise, match: CatalogMatch, spokenNa
   };
 }
 
+/** KB-364: a unit word the way the app reads it ("kilo", "किलो" -> "kg"); null when it is not a unit. */
+export function canonicalUnit(word: string): string | null {
+  return UNIT_ALIASES[word.trim().toLowerCase()] ?? null;
+}
+
+/** KB-364: which catalog product a spoken name is, by the SAME matcher the app uses (used to write an expected bill in plain words). */
+export function matchProductName(name: string, pc: ParserCatalog): CatalogMatch {
+  return resolveCatalogMatch(splitWords(name).join(" "), pc);
+}
+
 function resolveSegment(rawSegment: string, pc: ParserCatalog): ParsedItem | null {
   const words = splitWords(rawSegment);
   if (words.length === 0) return null;

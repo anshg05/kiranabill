@@ -1,0 +1,261 @@
+# Acceptance sheet (KB-364, docs/23-ACCEPTANCE.md). One block per recorded order - the same A-number as on the phone.
+# Fill in "said:" (your words) and one "- " line per item of the bill you expect:
+#   - 2 kg चीनी @45          a rate you said (per the unit)
+#   - 5 kg चावल =225         a total you said
+#   - चावल =90               a total with no quantity
+#   - 1 kg मूंग दाल          nothing said: the shop's own price
+#   - 1 kg बेसन price needed  you did not say it clearly: the bill must show Price needed
+#   - NOT ADDED              a piece nothing can read (add a number for more than one)
+# "checks: N" = how many Theek hai checks you accept for this order (usually 0).
+# Leave a block empty to skip it. Then run: npm run accept:build
+
+## A01 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A02 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A03 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A04 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A05 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A06 short-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A07 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A08 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A09 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A10 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A11 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A12 short-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A13 long-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A14 long-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A15 long-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A16 long-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A17 long-priced
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A18 long-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A19 long-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A20 long-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A21 long-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A22 long-priceless
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A23 mixed
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A24 mixed
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A25 mixed
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A26 mixed
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A27 mixed
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A28 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A29 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A30 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A31 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A32 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A33 number-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A34 units-fractions
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A35 units-fractions
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A36 units-fractions
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A37 units-fractions
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A38 units-fractions
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A39 repeated
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A40 repeated
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A41 repeated
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A42 unclear-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A43 unclear-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A44 unclear-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A45 unclear-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A46 unclear-words
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A47 unreadable-price
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A48 unreadable-price
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A49 unreadable-price
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+
+## A50 unreadable-price
+said:
+# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+checks: 0
+

@@ -16,6 +16,10 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
 } else if (import.meta.env.DEV && window.location.pathname === "/__dev/history") {
   // DEV ONLY (KB-310): History's load and search times on a real phone.
   void import("@/ui/DevHistoryBench").then(({ DevHistoryBench }) => root.render(<DevHistoryBench />));
+} else if (import.meta.env.VITE_ACCEPTANCE === "1" && new URLSearchParams(window.location.search).has("session")) {
+  // DRAFT BUILDS ONLY (KB-364): the acceptance-order recorder. VITE_ACCEPTANCE is set only when a draft is built; in any other build
+  // this condition is a build-time `false`, so the import and its chunk are gone (scripts/check-recorder-absent.ts proves it).
+  void import("@/acceptance/RecorderSession").then(({ RecorderSession }) => root.render(<RecorderSession />));
 } else {
   root.render(
     <StrictMode>
