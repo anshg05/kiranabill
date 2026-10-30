@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 30 Oct 2026 (rev 165) · **Current phase:** 3 — Billing UI; every pre-pilot ticket is built except `KB-318` (waits for the owner's go-ahead, KI-50). `KB-332` (Screen language) is done; the release draft is next once the owner says so.
+**Last updated:** 30 Oct 2026 (rev 166) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and live in production except one small fix (`KB-368`) that waits for his check on the draft. **Next: the owner's shop pilot (`KB-405`)**, starting with the "Before the real shop" checklist in `17-MANUAL-TASKS.md`.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -12,155 +12,87 @@
 
 ## Right now
 
-**Phase:** 3 — Billing UI, **in progress.** Phases 0, 1 and 2 are done for everything buildable without
-a screen — see the two retrospectives below and `06-FEATURE-TICKETS.md`'s corrected Phase 3 table.
-**`KB-345` (sync that rests), `KB-346` (iPhone readiness), `KB-348` (self sign-up) and `KB-349` (the public `/privacy` page for Google, D91) are BUILT; the owner's `db push` is DONE (21 Oct: both migrations on both sides; Netlify balance 300 credits). **22 Oct (later): `KB-350` (incl. the open Catalog) and `KB-351` (one bill-number sequence, D92) are BUILT and verified; STOP for the owner's `db push` of `20261022090000_bill_numbers`, then the draft is rebuilt and the SHORT two-phone re-test (section below) runs; the speed figures go into `05` section 10.** Earlier 22 Oct: the two-phone session found `KB-350` (a price changed on another phone never reached the billing screen) - FIXED, not yet pushed or re-tested on phones; `KB-351` (one bill-number sequence across phones) is PLAN-only; the release waits for both and a short two-phone re-test.** NOW (before 22 Oct): the RELEASE - release candidate `b2a5973` (full VERIFY green), the release draft is LIVE at https://release-draft--kiranabilling.netlify.app (no `--prod`); the owner runs the TWO-PHONE session (its own section below); no `[deploy]` marker until he approves the exact commit.** `KB-344` error monitoring and `KB-347` the privacy notice are PARKED (`SG-18`, `SG-19`); no new caps (`SG-20`). `KB-337` passed the owner's check; **`KB-338` ("—" on every line), `KB-339` (spoken commands) and `KB-340` (the shop name in the header) are DONE (19 Oct; D86, incl. the cross-unit amendment). **`KB-341` (simple bill numbers, D87) is DONE (owner's check passed 19 Oct). `KB-342` (the ≡ menu + the UI audit's 11 bugs) is DONE (owner's check passed). `KB-343` (the audit's DESIGN items, D88) is DONE (owner's check passed). Everything built since the audit (`KB-337` ... `KB-343`) has passed the owner's checks; what remains is the release, the pre-pilot items and Gemini (see the FINAL STATUS REPORT).** Still waiting for his answers, not planned: a History item count and a Copy debug report button (`21` Part 4). No deploy and no Gemini work until the owner says so.
-**Production:** live is app code `aef37a2` (deployed by the marker commit `773fd95`, 30 Oct 2026 17:38 UTC, deploy `6ae4d5cdb05a356e46d974df`, served build id `20261030-1737-773fd95`; KB-362 + KB-364 (recorder absent) + KB-365 / KB-366 on top of KB-361 / 360 / 359 / 363). The rollback target is the previous production deploy `6ae43ef37632217d26a8e515` (`0eaf046`), then `6ae2f73bc04975be8ca66d0e`, then `6ae1e5de507e259d58c6e891` - steps in the "Production release" section below. Anything committed after `773fd95` is not deployed (D55 - a release needs the owner-approved deploy marker).
+**Production:** app code `aef37a2`, deployed by the marker `773fd95` (30 Oct 2026 17:38 UTC), deploy `6ae4d5cdb05a356e46d974df`, served build id `20261030-1737-773fd95`. **Rollback target** (Netlify -> Deploys -> Publish deploy; no build, no credits): `6ae43ef37632217d26a8e515` (`0eaf046`), then `6ae2f73bc04975be8ca66d0e`, then `6ae1e5de507e259d58c6e891` (`37e48cc`). A push deploys only a commit carrying the owner-approved `[deploy]` marker (D55); no marker is on anything newer than `773fd95`.
 
-**Blocked on:** nothing. Checked 26 Sep, not assumed: `npx supabase status` exits 0 with the local stack up
-(its stopped/restarting services are expected here — `19-MACHINE-SETUP.md` §6); `npx supabase migration
-list --linked` shows all 10 migrations on both sides after the owner pushed `20260920170751` (`KB-111`)
-the same day. Node 26.7.0 stays — owner decision, `19-MACHINE-SETUP.md` §1.
-**Next action — owner decision, 26 Sep 2026, in this order** (tickets in `06-FEATURE-TICKETS.md`
-"Pre-Phase-3 fixes"):
-1. ~~**`KB-005e`** — `catalogIndex` perf test measures steady state (`KI-23`)~~ — **done 26 Sep 2026**, `npm test`
-   5/5, `KI-23` closed (D35).
-2. ~~**`KB-005f`** — gram/ml default-price rounding (`KI-30`)~~ — **done 26 Sep 2026** (D36), benchmark 110/0/0,
-   `KI-30` closed. New: `KI-34` (Layer 2 cross-unit totals untrusted, trigger `KB-302`), `KI-35` (`inferRateBasis`
-   unwired), `KI-36` (nothing outside `src/` is type-checked, trigger before `KB-302`/deploy).
-3. ~~**`KB-110b`** — bill push path + `receipt_number_source` (`KI-29` + `KI-31`)~~ — **done 27 Sep 2026** (D37).
-   Migration `20260927090000_push_bill.sql` pushed 27 Sep 2026 (owner); confirmed live via `supabase db dump --linked`
-   (both functions present, neither SECURITY DEFINER, no `anon` EXECUTE, composite FK present, plain
-   `bill_items_bill_id_fkey` absent, `rate_unit` + iff check present). New: `KI-37` (reset audit event never syncs), `KI-38` (other cross-shop FKs).
-4. ~~**`KB-315`** — runtime bootstrap (`KI-32`)~~ — **done 27 Sep 2026** (D38). No migration. New: `KI-39` (multi-tab loops).
-5. ~~**`KB-301`** — billing screen shell~~ — **done 27 Sep 2026** (D39 owner browser check passed). New: `KI-42`
-   (no unique shop per owner — LOW), `KI-43` (catalog seed in bundle — LOW), `NI-29` (npm strips lockfile `libc`),
-   `SG-09` (coarser-unit rate display + edited-rate storage — decide at `KB-303`).
-6. ~~**`KB-316`** — type-check + lint every TS file (`KI-36`)~~ — **done 27 Sep 2026** (D40).
-7. ~~**`KB-302`** — voice control + states~~ — **done 28 Sep 2026** (D39 owner check; D41–D44). Closed `KI-34`, `KI-43`. New:
-   `KI-44`–`KI-49`, `NI-30`.
-8. ~~**`KB-317`** — voice accuracy + speed~~ — **done 1 Oct 2026.**
-9. ~~**`KB-303`** — editable bill~~ — **done 1 Oct 2026.**
-10. ~~**`KB-304`** — flag display + "Theek hai"~~ — **done 2 Oct 2026.**
-11. **`KB-319`** — voice parse: client timeout + Retry text only (KI-57, KI-58; owner, 1 Oct 2026) — **done 2 Oct 2026.**
-12. ~~**`KB-305`** — add item by hand~~ — **done 3 Oct 2026.**
-13. ~~**`KB-306`** — customer name + mobile~~ — **done 3 Oct 2026.**
-14. ~~**`KB-307`** — finalise (Bill Banao) + learning~~ — **done 3 Oct 2026.** New: `KI-63` (per-kg rate on a per-gm product never observed).
-15. ~~**`KB-308`** — receipt~~ — **done 4 Oct 2026** (D57). New: `KI-65`.
-15a. ~~**`KB-309`** — share~~ — **done 7 Oct 2026** (D58). New: KI-66.
-15b. ~~**`KB-310`** — History + search~~ — **done 7 Oct 2026** (D60, D61). New: KI-67, KI-68, `KB-324` (before the pilot), `KB-325` (parked then; done 16 Oct 2026).
-15c. ~~**`KB-311`** — Catalog screen~~ — **done 8 Oct 2026** (D62). Next: `KB-324` (pull bills) — plan.
-15d. ~~**`KB-324`** — pull bills~~ — **done 8 Oct 2026** (D63). New: `KB-326` (before the pilot).
-15e. ~~**`KB-312`** — Settings (S7)~~ — **done 8 Oct 2026** (D64). New: `KB-327` (logo, parked), NI-39, NI-40. Closed KI-65 and KI-37.
-15f. ~~**`KB-313`** — offline UI, the half-built bill, sign-out warning~~ — **done 9 Oct 2026** (D65). Closed NI-38.
-15g. ~~**`KB-326`** — learning-state pull~~ — **done 9 Oct 2026** (D66). New: NI-41.
-15h. ~~**`KB-401`** — PWA: offline open, updates, persistent storage~~ — **done 10 Oct 2026** (D67; phone checks passed). Closed KI-40; KI-68's mitigation confirmed ("Storage: protected" on the installed phone).
-15i. ~~**`KB-314`** — bulk catalog import~~ — **done 10 Oct 2026** (D68; owner check passed). New: `KB-328` (price updates from a file, parked), `NI-43`, `SD-030`. The Android file-picker check rides on the release draft.
-16. `KB-318` (Gemini prompt: KI-45, KI-47, KI-52, thinking config) — **waits until the owner enables Gemini billing (KI-50)**; without it every Layer 2 parse fails on the free tier, so nothing in `KB-318` can be verified.
+**Waiting on the owner, in this order:**
+1. **The 3-step check of `draft-v14`** (below) - the draft of `KB-368`, code `07843ae`, at https://release-draft--kiranabilling.netlify.app (deploy `6ae4e0cf04d22ad35acff8fc`; real cloud shop database; no `--prod`, no marker). Probed from outside: `/`, `/sw.js`, `/manifest.webmanifest`, `/privacy` 200; `GET /voice` 405; tokenless `POST /voice` 401; `draft-v14` and the new sentence in the served bundle; no recorder; production untouched (its bundle has neither).
+2. **If it passes: tell the agent to release `KB-368`** - one empty marker commit carrying `[deploy]` on top of `HEAD`, the owner pushes it, the agent runs the post-deploy checks. Rollback target for that release = `6ae4d5cdb05a356e46d974df`. Docs commits after `07843ae` carry no code.
+3. **The one-time "Before the real shop" checklist** - `17-MANUAL-TASKS.md`, six steps (real shop on the full catalog; install with "Storage: protected"; one live voice order + the `parse ok model=gemini-3.5-flash-lite` line in Netlify's Functions log; backups; AI balance and credits; Review mode for the first 20 bills and how to read Pilot numbers). His own live-order/log check from the 30 Oct release is step 3.
 
-**Agreed order to the pilot - owner, 11 Oct 2026 (audit Part 3; revised the same day for multi-device). Each ticket gets its own plan and its own stop. ONE release at the end (06 "Release plan").**
-1. ~~**`KB-105b`** - the four missing RLS checks~~ - **done 11 Oct 2026** (`test:rls` 79/79).
-2. ~~**`KB-334`**~~ - multi-device safety (D73, D74) - **done 11 Oct 2026** (migration `20261011100000` pushed by the owner 11 Oct 2026, 20/20 on both sides).
-3. ~~**`KB-407`**~~ - **DONE 11 Oct 2026 (D75)** - scheduled `db dump` to the owner's **Google Drive, encrypted** (the plan says how, and where the key lives - never in the repo, never in the same Drive folder) + one restore rehearsal (prove the data and the `auth` users are in it - KI-25(3)).
-4. ~~**`KB-331`**~~ - "Add by hand" on every voice failure, transcript prefilled - **done 11 Oct 2026 (D76; owner check passed)**.
-5. **`KB-330`** - Catalog rename / aliases edit / archive / **Add product** (D71, D77) - **done - the owner's check passed (16 Oct 2026)**.
-6. **`KB-329`** - price-suggestion Ignore, 90 days, saved and synced - **with KI-63** - **done - the owner's check passed (16 Oct 2026, D78)**.
-7. ~~**`KB-325`**~~ - cancel and reissue a bill - **done 16 Oct 2026 (D79); owner's check passed.**
-8. ~~**`KB-404`**~~ - pilot measurements - **DONE 18 Oct 2026; built 16 Oct 2026 (D80); migration `20261016090000` pushed 17 Oct 2026 (22/22 on both sides); the owner's four-step check passed 18 Oct 2026 - done.**
-9. ~~**`KB-321` + `KB-323`**~~ - usage written, learned aliases feed the parser - **done 17 Oct 2026 (D81); owner checks passed.** The Whisper prompt stays off until a measured before/after.
-As their inputs arrive: **`KB-332`** (Screen language - done 18 Oct 2026, owner's checks of A and B passed; D84), **`KB-335`** (built 17 Oct 2026, D82), **`KB-336`** (built 17 Oct 2026, D83), and **`KB-318`** - **last: the owner is weighing alternatives to Gemini billing (KI-50) and decides when everything else is done.**
-Then: **one release draft + the full phone session** (including the four unmeasured 05 §10 budgets) **+ one deploy**.
-After the pilot starts: `KB-320`, `KB-322`, `KB-333` (cleanup). `KB-402` is folded into the phone session (no ticket).
+**The 3-step check of `draft-v14` (`KB-368`)** - on a phone, signed in to the draft:
+1. **Settings (the ≡ menu) must show `draft-v14`.** Make one ordinary bill by voice, for example "2 kilo chini, 1 kilo besan". It must look exactly as before: **no amber REVIEW badge, no red check** (the new warning is meant to be rare).
+2. **Say one item with a garbled name, on purpose, with a price:** "हारपी केक साठ रुपए एक" (the real A27). Allowed outcomes: the line is a custom line (no badge - nothing was chosen), **or** the app picked a product and the line shows an **amber REVIEW badge** - tap it: *Check this item - heard "...", chose "..."*; Bill Banao is NOT blocked. **Not allowed:** a product silently chosen with no badge. Then say the same without a price ("हारपी केक एक"): if a catalog product is chosen from the catalog's price, the line shows a **red check with "Theek hai"** and Bill Banao waits for it.
+3. **Teach it:** on the line with the badge, tap the product name (pencil), choose **Harpic**, and make the bill. Say "हारपी केक साठ रुपए एक" again: it must now go to Harpic with **no badge** (the correction taught the alias).
 
-**Outstanding owner tasks:** enable Gemini billing (KI-50). (npm 11.19.0 — done, NI-29.) `M-13` done 27 Sep 2026; since D55 (3 Oct 2026) a push deploys to
-https://kiranabilling.netlify.app **only** when the commit carries the owner-approved deploy marker (see "Before deployment").
+**Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 
-**Build tool:** Claude Code (`07-DECISIONS.md` D28). **Git:** single branch, `main`, commit after each
-verified step (D29, `CLAUDE.md`).
-**Test state (20 Oct 2026, `KB-345` / `KB-346` / `KB-348`):** `npm test` (the official 3-worker run, unit then perf) **139 files / 2329 tests**; `test:e2e` 24 files / 150; `test:rls` **116/116**; build, typecheck, lint clean; `npm audit --omit=dev` 0. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong of 39; `coverage:probe` 145/154.
-`test:e2e` 93 in 15 files; `test:rls` **82/82**. Number benchmark 129/129 (0 bail, 0 wrong); `eval:real` 25 fast-path hits, 25 correct, 0 wrong. The perf test is `KI-23`-closed; reopens only on an isolated failure.
-**`npm test` workers (owner, 4 Oct 2026; SUPERSEDED 17 Oct 2026):** **Official test run (owner, 17 Oct 2026):** the unit suite is capped at **3 workers in `vite.config.ts`** (`test.maxWorkers: 3`; `scripts/vitestConfig.test.ts` guards it) and `npm test` - unit, then perf alone (D35) - IS the official VERIFY run. It replaces the 4 Oct `--maxWorkers=2` workaround and the rule that a default-worker run must pass before a release: with one worker per core the 117-file suite times out UI tests on a busy machine (a different handful each run, all green alone and at 3 workers).
-**Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file — `src/`, `netlify/`,
-`eval/`, `scripts/`, `vite.config.ts` (D40, `KB-316`). `npx tsc --noEmit` checks nothing now; never use it.
-**Eval baseline (owner, 10 Oct 2026, D69):** `npm run eval:real` + `npm run bench:numbers` + `npm run coverage:probe` — recorded figures: `eval:real` 25 hits / 25 correct / 0 wrong of 39; `bench:numbers` 129/129, 0 wrong; `coverage:probe` >= 94.2% (145/154). "No regression" means none of the three gets worse. `eval/run-eval.ts` / `npm run eval` (0/0/0/25) is retired in the docs, not deleted. `KI-05` closed.
-**Key rotation:** Groq (`M-06`) and Gemini (`M-07`) both done — old keys deleted, new keys in
-`.env.local`, both real-verified against their live APIs. `KB-001` closed.
-**Codebase map:** `src/domain/` (pure logic), `src/data/` (Dexie, sync, receipt numbers, learning audit),
-`src/providers/` (React context only — Auth, Shop), `src/ui/` (every screen: billing, History, Catalog, Settings, set-up, sign-in; the screen-language hook and
-stores), `src/app/` (the auth and shop gates), `src/voice/` (server-side Groq/Gemini providers), `netlify/functions/` (`/voice`).
+**Test state (30 Oct 2026, on `07843ae`):** `npm test` (the official 3-worker run, unit then perf) **183 files / 3407 tests, all pass**; typecheck and lint clean; `eval:real` **29 fast-path hits of 43, 29 correct, 0 wrong**; `accept:report` (the owner's 50 orders; 41 in the gate) **0 wrong lines, 28 of 41 exact** (71% -> 68%: A15 now asks one Theek hai, see `23`); `smoke:voice` **11/11** live Gemini calls; `bench:numbers` 652 cases, 0 wrong (last run 30 Oct on `aef37a2`; `KB-368` touches no grammar). `test:e2e` 27 files / 160 and `test:rls` 123/123 were last run on `aef37a2`; `KB-368` touches no sync and no schema, so they were not re-run. `npm audit --omit=dev` 0 on the last release check. 25 migrations, all on both sides.
+**Type-check / lint:** `npm run typecheck` (`tsc -b`) and `npm run lint` cover every TS file (D40); `npx tsc --noEmit` checks nothing now - never use it.
+**Eval baseline (D69, updated 30 Oct):** `eval:real` 29 hits / 29 correct / 0 wrong of 43, `bench:numbers` 652/0 wrong, `coverage:probe` >= 94.2%. "No regression" means none gets worse.
+**Codebase map:** `src/domain/` (pure logic), `src/data/` (Dexie, sync, receipt numbers, learning, voice resolve), `src/providers/` (React context), `src/ui/` (every screen), `src/app/` (auth and shop gates), `src/voice/` (server-side Groq / Gemini providers), `netlify/functions/` (`/voice`), `eval/acceptance/` (the permanent release gate, `23`), `src/acceptance/` (the recorder, draft-only behind `VITE_ACCEPTANCE=1`).
+**Secrets:** never print a line of `.env.local` - names and lengths only (owner, 9 Oct 2026). Groq and Gemini keys rotated (`M-06`, `M-07`); the Gemini key is paid (prepaid balance, 29 Oct).
 
 ---
 
-## FINAL STATUS REPORT — updated 20 Oct 2026 (first written 17 Oct after `KB-332` Checkpoint B, as the owner asked; **every ticket since the audit is done and passed - `KB-337` ... `KB-343` included; nothing is deployed**)
+## PHASE COMPLETE REPORT — Phase 3 (billing UI), 30 Oct 2026
 
-**Where things stand.** `main` is **104 commits past production** (`6e29cf2`, live), all pushed to GitHub, none deployed (D55). 22 migrations exist and **all 22 are on the remote** (`migration list --linked`, 17 Oct 2026) — none is waiting for a `db push`, and each is additive against the live app (D55 §5). Last full VERIFY: see "Test state" above.
+**One sentence.** A shopkeeper can speak an order in Hindi / Hinglish and get a correct, itemised, editable bill in one turn, on an installed phone app, offline-capable, synced across phones, with every number the app was not sure of either asked about or left as "Price needed" - and that is what runs in production today.
 
-### 1. Every ticket done since the audit (Part 3 accepted 11 Oct 2026)
+### 1. What is LIVE in production (app code `aef37a2`)
 
-| Ticket | What it gave the shopkeeper | Date | Decision | Owner's check |
-|---|---|---|---|---|
-| `KB-105b` | The four missing RLS checks (`receipt_number_blocks`, `base_products` read-only, cross-shop reads of the learning tables, logo Storage policies) | 11 Oct | — | test-only |
-| `KB-334` | Several devices at once are safe: the database refuses overlapping receipt-number blocks and the client retries; `shops` edits send only the changed fields | 11 Oct | D73, D74 | accepted |
-| `KB-407` | Encrypted backup to the owner's Google Drive on a schedule, and a restore rehearsal proven with the real key | 11 Oct | D75 | done by the owner (weekly look `M-38` remains) |
-| `KB-331` | "Add by hand" on every voice failure, transcript prefilled | 11 Oct | D76 | **passed** |
-| `KB-330` | Catalog: rename, other names, archive and restore, Add product | 11 → 16 Oct | D77 | **passed** |
-| `KB-329` | Price-suggestion Ignore (90 days, saved and synced) + `KI-63` (a per-kg rate on a per-gm product is now learned) | 14 → 16 Oct | D78 | **passed** |
-| `KB-325` | Cancel and reissue a bill; the cancelled bill stays in History, marked | 14 → 16 Oct | D79 | **passed** |
-| `KB-404` | Pilot measurements (`bill_metrics`; Developer mode "Pilot numbers") | 16 → 18 Oct | D80 | **passed** (18 Oct) |
-| `KB-321` + `KB-323` | Catalog usage is written (Catalog ordering, vocabulary input); learned aliases feed the parser, with a "Learned" note and "Not this" | 17 Oct | D81 | **passed** |
-| `KB-335` | Sign-in uses PKCE; a refused or unfinished return is said in one plain sentence | 17 Oct | D82 | accepted; two phone checks **PENDING** (below) |
-| `KB-336` | Change a line's product (tap the name, pick a catalog product); a correction teaches the app | 17 Oct | D83 | **passed** |
-| Test run | The unit suite is capped at 3 workers in `vite.config.ts` and that run IS the official VERIFY | 17 Oct | owner decision | — |
-| `KB-325` follow-up | **"Cancel only" keeps the shopkeeper on the cancelled bill** (CANCELLED card showing, History underneath); "Cancel and make a new bill" leaves no stray Back press. Cause: `useBackEntry` closed every overlay on any popstate that was not its own entry. Also: a Review-mode write finishing after the database closed was an unhandled rejection (`PilotNumbers`) | 18 Oct | D79 follow-up | **passed** (18 Oct) |
-| `KB-337` | **Amount editing on every line** (typed amount, cleared rate, typed rate, a qty with no unit); reverses `KB-303` decision 1 | 18 Oct | D85 | **passed** (18 Oct) |
-| `KB-338` | **"—" (no unit) on every line**; picking it changes no number; D83: a line with no unit fits every product | 18 Oct | D86 | ✅ passed 19 Oct (incl. the cross-unit amendment) |
-| `KB-339` | **Spoken commands** ("bas" -> hint, "hatao" -> remove last with Undo, "sab hatao" -> hint), whole utterance only, not a turn | 18 Oct | D86 | ✅ passed 19 Oct |
-| `KB-340` | **The shop's name in the billing header** | 18 Oct | D86 | ✅ passed 19 Oct |
-| `KB-341` | **Simple bill numbers** - plain 1, 2, 3 …; fallback `7F2A91-1`; "Bill 59" labels; search ignores bill / बिल / no | 19 Oct | D87 | ✅ passed 19 Oct |
-| `KB-348` | **Self sign-up** - any Google account can sign up and create a shop; one shop per owner (database rule); a double tap on set-up makes one shop | 20 Oct | D90 | **PENDING** (`db push`, then the release; steps in `17`) |
-| `KB-346` | **iPhone readiness** (code only): recording type, Add-to-Home-Screen hint, iOS storage wording, SMS `&body=` + Copy message, notch / home-bar padding; iOS 16.4+ | 20 Oct | D90 | **PENDING** (needs an iPhone: `19` section 9c) |
-| `KB-345` | **Sync that rests** - one probe request every 15 s, pull only what moved, a full pull ~5 min, nothing while hidden; 2,900 -> ~360 requests an hour per open phone | 20 Oct | D90 | **PENDING** (`db push`, then the release; two-phone check) |
-| `KB-343` | **The audit's DESIGN items:** Indian digit grouping (₹1,25,000), focus after Enter, "Discard changes?", a reason beside every disabled button, "Understanding…", Undo 10 s, translated errors, set-up labels | 19 Oct | D88 | ✅ passed 19 Oct |
-| `KB-342` | **The ≡ menu closes properly** (outside tap, a choice, Escape, Back, a panel / dialog / the mic opening) + the UI audit's 11 bugs (Escape on every layer, real modal dialogs, `inert` behind a layer, SMS sheet in view, no double share, 44 px targets, one Google sign-in per tap) | 19 Oct | `21` Part 5 | ✅ passed 19 Oct |
-| `KB-332` | **Screen language** — English / हिन्दी / Hinglish, per device, no reload (Checkpoint A: billing, flags, voice errors, sync chip, sign-in, Add item, Settings. Checkpoint B: Catalog, History and Cancel, product sheets, set-up, shop-load error) | 17 Oct | D84 | A and B **passed** (18 Oct) |
+| Area | What the shopkeeper has | Tickets |
+|---|---|---|
+| **Voice billing** | Speak -> transcript -> Layer 1 (deterministic grammar, instant) -> Layer 2 (Gemini `gemini-3.5-flash-lite`, pinned) only for what Layer 1 cannot read; long orders cut into pieces; price-less and mixed orders; Hindi number words 1-100 and Whisper's spellings; exact gram-per-kilo prices; never an invented quantity or price | `KB-302`, `KB-317`, `KB-358`, `KB-359`, `KB-360`, `KB-361`, `KB-362`, `KB-363`, `KB-365`, `KB-366` |
+| **Number safety** | A rate or total from the AI must be a number that was spoken; one warning per line with one "Theek hai"; a line with no price must be priced before Bill Banao | `KB-208`, `KB-359`, `KB-363`, `KB-366` |
+| **The bill** | Editable lines (qty, unit, rate, amount), add by hand with type-ahead, change a line's product, customer name and mobile, spoken commands, undo, finalise (Bill Banao), receipt, SMS / WhatsApp / PDF share, cancel and reissue | `KB-301`, `KB-303` - `KB-309`, `KB-325`, `KB-331`, `KB-336`, `KB-337` - `KB-339`, `KB-341` |
+| **History and Catalog** | History with search; Catalog with rename, other names, archive, add product, price suggestions with Ignore, bulk import from a file | `KB-310`, `KB-311`, `KB-314`, `KB-329`, `KB-330` |
+| **Learning (per shop)** | Learns from finalised bills only; learned aliases feed the parser; Gemini evidence alone never promotes an alias | `KB-209`, `KB-307`, `KB-321`, `KB-323`, `KB-326`, `KB-354` |
+| **Phones and sync** | Installable PWA, opens offline, offline bills sync later; several phones at once with one bill-number sequence; the open Catalog refreshes; a probe-based sync that rests; backups to Google Drive (encrypted, daily) | `KB-110`, `KB-324`, `KB-334`, `KB-345`, `KB-350`, `KB-351`, `KB-401`, `KB-407` |
+| **Sign-in and set-up** | Google sign-in (PKCE), self sign-up, one shop per owner, public privacy page | `KB-106`, `KB-107`, `KB-335`, `KB-348`, `KB-349` |
+| **Screen** | English / हिन्दी / Hinglish, shop name in the header, Indian digit grouping, one ≡ menu that closes properly | `KB-332`, `KB-340`, `KB-342`, `KB-343` |
+| **Pilot tools** | "Pilot numbers" and Review mode (Heard -> Billed pairs) in Developer mode | `KB-404` |
+| **Release safety** | Marker-only deploys (D55); rollback target recorded before each release; the acceptance gate (`npm test` fails on a wrong line in the owner's 41 orders); `smoke:voice`; `check:recorder` | `KB-364`, D55, D99 |
+| **Security** | RLS on `shop_id` (123 negative checks), immutable finalised bills, receipt HTML escaped | `KB-104`, `KB-105`, `KB-105b` |
 
-Also decided in this stretch (docs only): rule 5 reworded (D72), `eval:real` + `bench:numbers` + `coverage:probe` are the eval baseline (D69), Supabase Free + scheduled dump (D70).
+### 2. Built, NOT yet live
 
-### 2. Owner checks still pending
+`KB-368` - a product chosen from a name nothing about it explains is never silent (D99 item 19). On `draft-v14`; waits for the owner's 3-step check and his `[deploy]` approval.
 
-Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-only fix, and **`KB-404` "Pilot numbers"** (17 bills reconciled - every one on the server with the same number, total and item count; two voice bills: turns 1, fast-path 100%, fast-path item on screen 18 ms, finalise → receipt 54 ms; Review mode showed the Heard → Billed pairs and "Clear now" removed them).
+### 3. Parked, with ticket numbers
 
-1. **None of the tickets is waiting for a check** - `KB-337` to `KB-343` all passed (`KB-343` on 20 Oct: grouping on the bill, editors, History, receipt, SMS and WhatsApp; Enter keeps focus; Discard; the reason lines; "Understanding…" with the real mic; 10 s Undo; set-up labels; हिन्दी).
-2. **Answers the owner owes (nothing built or planned):** an item count on a History row, a Copy debug report button (`21` Part 4).
-3. **`KB-335`, on the release draft** — (a) sign in on the Android phone with the installed app: the return must land signed in; (b) the sign-up-off test: switch off "Allow new users to sign up", pre-create a second Gmail user (Auto Confirm) — it must sign in; an uncreated Gmail must be refused with "This account isn't set up for the pilot".
-4. **Release-draft leftovers** — the Android file picker for the catalog import (`KB-314`) and the foreground-update fix (`KB-401`), each on a phone; and the **phone-only checks of `21` Part 5** - the virtual keyboard (focused field and TOTAL bar stay visible; decimal / tel keyboards appear), Android Back with the menu, a dialog and History > bill > Cancel, a real voice with the menu open, the share sheet and a double tap, a 320 px phone with the real font, touch feel, and Hinglish on screen once.
-5. **A live voice order through Layer 2** — needs Gemini billing (`KI-50`) first.
-6. **`M-38`** — the weekly look at the newest file in Drive `KiranaBill-Backups` (ongoing).
-7. Optional: `NI-28`, one paint reading on the 481-product catalog.
+| Ticket | What | Waits for |
+|---|---|---|
+| `KB-405` | **The shop pilot itself** | the owner; the checklist in `17` first |
+| `KB-369` | Whisper vs `gemini-3.5-transcribe` on the same 50 recordings | after the pilot starts (the biggest source of wrong lines is what the speech-to-text hears) |
+| `KB-007` | Whisper vocabulary prompt (built, OFF) | a measured before/after, with `KB-369` |
+| `KB-318` | Gemini prompt guards - parked: its blocker is gone and most of its work was done (`KB-360`, `KB-365`, `KB-366`) | pilot evidence of `KI-47` / `KI-52` |
+| `KB-355` | Voice speed (stop -> transcript 2.1 s vs a 1.5 s budget) | measure on the shop phone first |
+| `KB-320`, `KB-322` | Learning L1 promotion, L4 unit preferences | after the pilot starts |
+| `KB-333`, `KB-356`, `KB-357` | Retire the old eval, smaller first download, install-script warnings | later |
+| `KB-327`, `KB-328` | Shop logo upload, price updates from a file | owner's call after the pilot |
+| `KB-344`, `KB-347` | Error monitoring, privacy notice (DPDP; a lawyer reviews) | before more than the pilot shops |
+| `KB-367` | A spoken "remove that" | dropped by the owner 30 Oct ("not needed now") |
+| `KB-406` | Capacitor Android wrapper | gated; after the pilot |
+| `SG-01` ... `SG-21` | Suggestions (same-as-last-time basket, daily total, staff roles, GST invoice, round-off ...) | `12` section B |
 
-**Watch items for the release-draft phone session (not fixes yet; owner, 18 Oct 2026):**
-- **Stop → transcript:** measured median 4.2 s / p95 5.2 s on localhost against the 1.5 s budget (`05` §10). `netlify dev` adds about 1 s per `/voice` call in the owner's logs, so the figure is inflated. **Measure it on the phone; if it is still over budget there, it becomes a ticket.**
-- **App cold start:** p95 27 s was dev-server first loads. The phone session gives the real figure (budget < 2 s).
-- **Baseline note:** `?try=` dev bills count as hand-only "typing" bills in the baseline - harmless for a fresh pilot shop (recorded in `05` §10 and D80).
+### 4. Known limits - said plainly
 
-### 3. What remains before a production deploy
+- **The app can only check what the phone heard.** In the owner's own 50 recordings, 48 were readable and **7 of the 48 (about 1 in 7) were mis-heard by Whisper** (a number or an item): A19 (two items Whisper added), A33 (180 for 80, 140 for 120), A34 (a quarter for a kilo and a quarter), A32, A39, and the two product cases A27 / A35 (now caught by `KB-368`). Those produced **silent wrong lines** - so "0 wrong lines" (the release rule) is measured on what Whisper heard, not on what was said (`23`). What contains it: Review mode and the first 20 bills; the Heard -> Billed pairs; and later `KB-369`.
+- **The follow-up that matters most: Review mode** for the first 20 pilot bills (`17` step 6) - it is how a silent mis-hearing is found.
+- **Exact bills 68% (28 of 41)** against the owner's 90% target: the app asks (Theek hai) or leaves "Price needed" rather than guessing; the set is not locked.
+- **`KI-47` / `KI-52`:** Gemini may choose a brand for a generic word, or a different product though the name matches - visible, not a wrong number; `KB-368` does not cover a name the wrong product also explains (`12`).
+- **Layer 2 can be down** (Gemini busy or out of credit): the screen says which, and "Add by hand" always works; Layer 1 orders never depend on it.
+- **iPhone is built but never proven on a real iPhone** (`NI-30`); the pilot is Android.
+- **Receipt is a simple bill (parchi), not a GST invoice** (`NI-35`).
+- **A phone's storage can be emptied by the browser** unless installed and "Storage: protected" (`KI-68`); bills are on the server, so a wiped phone gets them back.
 
-0. **Owner, now:** run `npx supabase db push --dry-run`, then `db push` (two additive migrations: `sync_probe` and `shops_one_per_owner` - first run the duplicate-owner check in `17` "Release day"); tell the agent the **Netlify credit balance** (credits reset 18 Oct) so the release draft can be built; and look at the **Google consent screen** (`17` section B): self sign-up needs it published, and Google's pages say a production app needs a homepage and a privacy-policy link - **an open item** (`KB-347` is parked).
-1. **Netlify credits (owner, dashboard).** A production deploy is 15 credits; at 0 the Free plan pauses the site. Keep a second 15 for a worker emergency. (The 10 Oct note said "4 left until 18 Oct" — confirm the balance after the reset.)
-2. **`KB-318` and `KI-50` (Gemini)** — waiting for the owner's go-ahead; nothing is built or run on it until he says so. Layer 2 parses fail on the free tier, so `KB-318` cannot be verified before it, and `KI-52` (a different product picked with no flag) is a wrong-number risk the thesis forbids.
-3. **The release draft.** One `netlify deploy` (no `--prod`) from the release-candidate commit, built with the production `VITE_*` values (names and lengths only), then the **full phone session on that one build**: install, Google sign-in returning into the app, offline open, an offline bill syncing, reload mid-bill, sign-out count, Clear bill, a wiped phone getting its bills and learning back, Settings edits, Catalog edit and import with the real Android file picker, a live voice order through Layer 1 and Layer 2, receipt Image / PDF / WhatsApp, "Storage: protected", `?nosw=1`, the update flow including the foreground-check fix (two builds; the first with the phone offline at a foreground), and the four unmeasured 05 §10 budgets with `KB-404`'s timings. Add: the three screen languages on the phone (Devanagari wrapping), and the `KB-335` checks above.
-4. **The deploy.** The owner signs off the exact commit; **one** commit carrying the deploy marker is pushed (15 credits). Note the previous production deploy's ID first (the rollback is "publish" that deploy). Then read the Netlify build log (`NI-29`), `curl -I` for `/sw.js` (`no-cache`) and `/manifest.webmanifest` (`application/manifest+json`), `/voice` answers 401, the app opens on the phone and Settings shows the new version. A rollback to the pre-worker deploy makes `/sw.js` a 404 — not tested, do not rely on it.
-5. **Re-run on the release commit:** the official 3-worker `npm test`, `test:e2e`, `test:rls`, build, audit, and `eval:real` / `bench:numbers` / `coverage:probe` not worse than the baseline.
-6. **After the release draft, not before:** the Whisper prompt before/after (`eval:audio`); it stays OFF until measured.
+### 5. Owner checks pending
 
-### 4. The owner's pre-pilot items
+1. `KB-368` on `draft-v14` (3 steps, above). 2. The "Before the real shop" checklist (`17`). 3. The weekly look at the Drive backup (`M-38`). Nothing else is waiting for a check.
 
-- **Privacy notice — DPDP Act 2023** (customer names and mobiles are personal data; the shop is the fiduciary): the notice a shop gives customers, retention vs immutable bills, processors, and WhatsApp/PDF sharing. Qualified advice, not the agent's.
-- **Onboard the pilot shop** with the Ready catalog (a **fresh** shop; the live test shop is start-empty), after the `KI-53` owner-led catalog review. Sign-up policy: keep sign-ups off and create each pilot user yourself (proven by the `KB-335` draft test).
-- **Redirect-URL cleanup, in this order, AFTER the last draft:** remove `https://*--kiranabilling.netlify.app/**` and `https://kiranabilling.netlify.app/**`, leaving the exact `https://kiranabilling.netlify.app/` (Site URL `https://kiranabilling.netlify.app`); sign in once more on production. (`http://localhost:5173/**` is already removed.)
-- **Gemini billing / `KB-318` (`KI-50`)** — the owner is weighing alternatives and decides when everything else is done. **No Gemini work until he says so.**
-- Per pilot phone: install and confirm "Storage: protected" (`KI-68`). Turn on the weekly backup look (`M-38`; consider healthchecks.io if the laptop will be off for days). GST (`NI-35`) only if a pilot shop is GST-registered; iPhone (`NI-30`) only if a pilot shop uses one.
-- After the pilot starts: `KB-320`, `KB-322`, `KB-333`.
+### 6. After the pilot's first 20 bills
+
+Read the Heard -> Billed pairs, decide `KB-369` (Whisper vs `gemini-3.5-transcribe`) on the same recordings, the unlocking of the acceptance set (>= 90% exact), and then the next big thing.
 
 ---
 
@@ -174,6 +106,8 @@ Passed on 18 Oct 2026 and no longer pending: `KB-332` Checkpoint B, the Cancel-o
 - **Redirect URLs (Supabase -> Authentication -> URL configuration), decision 28 Oct:** change NOTHING now. `KB-355` (voice speed) will need drafts again, so keep `https://*--kiranabilling.netlify.app/**` (the safe single-`*` form, D58 section 6). **After the LAST draft** the owner removes it AND `https://kiranabilling.netlify.app/**`, leaving the exact `https://kiranabilling.netlify.app/` (D82).
 
 ## Draft deploy — checks (owner)
+
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
 
 **Draft `6ac7c715886e9f4482351669`, 8 Oct 2026, from `5c4ac93`** — https://6ac7c715886e9f4482351669--kiranabilling.netlify.app
 (`npx netlify deploy --site kiranabilling --dir dist --no-build`, 19 §8 — never `--prod`, never the marker; not linked).
@@ -225,6 +159,8 @@ added the new line at ₹50 (total ₹125); a long customer name, Image and PDF.
 
 ## Release draft re-test — TWO phones, SHORT (owner) — after `KB-350` and `KB-351`
 
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
+
 **Before you start (once):** `npx supabase db push` (dry run = exactly `20261022090000_bill_numbers`), `migration list --linked` shows it on both sides; Claude rebuilds the draft (same address, never `--prod`). On BOTH phones: open **Settings** and check the **new version** shows (close and reopen the app if not). Turn the Pilot numbers panel on (Developer mode) on A.
 
 1. **Numbers in sequence.** A: Bill Banao -> note the number N. B: Bill Banao -> N+1. A again -> N+2. Check History on both phones: the same numbers, nothing doubled.
@@ -237,6 +173,8 @@ added the new line at ₹50 (total ₹125); a long customer name, Image and PDF.
 Still to do after this re-test: you push the commits, approve the exact commit, then the `[deploy]` commit and the post-deploy steps in `17`.
 
 ## Release draft `release-draft` — the TWO-PHONE session (owner, two Android phones) — 21 Oct 2026
+
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
 
 **URL:** https://release-draft--kiranabilling.netlify.app — built from **`b2a5973`** with the production VITE values (names and lengths only; `dist/` holds the project ref and no `localhost:54321`, `localhost:8888` or `http://127.0.0.1`), Netlify deploy `6ad86d60f6532d3ec1b44879`, `--alias release-draft`, **no `--prod`, no `[deploy]` marker, not linked.** Checked from outside: `/` 200; `/sw.js` 200 `no-cache`; `/manifest.webmanifest` 200 `application/manifest+json`; **`/privacy` and `/privacy.html` 200, the policy page (English + हिन्दी), not the app shell - also with the service worker controlling the browser**; `/voice` without a token answers 401. **The draft talks to the REAL cloud Supabase project:** every bill you make is a real row in your live shop (and the second Gmail makes a real second shop) - test data you can cancel or delete afterwards. Before you start: the second Gmail is a **Google test user** (Google Cloud > Audience > Test users); Supabase **"Allow new users to sign up" is OFF** and stays OFF until step 17.
 
@@ -312,10 +250,14 @@ of its own schedule. Reliable trigger: switch to another app for a few seconds a
 
 ## Next release draft — KB-314 check (owner)
 
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
+
 - [ ] **Android file picker:** Catalog → Import from file → the phone's file picker offers the `.xlsx` / `.csv` (from Files, Drive or Downloads); pick the sample CSV (download it from the sheet first) and a real spreadsheet: the preview appears, Add works, the products are in the Catalog. (The browser checks used a programmatic file; the real picker rides on the release draft.)
 - [ ] Re-pick the same file: "0 to add · N already in your shop".
 
 ## Release 1 readiness — report of 10 Oct 2026 (docs and checks only; no code changed)
+
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
 
 **(a)** = blocks the first production deploy of the current `main` (59 commits past the live `6e29cf2`). **(b)** = blocks the first real pilot shop.
 "Acts": **O** = owner, **C** = Claude Code. Checks run on 10 Oct 2026: `migration list --linked` 19/19 on both sides, none local-only or remote-only;
@@ -371,6 +313,8 @@ e2e 80, RLS 55/55, typecheck, lint, `npm audit --omit=dev` 0; `eval:real` 25 hit
 ---
 
 ## Before deployment
+
+> **HISTORICAL (30 Oct 2026):** done; kept as the record of that session. The current state is at the top of this file.
 
 Must be done before any production deploy or the pilot. Added 27 Sep 2026 (owner). Each line points to
 where the detail lives; tick it off there and strike it here.
@@ -452,8 +396,8 @@ where the detail lives; tick it off there and strike it here.
 | **0** | Build `domain/` + eval harness, new codebase | ✅ Done — domain tickets complete; `KB-001` closed 26 Sep 2026 |
 | 1 | Foundation: scaffold, Supabase, schema, RLS, auth, sync | ✅ Core chain done (`KB-101`–`KB-111`; `KB-107b`'s schema is done, its upload UI is now `KB-327`, parked) — see the retrospective below; `KB-105b` (four missing RLS checks) done 11 Oct 2026, `test:rls` 79/79; **`KB-334` (multi-device safety, D73) before the pilot** |
 | 2 | Voice pipeline: catalog index, layers 1–4, learning | ✅ Done except what is tracked elsewhere: `KB-209`'s write side is built (`KB-307`, D56) and `KB-210`'s screen is built (`KB-312`); `KB-318` (blocked on KI-50), `KB-320` and `KB-322` (not started; `KB-321`, `KB-323` done 17 Oct 2026) and `KB-204`'s Web Speech half (deferred) remain — see the Phase 2 retrospective below |
-| 3 | Billing UI, receipt, history, catalog screen | 🟦 **In progress** — done: `KB-301`–`KB-317` except `KB-318` (blocked on KI-50) and `KB-320` and `KB-322` (not started; `KB-321`, `KB-323` done 17 Oct 2026); also `KB-311`–`KB-314`, `KB-324`–`KB-326`, `KB-329`–`KB-332`, `KB-335`, `KB-336`; parked: `KB-327`, `KB-328` |
-| 4 | Pilot hardening, PWA, 20-bill validation run | 🟦 **In progress** — `KB-401` done (D67); `KB-404` done (D80; migration pushed, the owner's check passed 18 Oct 2026); `KB-402`, `KB-405` not started; `KB-403` deferred (D70); `KB-406` gated; **`KB-407` (backup + restore rehearsal) done 11 Oct 2026; `KB-404` done 18 Oct 2026** |
+| 3 | Billing UI, receipt, history, catalog screen | ✅ **COMPLETE 30 Oct 2026** (the report at the top; `KB-368` waits for a check) - history: 🟦 in progress — done: `KB-301`–`KB-317` except `KB-318` (blocked on KI-50) and `KB-320` and `KB-322` (not started; `KB-321`, `KB-323` done 17 Oct 2026); also `KB-311`–`KB-314`, `KB-324`–`KB-326`, `KB-329`–`KB-332`, `KB-335`, `KB-336`; parked: `KB-327`, `KB-328` |
+| 4 | Pilot hardening, PWA, 20-bill validation run | 🟦 **Ready to start** - the PWA, backups, metrics and Review mode are live; the pilot (`KB-405`) is next; old status:  — `KB-401` done (D67); `KB-404` done (D80; migration pushed, the owner's check passed 18 Oct 2026); `KB-402`, `KB-405` not started; `KB-403` deferred (D70); `KB-406` gated; **`KB-407` (backup + restore rehearsal) done 11 Oct 2026; `KB-404` done 18 Oct 2026** |
 | — | Capacitor Android wrapper | ⬜ After Phase 4 |
 
 ---
@@ -610,10 +554,11 @@ catalog index under 16 ms at 10,000 products ✅.
 | R1 | ~~Fast-path coverage of 60–70% is an assumption, not a measurement.~~ The entire cost model, the latency story and the compounding-moat argument all rest on it. If real coverage is 30%, cost per bill roughly doubles and the product is not sellable at Indian price points. | **HIGH** | **Closed 15 Sep 2026 — measured, not assumed.** `KB-009`: **92.8%** (116/125) on the real `parseUtterance()` pipeline over the eval + number-benchmark fixtures. Above the 60–70% target range, not just above the 40% floor. The cost model and moat argument have real ground under them now — caveat: 125 hand-authored fixture cases are not 125 real shop utterances, so this is a strong signal, not a pilot-validated number; revisit once real bills exist. |
 | R2 | ~~The pricing grammar — the core differentiator — currently fails its own tests~~ | HIGH | **Closed 14 Sep 2026** — `KB-005`: all five rules pass, `ka`/`wala` differentiator confirmed (₹30 vs ₹150). Separate, newer number-correctness defect in the default-price unit conversion: `KI-30` (26 Sep) — not this risk reopening. |
 | R3 | ~~API keys exposed in a distributed archive~~ | HIGH | **Closed 26 Sep 2026** — `KB-001`: both keys rotated, `.gitignore` verified, no key ever committed (see the `KB-001` row). |
-| R4 | Local-first sync is the most complex thing in the plan for a solo developer | MEDIUM | Mitigated by immutable bills; revisit if Phase 1 overruns |
-| R5 | Phrase biasing improving recognition is an assumption | MEDIUM | Still open. `KB-007` built the ranking/capping mechanism, not the measurement — that needs an STT connection Phase 0 doesn't have. Revisit once Phase 1/2 wires up Whisper. |
-| R6 | 14-week estimate has no historical basis | MEDIUM | Re-estimate after Phase 0 actuals |
-| R7 | Number-safety flags may prove annoying enough to be ignored | LOW | Watch during the pilot run |
+| R4 | Local-first sync is the most complex thing in the plan for a solo developer | MEDIUM | **Mitigated 30 Oct 2026:** live since 28 Oct; immutable bills, an e2e suite on the real local stack (160), multi-device safety (`KB-334`), a two-phone script passed. |
+| R5 | Phrase biasing improving recognition is an assumption | MEDIUM | Still open (30 Oct 2026: the Whisper prompt is OFF; measure with `KB-369`). `KB-007` built the ranking/capping mechanism, not the measurement — that needs an STT connection Phase 0 doesn't have. Revisit once Phase 1/2 wires up Whisper. |
+| R6 | ~~14-week estimate has no historical basis~~ | MEDIUM | **Closed 30 Oct 2026:** Phase 3 is complete; the actuals are in `Recent changes`. |
+| R7 | Number-safety flags may prove annoying enough to be ignored | LOW | Watch during the pilot run. 30 Oct 2026: `KB-363` cut a line's warnings to one; `KB-368` adds one rare badge (8% of choices on the noisy recordings, 0 on the real Layer 1 transcripts). |
+| R8 | The speech-to-text mis-hears a number or item in about 1 order in 7 and the app cannot tell | **HIGH** | Open, said plainly in the report. Review mode on the first 20 pilot bills; `KB-369` compares another transcriber on the same recordings. |
 
 ---
 
@@ -632,6 +577,7 @@ catalog index under 16 ms at 10,000 products ✅.
 | 28 Oct 2026 | **Release draft `draft-v4` LIVE** (same alias, deploy `6ae195c91c81a429d54faa7a`, built from `6e2a4d9`, production VITE values - names and lengths only, `dist/` free of localhost / dev sign-in, no `--prod`, no `[deploy]` marker). Live: `/` `/sw.js` `/manifest` `/privacy` 200, `/voice` without a token 401, the served app holds `draft-v4`. **Both phones' Settings must show `draft-v4`.** The owner re-measures: the Pilot numbers panel now has the phase tables (after Bill Banao; app start; stop → transcript). |
 | 29 Oct 2026 | **RELEASE 2: production = `fb6d2e1` via `b7fca3d`** (the `KB-358-0` hotfix + `KB-358` a/b/c), deploy `6ae2f73bc04975be8ca66d0e`, built from the marker commit in 32 s (Netlify's deploy API), published 07:35 UTC. Post-deploy checks (Claude): `/`, `/privacy`, `/sw.js`, `/manifest.webmanifest` 200; `GET /voice` 405; `POST /voice` with no token 401 and with a forged token 401; the served bundle `index-DbvFZ4oW.js` carries the build id `20261029-0735-b7fca3d`, the project URL once, no local URLs, and the `KB-358c` messages. Rollback target recorded before the marker: `6ae1e5de507e259d58c6e891` (`37e48cc`). The owner's draft-v8 phone test passed (the no-comma order, the 5:43 PM order, Layer 1 "मूंग दाल 96 रुपई किलो"). | Claude Code |
 | 29 Oct 2026 | **PRODUCTION ISSUE after release 2: every Layer-2 (Gemini) call fails with Google status 404 - the NEW key.** Production `/voice` logs 07:42-07:46 UTC (1:12-1:16 PM IST): 9 warn lines, all `Parse failure kind=failed status=502 provider=404` (no `quota=` - that is only for 429; no limit message was right). Segmentation worked as designed (separate "Not added" entries, Chini added alone). Why the key is the cause: the same code on `draft-v8` with the OLD key answered Gemini correctly that morning; the only change is `GEMINI_API_KEY` (another Google account). A 404 from Google for a key that authenticates (a bad key is a 400) means the model is not found for that key: community reports of 28-29 Oct say `gemini-2.5-flash-lite` returns 404 "no longer available to new users" for projects created recently (sources disagree on the retirement date, 22 Jul or 16 Oct 2026). NOT yet proven: our log carries no Google error text (D59) - the owner's two-minute `curl` check (ListModels with the new key) settles it. Netlify's CLI masks secret values (20-character placeholders), so the key itself cannot be read from here. A key change reaches `/voice` only with a new deploy. Fix tracked in `KB-360` (log Google's `error.status`, a model variable, a clear setup message). | Claude Code |
+| 30 Oct 2026 | **PHASE 3 COMPLETE; `KB-368` BUILT and on `draft-v14` (owner approved the plan with the recommended severity split).** `src/domain/weakProduct.ts` `flagWeakProducts`: a heard name with a content word nothing about the chosen product's name or aliases is close to raises ONE `weak_product` - MEDIUM (amber REVIEW badge, non-blocking) when the price was spoken, HIGH (Theek hai) when it came from the catalog; Layer 1 and Layer 2 through `resolveUtterance`; `checkHeadline` leads with it; 3-language sentence; a pencil correction teaches the alias (`KB-336`). **Tests first (21), 5 plants caught.** **Measured with the real function:** 8% of choices in 6 of 36 of the owner's 41 orders, 21% in 3 of 6 of the 7 set-aside orders, **0 of 61 real Layer 1 choices**; catches A27 (Harpic -> Cake), A35 (Fortune -> Tel Pouch) and "मदर डिलाइट तेल" -> Ruchi Gold. Cost: A15 "फली दाने" and A20 "खड़ी हल्दी" (right matches the catalog has no alias for) now ask one Theek hai - `accept:report` 28/41 exact (was 29), **0 wrong lines**; the sheet was not changed. **VERIFY:** `npm test` 183 files / 3407; typecheck, lint clean; `eval:real` 29/29/0 wrong of 43; `smoke:voice` 11/11. Not re-run (no sync or schema touched): `test:e2e`, `test:rls`. **Draft:** `draft-v14` at the release-draft alias, deploy `6ae4e0cf04d22ad35acff8fc`, code `07843ae`, production `VITE_` values (names and lengths only), `--no-build`, no `--prod`, no marker; `/` `/sw.js` `/manifest.webmanifest` `/privacy` 200, `GET /voice` 405, tokenless `POST /voice` 401; production bundle unchanged. **Docs sweep (owner):** 06 (every ticket status made true: KB-335 / 345 / 346 / 348 / 349 / 350 / 351 LIVE 28 Oct, KB-359 LIVE 30 Oct, KB-318 / 355 parked, KB-405 next), 10 (this report), 12 (triage of every open KI / NI), 07 (D99 item 19), 23, 17 ("Before the real shop" checklist), 19 (draft procedure). | Claude Code |
 | 30 Oct 2026 | **RELEASED to production: app code `aef37a2` via the marker `773fd95` (pushed by the owner), deploy `6ae4d5cdb05a356e46d974df`, published 30 Oct 17:38 UTC.** KB-362 (price-less and mixed orders), KB-364 (the acceptance tools; recorder draft-only), KB-365 / KB-366 (D99 item 18: exact gram-per-kilo prices, no invented quantity or price, Whisper's spellings of kilo). **Post-deploy checks (production URL):** build `ready` and published; `/`, `/sw.js`, `/manifest.webmanifest`, `/privacy` 200; `GET /voice` 405, tokenless `POST /voice` 401; served bundle `/assets/index-B781ctbm.js` carries build id `20261030-1737-773fd95` and the new messages; one hosted Supabase URL, no local one; **recorder absent**: 0 of the 4 markers in the bundle, `/assets/RecorderSession-*.js` 404, `/?session=1` serves the normal app. **Still to confirm by the owner:** one live Layer-2 call and the `parse ok model=gemini-3.5-flash-lite` line in Netlify's Functions log (the CLI's log lookup was unreliable on 30 Oct; he reads it in the UI). **Rollback target:** `6ae43ef37632217d26a8e515` (Netlify -> Deploys -> Publish deploy). | Claude Code |
 | 30 Oct 2026 | **HONEST RECORD (owner): "0 wrong lines" is measured on what Whisper HEARD.** 48 usable orders (50 minus A13, unreadable, and A41, dropped); **7 of the 48 were set aside** because Whisper misheard numbers or items, and those produced silent wrong lines: A19 (two items added), A33 (180 for 80, 140 for 120), A34 (a quarter for a kilo and a quarter); A27 ("हारपी केक" -> Cake) and A35 ("फॉल्चून" -> Tel Pouch) are the APP choosing a product silently from a garbled name. `KB-368` (no silent weak product match) is planned for approval BEFORE the shop pilot. Follow-ups: the pilot's **Review mode**, and `KB-369` (Whisper vs `gemini-3.5-transcribe` on the same 50 recordings) PARKED. `docs/23` carries the same statement. | Claude Code |
 | 30 Oct 2026 | **RELEASE APPROVED (owner, 30 Oct 2026, after the draft-v13 phone tests and the two-phone script): app code `aef37a2` (= draft-v13; `git diff aef37a2 HEAD` touches no `src/`, `netlify/`, `scripts/` or `eval/` file).** Release rule chosen by the owner: **0 wrong lines** (the exact rate stays a target; `docs/23` section 8 updated). In it: KB-362, KB-364 (the recorder is draft-only: `check:recorder` clean on this production build), KB-365 / KB-366. **Fresh pre-release checks on HEAD:** `npm test` 3385, typecheck, lint, audit 0, `bench:numbers` 652 / 0 wrong, `eval:real` 29 hits / 0 wrong, production build + `check:recorder` clean, `smoke:voice` 11/11 live, acceptance replay 41 orders / 0 wrong lines (29 exact); `test:e2e` 160 and `test:rls` 123/123 passed on the same code earlier today (no migration in this release). **Rollback target = the CURRENT production deploy, read from Netlify on 30 Oct: `6ae43ef37632217d26a8e515`** (`0eaf046` via `ec0ff63`); behind it `6ae2f73bc04975be8ca66d0e`, then `6ae1e5de507e259d58c6e891`. Rollback = Netlify -> Deploys -> that deploy -> Publish deploy. Marker commit follows; post-deploy checks recorded below once done. | Claude Code |

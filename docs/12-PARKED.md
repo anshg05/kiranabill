@@ -1,6 +1,6 @@
 # 12 — Parked
 
-**Last updated:** 18 Oct 2026 (rev 67)
+**Last updated:** 30 Oct 2026 (rev 68) - phase-complete triage: every open KI / NI dispositioned below
 
 Everything deliberately not being done now. Four sections, one file.
 
@@ -9,6 +9,39 @@ is the mechanism that stops scope creep without losing good ideas.
 
 > **Split this file** into `KNOWN_ISSUES.md`, `SUGGESTIONS.md` and `NOT_YET_INVESTIGATED.md` when it
 > passes ~500 lines. That is what happened on SolarOps, and splitting earlier is premature.
+
+---
+
+## Phase-complete triage - 30 Oct 2026
+
+Every item still open on 30 Oct 2026 has one of three verdicts: **CLOSED** (struck through in its own row below), **PARKED** (not now; the reason and the trigger are here), **REAL** (still true - the app lives with it, and what stops it hurting is named). Items already struck through were closed earlier.
+
+| Item | Verdict | Why / the trigger |
+|---|---|---|
+| `KI-20` shared aliases (28 pairs, 22 with different prices) | **REAL** | Owner-led catalog review when a shop is onboarded (`17` "Before the real shop" step 1). A tie between two products shows the MEDIUM "matched more than one product" badge, never a silent pick. |
+| `KI-53` duplicate / synonym products | **REAL** | Same review. Toor / Arhar already merged (29 Sep). |
+| `KI-22` "3 पीस parle-g 10 wala" correct by accident | **PARKED** | Checked 30 Oct: Layer 1 now misses it safely and Layer 2 reads it. No wrong bill. Trigger: a Devanagari unit-alias pass if the pilot shows misses. |
+| `KI-24` "2 चीनी किलो" (unit after the product) | **PARKED** | Checked 30 Oct: a safe Layer 1 miss; Layer 2 reads it. Trigger: pilot fast-path share. |
+| `KI-44` Whisper glues a number to the next word | **PARKED (partly fixed)** | "दसवाला" is read (`grammar.ts`); other glued forms are safe Layer 1 misses. Trigger: pilot transcripts. |
+| `KI-56` a thousands comma "1,500" | **PARKED** | Whisper `hi` never wrote one in 50+ recordings; Layer 1 stays safe. Trigger: one appears. |
+| `KI-47` Gemini picks a brand for a generic name ("साबुन") | **REAL, mitigated** | Prompt RULE 8 (a different brand is not the catalog product). `KB-368` does NOT cover it - generic words are left out of its check on purpose. Visible, not a wrong number. Follow-up: the pilot's Review mode. |
+| `KI-52` Gemini picks another product though the name matches exactly | **REAL, mitigated** | `KB-368` flags a name nothing about the chosen product explains; a name that the wrong product also explains (a shared alias) is still not caught. Follow-up: Review mode; `KI-20` review removes the shared aliases. |
+| `KI-49` fixtures are typed text, real input is Whisper | **PARKED (mitigated)** | `eval:real` (real transcripts) and the 50 acceptance recordings are the real measure; the field share comes from Pilot numbers in the pilot. |
+| `KI-68` device storage can be emptied | **REAL, mitigated** | Installed PWA + "Storage: protected" on every shop phone (`17` step 2) + bills pulled back from the server (`KB-324`). |
+| `KI-27` Groq's real per-hour rate unknown | **REAL** | Close with the real Groq spend after the first pilot week. |
+| `KI-25` `supabase db diff` can look reassuring | **REAL (a caveat only)** | No action; the backup scanner applies it. |
+| `KI-42` nothing stops one owner having two shops | **PARKED** | Self sign-up made it one shop per owner in the database (`KB-348`); the old note is about multi-shop. Trigger: multi-shop. |
+| `KI-54` `base_products` copy never refreshes | **PARKED (LOW)** | Harmless today (see its row). |
+| `KI-69` voice rate-limit keys never deleted | **PARKED (LOW)** | Look at the Netlify usage page after the first pilot day. |
+| `NI-30` recording on Safari / iPhone | **REAL** | Built (`KB-346`), never proven on an iPhone; the pilot is Android. Before any iPhone shop (`19` section 9c). |
+| `NI-31` catalog migrations vs a device's unsynced edits | **REAL** | Before any catalog migration once shops exist. |
+| `NI-35` / `NI-36` / `NI-37` GST, address and product-name language on the receipt | **PARKED** | The receipt is a simple bill (parchi). Pilot feedback decides; GST only for a GST-registered shop. |
+| `NI-32` / `NI-33` / `NI-34` flag for a far-above-price total, silence threshold, repeated phrases | **PARKED** | Pilot measurements (Review mode + Pilot numbers). |
+| `NI-22` / `NI-23` tie-band constant, category-guard keyword lists | **PARKED** | Pilot week data. |
+| `NI-39` landline, `NI-41` / `NI-44` / `NI-51` learning-pull limits, `NI-43` import limits, `NI-48` / `NI-49` small catalog edge cases, `NI-50` cancelled bill's lessons | **PARKED** | Accepted limits with an owner decision on record; none changes a bill. |
+| `NI-42` dev-tooling `npm audit` | **PARKED** | Production audit is 0 on every release check; dev-only. |
+| `NI-45` / `NI-46` / `NI-47` backup tooling cautions | **REAL** | `NI-47` is the weekly Drive look (`17` step 4). |
+| `NI-05` Web Speech, `NI-06` slice size, `NI-08` real bills per day, `NI-09` competitor quotes, `NI-11` barcode, `NI-24` Web Speech interface | **PARKED** | Not needed for the pilot; `NI-08` is answered by the pilot itself. |
 
 ---
 

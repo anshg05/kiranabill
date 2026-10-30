@@ -1,6 +1,6 @@
 # 17 — Manual Tasks
 
-**Last updated:** 11 Oct 2026 · **Status:** Active
+**Last updated:** 30 Oct 2026 · **Status:** Active
 
 Everything only **you** can do. The agent cannot create accounts, click consent screens, hold
 credit cards, or paste secrets into dashboards.
@@ -128,14 +128,14 @@ Only at Phase 1. Use a **read-only** token if the option exists.
 
 ---
 
-## Release day - the bill-number migration (`KB-351`, D92) - owner
+## Release day - the bill-number migration (`KB-351`, D92) - owner - ✅ DONE (the migration applied 27 Oct; released 28 Oct 2026)
 
 1. **Before the two-phone re-test:** `npx supabase db push` (the dry run must list exactly `20261022090000_bill_numbers`), then `npx supabase migration list --linked` - both sides show it. It is additive (two tables, a trigger, a function, a wider CHECK, a nullable column): the deployed app never calls it.
 2. **After it is applied:** tell Claude, who moves `shop_bill_counters` and `bill_number_grants` from `PENDING_PUBLIC_TABLES` to `EXPECTED_PUBLIC_TABLES` (backup check).
 3. **Before the FIRST bill after the release (both phones):** open **Settings** on every phone and check it shows the NEW version (the build id). A phone still on the old build could issue a block number that the counter then reaches - that bill would sit in permanent conflict. Fully close and reopen the app if the old version shows.
 4. A phone that was offline keeps its offline-numbered bills as they are (a code like `7F2A91-3`); they push when it is back online and are never renumbered.
 
-## Release day — self sign-up (`KB-348`, D90, D91) — owner
+## Release day — self sign-up (`KB-348`, D90, D91) — owner — ✅ DONE (28 Oct 2026: Google app published, sign-ups ON, a never-used Gmail signed up and made Bill 1)
 
 **Done by the owner, 21 Oct 2026:** the duplicate-owner query returned no rows; `db push` applied `20261020090000_sync_probe` and `20261020091000_shops_one_per_owner` (the dry-run listed exactly those two); `migration list --linked` shows both on both sides. Netlify balance: **300 credits**.
 
@@ -157,6 +157,23 @@ The order matters: the **draft** is tested with Google still in **Testing** and 
 **C. What watches the spend:** nothing automatic (owner's choice, D90): Netlify credits, the Groq usage page, Supabase database size (500 MB on Free). The per-shop 300-an-hour `/voice` limit stays.
 
 **D. The policy page is a minimal page for Google (D91), not the parked privacy notice (`KB-347`):** no consent flow, no acceptance records, **no lawyer has reviewed it**, and the deletion it promises (by e-mail) is done by hand by the owner - there is no runbook yet (`SG-19`).
+
+---
+
+## Before the real shop - one-time checklist (owner, written 30 Oct 2026)
+
+Do these once, in this order, before the first real customer. Each says what to do and what you should see. Nothing here needs the agent except where it says so.
+
+1. **Put the real shop on the full Ready catalog.** On the production app (https://kiranabilling.netlify.app) sign in with the shop's own Gmail -> "Set up your shop" -> the shop name and phone -> **Use ready catalog** (the whole list, not a test shop's). Then spend 20 minutes in **Catalog**: look at the prices of the 30 things this shop sells most and fix any that are wrong; if two products look like the same thing with two prices, tell the agent (it is the `KI-20` / `KI-53` review). *You should see:* the catalog list, search finding "chini", your prices.
+2. **Install the app on every shop phone, and check "Storage: protected".** In Chrome: menu -> Install app (or Add to Home screen) -> open it from the new icon, not from Chrome. Open **Settings** (the ≡ menu): it must show the newest version, and **"Storage: protected"**. If it says anything else, close and reopen from the icon; if it still does, tell the agent (a phone that is not protected can lose bills it has not yet sent to the server).
+3. **One live voice order, and the log line.** Say an order that has no commas, for example "2 kilo chini teen Parle-G 10 wala" - the app must read it (a few seconds) and show the lines. Then open Netlify -> `kiranabilling` -> **Logs** -> **Functions** -> `voice` and find the line **`[voice] parse ok model=gemini-3.5-flash-lite ms=...`**. That one line proves the live phone reached the live AI with the right model. (If the screen says the AI has no credit, or is busy, see step 5; **Add by hand** always works.)
+4. **Backups are running.** Open drive.google.com -> `KiranaBill-Backups`: the **newest file must be today's or yesterday's**. Do the same look **every week** (`M-38`); the script cannot see whether Drive really uploaded the file, and the laptop must have been on.
+5. **The AI's money and the site's credits.** (a) Google AI / Cloud billing: the **prepaid balance** is not near zero (you added Rs 500 on 29 Oct) and the **budget alert** e-mail is set. (b) Netlify: **credits** are at least 30 (a production deploy costs 15; at 0 the free plan pauses the site). (c) Groq: open the usage page once and note the day's cost - this closes `KI-27` after a week.
+6. **Review mode on for the first 20 bills, and how to read Pilot numbers.** On the shop phone: **Settings -> Developer mode -> Pilot numbers -> Review mode ON.** While it is on, the app keeps **what the phone heard next to what it billed** for each voice bill. After each of the first 20 bills, open Pilot numbers and read the **Heard -> Billed** pairs: any line where the billed words or numbers differ from what you said is a mistake the app did not catch - write it down and tell the agent. Then read the top lines: **Median turns to bill** (target 1), **Fast-path coverage** (target 60%), **Zero-edit bills** (bills made without touching a line - target 80%), **Escaped errors** (bills you cancelled for a wrong item, price or quantity - target 0). "Silent number errors" is not counted by the app; the Heard -> Billed pairs are how you count them. Switch Review mode off after 20 bills ("Clear now" removes the pairs).
+
+**The one limit to know before you start:** the app checks the numbers and products it is given, but it can only check **what the phone heard**. In the owner's own recordings the speech-to-text mis-heard a number or an item in about **1 order in 7** (7 of 48), and a mis-heard number that still looks like a number is not always caught. That is what Review mode and the first 20 bills are for. If anything looks wrong on a bill, do not finalise it - fix the line (pencil) or use **Add by hand**.
+
+**Drafts continue.** New code is tried on the `release-draft` address (a draft: not live, no credits, the real shop database); the Supabase redirect entry for drafts (`https://*--kiranabilling.netlify.app/**`) stays until the last draft - then remove it and `https://kiranabilling.netlify.app/**`, leaving only `https://kiranabilling.netlify.app/` (`D82`).
 
 ---
 

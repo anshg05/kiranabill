@@ -1,6 +1,6 @@
 # 19 — Machine Setup
 
-**Last updated:** 17 Oct 2026 · **Status:** Active
+**Last updated:** 30 Oct 2026 · **Status:** Active
 **Purpose:** get a new machine to the exact state the old one was in, with nothing skipped and nothing guessed. Written from what this project's actual setup involved, including the real problems hit along the way — not a generic checklist.
 
 **Do these in order.** Each section assumes the previous one is done.
@@ -269,8 +269,8 @@ If `.netlify/state.json` ever holds a `siteId`, run `npx netlify unlink` before 
    variables; never print any other value; delete any temporary file that held values.
 3. Prove `dist/` contains `urcenodcxtzwjrulwvgf` and no `localhost:54321`, `localhost:8888` or `http://127.0.0.1`
    (one `127.0.0.1` inside supabase-js's trusted-host list is expected — the live bundle has it too).
-4. `npx netlify deploy --site kiranabilling --dir dist --no-build --message "<why>"` — `--site` / `-s` takes a project
-   name or ID (`netlify deploy --help`); **no link needed, no `--prod`**. The draft URL is
+4. `npx netlify deploy --site kiranabilling --dir dist --no-build --alias release-draft --message "<why>"` — `--site` / `-s` takes a project
+   name or ID (`netlify deploy --help`); **no link needed, no `--prod`**. `--alias release-draft` keeps ONE draft address (https://release-draft--kiranabilling.netlify.app) that each new draft replaces. **`--no-build` is required:** a plain `netlify deploy` REBUILDS `dist/` without the production values. Build the draft with `KB_BUILD_ID=draft-vN` (Settings then shows `draft-vN`) and WITHOUT `VITE_ACCEPTANCE` (that flag adds the recording tool, for acceptance drafts only; production never has it - `npm run check:recorder`). The draft URL is
    `https://<deploy-id>--kiranabilling.netlify.app`.
 5. Rebuild `dist/` locally (`npm run build`) afterwards so it no longer holds production values.
 6. Google sign-in returns to the draft only because the Supabase Redirect URL `https://*--kiranabilling.netlify.app/**`
