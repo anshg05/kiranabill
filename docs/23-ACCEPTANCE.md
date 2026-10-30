@@ -136,3 +136,13 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 | 14 | On one phone: add to the home screen and open it from there. | Opens like an app; the microphone still works. |
 
 Result goes into `docs/10-TRACKER.md` (date, build id, which steps passed, anything that did not).
+
+## 10. How the first 50 expected bills were written (30 Oct 2026)
+
+The owner recorded all 50 orders (A01-A50) on `draft-v12`; he did not write the sheet himself. So:
+1. The recordings were transcribed through the real `/voice` (Groq Whisper, language `hi`, exactly as the app does) - **transcription only**: no parser, no Layer 2, no `accept:live` was run on these orders before the sheet existed.
+2. **The agent wrote every expected bill BLIND**, as an independent reader of the transcript and its coverage group (names corrected only for obvious mishearings, e.g. महिदा = मैदा, तूअलदाल = तुअर दाल). The test is therefore not circular: the bill was never derived from what the app produced.
+3. Where a transcript was garbled, misheard or could mean two things, the block carries `# OWNER CHECK: <question>` and stays **pending** (outside the gate) until the owner answers; the agent's best reading is kept beside it as `# reading:` lines. 19 of the 50 blocks were held this way on the first pass.
+4. The expected bills of the flagged orders were reviewed by the owner (see the tracker for his answers); the set locks only after his review and a passing `accept:live` run.
+
+A block containing a `# OWNER CHECK` line is skipped by `accept:build` until that line is removed.

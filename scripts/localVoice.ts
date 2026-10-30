@@ -26,11 +26,11 @@ export async function startLocalVoice(port = 9977): Promise<LocalVoice> {
   const server = spawn("npx", ["netlify", "functions:serve", "--port", String(port)], { shell: true, stdio: "ignore", env: { ...process.env, NETLIFY_SITE_ID: "" } });
   const stop = () => void spawnSync("taskkill", ["/pid", String(server.pid), "/T", "/F"], { stdio: "ignore" });
   try {
-    const deadline = Date.now() + 90_000;
+    const deadline = Date.now() + 180_000;
     for (;;) {
       const up = await fetch(endpoint).then((r) => r.status === 405, () => false);
       if (up) break;
-      if (Date.now() > deadline) throw new Error("netlify functions:serve did not come up in 90 s");
+      if (Date.now() > deadline) throw new Error("netlify functions:serve did not come up in 180 s");
       await sleep(1000);
     }
     const client = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });

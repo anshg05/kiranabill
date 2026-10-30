@@ -79,6 +79,15 @@ checks: 1
     expect(r.errors[0]).toMatch(why);
   });
 
+  it("OWNER CHECK: a block with a '# OWNER CHECK' line stays pending even with its text and lines written - until the line is removed", () => {
+    const r = sheet("## A13 x\nsaid: garbled text\n# OWNER CHECK: what did you say?\n- 1 kg चीनी\nchecks: 0\n");
+    expect(r.errors).toEqual([]);
+    expect(r.orders[0]).toMatchObject({ id: "A13", said: "garbled text", expected: null, ownerCheck: "what did you say?" });
+    const answered = sheet("## A13 x\nsaid: garbled text\n- 1 kg चीनी\nchecks: 0\n");
+    expect(answered.orders[0]!.expected).not.toBeNull();
+    expect(answered.orders[0]!.ownerCheck).toBeUndefined();
+  });
+
   it("duplicate ids and ids that are not A01..A99 are errors", () => {
     expect(sheet("## A01 x\nsaid: x\n- 1 kg चीनी\n## A01 x\nsaid: y\n- 1 kg चीनी\n").errors.join()).toMatch(/twice/);
     expect(sheet("## B1 x\nsaid: x\n").errors.join()).toMatch(/id/);

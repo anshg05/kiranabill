@@ -9,6 +9,8 @@ export interface SheetOrder {
   readonly said: string;
   /** null while the block is not filled in (nothing said, no lines). */
   readonly expected: ExpectedBill | null;
+  /** The question for the owner when the block carries a "# OWNER CHECK: ..." line - it stays pending until that line is removed. */
+  readonly ownerCheck?: string;
 }
 
 export interface ParsedSheet {
@@ -85,11 +87,14 @@ export function parseSheet(text: string): ParsedSheet {
     let said = "";
     let checks = 0;
     let notAdded = 0;
+    let ownerCheck: string | undefined;
     const lines: ExpectedLine[] = [];
     let bad = false;
     const fail = (why: string) => (errors.push(`${id}: ${why}`), (bad = true));
     for (const raw of body) {
       const line = raw.trim();
+      const oc = /^#\s*OWNER CHECK:?\s*(.*)$/i.exec(line);
+      if (oc) ownerCheck = oc[1] || "check this order";
       if (!line || line.startsWith("#")) continue;
       if (/^said:/i.test(line)) said = line.slice(5).trim();
       else if (/^checks:/i.test(line)) {
@@ -104,8 +109,8 @@ export function parseSheet(text: string): ParsedSheet {
       } else fail(`lines start with "- " ("${line.slice(0, 30)}")`);
     }
     if (bad) continue;
-    const pending = said === "" && lines.length === 0 && notAdded === 0;
-    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks } });
+    const pending = ownerCheck !== undefined || (said === "" && lines.length === 0 && notAdded === 0);
+    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks }, ...(ownerCheck !== undefined ? { ownerCheck } : {}) });
   }
   if (blocks.length === 0 && text.trim() !== "") errors.push(`no "## A01 ..." block found`);
   return { orders, errors };

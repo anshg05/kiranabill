@@ -1,4 +1,1283 @@
 {
   "frozen": false,
-  "orders": []
+  "orders": [
+    {
+      "id": "A01",
+      "category": "short-priced",
+      "said": "2 किलो चीनी 56 रुपए किलो 5 किलो चावल 225 रुपए",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चीनी",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 5600
+            }
+          },
+          {
+            "name": "चावल",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 22500
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A02",
+      "category": "short-priced",
+      "said": "एक किलो तूअलदाल 150 रुपए किलो एक किलो फल्ली दानी 140 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "तुअर दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 15000
+            }
+          },
+          {
+            "name": "फल्ली दाना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 14000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A03",
+      "category": "short-priced",
+      "said": "एक किलो जवारी 34 रुपए किलो एक किलो दालिया 120 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "जवारी",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 3400
+            }
+          },
+          {
+            "name": "दालिया",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 12000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A04",
+      "category": "short-priced",
+      "said": "2 किलो चावल 90 रुपए किलो 1 किलो मुंग दाल 96 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चावल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 9000
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 9600
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A05",
+      "category": "short-priced",
+      "said": "एक किलो उड़ाद मोगर 130 रुपए किलो एक किलो मुंग मोगर 110 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "उड़द मोगर",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 13000
+            }
+          },
+          {
+            "name": "मूंग मोगर",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 11000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A06",
+      "category": "short-priced",
+      "said": "एक किलो महिदा 45 रुपए किलो एक किलो रावा 44 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "मैदा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4500
+            }
+          },
+          {
+            "name": "रवा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4400
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A07",
+      "category": "short-priceless",
+      "said": "एक किलो चावल एक किलो गेहू",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चावल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "गेहूं",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A08",
+      "category": "short-priceless",
+      "said": "10 किलो गेहू 5 किलो बेसन",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "गेहूं",
+            "qty": 10,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "बेसन",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A09",
+      "category": "short-priceless",
+      "said": "एक किलो बाजरा, एक किलो जवारी",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "बाजरा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "जवारी",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A10",
+      "category": "short-priceless",
+      "said": "एक किलो फल्ली दाने एक किलो दालिया",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "फल्ली दाना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "दालिया",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A11",
+      "category": "short-priceless",
+      "said": "एक्किलो तुअरदाल एक्किलो मुंदाल",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "तुअर दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A12",
+      "category": "short-priceless",
+      "said": "एक किलो बरवटी दाल एक किलो राजमा",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "बरबटी दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "राजमा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A15",
+      "category": "long-priced",
+      "said": "2 किलो चीनी, 2 किलो गुड, 1 किलो फली दाने, 1 किलो चना, 1 किलो मैदा",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चीनी",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "गुड़",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "फल्ली दाना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "चना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मैदा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A16",
+      "category": "long-priced",
+      "said": "एक किलो रवा 45 रुपई किलो एक किलो मैदा दो किलो चना अठ्यासी रुपई किलो दो किलो बरवटी दाल एक किलो मुंग दाल",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "रवा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4500
+            }
+          },
+          {
+            "name": "मैदा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "चना",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 8800
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A17",
+      "category": "long-priced",
+      "said": "एक डेटॉल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हार पिक 100 रुपए, एक लाइजॉल 110 रुपए,",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "डेटॉल सेट",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 12500
+            }
+          },
+          {
+            "name": "संतूर सेट",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 4000
+            }
+          },
+          {
+            "name": "संतूर हैंडवॉश सेट",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 10500
+            }
+          },
+          {
+            "name": "हार्पिक",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 10000
+            }
+          },
+          {
+            "name": "लाइज़ॉल",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 11000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A18",
+      "category": "long-priceless",
+      "said": "तूबल दाल 1 किलो, चना दाल 2 किलो, मुंग दाल 1 किलो, बरबटी दाल 1 किलो, उड़द मुखर 1 किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "तुअर दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "चना दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "उड़द मोगर",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A21",
+      "category": "long-priceless",
+      "said": "चीनी 5 किलो 4 किलो तूवर दाल 4 किलो चना दाल मूंग दाल 2 किलो बरबटी दाल 1 किलो 2 किलो मसूर दाल 1 किलो मूंग मुगर",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चीनी",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "तुअर दाल",
+            "qty": 4,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "चना दाल",
+            "qty": 4,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मसूर दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मूंग मोगर",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A22",
+      "category": "long-priceless",
+      "said": "30 किलो गेहु 30 किलो आटा 26 किलो कन की 15 किलो शक्कर",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "गेहूं",
+            "qty": 30,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "आटा",
+            "qty": 30,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "कनकी",
+            "qty": 26,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "शक्कर",
+            "qty": 15,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A23",
+      "category": "mixed",
+      "said": "चीनी 2 किलो चावल 90 रुपे आटा 1 किलो 40 रुपे किलो मैदा 1 किलो, रवा 1 किलो, राजमा 1 किलो तूवल दाल 2 किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चीनी",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "चावल",
+            "qty": null,
+            "unit": "",
+            "price": {
+              "kind": "total",
+              "paise": 9000
+            }
+          },
+          {
+            "name": "आटा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4000
+            }
+          },
+          {
+            "name": "मैदा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "रवा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "राजमा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "तुअर दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A24",
+      "category": "mixed",
+      "said": "तूवर दाल 2 किलो 150 रुपे किल वाली मुंग दाल 1 किलो 96 रुपे किलो 2 किलो बरबटी दाल 2 किलो उलद मुगर 1 किलो फुटाने 2 किलो दालिया 2 किलो हरा बटाना 56 रुपे किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "तुअर दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 15000
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 9600
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "उड़द मोगर",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "फुटाना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "दालिया",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "हरा बटाना",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 5600
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A25",
+      "category": "mixed",
+      "said": "10 किलो गेहु 34 रुपए किलो 30 किलो गेहु 36 रुपए किलो 5 किलो आटा 175 रुपए 5 किलो तूवर दाल 150 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "गेहूं",
+            "qty": 10,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 3400
+            }
+          },
+          {
+            "name": "गेहूं",
+            "qty": 30,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 3600
+            }
+          },
+          {
+            "name": "आटा",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 17500
+            }
+          },
+          {
+            "name": "तुअर दाल",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 15000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A26",
+      "category": "mixed",
+      "said": "2 किलो चीनी, 1 किलो रवा, 1 किलो महदा, 1 किलो बटाना दाल 60 रुपए किलो, 1 किलो मसूर दाल 80 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चीनी",
+            "qty": 2,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "रवा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "मैदा",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "default"
+            }
+          },
+          {
+            "name": "बटाना दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 6000
+            }
+          },
+          {
+            "name": "मसूर दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 8000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A30",
+      "category": "number-words",
+      "said": "चावल 5 किलो 55 रुपए किलो चावल 6 किलो 68 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चावल",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 5500
+            }
+          },
+          {
+            "name": "चावल",
+            "qty": 6,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 6800
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A31",
+      "category": "number-words",
+      "said": "चावल 5 किलो 300 रुपए चावल 6 किलो 600 रुपए गेवु 10 किलो 340 रुपए आटा 5 किलो 175 रुपए मोंग दाल 1 किलो 96 रुपए किलो बरबटी दाल 1 किलो 88 रुपए किलो मोट 1 किलो 88 रुपए किलो चाना 1 किलो 88 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "चावल",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 30000
+            }
+          },
+          {
+            "name": "चावल",
+            "qty": 6,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 60000
+            }
+          },
+          {
+            "name": "गेहूं",
+            "qty": 10,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 34000
+            }
+          },
+          {
+            "name": "आटा",
+            "qty": 5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 17500
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 9600
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 8800
+            }
+          },
+          {
+            "name": "मोठ",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 8800
+            }
+          },
+          {
+            "name": "चना",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 8800
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A35",
+      "category": "units-fractions",
+      "said": "तेल पैकेट एक फॉल्चून 160 रुपए, मदर डिलाइट तेल एक लिटर 150 रुपए, आधा किलो रवा पैकेट 23 रुपए",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "फॉर्च्यून तेल",
+            "qty": 1,
+            "unit": "packet",
+            "price": {
+              "kind": "total",
+              "paise": 16000
+            }
+          },
+          {
+            "name": "मदर डिलाइट तेल",
+            "qty": 1,
+            "unit": "liter",
+            "price": {
+              "kind": "total",
+              "paise": 15000
+            }
+          },
+          {
+            "name": "रवा",
+            "qty": 0.5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 2300
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A36",
+      "category": "units-fractions",
+      "said": "आधा किलो मैदा पैकेट 22 रुपए, एक बंसल तेल पैकेट 140 रुपए, एक बंसल एक लिटर 150 रुपए,",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "मैदा",
+            "qty": 0.5,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 2200
+            }
+          },
+          {
+            "name": "बंसल तेल",
+            "qty": 1,
+            "unit": "packet",
+            "price": {
+              "kind": "total",
+              "paise": 14000
+            }
+          },
+          {
+            "name": "बंसल तेल",
+            "qty": 1,
+            "unit": "liter",
+            "price": {
+              "kind": "total",
+              "paise": 15000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A37",
+      "category": "units-fractions",
+      "said": "आधा किलो शक्कर 56 रुपए किलो सवा किलो रवा 45 रुपए किलो देड किलो मैदा 44 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "शक्कर",
+            "qty": 0.5,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 5600
+            }
+          },
+          {
+            "name": "रवा",
+            "qty": 1.25,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4500
+            }
+          },
+          {
+            "name": "मैदा",
+            "qty": 1.5,
+            "unit": "kg",
+            "price": {
+              "kind": "rate",
+              "paise": 4400
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A38",
+      "category": "units-fractions",
+      "said": "500 ग्राम शक्कर 56 रुपए किलो, 500 ग्राम मुंग दाल 96 रुपए किलो, 500 ग्राम बरबटी दाल 88 रुपए किलो",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "शक्कर",
+            "qty": 500,
+            "unit": "gm",
+            "price": {
+              "kind": "total",
+              "paise": 2800
+            }
+          },
+          {
+            "name": "मूंग दाल",
+            "qty": 500,
+            "unit": "gm",
+            "price": {
+              "kind": "total",
+              "paise": 4800
+            }
+          },
+          {
+            "name": "बरबटी दाल",
+            "qty": 500,
+            "unit": "gm",
+            "price": {
+              "kind": "total",
+              "paise": 4400
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A43",
+      "category": "unclear-words",
+      "said": "मार्वल चाय 1 किलो 300 रुपए, रजवाडी गुड 1 किलो 80 रुपए",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "मार्वल चाय",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 30000
+            }
+          },
+          {
+            "name": "रजवाडी गुड",
+            "qty": 1,
+            "unit": "kg",
+            "price": {
+              "kind": "total",
+              "paise": 8000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A44",
+      "category": "unclear-words",
+      "said": "एवरेस्ट किचन किंग मसाला 100 ग्राम 100 रुपए छोले मसाला 50 ग्राम 45 रुपए",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "एवरेस्ट किचन किंग मसाला",
+            "qty": 100,
+            "unit": "gm",
+            "price": {
+              "kind": "total",
+              "paise": 10000
+            }
+          },
+          {
+            "name": "छोले मसाला",
+            "qty": 50,
+            "unit": "gm",
+            "price": {
+              "kind": "total",
+              "paise": 4500
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    },
+    {
+      "id": "A46",
+      "category": "unclear-words",
+      "said": "इंडिपेंडेंस हर सो तेल 1 लिटर 200 रुपए पॉंट्स पाउडर 1 बाड़ा 100 रुपए",
+      "transcript": null,
+      "expected": {
+        "lines": [
+          {
+            "name": "इंडिपेंडेंस सरसों तेल",
+            "qty": 1,
+            "unit": "liter",
+            "price": {
+              "kind": "total",
+              "paise": 20000
+            }
+          },
+          {
+            "name": "पॉन्ड्स पाउडर",
+            "qty": 1,
+            "unit": "piece",
+            "price": {
+              "kind": "total",
+              "paise": 10000
+            }
+          }
+        ],
+        "notAdded": 0,
+        "checks": 0
+      }
+    }
+  ]
 }

@@ -10,252 +10,389 @@
 # Leave a block empty to skip it. Then run: npm run accept:build
 
 ## A01 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 2 किलो चीनी 56 रुपए किलो 5 किलो चावल 225 रुपए
+- 2 kg चीनी @56
+- 5 kg चावल =225
 checks: 0
 
 ## A02 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो तूअलदाल 150 रुपए किलो एक किलो फल्ली दानी 140 रुपए किलो
+- 1 kg तुअर दाल @150
+- 1 kg फल्ली दाना @140
 checks: 0
 
 ## A03 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो जवारी 34 रुपए किलो एक किलो दालिया 120 रुपए किलो
+- 1 kg जवारी @34
+- 1 kg दालिया @120
 checks: 0
 
 ## A04 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 2 किलो चावल 90 रुपए किलो 1 किलो मुंग दाल 96 रुपए किलो
+- 2 kg चावल @90
+- 1 kg मूंग दाल @96
 checks: 0
 
 ## A05 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो उड़ाद मोगर 130 रुपए किलो एक किलो मुंग मोगर 110 रुपए किलो
+- 1 kg उड़द मोगर @130
+- 1 kg मूंग मोगर @110
 checks: 0
 
 ## A06 short-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो महिदा 45 रुपए किलो एक किलो रावा 44 रुपए किलो
+- 1 kg मैदा @45
+- 1 kg रवा @44
 checks: 0
 
 ## A07 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो चावल एक किलो गेहू
+- 1 kg चावल
+- 1 kg गेहूं
 checks: 0
 
 ## A08 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 10 किलो गेहू 5 किलो बेसन
+- 10 kg गेहूं
+- 5 kg बेसन
 checks: 0
 
 ## A09 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो बाजरा, एक किलो जवारी
+- 1 kg बाजरा
+- 1 kg जवारी
 checks: 0
 
 ## A10 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो फल्ली दाने एक किलो दालिया
+- 1 kg फल्ली दाना
+- 1 kg दालिया
 checks: 0
 
 ## A11 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक्किलो तुअरदाल एक्किलो मुंदाल
+- 1 kg तुअर दाल
+- 1 kg मूंग दाल
 checks: 0
 
 ## A12 short-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो बरवटी दाल एक किलो राजमा
+- 1 kg बरबटी दाल
+- 1 kg राजमा
 checks: 0
 
 ## A13 long-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: पाक ला से यह केलो यह किधरका हो पिकाल दाल तोो नहीं-बनित दें दोस्तों प्रशुक्रम सब सेसने इस पाइट रूपई किस्सी लोग 2,32 को 1 राघ्य मांघी अमोर्धय 3,000 उपयोग YS14 धरो गेवन है एक भी सबसे बहुत अंतोरी दाल पुरिशनी रोपटी ने भी मग
+# OWNER CHECK: the recording came out as unreadable words - nothing can be made of it. What did you say (or please record this one again)?
 checks: 0
 
 ## A14 long-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 10 किलों गेहु 340 रुपया पाँच क्ला यही 36 रुपए किलों पाँच किलवा चावल 90 रुपए किलों आठ किलों बटाना जाल रुपए किलों एक किल राघवाटारा 56 रुपए किल.
+# OWNER CHECK: garbled in the middle. I read: 10 kg गेहूं Rs 340 total; 5 kg (a name I cannot read) at Rs 36 a kilo; 5 kg चावल Rs 90 a kilo; 8 kg बटाना (price not clear); 1 kg (a name I cannot read) Rs 56 a kilo. What are the two unreadable names and the बटाना price?
+# reading: 10 kg गेहूं =340
+# reading: 5 kg ??? @36
+# reading: 5 kg चावल @90
+# reading: 8 kg बटाना ??? price needed
+# reading: 1 kg ??? @56
 checks: 0
 
 ## A15 long-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 2 किलो चीनी, 2 किलो गुड, 1 किलो फली दाने, 1 किलो चना, 1 किलो मैदा
+- 2 kg चीनी
+- 2 kg गुड़
+- 1 kg फल्ली दाना
+- 1 kg चना
+- 1 kg मैदा
 checks: 0
 
 ## A16 long-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक किलो रवा 45 रुपई किलो एक किलो मैदा दो किलो चना अठ्यासी रुपई किलो दो किलो बरवटी दाल एक किलो मुंग दाल
+- 1 kg रवा @45
+- 1 kg मैदा
+- 2 kg चना @88
+- 2 kg बरबटी दाल
+- 1 kg मूंग दाल
 checks: 0
 
 ## A17 long-priced
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एक डेटॉल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हार पिक 100 रुपए, एक लाइजॉल 110 रुपए,
+- 1 piece डेटॉल सेट =125
+- 1 piece संतूर सेट =40
+- 1 piece संतूर हैंडवॉश सेट =105
+- 1 piece हार्पिक =100
+- 1 piece लाइज़ॉल =110
 checks: 0
 
 ## A18 long-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: तूबल दाल 1 किलो, चना दाल 2 किलो, मुंग दाल 1 किलो, बरबटी दाल 1 किलो, उड़द मुखर 1 किलो
+- 1 kg तुअर दाल
+- 2 kg चना दाल
+- 1 kg मूंग दाल
+- 1 kg बरबटी दाल
+- 1 kg उड़द मोगर
 checks: 0
 
 ## A19 long-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: � 2 kg उड़त मोगर, एक kg मोंग मोगर, एक kg बरबटी दाल, एक kg चना दाल, एक kg लाल मिर्ची पैकेट �
+# OWNER CHECK: '1 किलो लाल मिर्ची पैकेट' - is the last item 1 kg of लाल मिर्च or 1 packet?
+# reading: 2 kg उड़द मोगर
+# reading: 1 kg मूंग मोगर
+# reading: 1 kg बरबटी दाल
+# reading: 1 kg चना दाल
+# reading: 1 ??? लाल मिर्च
 checks: 0
 
 ## A20 long-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 1 किलो गरम मसाला पैकेट, 1 किलो धनिया मसाला पैकेट, 1 किलो हलदी पैकेट, 1 किलो खड़ी हलदी, 1 किलो दाने, 1 किलो चावल, 1 किलो मसूल डाल,
+# OWNER CHECK: '1 किलो ... पैकेट' for गरम मसाला, धनिया मसाला and हल्दी - is each 1 kg or 1 packet? And what is '1 किलो दाने'?
+# reading: 1 ??? गरम मसाला
+# reading: 1 ??? धनिया मसाला
+# reading: 1 ??? हल्दी
+# reading: 1 kg खड़ी हल्दी
+# reading: 1 kg ??? दाने
+# reading: 1 kg चावल
+# reading: 1 kg मसूर दाल
 checks: 0
 
 ## A21 long-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: चीनी 5 किलो 4 किलो तूवर दाल 4 किलो चना दाल मूंग दाल 2 किलो बरबटी दाल 1 किलो 2 किलो मसूर दाल 1 किलो मूंग मुगर
+- 5 kg चीनी
+- 4 kg तुअर दाल
+- 4 kg चना दाल
+- 2 kg मूंग दाल
+- 1 kg बरबटी दाल
+- 2 kg मसूर दाल
+- 1 kg मूंग मोगर
 checks: 0
 
 ## A22 long-priceless
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 30 किलो गेहु 30 किलो आटा 26 किलो कन की 15 किलो शक्कर
+- 30 kg गेहूं
+- 30 kg आटा
+- 26 kg कनकी
+- 15 kg शक्कर
 checks: 0
 
 ## A23 mixed
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: चीनी 2 किलो चावल 90 रुपे आटा 1 किलो 40 रुपे किलो मैदा 1 किलो, रवा 1 किलो, राजमा 1 किलो तूवल दाल 2 किलो
+- 2 kg चीनी
+- चावल =90
+- 1 kg आटा @40
+- 1 kg मैदा
+- 1 kg रवा
+- 1 kg राजमा
+- 2 kg तुअर दाल
 checks: 0
 
 ## A24 mixed
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: तूवर दाल 2 किलो 150 रुपे किल वाली मुंग दाल 1 किलो 96 रुपे किलो 2 किलो बरबटी दाल 2 किलो उलद मुगर 1 किलो फुटाने 2 किलो दालिया 2 किलो हरा बटाना 56 रुपे किलो
+- 2 kg तुअर दाल @150
+- 1 kg मूंग दाल @96
+- 2 kg बरबटी दाल
+- 2 kg उड़द मोगर
+- 1 kg फुटाना
+- 2 kg दालिया
+- 2 kg हरा बटाना @56
 checks: 0
 
 ## A25 mixed
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 10 किलो गेहु 34 रुपए किलो 30 किलो गेहु 36 रुपए किलो 5 किलो आटा 175 रुपए 5 किलो तूवर दाल 150 रुपए किलो
+- 10 kg गेहूं @34
+- 30 kg गेहूं @36
+- 5 kg आटा =175
+- 5 kg तुअर दाल @150
 checks: 0
 
 ## A26 mixed
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 2 किलो चीनी, 1 किलो रवा, 1 किलो महदा, 1 किलो बटाना दाल 60 रुपए किलो, 1 किलो मसूर दाल 80 रुपए किलो
+- 2 kg चीनी
+- 1 kg रवा
+- 1 kg मैदा
+- 1 kg बटाना दाल @60
+- 1 kg मसूर दाल @80
 checks: 0
 
 ## A27 mixed
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: डेटॉल साबुन सेट 1, 185 रुपए, संतूर साबुन सेट 1, 140 रुपए, डेटॉल हैंड वाश 1, 100 रुपए, लाइजॉल 1, 110 रुपए, हारपी केक 100 रुपए, रिन साबुन एक सेट 100 रुपए फेना साबुन 5 50 रुपए फेना डिटरजन 3 किलो 300 रुपए फेना डिटरजन 5 किलो 500 रुपए
+# OWNER CHECK: a long list - please check my 9 lines: डेटॉल साबुन सेट 1 = Rs 185; संतूर साबुन सेट 1 = Rs 140; डेटॉल हैंडवॉश 1 = Rs 100; लाइज़ॉल 1 = Rs 110; 'हारपी केक' (हार्पिक?) = Rs 100; रिन साबुन 1 सेट = Rs 100; फेना साबुन 5 = Rs 50 (is it 5 pieces for Rs 50?); फेना डिटर्जेंट 3 kg = Rs 300; फेना डिटर्जेंट 5 kg = Rs 500. Which of these is wrong?
+# reading: 1 piece डेटॉल साबुन सेट =185
+# reading: 1 piece संतूर साबुन सेट =140
+# reading: 1 piece डेटॉल हैंडवॉश =100
+# reading: 1 piece लाइज़ॉल =110
+# reading: हार्पिक =100
+# reading: 1 piece रिन साबुन =100
+# reading: 5 piece फेना साबुन =50
+# reading: 3 kg फेना डिटर्जेंट =300
+# reading: 5 kg फेना डिटर्जेंट =500
 checks: 0
 
 ## A28 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: मुग मोगर 110 रुपई किलो उड़द मोगर 130 रुपई किलो चावल 5 किलो 288
+# OWNER CHECK: no quantity is said for 'मूंग मोगर 110 रुपए किलो' and 'उड़द मोगर 130 रुपए किलो' - should the bill show them with the quantity missing (you add it)? And is 'चावल 5 किलो 288' = Rs 288 for 5 kg?
+# reading: मूंग मोगर @110 (no quantity)
+# reading: उड़द मोगर @130 (no quantity)
+# reading: 5 kg चावल =288
 checks: 0
 
 ## A29 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: मुँग दाल 5 किलो छेननो रुपई किलो उड़द मुगर 2 किलो 130 रुपई किलो
+# OWNER CHECK: '5 किलो मूंग दाल छेननो रुपए किलो' - did you say छियानवे (96) a kilo? (the 2 kg उड़द मोगर Rs 130 a kilo is clear)
+# reading: 5 kg मूंग दाल @96
+# reading: 2 kg उड़द मोगर @130
 checks: 0
 
 ## A30 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: चावल 5 किलो 55 रुपए किलो चावल 6 किलो 68 रुपए किलो
+- 5 kg चावल @55
+- 6 kg चावल @68
 checks: 0
 
 ## A31 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: चावल 5 किलो 300 रुपए चावल 6 किलो 600 रुपए गेवु 10 किलो 340 रुपए आटा 5 किलो 175 रुपए मोंग दाल 1 किलो 96 रुपए किलो बरबटी दाल 1 किलो 88 रुपए किलो मोट 1 किलो 88 रुपए किलो चाना 1 किलो 88 रुपए किलो
+- 5 kg चावल =300
+- 6 kg चावल =600
+- 10 kg गेहूं =340
+- 5 kg आटा =175
+- 1 kg मूंग दाल @96
+- 1 kg बरबटी दाल @88
+- 1 kg मोठ @88
+- 1 kg चना @88
 checks: 0
 
 ## A32 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: मोह थेक किलो 1200 रुपए किलो काबशाने किलो 120 रुपए किलो काबशाने चना एक किलो मीडियम वाला शोगुपी किलो है आटा 1 किलो 40 रूपए किलो कि मुंदाली किलोट 98 11 किलो 98 कर दो
+# OWNER CHECK: garbled - only 'आटा 1 किलो 40 रुपए किलो' and two '98' prices are readable. What did you say?
 checks: 0
 
 ## A33 number-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: को फल्ली दान 140 रुपए किलोस रुपए किलो सब्सक्राइब किलो को तुआल लाल 140 रुपए गिलो खंडा तुआल पिक लो कि फुटानी 120 रुपए किलो लंडल 120 रुपए किलो
+# OWNER CHECK: garbled. I can read: फल्ली दाना Rs 140 a kilo; तुअर Rs 140 a kilo; फुटाना Rs 120 a kilo; one more item at Rs 120 a kilo - but not the quantities or the last name. What did you say?
+# reading: ? kg फल्ली दाना @140
+# reading: ? kg तुअर दाल @140
+# reading: ? kg फुटाना @120
+# reading: ? ??? @120
 checks: 0
 
 ## A34 units-fractions
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: पावा किलो मूंग दाल छैननो रुपए किलो तेल एक पैकेट एक सो जालिस वाला तेल एक लीटर एक सो पचास रुपए बनसल
+# OWNER CHECK: two numbers are misheard: 'पाव किलो मूंग दाल छैननो रुपए किलो' (96?) and 'तेल एक पैकेट एक सो जालिस वाला' (140?). Then 'तेल एक लीटर 150 रुपए बंसल'. Is it: 1/4 kg मूंग दाल Rs 96 a kilo; 1 packet तेल Rs 140; 1 litre बंसल तेल Rs 150?
+# reading: 0.25 kg मूंग दाल @96
+# reading: 1 packet तेल @140
+# reading: 1 liter बंसल तेल =150
 checks: 0
 
 ## A35 units-fractions
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: तेल पैकेट एक फॉल्चून 160 रुपए, मदर डिलाइट तेल एक लिटर 150 रुपए, आधा किलो रवा पैकेट 23 रुपए
+- 1 packet फॉर्च्यून तेल =160
+- 1 liter मदर डिलाइट तेल =150
+- 0.5 kg रवा =23
 checks: 0
 
 ## A36 units-fractions
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: आधा किलो मैदा पैकेट 22 रुपए, एक बंसल तेल पैकेट 140 रुपए, एक बंसल एक लिटर 150 रुपए,
+- 0.5 kg मैदा =22
+- 1 packet बंसल तेल =140
+- 1 liter बंसल तेल =150
 checks: 0
 
 ## A37 units-fractions
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: आधा किलो शक्कर 56 रुपए किलो सवा किलो रवा 45 रुपए किलो देड किलो मैदा 44 रुपए किलो
+- 0.5 kg शक्कर @56
+- 1.25 kg रवा @45
+- 1.5 kg मैदा @44
 checks: 0
 
 ## A38 units-fractions
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 500 ग्राम शक्कर 56 रुपए किलो, 500 ग्राम मुंग दाल 96 रुपए किलो, 500 ग्राम बरबटी दाल 88 रुपए किलो
+- 500 gm शक्कर =28
+- 500 gm मूंग दाल =48
+- 500 gm बरबटी दाल =44
 checks: 0
 
 ## A39 repeated
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 220 2010 को 2 Kg शक्कर 2 Kg एक किलो आटा एक किलो आटा रवा एक किलो मैं भरि एक एक बंच सलवश्य पैकेट एक लीटर 150 रुपए एक बंच सलवश्य पैकेट एक लीटर
+# OWNER CHECK: garbled (this is the 'said twice' order). I can read: 2 kg शक्कर twice, 1 kg आटा twice, रवा 1 kg, बंसल तेल 1 litre Rs 150 twice. What did you say - and should a repeat be two lines or one?
 checks: 0
 
 ## A40 repeated
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: गेहू 10 किलो 340 रुपए, गेहू 10 किलो 34 रुपए किलो आला, पंसल तेल 1 लिटर 150 रुपए, मदर डिलाइट तेल 1 लिटर 150 रुपए, फौचुन तेल 1 लिटर 160 रुपए, टोटल गूल्ड तेल 1 लिटर
+# OWNER CHECK: you said 'गेहूं 10 किलो 340 रुपए' and again 'गेहूं 10 किलो 34 रुपए किलो'. Then बंसल तेल 1 L Rs 150, मदर डिलाइट तेल 1 L Rs 150, फॉर्च्यून तेल 1 L Rs 160, and 'टोटल गोल्ड तेल 1 लीटर' with no price. Is the गेहूं a repeat (one line) or two lines? And Total Gold तेल - Price needed?
+# reading: 10 kg गेहूं =340
+# reading: 10 kg गेहूं @34
+# reading: 1 liter बंसल तेल =150
+# reading: 1 liter मदर डिलाइट तेल =150
+# reading: 1 liter फॉर्च्यून तेल =160
+# reading: 1 liter टोटल गोल्ड तेल price needed
 checks: 0
 
 ## A41 repeated
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: 2 किलो चनादाल, 2 किलो चनादाल, लास्ट वाला चनादाल हटा दो, 1 किलो बेसन, 1 किलो आटा, 1 लिटर बंसल 150 रुपए
+# OWNER CHECK: you said 2 kg चना दाल twice, then 'लास्ट वाला चना दाल हटा दो' (remove the last one). Should the app drop it by itself (ONE चना दाल 2 kg), or show both lines for you to remove by hand?
+# reading: 2 kg चना दाल
+# reading: 1 kg बेसन
+# reading: 1 kg आटा
+# reading: 1 liter बंसल तेल =150
 checks: 0
 
 ## A42 unclear-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: दन्त कान 30 60 वाला पतंजली पेस्ट बड़ा वाला 110 रुपए कोलगेट पेस्ट 1 70 रुपए सयादरी चाय आधा किलो 185 रुपए
+# OWNER CHECK: the first item is unclear: 'दन्त कान 30 60 वाला' - is it दंत कांति, and Rs 30 or Rs 60? (पतंजलि पेस्ट बड़ा Rs 110; कोलगेट पेस्ट 1 = Rs 70; चाय आधा किलो Rs 185 look clear)
+# reading: 1 piece दंत कांति =30 or 60 ?
+# reading: 1 piece पतंजलि पेस्ट (बड़ा) =110
+# reading: 1 piece कोलगेट पेस्ट =70
+# reading: 0.5 kg सयादरी चाय =185
 checks: 0
 
 ## A43 unclear-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: मार्वल चाय 1 किलो 300 रुपए, रजवाडी गुड 1 किलो 80 रुपए
+- 1 kg मार्वल चाय =300
+- 1 kg रजवाडी गुड =80
 checks: 0
 
 ## A44 unclear-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: एवरेस्ट किचन किंग मसाला 100 ग्राम 100 रुपए छोले मसाला 50 ग्राम 45 रुपए
+- 100 gm एवरेस्ट किचन किंग मसाला =100
+- 50 gm छोले मसाला =45
 checks: 0
 
 ## A45 unclear-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: कि चिन्नवर काली मूच 1 किलो 80 रुपए थूप अगर बत्ती साइकल 20 रुपए वुश निर्मा 1 किलो 70 रुपए अ
+# OWNER CHECK: garbled names. I read: '? काली मूच' 1 kg Rs 80 (काली मिर्च?); 'धूप अगरबत्ती साइकल' Rs 20; 'वॉश निरमा' 1 kg Rs 70. What did you say?
+# reading: 1 kg ??? काली ??? =80
+# reading: धूप अगरबत्ती साइकल =20
+# reading: 1 kg निरमा =70
 checks: 0
 
 ## A46 unclear-words
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: इंडिपेंडेंस हर सो तेल 1 लिटर 200 रुपए पॉंट्स पाउडर 1 बाड़ा 100 रुपए
+- 1 liter इंडिपेंडेंस सरसों तेल =200
+- 1 piece पॉन्ड्स पाउडर =100
 checks: 0
 
 ## A47 unreadable-price
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: फुटाने 110 रुपए किलो, लाइजॉल 110 रुपए, गुड़ 98 रुपए, चावल 98 रुपए
+# OWNER CHECK: the 4 'unclear price' orders A47-A50: Whisper wrote CLEAR prices for all of them (A47: फुटाना 110 a kilo, लाइज़ॉल 110, गुड़ 98, चावल 98 - no quantities). Which prices did you really mumble (these must show 'Price needed')?
 checks: 0
 
 ## A48 unreadable-price
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: इंडिपेंडेंस तेल सरसो साथ 200 रुपएं दंतलाल मंजन एक 20 रुपएं
+# OWNER CHECK: see the A47 question. Heard: 'इंडिपेंडेंस तेल सरसो साथ 200 रुपए, दंतलाल मंजन एक 20 रुपए' ('साथ' = 7? or nothing).
+# reading: इंडिपेंडेंस सरसों तेल =200
+# reading: 1 piece दंत लाल मंजन =20
 checks: 0
 
 ## A49 unreadable-price
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: रिफाइंड सोयाबिन ओयल 170 रुपए ग्राउंड नट ओयल 200 रुपए
+# OWNER CHECK: see the A47 question. Heard: 'रिफाइंड सोयाबिन ओयल 170 रुपए, ग्राउंड नट ओयल 200 रुपए' (no quantities).
+# reading: रिफाइंड सोयाबीन ऑयल =170
+# reading: ग्राउंडनट ऑयल =200
 checks: 0
 
 ## A50 unreadable-price
-said:
-# one line per item, e.g.   - 2 kg चीनी @45     - 5 kg चावल =225     - 1 kg मूंग दाल     - 1 kg बेसन price needed     - NOT ADDED
+said: स्वाद चायपत्ती 1 किलो 500 रुपए सायद तूद ब्रस 1 पाइतीस रुपए तूद ब्रस 1 60 रुपए
+# OWNER CHECK: see the A47 question. Heard: 'स्वाद चायपत्ती 1 किलो 500 रुपए, ... टूथ ब्रश 1 पैंतीस रुपए, टूथ ब्रश 1 60 रुपए'.
+# reading: 1 kg स्वाद चायपत्ती =500
+# reading: 1 piece टूथ ब्रश =35
+# reading: 1 piece टूथ ब्रश =60
 checks: 0
 
