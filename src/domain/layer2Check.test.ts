@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ParsedItem, UtterancePart } from "./grammar";
 import { pieceHasUnreadPrice } from "./grammar";
-import { checkLayer2AgainstSpoken } from "./layer2Check";
+import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "./layer2Check";
 import type { SettledLine } from "./layer2";
 
 // KB-359 (owner, 29-30 Oct 2026): Gemini's answer is checked against what Layer 1 could read of the SAME spoken piece.
@@ -125,5 +125,32 @@ describe("Check C (KB-366, A27 / A47 / A49) - a quantity nobody said is dropped,
   it("lines that cannot be paired with pieces are left alone", () => {
     const g = line({ qty: 1, unit: "piece", total: 11000, priceType: "total" });
     expect(checkLayer2AgainstSpoken([piece("लाइजॉल 110 रुपए"), piece("x")], [g]).lines[0]).toEqual(g);
+  });
+});
+
+describe("Check E (KB-366, A48 / A24) - a price from Layer 2 must be a number that was SPOKEN", () => {
+  it("A48: 'सरसो साथ 200 रुपएं' came back as Rs 602 (60200) - a number nobody said: the price is dropped, the line stays (Price needed)", () => {
+    const [l] = dropUnspokenPrices("इंडिपेंडेंस तेल सरसो साथ 200 रुपएं", [line({ qty: null, unit: "", total: 60200, priceType: "total" })]);
+    expect(l!.item).toMatchObject({ rate: null, total: null, priceType: "unknown" });
+    expect(l!.displayName).toBe("चावल");
+  });
+  it("a total that WAS spoken stays (digits, a number word, a compound, a fraction)", () => {
+    for (const [text, paise] of [["तेल 200 रुपए", 20000], ["तेल एक सो दस रुपए", 11000], ["तेल सवा सौ रुपए", 12500], ["तेल साढ़े तीन सौ रुपए", 35000], ["तेल अठासी रुपए", 8800]] as const) {
+      const [l] = dropUnspokenPrices(text, [line({ qty: null, unit: "", total: paise, priceType: "total" })]);
+      expect(l!.item.total, text).toBe(paise);
+    }
+  });
+  it("A24: a RATE that was not spoken (Gemini used the catalog's Rs 70 while Rs 56 was said) is dropped", () => {
+    const [l] = dropUnspokenPrices("2 किलो हरा बटाना 56 रुपे किलो", [line({ qty: 2, unit: "kg", rate: 7000, rateUnit: "kg", total: 14000, priceType: "rate" })]);
+    expect(l!.item).toMatchObject({ qty: 2, unit: "kg", rate: null, total: null, priceType: "unknown" });
+  });
+  it("a spoken rate stays", () => {
+    const g = line({ qty: 2, unit: "kg", rate: 5600, rateUnit: "kg", total: 11200, priceType: "rate" });
+    expect(dropUnspokenPrices("2 किलो चीनी 56 रुपए किलो", [g])[0]).toEqual(g);
+  });
+  it("the shop's own price (default) and 'unknown' are never touched - nothing was claimed to be spoken", () => {
+    const d = line({ qty: 2, unit: "kg", rate: 4500, rateUnit: "kg", total: 9000, priceType: "default" });
+    const u = line({ qty: 1, unit: "kg" });
+    expect(dropUnspokenPrices("2 किलो चीनी", [d, u])).toEqual([d, u]);
   });
 });

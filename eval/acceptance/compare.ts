@@ -36,12 +36,14 @@ export interface OrderVerdict {
 
 /** The Theek hai checks the screen shows: one per line with a HIGH flag; a reason about what was said joins the last line's check. */
 export function checksOf(flags: readonly ReviewFlag[], lineCount: number): number {
-  return warnedLinesOf(flags, lineCount).length;
+  return new Set(flags.filter((f) => f.severity === "HIGH").map((f) => f.itemIndex ?? Math.max(0, lineCount - 1))).size;
 }
 
-/** The lines a HIGH flag is shown on (one check each). */
+/** The lines the screen WARNS about: a line's own HIGH flag warns that line; a HIGH flag about what was said (the numbers do not fit the lines) warns every line of the order. */
 export function warnedLinesOf(flags: readonly ReviewFlag[], lineCount: number): number[] {
-  return [...new Set(flags.filter((f) => f.severity === "HIGH").map((f) => f.itemIndex ?? Math.max(0, lineCount - 1)))];
+  const high = flags.filter((f) => f.severity === "HIGH");
+  if (high.some((f) => f.itemIndex === null)) return Array.from({ length: lineCount }, (_, i) => i);
+  return [...new Set(high.map((f) => f.itemIndex!))];
 }
 
 // ---- names: the heard name against the name the owner wrote ------------------------------------------------------------
@@ -67,6 +69,13 @@ function sameName(a: string, b: string): boolean {
   return short.every((w) => long.some((v) => closeWord(w, v)));
 }
 
+/** At least half of the owner's words have a close word in the heard name ("इंडिपेंडेंस सरसों तेल" ~ "इंडिपेंडेंस हर सो तेल 1 लिटर"). */
+function mostlySame(written: string, heard: string): boolean {
+  const x = norm(written).split(" ").filter(Boolean);
+  const y = norm(heard).split(" ").filter(Boolean);
+  return x.length > 0 && x.filter((w) => y.some((v) => closeWord(w, v))).length >= Math.ceil(x.length / 2);
+}
+
 type Verdict = { wrong: string } | { inexact: string } | "ok";
 
 /** Is this heard line the product the owner wrote? ok = yes; inexact = cannot tell (his spelling is not in the catalog); wrong = it is another product. */
@@ -75,6 +84,9 @@ function productOf(exp: ExpectedLine, line: { item: ParsedItem; displayName: str
   const m = matchProductName(exp.name, shop);
   if (m.catalogId && act.catalogId === m.catalogId) return "ok";
   if (sameName(exp.name, act.spokenName) || sameName(exp.name, line.displayName)) return "ok";
+  // the owner's name is not in the catalog and the app shows the heard words on a custom line: it claims no product - if the heard words still
+  // resemble what he said (at least half of them close) that is the same item, spelled the way Whisper heard it
+  if (!m.catalogId && act.catalogId === null && mostlySame(exp.name, act.spokenName)) return "ok";
   const heard = `"${act.spokenName}"${act.catalogId ? ` (${shop.byId.get(act.catalogId)?.displayName ?? act.catalogId})` : " (not in the catalog)"}`;
   // a custom line claims NO catalog product, so it cannot be a wrong product: the app just did not know the word
   if (m.catalogId && act.catalogId !== null) return { wrong: `${exp.name}: wrong product - heard ${heard}` };

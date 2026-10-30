@@ -29,7 +29,7 @@
   ],
   "एक्किलो तुअरदाल एक्किलो मुंदाल": [
     {
-      "spokenName": "तुअरदाल",
+      "spokenName": "एक्किलो तुअरदाल",
       "catalogId": "16",
       "isCustom": false,
       "matchStatus": "matched",
@@ -41,7 +41,7 @@
       "priceType": "default"
     },
     {
-      "spokenName": "मुंदाल",
+      "spokenName": "एक्किलो मुंदाल",
       "catalogId": "18",
       "isCustom": false,
       "matchStatus": "matched",
@@ -71,7 +71,7 @@
   "एक डेटोल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हारपिक 100 रुपए, एक लाइजॉल 110 रुपए": [
     {
       "spokenName": "डेटोल सेट",
-      "catalogId": "163",
+      "catalogId": "222",
       "isCustom": false,
       "matchStatus": "matched",
       "qty": 1,
@@ -95,9 +95,9 @@
     },
     {
       "spokenName": "संतूर हैंडवर्स सेट",
-      "catalogId": "451",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "piece",
       "rate": null,
@@ -244,7 +244,7 @@
   ],
   "कि एक युक्त मसाला एक किलो घर मसाला एक किलो धन्यवाय करते हैं आलजी इस एक किलो खड़ी हल्दी एक किलो दाने 1 किलो चावल है आप एक किलो मसूल दाल": [
     {
-      "spokenName": "घर मसाला",
+      "spokenName": "गरम मसाला",
       "catalogId": "105",
       "isCustom": false,
       "matchStatus": "matched",
@@ -280,7 +280,7 @@
       "priceType": "default"
     },
     {
-      "spokenName": "मसूल दाल",
+      "spokenName": "मसूर दाल",
       "catalogId": "19",
       "isCustom": false,
       "matchStatus": "matched",
@@ -394,7 +394,7 @@
   ],
   "तूवल दाल 2 किलो": [
     {
-      "spokenName": "तूवल दाल",
+      "spokenName": "तूवल दाल 2 किलो",
       "catalogId": "16",
       "isCustom": false,
       "matchStatus": "matched",
@@ -462,15 +462,15 @@
       "matchStatus": "matched",
       "qty": 2,
       "unit": "kg",
-      "rate": 7000,
+      "rate": 5600,
       "rateUnit": "kg",
-      "total": 14000,
+      "total": 11200,
       "priceType": "rate"
     }
   ],
   "1 किलो महदा": [
     {
-      "spokenName": "महदा",
+      "spokenName": "1 किलो महदा",
       "catalogId": "3",
       "isCustom": false,
       "matchStatus": "matched",
@@ -626,15 +626,15 @@
       "matchStatus": "matched",
       "qty": 5,
       "unit": "kg",
-      "rate": null,
-      "rateUnit": null,
-      "total": 0,
-      "priceType": "unknown"
+      "rate": 60000,
+      "rateUnit": "kg",
+      "total": 300000,
+      "priceType": "rate"
     }
   ],
   "गेवु 10 किलो 340 रुपए": [
     {
-      "spokenName": "गेवु 10 किलो 340 रुपए",
+      "spokenName": "गेवु 10 किलो",
       "catalogId": "1",
       "isCustom": false,
       "matchStatus": "matched",
@@ -861,21 +861,21 @@
   "एक बंसल तेल पैकेट 140 रुपए, एक बंसल एक लिटर 150 रुपए": [
     {
       "spokenName": "बंसल तेल पैकेट",
-      "catalogId": "39",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
-      "unit": "piece",
+      "unit": "packet",
       "rate": null,
       "rateUnit": null,
       "total": 14000,
       "priceType": "total"
     },
     {
-      "spokenName": "बंसल",
-      "catalogId": "33",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "spokenName": "बंसल एक लिटर",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "liter",
       "rate": null,
@@ -1073,15 +1073,15 @@
     },
     {
       "spokenName": "टोटल गोल्ड तेल",
-      "catalogId": "335",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "liter",
-      "rate": 13000,
-      "rateUnit": "liter",
-      "total": 13000,
-      "priceType": "default"
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
     }
   ],
   "2 किलो चनादाल, 2 किलो चनादाल, लास्ट वाला चनादाल हटा दो, 1 लिटर बंसल 150 रुपए": [
@@ -1168,27 +1168,27 @@
       "matchStatus": "none",
       "qty": 1,
       "unit": "kg",
-      "rate": null,
-      "rateUnit": null,
+      "rate": 30000,
+      "rateUnit": "kg",
       "total": 30000,
-      "priceType": "total"
+      "priceType": "rate"
     },
     {
       "spokenName": "रजवाडी गुड",
-      "catalogId": "31",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "kg",
-      "rate": null,
-      "rateUnit": null,
+      "rate": 8000,
+      "rateUnit": "kg",
       "total": 8000,
-      "priceType": "total"
+      "priceType": "rate"
     }
   ],
   "एवरेस्ट किचन किंग मसाला 100 ग्राम 100 रुपए": [
     {
-      "spokenName": "एवरेस्ट किचन किंग मसाला",
+      "spokenName": "एवरेस्ट किचन किंग मसाला 100 ग्राम",
       "catalogId": "124",
       "isCustom": false,
       "matchStatus": "matched",
@@ -1214,19 +1214,7 @@
       "priceType": "total"
     },
     {
-      "spokenName": "थूप",
-      "catalogId": "204",
-      "isCustom": false,
-      "matchStatus": "matched",
-      "qty": null,
-      "unit": "",
-      "rate": null,
-      "rateUnit": null,
-      "total": 0,
-      "priceType": "unknown"
-    },
-    {
-      "spokenName": "अगर बत्ती साइकल",
+      "spokenName": "थूप अगर बत्ती साइकल",
       "catalogId": "203",
       "isCustom": false,
       "matchStatus": "matched",
@@ -1238,19 +1226,7 @@
       "priceType": "total"
     },
     {
-      "spokenName": "वुश",
-      "catalogId": null,
-      "isCustom": true,
-      "matchStatus": "none",
-      "qty": null,
-      "unit": "",
-      "rate": null,
-      "rateUnit": null,
-      "total": 0,
-      "priceType": "unknown"
-    },
-    {
-      "spokenName": "निर्मा",
+      "spokenName": "वुश निर्मा",
       "catalogId": "193",
       "isCustom": false,
       "matchStatus": "matched",
@@ -1264,10 +1240,10 @@
   ],
   "इंडिपेंडेंस हर सो तेल 1 लिटर 200 रुपए, पॉंट्स पाउडर 1 बाडा 100 रुपए": [
     {
-      "spokenName": "इंडिपेंडेंस हर सो तेल",
-      "catalogId": "34",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "spokenName": "इंडिपेंडेंस हर सो तेल 1 लिटर",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "liter",
       "rate": null,
@@ -1276,7 +1252,7 @@
       "priceType": "total"
     },
     {
-      "spokenName": "पॉंट्स पाउडर",
+      "spokenName": "पॉंट्स पाउडर 1 बाडा",
       "catalogId": null,
       "isCustom": true,
       "matchStatus": "none",
@@ -1316,12 +1292,12 @@
   ],
   "इंडिपेंडेंस तेल सरसो साथ 200 रुपएं दंतलाल मंजन एक 20 रुपएं": [
     {
-      "spokenName": "तेल सरसो",
-      "catalogId": "34",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "spokenName": "इंडिपेंडेंस तेल सरसो",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": null,
-      "unit": "liter",
+      "unit": "",
       "rate": null,
       "rateUnit": null,
       "total": 20000,
@@ -1329,9 +1305,9 @@
     },
     {
       "spokenName": "दंतलाल मंजन",
-      "catalogId": "168",
-      "isCustom": false,
-      "matchStatus": "matched",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
       "qty": 1,
       "unit": "piece",
       "rate": null,
@@ -1346,8 +1322,8 @@
       "catalogId": "36",
       "isCustom": false,
       "matchStatus": "matched",
-      "qty": 1,
-      "unit": "liter",
+      "qty": null,
+      "unit": "",
       "rate": null,
       "rateUnit": null,
       "total": 17000,
@@ -1358,7 +1334,7 @@
       "catalogId": null,
       "isCustom": true,
       "matchStatus": "none",
-      "qty": 1,
+      "qty": null,
       "unit": "",
       "rate": null,
       "rateUnit": null,
@@ -1380,7 +1356,7 @@
       "priceType": "total"
     },
     {
-      "spokenName": "तूद ब्रस",
+      "spokenName": "सायद तूद ब्रस",
       "catalogId": "172",
       "isCustom": false,
       "matchStatus": "matched",
@@ -1401,6 +1377,70 @@
       "rate": null,
       "rateUnit": null,
       "total": 6000,
+      "priceType": "total"
+    }
+  ],
+  "दन्त कान 30 60 वाला, पतंजली पेस्ट बडा वाला 110 रुपए, कोलगेट पेस्ट 1 70 रुपए, सयादरी चाय आधा किलो 185 रुपए": [
+    {
+      "spokenName": "दन्त कान 30 60 वाला",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": null,
+      "unit": "",
+      "rate": 6000,
+      "rateUnit": "",
+      "total": null,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "पतंजली पेस्ट बडा वाला",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "कोलगेट पेस्ट",
+      "catalogId": "169",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 7000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "सयादरी चाय",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 0.5,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 18500,
+      "priceType": "total"
+    }
+  ],
+  "लाइजॉल 110 रुपए": [
+    {
+      "spokenName": "लाइजॉल",
+      "catalogId": "200",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
       "priceType": "total"
     }
   ]

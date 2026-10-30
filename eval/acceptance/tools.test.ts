@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMissingBlocks, buildOrders, SHEET_HEADER } from "./tools";
+import { addMissingBlocks, buildOrders, canLock, SHEET_HEADER } from "./tools";
 import type { OrdersFile } from "./store";
 
 // KB-364: the tools between the phone's session file, the sheet and orders.json.
@@ -72,5 +72,24 @@ describe("buildOrders - skipped blocks", () => {
     expect(r.file!.orders.map((o) => o.id)).toEqual(["A01"]);
     expect(r.pending).toEqual(["A03"]);
     expect(r.skipped).toEqual([{ id: "A02", reason: "Whisper heard other words" }]);
+  });
+});
+
+describe("canLock - the set locks only after a PASSING run of the WHOLE set", () => {
+  const ok = { passed: true, ranOrders: 41, ordersWithText: 41, min: 40 };
+  it("a full passing run locks", () => {
+    expect(canLock(ok)).toBe(true);
+  });
+  it("a passing run of ONE order (accept:live --only A14) never locks - it said 'LOCKED' after A14 on 30 Oct", () => {
+    expect(canLock({ ...ok, ranOrders: 1 })).toBe(false);
+  });
+  it("a failing run never locks", () => {
+    expect(canLock({ ...ok, passed: false })).toBe(false);
+  });
+  it("too few orders never lock", () => {
+    expect(canLock({ passed: true, ranOrders: 39, ordersWithText: 39, min: 40 })).toBe(false);
+  });
+  it("orders with no frozen text do not count as covered", () => {
+    expect(canLock({ passed: true, ranOrders: 40, ordersWithText: 41, min: 40 })).toBe(false);
   });
 });

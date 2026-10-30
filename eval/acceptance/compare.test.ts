@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import type { ReviewFlag } from "../../src/domain/reviewFlags.js";
-import { checksOf, compareOrder, gate, type ActualBill, type OrderVerdict } from "./compare.js";
+import { checksOf, compareOrder, gate, warnedLinesOf, type ActualBill, type OrderVerdict } from "./compare.js";
 import type { ExpectedBill, ExpectedLine } from "./types.js";
 
 // KB-364: the owner's expected bill against what the app produced. WRONG = a confident number that is not what was said.
@@ -91,6 +91,19 @@ describe("KB-364 first live run: the comparer judges a bill as a set, and is fai
     expect(v.wrong).toEqual([]);
     expect(v.exact).toBe(false);
     expect(v.inexact.join()).toMatch(/name/);
+  });
+  it("a name the catalog cannot resolve, shown as the heard words on a custom line (the app claims NO product): nothing differs - the numbers decide", () => {
+    const heard = chini({ spokenName: "संतूर हैंडवर्स सेट", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: null, rateUnit: null, total: 10500, priceType: "total" });
+    const v = run(exp([line("संतूर हैंडवॉश सेट", 1, "piece", { kind: "total", paise: 10500 })]), bill([heard]));
+    expect(v.wrong).toEqual([]);
+    expect(v.inexact).toEqual([]);
+    expect(v.exact).toBe(true);
+  });
+  it("...but a name the catalog DOES resolve, shown as a custom line, is a recognition miss: inexact, not exact", () => {
+    const heard = chini({ spokenName: "महिदा", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "kg", rate: null, rateUnit: null, total: 4500, priceType: "total" });
+    const v = run(exp([line("चीनी", 1, "kg", { kind: "total", paise: 4500 })]), bill([heard]));
+    expect(v.wrong).toEqual([]);
+    expect(v.exact).toBe(false);
   });
   it("a name that DOES resolve, read as a different product with different words: WRONG", () => {
     const v = run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([chawal({ qty: 2, total: 10000 })]));
@@ -207,6 +220,19 @@ describe("checksOf - the Theek hai checks the screen would show", () => {
     expect(checksOf([f("number_dropped", null), f("unusual_rate", 1)], 2)).toBe(1); // joins the last line
     expect(checksOf([f("already_on_bill", 0, "MEDIUM")], 1)).toBe(0);
     expect(checksOf([], 3)).toBe(0);
+  });
+});
+
+describe("warnedLinesOf - which lines the screen warns about", () => {
+  const f = (code: string, itemIndex: number | null, severity: "HIGH" | "MEDIUM" = "HIGH") => ({ id: code, code, severity, message: "x", itemIndex }) as ReviewFlag;
+  it("a line flag warns that line only", () => {
+    expect(warnedLinesOf([f("unusual_rate", 1)], 3)).toEqual([1]);
+  });
+  it("a flag about WHAT WAS SAID (the numbers do not fit the lines) warns the whole order - every line is under it", () => {
+    expect(warnedLinesOf([f("number_misaligned", null)], 3)).toEqual([0, 1, 2]);
+  });
+  it("MEDIUM warns nobody", () => {
+    expect(warnedLinesOf([f("already_on_bill", 0, "MEDIUM")], 2)).toEqual([]);
   });
 });
 

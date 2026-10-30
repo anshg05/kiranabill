@@ -16,6 +16,7 @@ import { startLocalVoice } from "../../scripts/localVoice.js";
 import { compareOrder, gate, type OrderVerdict } from "./compare.js";
 import { runOrder } from "./run.js";
 import { AUDIO_DIR, MIN_FROZEN_ORDERS, readOrders, readRecorded, writeOrders, writeRecorded, type Recorded } from "./store.js";
+import { canLock } from "./tools.js";
 
 const MIME: Record<string, string> = { webm: "audio/webm", m4a: "audio/mp4", ogg: "audio/ogg", wav: "audio/wav" };
 const arg = (name: string) => {
@@ -114,9 +115,10 @@ if (freeze) {
   const merged: Recorded = { ...readRecorded(), ...(answered as Recorded) };
   writeRecorded(merged);
   const next = all.map((o) => (transcripts.has(o.id) ? { ...o, transcript: transcripts.get(o.id)! } : o));
-  const lock = g.passed && next.filter((o) => o.transcript !== null).length >= MIN_FROZEN_ORDERS;
+  const withText = next.filter((o) => !!o.transcript).length;
+  const lock = canLock({ passed: g.passed, ranOrders: verdicts.length, ordersWithText: withText, min: MIN_FROZEN_ORDERS });
   writeOrders({ frozen: frozen || lock, orders: next });
   console.log(`Frozen: ${transcripts.size} transcript(s) and ${Object.keys(answered).length} Gemini answer(s) written (tier A replays them in npm test).`);
-  console.log(lock ? "The set is now LOCKED: npm test enforces the full gate." : frozen ? "The set stays locked." : `The set is not locked yet (needs a passing run and >= ${MIN_FROZEN_ORDERS} orders with a frozen text).`);
+  console.log(lock ? "The set is now LOCKED: npm test enforces the full gate." : frozen ? "The set stays locked." : `The set is not locked yet (needs a passing run of the WHOLE set - every order with a frozen text, at least ${MIN_FROZEN_ORDERS}).`);
 }
 process.exit(g.passed ? 0 : 1);

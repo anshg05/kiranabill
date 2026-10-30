@@ -8,6 +8,9 @@
  *  C. A quantity nobody said (A27, A47, A49: "लाइजॉल 110 रुपए" came back as 1 piece) is dropped: the line keeps what was said and shows
  *     "quantity needed" - D47, never a number nobody said. Exceptions that ARE a quantity: a number the reader finds in the piece, and a
  *     price per kilo / litre with no quantity (the owner's ruling: 1 kg).
+ *  E. A rate or total that is not a number anyone SPOKE (A48: "साथ 200 रुपए" came back as Rs 602; A24: the catalog's Rs 70 as a "rate"
+ *     while Rs 56 was said) is dropped: the line stays with what was said and shows "Price needed" - dropUnspokenPrices, text-level, so it
+ *     needs no pairing of pieces and lines.
  *  B. A price was said but nobody could read it (a currency word inside the name) -> any price the AI gave is DISCARDED: the line
  *     keeps its quantity and has no price ("price needed", hard rule 5). Nothing is flagged: the missing price is the signal.
  *
@@ -36,6 +39,22 @@ function say(item: ParsedItem): string {
 /** Is this quantity one the speaker said (a number the shared reader finds in the piece), or the 1 of a per-unit price? */
 function quantitySaid(text: string, qty: number): boolean {
   return extractSpokenNumbers(text).some((n) => Math.abs(n - qty) < 1e-9) || (qty === 1 && pieceHasPerUnitPrice(text));
+}
+
+/**
+ * KB-366: "never silently a wrong number" as an invariant. A line Layer 2 priced as a spoken RATE or a spoken TOTAL must carry a number
+ * the shared reader finds in the text it was asked about (digits, number words, compounds, fractions). Anything else is a number nobody said:
+ * the price is dropped (priceType unknown) and the line shows "Price needed". The shop's own price (priceType default) and lines with no
+ * price are untouched.
+ */
+export function dropUnspokenPrices(asked: string, lines: readonly SettledLine[]): SettledLine[] {
+  const spoken = new Set(extractSpokenNumbers(asked).map((n) => Math.round(n * 100)));
+  return lines.map((line) => {
+    const { priceType, rate, total } = line.item;
+    const claimed = priceType === "rate" ? rate : priceType === "total" ? total : null;
+    if (claimed === null || spoken.has(claimed)) return line;
+    return { ...line, item: { ...line.item, rate: null, rateUnit: null, total: null, priceType: "unknown" } };
+  });
 }
 
 export function checkLayer2AgainstSpoken(pieces: readonly UtterancePart[], lines: readonly SettledLine[]): CheckedLayer2 {

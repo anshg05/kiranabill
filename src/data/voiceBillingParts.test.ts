@@ -230,3 +230,15 @@ describe("KB-366 (A42): a custom line needs an EXPLICIT unit word - a bare numbe
     expect(r.lines[0]!.item).toMatchObject({ qty: null, unit: "", total: 11000 });
   });
 });
+
+describe("KB-366 (A48): Layer 2 may not put a number on the bill that nobody said", () => {
+  it("Gemini answers Rs 602 for 'kuch naya 200 rupay': the line stays, with no price (Price needed)", async () => {
+    const r = await run("kuch naya 200 rupay", async () => [{ spokenName: "kuch naya", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "", rate: null, rateUnit: null, total: 60200, priceType: "total" }]);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]!.item).toMatchObject({ rate: null, total: null, priceType: "unknown" });
+  });
+  it("and Rs 200 (spoken) is kept", async () => {
+    const r = await run("kuch naya 200 rupay", async () => [{ spokenName: "kuch naya", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "", rate: null, rateUnit: null, total: 20000, priceType: "total" }]);
+    expect(r.lines[0]!.item).toMatchObject({ total: 20000, priceType: "total" });
+  });
+});

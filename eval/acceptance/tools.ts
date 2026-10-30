@@ -62,3 +62,11 @@ export function buildOrders(sheetText: string, prev: OrdersFile): BuildResult {
   orders.sort((a, b) => a.id.localeCompare(b.id));
   return { errors: [], file: { frozen: prev.frozen, orders }, pending, skipped };
 }
+
+/**
+ * The set locks (npm test then enforces the FULL gate) only after a PASSING run that covered EVERY order that has a frozen text, and
+ * only when there are enough of them. A run of a few orders (accept:live --only A14) proves nothing about the set (30 Oct 2026).
+ */
+export function canLock(a: { passed: boolean; ranOrders: number; ordersWithText: number; min: number }): boolean {
+  return a.passed && a.ranOrders === a.ordersWithText && a.ordersWithText >= a.min;
+}

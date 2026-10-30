@@ -3,7 +3,7 @@
 // the real netlify/functions/voice.mts (auth, shop lookup, rate limit, GEMINI_MODEL, the provider) -> the real Gemini, with a throwaway user
 // on the local Supabase stack. Run it before every draft and release that touches Layer 2:
 //     npm run smoke:voice
-// It spends 10 Gemini calls (declared below; they share production's quota if the key is the same - keep it <= 10) and starts/stops
+// It spends 11 Gemini calls (declared below; they share production's quota if the key is the same - keep it <= 10) and starts/stops
 // `netlify functions:serve` itself. Needs the local Docker stack (npx supabase start) and GEMINI_API_KEY / GEMINI_MODEL / GROQ_API_KEY in .env.local.
 // It proves the key in .env.local - NOT the key in Netlify; the owner's first signed-in call on the deployed draft proves that one.
 import { parseTranscript, VoiceApiError } from "../src/data/voiceApi.js";
@@ -33,6 +33,8 @@ const cases: Case[] = [
     check: (i) => (i.length === 1 && i[0]!.qty === null && i[0]!.total === 11000 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.unit, x.total]))}`) },
   { label: "KB-366 (owner ruling): a per-kilo price with no quantity is 1 kg", say: "फुटाने 110 रुपए किलो",
     check: (i) => (i.length === 1 && i[0]!.qty === 1 && i[0]!.unit === "kg" && i[0]!.total === 11000 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.unit, x.rate, x.total]))}`) },
+  { label: "KB-366 (A42): '30 60 वाला' for an unknown product - the 30 is not a quantity (it billed Rs 1,800)", say: "दन्त कान 30 60 वाला",
+    check: (i) => (i.length === 1 && i[0]!.catalogId === null && i[0]!.qty === null ? null : `read as ${JSON.stringify(i.map((x) => [x.catalogId, x.qty, x.unit, x.rate, x.total]))}`) },
   { label: "a total, not a rate", say: "5 किलो चीनी 225 रुपए", check: (i) => (i.length === 1 && i[0]!.qty === 5 && i[0]!.total === 22500 ? null : `read as ${JSON.stringify(i.map((x) => [x.qty, x.rate, x.total]))}`) },
 ];
 

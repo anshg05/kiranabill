@@ -115,6 +115,10 @@ RULE 7 - never invent a quantity. If no quantity is spoken for an item, qty must
 price is spoken or not. ONE exception, the owner's ruling: a price said PER kilo / litre with no quantity ("110 rupay kilo") is
 1 of that unit: qty:1, unit:"kg" (or "liter"), rate = that price, priceType:"rate". This exception needs a price you can actually
 read (digits, or a number word you recognise): if the number word is garbled, RULE 6 wins - never guess it.
+A bare number with no unit beside a "wala" price, for a product that is NOT among the candidates, is not assumed to be a quantity
+(it may be a size or a pack, like the 30 in "daant kanti 30 60 wala"): qty:null, unit:"", rate = the price. For a candidate product
+the usual rule stands ("3 parle-g 10 wala" is qty 3 at rate 10).
+"daant kanti 30 60 wala" (not among the candidates) -> qty:null, unit:"", rate:6000, total:0, priceType:"rate"
 "phutane 110 rupay kilo" -> qty:1, unit:"kg", rate:11000, total:11000, priceType:"rate"
 "ek lizol 110 rupay" -> qty:1, unit:"piece", rate:null, total:11000, priceType:"total"
 "lizol 110 rupay" -> qty:null, unit:"", rate:null, total:11000, priceType:"total"

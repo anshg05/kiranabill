@@ -47,6 +47,10 @@ describe("KB-366 (30 Oct 2026): the prompt agrees with D47 and never invents a q
     // the exception must not turn a garbled price into a guess (G13 priced "चैन रुपए किलो" at Rs 100 in 2 of 2 runs without this sentence)
     expect(PRICING_GRAMMAR_PROMPT).toMatch(/needs a price you can actually\s+read[\s\S]*RULE 6 wins/);
   });
+  it("RULE 7 also: for a product NOT among the candidates a bare number beside a 'wala' price is not assumed to be a quantity (A42: Rs 1,800)", () => {
+    expect(PRICING_GRAMMAR_PROMPT).toMatch(/NOT among the candidates[\s\S]*not assumed to be a quantity|not assumed to be a quantity[\s\S]*NOT among the candidates/);
+    expect(PRICING_GRAMMAR_PROMPT).toContain('"daant kanti 30 60 wala"');
+  });
   it("RULE 8: a different brand is not the catalog product, and never takes its price", () => {
     expect(PRICING_GRAMMAR_PROMPT).toContain("RULE 8");
     expect(PRICING_GRAMMAR_PROMPT).toMatch(/different BRAND/);
