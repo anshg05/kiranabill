@@ -28,7 +28,7 @@ Solo developer, working alongside a full-time job, not a full-time engineer. He 
 you are the implementing engineer. He approves, you build. **You never decide architecture** — it is
 already decided in `docs/07-DECISIONS.md`.
 
-**Current phase: 3** — billing UI. Phases 0–2 (`domain/`, foundation, voice pipeline) are done.
+**Current phase: Phase 3 complete (30 Oct 2026); next = KB-405, the pilot in the owner's shop; parked work is listed in `docs/10-TRACKER.md`.**
 The exact current state, blockers and next action live in `docs/10-TRACKER.md` "Right now" — read
 it; this file does not repeat it.
 
