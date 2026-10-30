@@ -7891,5 +7891,4235 @@
       "priceType": "default"
     },
     "note": "KB-363a guard: a stray so after a unit and a name is an ordinary word - the line is 2 kg at the catalog price, never 100."
+  },
+  {
+    "id": "NB541",
+    "category": "price-less",
+    "utterance": "एक किलो चीनी आधा किलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB542",
+    "category": "price-less",
+    "utterance": "तीन किलो बेसन पांच किलो चावल तीन किलो आटा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB543",
+    "category": "price-less",
+    "utterance": "डेढ किलो चावल दो किलो आटा डेढ किलो नमक दो किलो मैदा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB544",
+    "category": "price-less",
+    "utterance": "एक किलो आटा आधा किलो नमक एक किलो मैदा आधा किलो चीनी एक किलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB545",
+    "category": "price-less",
+    "utterance": "तीन किलो नमक पांच किलो मैदा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB546",
+    "category": "price-less",
+    "utterance": "डेढ किलो मैदा दो किलो चीनी डेढ किलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB547",
+    "category": "price-less",
+    "utterance": "एक किलो चीनी आधा किलो बेसन एक किलो चावल आधा किलो आटा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 1900,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB548",
+    "category": "price-less",
+    "utterance": "तीन किलो बेसन पांच किलो चावल तीन किलो आटा पांच किलो नमक तीन किलो मैदा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 12600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB549",
+    "category": "price-less",
+    "utterance": "डेढ किलो चावल दो किलो आटा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB550",
+    "category": "price-less",
+    "utterance": "एक किलो आटा आधा किलो नमक एक किलो मैदा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB551",
+    "category": "price-less",
+    "utterance": "तीन किलो नमक पांच किलो मैदा तीन किलो चीनी पांच किलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 45000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB552",
+    "category": "price-less",
+    "utterance": "डेढ किलो मैदा दो किलो चीनी डेढ किलो बेसन दो किलो चावल डेढ किलो आटा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 5700,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB553",
+    "category": "price-less",
+    "utterance": "चीनी एक किलो बेसन आधा किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB554",
+    "category": "price-less",
+    "utterance": "बेसन तीन किलो चावल पांच किलो आटा तीन किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB555",
+    "category": "price-less",
+    "utterance": "चावल डेढ किलो आटा दो किलो नमक डेढ किलो मैदा दो किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB556",
+    "category": "price-less",
+    "utterance": "आटा एक किलो नमक आधा किलो मैदा एक किलो चीनी आधा किलो बेसन एक किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB557",
+    "category": "price-less",
+    "utterance": "नमक तीन किलो मैदा पांच किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB558",
+    "category": "price-less",
+    "utterance": "मैदा डेढ किलो चीनी दो किलो बेसन डेढ किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB559",
+    "category": "price-less",
+    "utterance": "चीनी एक किलो बेसन आधा किलो चावल एक किलो आटा आधा किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 1900,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB560",
+    "category": "price-less",
+    "utterance": "बेसन तीन किलो चावल पांच किलो आटा तीन किलो नमक पांच किलो मैदा तीन किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 12600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB561",
+    "category": "price-less",
+    "utterance": "चावल डेढ किलो आटा दो किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB562",
+    "category": "price-less",
+    "utterance": "आटा एक किलो नमक आधा किलो मैदा एक किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB563",
+    "category": "price-less",
+    "utterance": "नमक तीन किलो मैदा पांच किलो चीनी तीन किलो बेसन पांच किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 45000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB564",
+    "category": "price-less",
+    "utterance": "मैदा डेढ किलो चीनी दो किलो बेसन डेढ किलो चावल दो किलो आटा डेढ किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 5700,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB565",
+    "category": "price-less",
+    "utterance": "ek kilo chini aadha kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB566",
+    "category": "price-less",
+    "utterance": "teen kilo besan paanch kilo chawal teen kilo aata",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB567",
+    "category": "price-less",
+    "utterance": "dedh kilo chawal do kilo aata dedh kilo namak do kilo maida",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB568",
+    "category": "price-less",
+    "utterance": "ek kilo aata aadha kilo namak ek kilo maida aadha kilo chini ek kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB569",
+    "category": "price-less",
+    "utterance": "teen kilo namak paanch kilo maida",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB570",
+    "category": "price-less",
+    "utterance": "dedh kilo maida do kilo chini dedh kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB571",
+    "category": "price-less",
+    "utterance": "ek kilo chini aadha kilo besan ek kilo chawal aadha kilo aata",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 1900,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB572",
+    "category": "price-less",
+    "utterance": "teen kilo besan paanch kilo chawal teen kilo aata paanch kilo namak teen kilo maida",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 12600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB573",
+    "category": "price-less",
+    "utterance": "dedh kilo chawal do kilo aata",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB574",
+    "category": "price-less",
+    "utterance": "ek kilo aata aadha kilo namak ek kilo maida",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB575",
+    "category": "price-less",
+    "utterance": "teen kilo namak paanch kilo maida teen kilo chini paanch kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 45000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB576",
+    "category": "price-less",
+    "utterance": "dedh kilo maida do kilo chini dedh kilo besan do kilo chawal dedh kilo aata",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 5700,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB577",
+    "category": "price-less",
+    "utterance": "chini ek kilo besan aadha kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB578",
+    "category": "price-less",
+    "utterance": "besan teen kilo chawal paanch kilo aata teen kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB579",
+    "category": "price-less",
+    "utterance": "chawal dedh kilo aata do kilo namak dedh kilo maida do kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB580",
+    "category": "price-less",
+    "utterance": "aata ek kilo namak aadha kilo maida ek kilo chini aadha kilo besan ek kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB581",
+    "category": "price-less",
+    "utterance": "namak teen kilo maida paanch kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB582",
+    "category": "price-less",
+    "utterance": "maida dedh kilo chini do kilo besan dedh kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB583",
+    "category": "price-less",
+    "utterance": "chini ek kilo besan aadha kilo chawal ek kilo aata aadha kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 1900,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB584",
+    "category": "price-less",
+    "utterance": "besan teen kilo chawal paanch kilo aata teen kilo namak paanch kilo maida teen kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 11400,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 12600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB585",
+    "category": "price-less",
+    "utterance": "chawal dedh kilo aata do kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 7500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB586",
+    "category": "price-less",
+    "utterance": "aata ek kilo namak aadha kilo maida ek kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 1000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB587",
+    "category": "price-less",
+    "utterance": "namak teen kilo maida paanch kilo chini teen kilo besan paanch kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 6000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 45000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB588",
+    "category": "price-less",
+    "utterance": "maida dedh kilo chini do kilo besan dedh kilo chawal do kilo aata dedh kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 10000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 5700,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a price-less order with no commas is cut at its quantity phrases; every quantity lands on its own item."
+  },
+  {
+    "id": "NB589",
+    "category": "mixed-qty-first",
+    "utterance": "एक किलो चीनी आधा किलो बेसन 120 रुपए एक किलो चावल 56 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 5600,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB590",
+    "category": "mixed-qty-first",
+    "utterance": "तीन किलो बेसन 120 रुपए पांच किलो चावल तीन किलो आटा 70 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB591",
+    "category": "mixed-qty-first",
+    "utterance": "डेढ किलो चावल 56 रुपए किलो दो किलो आटा डेढ किलो नमक",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB592",
+    "category": "mixed-qty-first",
+    "utterance": "एक किलो आटा आधा किलो नमक 45 रुपए किलो एक किलो मैदा 90 रुपए आधा किलो चीनी",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB593",
+    "category": "mixed-qty-first",
+    "utterance": "तीन किलो नमक 45 रुपए किलो पांच किलो मैदा 90 रुपए तीन किलो चीनी",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB594",
+    "category": "mixed-qty-first",
+    "utterance": "डेढ किलो मैदा दो किलो चीनी डेढ किलो बेसन 56 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB595",
+    "category": "mixed-qty-first",
+    "utterance": "एक किलो चीनी 120 रुपए आधा किलो बेसन 56 रुपए किलो एक किलो चावल आधा किलो आटा 45 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB596",
+    "category": "mixed-qty-first",
+    "utterance": "तीन किलो बेसन पांच किलो चावल 70 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 35000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB597",
+    "category": "mixed-qty-first",
+    "utterance": "डेढ किलो चावल 70 रुपए किलो दो किलो आटा",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 10500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB598",
+    "category": "mixed-qty-first",
+    "utterance": "एक किलो आटा आधा किलो नमक 90 रुपए एक किलो मैदा आधा किलो चीनी 56 रुपए किलो एक किलो बेसन",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB599",
+    "category": "mixed-name-first",
+    "utterance": "चीनी एक किलो बेसन 120 रुपए चावल एक किलो 56 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 5600,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB600",
+    "category": "mixed-name-first",
+    "utterance": "बेसन 120 रुपए चावल पांच किलो आटा तीन किलो 70 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB601",
+    "category": "mixed-name-first",
+    "utterance": "चावल डेढ किलो 56 रुपए किलो आटा दो किलो नमक डेढ किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB602",
+    "category": "mixed-name-first",
+    "utterance": "आटा एक किलो नमक आधा किलो 45 रुपए किलो मैदा 90 रुपए चीनी आधा किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB603",
+    "category": "mixed-name-first",
+    "utterance": "नमक तीन किलो 45 रुपए किलो मैदा 90 रुपए चीनी तीन किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB604",
+    "category": "mixed-name-first",
+    "utterance": "मैदा डेढ किलो चीनी दो किलो बेसन डेढ किलो 56 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB605",
+    "category": "mixed-name-first",
+    "utterance": "चीनी 120 रुपए बेसन आधा किलो 56 रुपए किलो चावल एक किलो आटा आधा किलो 45 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB606",
+    "category": "mixed-name-first",
+    "utterance": "बेसन तीन किलो चावल पांच किलो 70 रुपए किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 35000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB607",
+    "category": "mixed-name-first",
+    "utterance": "चावल डेढ किलो 70 रुपए किलो आटा दो किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 10500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB608",
+    "category": "mixed-name-first",
+    "utterance": "आटा एक किलो नमक 90 रुपए मैदा एक किलो चीनी आधा किलो 56 रुपए किलो बेसन एक किलो",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB609",
+    "category": "mixed-qty-first",
+    "utterance": "ek kilo chini aadha kilo besan 120 rupay ek kilo chawal 56 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 5600,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB610",
+    "category": "mixed-qty-first",
+    "utterance": "teen kilo besan 120 rupay paanch kilo chawal teen kilo aata 70 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB611",
+    "category": "mixed-qty-first",
+    "utterance": "dedh kilo chawal 56 rupay kilo do kilo aata dedh kilo namak",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB612",
+    "category": "mixed-qty-first",
+    "utterance": "ek kilo aata aadha kilo namak 45 rupay kilo ek kilo maida 90 rupay aadha kilo chini",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB613",
+    "category": "mixed-qty-first",
+    "utterance": "teen kilo namak 45 rupay kilo paanch kilo maida 90 rupay teen kilo chini",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB614",
+    "category": "mixed-qty-first",
+    "utterance": "dedh kilo maida do kilo chini dedh kilo besan 56 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB615",
+    "category": "mixed-qty-first",
+    "utterance": "ek kilo chini 120 rupay aadha kilo besan 56 rupay kilo ek kilo chawal aadha kilo aata 45 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB616",
+    "category": "mixed-qty-first",
+    "utterance": "teen kilo besan paanch kilo chawal 70 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 35000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB617",
+    "category": "mixed-qty-first",
+    "utterance": "dedh kilo chawal 70 rupay kilo do kilo aata",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 10500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB618",
+    "category": "mixed-qty-first",
+    "utterance": "ek kilo aata aadha kilo namak 90 rupay ek kilo maida aadha kilo chini 56 rupay kilo ek kilo besan",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB619",
+    "category": "mixed-name-first",
+    "utterance": "chini ek kilo besan 120 rupay chawal ek kilo 56 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 4500,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 5600,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB620",
+    "category": "mixed-name-first",
+    "utterance": "besan 120 rupay chawal paanch kilo aata teen kilo 70 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 25000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 21000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB621",
+    "category": "mixed-name-first",
+    "utterance": "chawal dedh kilo 56 rupay kilo aata do kilo namak dedh kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 2000,
+        "rateUnit": "kg",
+        "total": 3000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB622",
+    "category": "mixed-name-first",
+    "utterance": "aata ek kilo namak aadha kilo 45 rupay kilo maida 90 rupay chini aadha kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB623",
+    "category": "mixed-name-first",
+    "utterance": "namak teen kilo 45 rupay kilo maida 90 rupay chini teen kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 13500,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB624",
+    "category": "mixed-name-first",
+    "utterance": "maida dedh kilo chini do kilo besan dedh kilo 56 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 6300,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 8400,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB625",
+    "category": "mixed-name-first",
+    "utterance": "chini 120 rupay besan aadha kilo 56 rupay kilo chawal ek kilo aata aadha kilo 45 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 12000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 5000,
+        "rateUnit": "kg",
+        "total": 5000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 4500,
+        "rateUnit": "kg",
+        "total": 2250,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB626",
+    "category": "mixed-name-first",
+    "utterance": "besan teen kilo chawal paanch kilo 70 rupay kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 3,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 27000,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 35000,
+        "priceType": "rate"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB627",
+    "category": "mixed-name-first",
+    "utterance": "chawal dedh kilo 70 rupay kilo aata do kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 7000,
+        "rateUnit": "kg",
+        "total": 10500,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 2,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 7600,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB628",
+    "category": "mixed-name-first",
+    "utterance": "aata ek kilo namak 90 rupay maida ek kilo chini aadha kilo 56 rupay kilo besan ek kilo",
+    "expected": {
+      "safe": false,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "expectedItems": [
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 3800,
+        "rateUnit": "kg",
+        "total": 3800,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": null,
+        "unit": "",
+        "rate": null,
+        "total": 9000,
+        "priceType": "total"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 4200,
+        "rateUnit": "kg",
+        "total": 4200,
+        "priceType": "default"
+      },
+      {
+        "safe": false,
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 5600,
+        "rateUnit": "kg",
+        "total": 2800,
+        "priceType": "rate"
+      },
+      {
+        "safe": false,
+        "qty": 1,
+        "unit": "kg",
+        "rate": 9000,
+        "rateUnit": "kg",
+        "total": 9000,
+        "priceType": "default"
+      }
+    ],
+    "note": "KB-362 (owner, 30 Oct 2026): a MIXED order (priced and price-less pieces, no commas) is cut at quantity AND price phrases; the price stays with its item. A bail (ambiguous) is acceptable, a wrong line never."
+  },
+  {
+    "id": "NB629",
+    "category": "price-less-guard",
+    "utterance": "1 किलो मूंग दाल 96 किलो 1 किलो बर्बटी दाल 88 किलो 1 किलो उडद मोगर 130 किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (the owner's per-kilo prices without 'rupees')"
+  },
+  {
+    "id": "NB630",
+    "category": "price-less-guard",
+    "utterance": "1 kilo chini 56 kilo 2 kilo chawal 90 kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (Roman: a per-kilo number without a currency word)"
+  },
+  {
+    "id": "NB631",
+    "category": "price-less-guard",
+    "utterance": "चीनी दो किलो चावल",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (starts and ends with a name)"
+  },
+  {
+    "id": "NB632",
+    "category": "price-less-guard",
+    "utterance": "chini do kilo chawal",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (Roman: starts and ends with a name)"
+  },
+  {
+    "id": "NB633",
+    "category": "price-less-guard",
+    "utterance": "एक किलो चीनी दो किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (ends with a quantity that has no name)"
+  },
+  {
+    "id": "NB634",
+    "category": "price-less-guard",
+    "utterance": "ek kilo chini do kilo",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (Roman: ends with a quantity that has no name)"
+  },
+  {
+    "id": "NB635",
+    "category": "price-less-guard",
+    "utterance": "चीनी किलो चावल दो किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a unit with no number)"
+  },
+  {
+    "id": "NB636",
+    "category": "price-less-guard",
+    "utterance": "चीनी दो किलो तीन किलो चावल",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (two quantities in a row)"
+  },
+  {
+    "id": "NB637",
+    "category": "price-less-guard",
+    "utterance": "कि एक किलो चीनी दो किलो चावल 90 रुपए",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a leading filler word: quantity-first or name-first?)"
+  },
+  {
+    "id": "NB638",
+    "category": "price-less-guard",
+    "utterance": "ji ek kilo chini do kilo chawal 90 rupay",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (Roman: a leading filler word)"
+  },
+  {
+    "id": "NB639",
+    "category": "price-less-guard",
+    "utterance": "दो किलो 90 रुपए चावल एक किलो चीनी",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a price before its name)"
+  },
+  {
+    "id": "NB640",
+    "category": "price-less-guard",
+    "utterance": "एक किलो चीनी दो किलो चावल तीन",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a trailing bare number)"
+  },
+  {
+    "id": "NB641",
+    "category": "price-less-guard",
+    "utterance": "दो किलो चीनी चावल तीन किलो",
+    "expected": {
+      "safe": true,
+      "qty": null,
+      "unit": null,
+      "rate": null,
+      "total": null,
+      "priceType": null
+    },
+    "note": "KB-362 adversarial: ambiguous or incomplete - must NOT be cut into confident lines (a quantity on the wrong item, or a price read as a quantity). (a quantity-first start with a name-first end)"
   }
 ]

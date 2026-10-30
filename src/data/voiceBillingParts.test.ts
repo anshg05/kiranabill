@@ -89,6 +89,42 @@ describe("KB-362 (owner, 29 Oct 2026): a price per kilo said WITHOUT 'rupees', a
   });
 });
 
+describe("KB-362 (owner, 30 Oct 2026): price-less and MIXED orders with no commas are read by rule, each quantity on its own item", () => {
+  const lines = (r: Awaited<ReturnType<typeof run>>) => r.lines.map((l) => [l.item.spokenName, l.item.qty, l.item.priceType, l.item.total, l.source]);
+
+  it.each([
+    ["name first (the owner's sentence)", "बरबटी दाल एक किलो मूंग दाल दो किलो हरा बटाना एक किलो"],
+    ["quantity first", "एक किलो बरबटी दाल दो किलो मूंग दाल एक किलो हरा बटाना"],
+  ])("%s: three lines, quantities 1 / 2 / 1 on the right items, Gemini never called", async (_label, said) => {
+    const r = await run(said); // `never` throws if Layer 2 is called
+    expect(lines(r)).toEqual([
+      ["बरबटी दाल", 1, "default", 8000, "fastpath"],
+      ["मूंग दाल", 2, "default", 22000, "fastpath"],
+      ["हरा बटाना", 1, "default", 7000, "fastpath"],
+    ]);
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it("the owner's MIXED order: चीनी 2 kg (default price), चावल Rs 90 total, दाल 1 kg at Rs 96 - the price stays with its item", async () => {
+    const r = await run("चीनी दो किलो चावल 90 रुपए दाल एक किलो 96 रुपए किलो");
+    expect(lines(r)).toEqual([
+      ["चीनी", 2, "default", 9000, "fastpath"],
+      ["चावल", null, "total", 9000, "fastpath"],
+      ["दाल", 1, "rate", 9600, "fastpath"],
+    ]);
+  });
+
+  it.each(["चीनी दो किलो चावल 5", "चीनी एक किलो चावल 90 रुपए", "कि एक किलो चीनी दो किलो चावल 90 रुपए", "1 किलो मूंग दाल 96 किलो 1 किलो बर्बटी दाल 88 किलो"])(
+    "ambiguous - %s: Layer 1 accepts NO line; the whole text goes to Layer 2 (a quantity is never put on a guess)",
+    async (said) => {
+      const asked: string[] = [];
+      const r = await run(said, async (text) => (asked.push(text), []));
+      expect(r.lines).toEqual([]);
+      expect(asked).toEqual([said]);
+    },
+  );
+});
+
 describe("KB-359: Gemini's answer is checked against the piece it was asked about", () => {
   const priced = (over: Partial<ParsedItem>): ParsedItem => ({ spokenName: "zzyzx khaas", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "unknown", ...over });
 

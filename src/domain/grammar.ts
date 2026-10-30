@@ -741,7 +741,12 @@ export function splitItemSegments(text: string): string[] {
     .split(/\baur\b|(?<![\u0900-\u097F])और(?![\u0900-\u097F])|,/i)
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0)
-    .flatMap(splitAtPriceEnds);
+    // KB-362: the WHOLE text decides the word order first (a piece alone can look ambiguous that the whole list is not); when the list
+    // cannot be cut at its quantities, KB-358a's price phrases cut it as before
+    .flatMap((segment) => {
+      const byQuantity = splitAtQuantities(segment);
+      return byQuantity.length > 1 ? byQuantity : splitAtPriceEnds(segment);
+    });
 }
 
 const isNumberWord = (word: string): boolean =>
@@ -783,6 +788,97 @@ function splitAtPriceEnds(segment: string): string[] {
   }
   if (start < words.length) pieces.push(words.slice(start).join(" "));
   return pieces.length >= 2 && pieces.every(segmentIsComplete) ? pieces : [segment];
+}
+
+type Element = { readonly kind: "name" | "qty" | "price"; readonly token: number };
+
+/** Tokens -> names, quantity phrases ([num][unit]) and price phrases ([num] + currency / rate / total markers, or [num][perUnit]).
+ * null when anything else is there (a bare number, a lone unit or marker): the text is not a plain list of items. */
+function elementsOf(tokens: readonly Classified[]): Element[] | null {
+  const out: Element[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    if (t.type === "word") out.push({ kind: "name", token: i });
+    else if (t.type === "num" && tokens[i + 1]?.type === "unit") (out.push({ kind: "qty", token: i }), i++);
+    else if (t.type === "num" && (tokens[i + 1]?.type === "perUnit" || ["currency", "rate", "total"].includes(tokens[i + 1]?.type ?? ""))) {
+      out.push({ kind: "price", token: i });
+      i++;
+      while (["currency", "rate", "total"].includes(tokens[i + 1]?.type ?? "")) i++;
+      if (tokens[i + 1]?.type === "perUnit") i++;
+    } else return null;
+  }
+  return out;
+}
+
+/** Item starts (element indexes) when `els` is a list of [qty] name+ [price]? - quantity FIRST - or null. */
+function quantityFirstItems(els: readonly Element[]): number[] | null {
+  const starts: number[] = [];
+  let i = 0;
+  while (i < els.length) {
+    if (els[i]!.kind !== "qty") return null;
+    starts.push(i++);
+    if (els[i]?.kind !== "name") return null;
+    while (els[i]?.kind === "name") i++;
+    if (els[i]?.kind === "price") i++;
+  }
+  return starts;
+}
+
+/** Item starts when `els` is a list of name+ [qty]? [price]? (at least one of the two) - quantity AFTER the name - or null. */
+function nameFirstItems(els: readonly Element[]): number[] | null {
+  const starts: number[] = [];
+  let i = 0;
+  while (i < els.length) {
+    if (els[i]!.kind !== "name") return null;
+    starts.push(i);
+    while (els[i]?.kind === "name") i++;
+    const before = i;
+    if (els[i]?.kind === "qty") i++;
+    if (els[i]?.kind === "price") i++;
+    if (i === before) return null;
+  }
+  return starts;
+}
+
+/**
+ * KB-362 (owner, 30 Oct 2026): Whisper drops the commas AND a price-less order has no price phrase to cut at ("बरबटी दाल एक किलो
+ * मूंग दाल दो किलो"). The text is cut at its QUANTITY phrases - quantity first ("एक किलो चीनी दो किलो चावल") or name first ("चीनी एक
+ * किलो चावल दो किलो"), with an optional price phrase inside a piece (mixed orders). Only when every piece is complete, the whole
+ * text is one clean list, the cut never changes how a number reads, and no OTHER reading exists (a leading filler word before a
+ * quantity-first list would read as name first: both readings => no cut). Otherwise the text stays whole and Layer 2 reads it:
+ * a quantity is never given to the wrong item.
+ */
+function splitAtQuantities(segment: string): string[] {
+  const words = splitWords(segment);
+  if (words.length < 4) return [segment];
+  const tokens = classifySegment(words);
+  const els = elementsOf(tokens);
+  if (!els || els.length < 4) return [segment];
+
+  let starts: number[] | null;
+  if (els[0]!.kind === "qty") starts = quantityFirstItems(els);
+  else if (els[0]!.kind === "name") {
+    starts = nameFirstItems(els);
+    // a leading run of words could be filler before a quantity-first list: then the list reads both ways
+    const leading = els.findIndex((e) => e.kind !== "name");
+    if (starts && leading > 0 && els[leading]!.kind === "qty" && quantityFirstItems(els.slice(leading))) return [segment];
+  } else return [segment];
+  if (!starts || starts.length < 2) return [segment];
+
+  // a cut is a word position where the tokens before and after are exactly the tokens of the whole text (no number split in two)
+  const whole = JSON.stringify(tokens);
+  const cutAt = (tokenIndex: number): number | null => {
+    for (let k = 1; k < words.length; k++) {
+      const left = classifySegment(words.slice(0, k));
+      if (left.length === tokenIndex && JSON.stringify([...left, ...classifySegment(words.slice(k))]) === whole) return k;
+    }
+    return null;
+  };
+  // an item starts where its first element does; a name-first item's name is its first element, a quantity-first item's is its quantity
+  const cuts = starts.slice(1).map((s) => cutAt(els[s]!.token));
+  if (cuts.some((c) => c === null)) return [segment];
+  const edges = [0, ...(cuts as number[]), words.length];
+  return edges.slice(0, -1).map((from, i) => words.slice(from, edges[i + 1]).join(" "));
 }
 
 /** KB-317 (owner): in a multi-item utterance every segment needs a product

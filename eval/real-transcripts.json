@@ -258,9 +258,9 @@
       { "catalogId": "16", "displayName": "Toor Daal", "qty": 1, "unit": "kg", "total": 9000 },
       { "catalogId": "24", "displayName": "Kala Chana", "qty": 1, "unit": "kg", "total": 8000 }
     ],
-    "layer1": "miss",
+    "layer1": "hit",
     "audio": "2026-09-28T18-05-37-358Z.webm",
-    "note": "No separator (4 numbers in one run) - a Layer 1 miss. Owner: split Moong/Masoor, toor = Toor Daal (16), चना = Kala Chana."
+    "note": "No separator (4 numbers in one run) - a Layer 1 miss. Owner: split Moong/Masoor, toor = Toor Daal (16), चना = Kala Chana. KB-362 (30 Oct 2026): a quantity-first list with no price is now cut at its quantity phrases - a Layer 1 HIT."
   },
   {
     "id": "RT24",
