@@ -22,6 +22,18 @@ const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);
   return i < 0 ? undefined : process.argv[i + 1];
 };
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const PACE_MS = 4_000;
+async function retry<T>(call: () => Promise<T>, attempts = 4): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await call();
+    } catch (e) {
+      if (attempt >= attempts) throw e;
+      await sleep(attempt * 15_000);
+    }
+  }
+}
 const freeze = process.argv.includes("--freeze");
 const only = arg("only")?.split(",");
 const maxGemini = Number(arg("max-gemini") ?? 30);
@@ -48,7 +60,9 @@ try {
     const blob = new Blob([readFileSync(path.join(AUDIO_DIR, file))], { type: MIME[ext] ?? "application/octet-stream" });
     let transcript: string;
     try {
-      transcript = await transcribeAudio(blob, { accessToken: voice.accessToken, endpoint: voice.endpoint, language: "hi" });
+      // Groq answers "busy" when recordings are sent back to back (14 of 50 on 30 Oct): pace the calls and retry with a back-off
+      transcript = await retry(() => transcribeAudio(blob, { accessToken: voice.accessToken, endpoint: voice.endpoint, language: "hi" }));
+      await sleep(PACE_MS);
     } catch (e) {
       console.log(`ERR   ${o.id} ${o.category}: transcription failed (${(e as Error).message})`);
       verdicts.push({ id: o.id, exact: false, wrong: [], missing: ["transcription failed"], extra: [], notAddedOk: false, unexpectedChecks: false });
