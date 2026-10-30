@@ -10,7 +10,9 @@ They become a PERMANENT, automatic regression test: no release without a pass. A
 | **Hard stop** | **0 wrong lines.** A *wrong* line is a confident number or product that is not what was said: a wrong quantity, unit, product or price, a price where "Price needed" was expected, or a line nobody asked for. |
 | **Quality** | **At least 90% of the orders exact** — every line right, "Not added" pieces as expected, no more Theek hai checks than the owner accepted for that order. |
 | **No surprises** | **No order shows more Theek hai checks than the owner wrote for it** (usually 0). Fewer is fine. |
-| **Not wrong, only inexact** | The app did not guess: a missing line, a price left as "Price needed" where a price was said, a custom line instead of a catalog match. Costs "exact", never "wrong". |
+| **Not wrong, only inexact** | The app did not guess: a missing line, a price left as "Price needed" where a price was said, a custom line instead of a catalog match, a name that differs where the owner's spelling is not in the catalog. Costs "exact", never "wrong". |
+| **How a bill is judged** | As a **set**: Layer 1 lines come before Layer 2 lines on the screen, so position says nothing. A heard line is the product the owner wrote if it is the same catalog product **or** its name is close to what he wrote. "Wrong product" is only called when the owner's name resolves to one catalog product and the app claims another. A custom line claims none, so it is never a wrong product. piece / packet / box / bottle / pouch / bag / can / tin are one unit for a catalog price. |
+| **Silent or warned** | Every wrong line is reported with whether a Theek hai warned about it. The hard stop counts all of them; the report shows the silent ones separately (the dangerous kind: "never SILENTLY gets a number wrong"). |
 
 ## 2. What is stored where
 
@@ -146,3 +148,7 @@ The owner recorded all 50 orders (A01-A50) on `draft-v12`; he did not write the 
 4. The expected bills of the flagged orders were reviewed by the owner (see the tracker for his answers); the set locks only after his review and a passing `accept:live` run.
 
 A block containing a `# OWNER CHECK` line is skipped by `accept:build` until that line is removed.
+
+**First run, 30 Oct 2026.** The sheet (`b8a3f02`) was committed BEFORE the first live run and no number in it was changed afterwards. The owner answered the 19 flagged blocks in chat: A13 skipped (Whisper could not read it; what he said is kept as a note), the rest applied as he said them - the expected bill is **what he said**, even where Whisper heard something else. Two rulings of his are built into the sheet: a per-kilo price with no quantity means **1 kg** (A28, A33), and a total with no quantity stays **no quantity** (A28 "चावल 288"). A deliberate repeat expects the app's "said twice?" check (`checks:` 3 for A39, 1 for A40). The first live run (`npm run accept:live -- --freeze`) used 49 Groq and 37 Gemini calls.
+
+**What the first run taught about the TOOL** (fixed, tests first): it compared lines by position (the app puts Layer 1 lines first); it called a custom line a "wrong product"; it did not treat a rate and an equal total at quantity 1 as one bill, nor piece / packet as one unit; and it froze an EMPTY Whisper answer (A14) as if it were text. Those moved the first report's 95 wrong lines to 25 - the 25 are real (see the tracker). The set is **not locked**: until it is, `npm test` reports each order and enforces nothing; `npm run accept:report` replays the frozen run offline, in plain words, for free.

@@ -27,7 +27,8 @@
     "check:recorder": "tsx scripts/check-recorder-absent.ts",
     "accept:import": "tsx eval/acceptance/import.ts",
     "accept:build": "tsx eval/acceptance/build.ts",
-    "accept:live": "tsx eval/acceptance/live.ts"
+    "accept:live": "tsx eval/acceptance/live.ts",
+    "accept:report": "tsx eval/acceptance/report.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",

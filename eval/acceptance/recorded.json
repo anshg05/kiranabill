@@ -1,1 +1,1407 @@
-{}
+{
+  "एक किलो जवारी": [
+    {
+      "spokenName": "जवारी",
+      "catalogId": "8",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 2800,
+      "rateUnit": "kg",
+      "total": 2800,
+      "priceType": "default"
+    }
+  ],
+  "एक किलो फल्ली दाने": [
+    {
+      "spokenName": "फल्ली दाने",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  ],
+  "एक्किलो तुअरदाल एक्किलो मुंदाल": [
+    {
+      "spokenName": "तुअरदाल",
+      "catalogId": "16",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 9000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मुंदाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "default"
+    }
+  ],
+  "": null,
+  "1 किलो फली दाने": [
+    {
+      "spokenName": "फली दाने",
+      "catalogId": "228",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 12000,
+      "rateUnit": "kg",
+      "total": 12000,
+      "priceType": "default"
+    }
+  ],
+  "एक डेटोल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हारपिक 100 रुपए, एक लाइजॉल 110 रुपए": [
+    {
+      "spokenName": "डेटोल सेट",
+      "catalogId": "163",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 12500,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "संतूर सेट",
+      "catalogId": "167",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 4000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "संतूर हैंडवर्स सेट",
+      "catalogId": "451",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10500,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "हारपिक",
+      "catalogId": "199",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "लाइजॉल",
+      "catalogId": "200",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
+      "priceType": "total"
+    }
+  ],
+  "तूबल दाल 1 किलो, उड़द मुखर 1 किलो": [
+    {
+      "spokenName": "तूबल दाल",
+      "catalogId": "16",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 9000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "उड़द मुखर",
+      "catalogId": "624",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 12000,
+      "rateUnit": "kg",
+      "total": 12000,
+      "priceType": "default"
+    }
+  ],
+  "2 कीलो मोंगडाल 2 कीलो चनादाल 2 कीलो उडदमोगर 1 कीलो मोंगमोगर 1 कीलो बरबटीडाल 1 कीलो चनादाल 1 कीलो लालमिल्ची पैकेट": [
+    {
+      "spokenName": "मोंगडाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 22000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "चनादाल",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 16000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "उडदमोगर",
+      "catalogId": "624",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 12000,
+      "rateUnit": "kg",
+      "total": 24000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मोंगमोगर",
+      "catalogId": "622",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "बरबटीडाल",
+      "catalogId": "629",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 8000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "चनादाल",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 8000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "लाالمिल्ची पैकेट",
+      "catalogId": "100",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 20000,
+      "rateUnit": "kg",
+      "total": 20000,
+      "priceType": "default"
+    }
+  ],
+  "कि एक युक्त मसाला एक किलो घर मसाला एक किलो धन्यवाय करते हैं आलजी इस एक किलो खड़ी हल्दी एक किलो दाने 1 किलो चावल है आप एक किलो मसूल दाल": [
+    {
+      "spokenName": "घर मसाला",
+      "catalogId": "105",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 3000,
+      "rateUnit": "kg",
+      "total": 3000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "खड़ी हल्दी",
+      "catalogId": "634",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 32000,
+      "rateUnit": "kg",
+      "total": 32000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "चावल",
+      "catalogId": "11",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 5000,
+      "rateUnit": "kg",
+      "total": 5000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मसूल दाल",
+      "catalogId": "19",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 9000,
+      "priceType": "default"
+    }
+  ],
+  "चीनी 5 किलो 4 किलो तूवर दाल 4 किलो चना दाल मूंग दाल 2 किलो बरबटी दाल 1 किलो 2 किलो मसूर दाल 1 किलो मूंग मुगर": [
+    {
+      "spokenName": "चीनी",
+      "catalogId": "27",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 5,
+      "unit": "kg",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 22500,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "तूवर दाल",
+      "catalogId": "16",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 4,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 36000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "चना दाल",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 4,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 32000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मूंग दाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 22000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "बरबटी दाल",
+      "catalogId": "629",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 8000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मसूर दाल",
+      "catalogId": "19",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 18000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मूंग मुगर",
+      "catalogId": "622",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "default"
+    }
+  ],
+  "26 किलो कन की": [
+    {
+      "spokenName": "कन की",
+      "catalogId": "620",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 26,
+      "unit": "kg",
+      "rate": 3600,
+      "rateUnit": "kg",
+      "total": 93600,
+      "priceType": "default"
+    }
+  ],
+  "तूवल दाल 2 किलो": [
+    {
+      "spokenName": "तूवल दाल",
+      "catalogId": "16",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 18000,
+      "priceType": "default"
+    }
+  ],
+  "2 किलो बरबटी दाल 2 किलो उलद मुगर 1 किलो फुटाने 2 किलो दालिया 2 किलो हरा बटाना 56 रुपे किलो": [
+    {
+      "spokenName": "बरबटी दाल",
+      "catalogId": "629",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 16000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "उलद मुगर",
+      "catalogId": "624",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 12000,
+      "rateUnit": "kg",
+      "total": 24000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "फुटाने",
+      "catalogId": "609",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 9000,
+      "rateUnit": "kg",
+      "total": 9000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "दालिया",
+      "catalogId": "613",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 32000,
+      "rateUnit": "kg",
+      "total": 64000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "हरा बटाना",
+      "catalogId": "626",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 7000,
+      "rateUnit": "kg",
+      "total": 14000,
+      "priceType": "rate"
+    }
+  ],
+  "1 किलो महदा": [
+    {
+      "spokenName": "महदा",
+      "catalogId": "3",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 4200,
+      "rateUnit": "kg",
+      "total": 4200,
+      "priceType": "default"
+    }
+  ],
+  "डेटॉल साबुन सेट 1, 185 रुपए, संतूर साबुन सेट 1, 140 रुपए, डेटॉल हैंड वाश 1, 100 रुपए, लाइजॉल 1, 110 रुपए, हारपी केक 100 रुपए, रिन साबुन एक सेट 100 रुपए फेना साबुन 5 50 रुपए फेना डिटरजन 3 किलो 300 रुपए फेना डिटरजन 5 किलो 500 रुपए": [
+    {
+      "spokenName": "डेटॉल साबुन",
+      "catalogId": "163",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 18500,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "संतूर साबुन",
+      "catalogId": "167",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 14000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "डेटॉल हैंड वाश",
+      "catalogId": "450",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "लाइजॉल",
+      "catalogId": "200",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "हारपी केक",
+      "catalogId": "69",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "रिन साबुन",
+      "catalogId": "192",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "फेना साबुन",
+      "catalogId": "614",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 5,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 5000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "फेना डिटरजन",
+      "catalogId": "472",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 3,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 30000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "फेना डिटरजन",
+      "catalogId": "472",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 50000,
+      "priceType": "total"
+    }
+  ],
+  "मुग मोगर 110 रुपई किलो, उडद मोगर 130 रुपई किलो": [
+    {
+      "spokenName": "मुग मोगर",
+      "catalogId": "622",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": null,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "उडद मोगर",
+      "catalogId": "624",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "kg",
+      "rate": 13000,
+      "rateUnit": "kg",
+      "total": null,
+      "priceType": "rate"
+    }
+  ],
+  "मुंग दाल 5 किलो छेननो रुपई किलो": [
+    {
+      "spokenName": "मुंग दाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 5,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  ],
+  "गेवु 10 किलो 340 रुपए": [
+    {
+      "spokenName": "गेवु 10 किलो 340 रुपए",
+      "catalogId": "1",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 10,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 34000,
+      "priceType": "total"
+    }
+  ],
+  "झाल है कि मोठ 130 कुल काबूली चना 1 किलो 120 बाइक लो काबूली चना एक किलो मीडियम वाला 100 रुपए किलो, मुंदाल 1 टासी से चना 1 किलो अट्थाइसी करो": [
+    {
+      "spokenName": "मोठ",
+      "catalogId": "26",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    },
+    {
+      "spokenName": "काबुली चना",
+      "catalogId": "23",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 12000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "काबुली चना",
+      "catalogId": "23",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 10000,
+      "rateUnit": "kg",
+      "total": 10000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "मुंदाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    },
+    {
+      "spokenName": "चना",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 2800,
+      "priceType": "total"
+    }
+  ],
+  "यहीवी फल्ली दान 140 रुपए किलो, ए फल्ली दाने 150 रुपए, कि लो तुध हो दाल 140 रुपए किलो, खंडा तुध दाल 180 रुपए किलो, फुटान 140 रुपए किलो, दालिया एक सुन 20 रुपए किलो": [
+    {
+      "spokenName": "फल्ली दान",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 14000,
+      "rateUnit": "kg",
+      "total": 14000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "फल्ली दाने",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 15000,
+      "rateUnit": "kg",
+      "total": 15000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "तुध हो दाल",
+      "catalogId": "16",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 14000,
+      "rateUnit": "kg",
+      "total": 14000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "खंडा तुध दाल",
+      "catalogId": "632",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 18000,
+      "rateUnit": "kg",
+      "total": 18000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "फुटान",
+      "catalogId": "609",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 14000,
+      "rateUnit": "kg",
+      "total": 14000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "दालिया",
+      "catalogId": "613",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  ],
+  "पावा किलो मूंग दाल छैननो रुपए किलो तेल एक पैकेट एक सो जालिस वाला तेल एक लीटर एक सो पचास रुपए बनसल": [
+    {
+      "spokenName": "मूंग दाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 0.25,
+      "unit": "kg",
+      "rate": 9900,
+      "rateUnit": "kg",
+      "total": 2475,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "तेल",
+      "catalogId": "39",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "packet",
+      "rate": 14000,
+      "rateUnit": "packet",
+      "total": 14000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "तेल",
+      "catalogId": "33",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "बनसल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    }
+  ],
+  "तेल पैकेट एक फॉल्चून 160 रुपए, मदर डिलाइट तेल एक लिटर 150 रुपए": [
+    {
+      "spokenName": "तेल पैकेट एक फॉल्चून",
+      "catalogId": "39",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 16000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "मदर डिलाइट तेल एक लिटर",
+      "catalogId": "335",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    }
+  ],
+  "एक बंसल तेल पैकेट 140 रुपए, एक बंसल एक लिटर 150 रुपए": [
+    {
+      "spokenName": "बंसल तेल पैकेट",
+      "catalogId": "39",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 14000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "बंसल",
+      "catalogId": "33",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    }
+  ],
+  "देड किलो मैदा 44 रुपए किलो": [
+    {
+      "spokenName": "मैदा",
+      "catalogId": "3",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1.5,
+      "unit": "kg",
+      "rate": 4400,
+      "rateUnit": "kg",
+      "total": 6600,
+      "priceType": "rate"
+    }
+  ],
+  "500 ग्राम शक्कर 56 रुपए किलो, 500 ग्राम मुंग दाल 96 रुपए किलो, 500 ग्राम बरबटी दाल 88 रुपए किलो": [
+    {
+      "spokenName": "शक्कर",
+      "catalogId": "27",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 500,
+      "unit": "gm",
+      "rate": 5600,
+      "rateUnit": "gm",
+      "total": 2800,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "मुंग दाल",
+      "catalogId": "18",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 500,
+      "unit": "gm",
+      "rate": 9600,
+      "rateUnit": "gm",
+      "total": 4800,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "बरबटी दाल",
+      "catalogId": "629",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 500,
+      "unit": "gm",
+      "rate": 8800,
+      "rateUnit": "gm",
+      "total": 4400,
+      "priceType": "rate"
+    }
+  ],
+  "2 किलो शक्कर 1 किलो आटा रवा 1 किलो मैदा 1 किलो 1 मंसल तेल पैकेट 1 लिटर 150 रुपए, 1 मंसल तेल पैकेट 1 लिटर": [
+    {
+      "spokenName": "शक्कर",
+      "catalogId": "27",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 4500,
+      "rateUnit": "kg",
+      "total": 9000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "आटा",
+      "catalogId": "2",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 3800,
+      "rateUnit": "kg",
+      "total": 3800,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "रवा",
+      "catalogId": "5",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 4000,
+      "rateUnit": "kg",
+      "total": 4000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "मैदा",
+      "catalogId": "3",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 4200,
+      "rateUnit": "kg",
+      "total": 4200,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "तेल पैकेट",
+      "catalogId": "39",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "litre",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "तेल पैकेट",
+      "catalogId": "39",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "litre",
+      "rate": 2500,
+      "rateUnit": "litre",
+      "total": 2500,
+      "priceType": "default"
+    }
+  ],
+  "केहु 10 किलो 340 रुपय गेहु 10 किलो 34 रुपय किलो आला पंसल तेल 1 लिटर 150 रुपय मदर डिलाइट तेल 1 लिटर 150 रुपय वॉचुन तेल 1 लिटर 160 रुपय टोटल गोल्ड तेल 1 लिटर": [
+    {
+      "spokenName": "केहु",
+      "catalogId": "1",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 10,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 34000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "गेहु",
+      "catalogId": "1",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 10,
+      "unit": "kg",
+      "rate": 3400,
+      "rateUnit": "kg",
+      "total": 34000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "पंसल तेल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "मदर डिलाइट तेल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "वॉचुन तेल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 16000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "टोटल गोल्ड तेल",
+      "catalogId": "335",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": 13000,
+      "rateUnit": "liter",
+      "total": 13000,
+      "priceType": "default"
+    }
+  ],
+  "2 किलो चनादाल, 2 किलो चनादाल, लास्ट वाला चनादाल हटा दो, 1 लिटर बंसल 150 रुपए": [
+    {
+      "spokenName": "चनादाल",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 16000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "चनादाल",
+      "catalogId": "21",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 2,
+      "unit": "kg",
+      "rate": 8000,
+      "rateUnit": "kg",
+      "total": 16000,
+      "priceType": "default"
+    },
+    {
+      "spokenName": "बंसल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 15000,
+      "priceType": "total"
+    }
+  ],
+  "पतंजली पेस्ट बडा वाला 110 रुपए, कोलगेट पेस्ट 1 70 रुपए, सयादरी चाय आधा किलो 185 रुपए": [
+    {
+      "spokenName": "पतंजली पेस्ट बडा वाला",
+      "catalogId": "168",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "कोलगेट पेस्ट",
+      "catalogId": "169",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 7000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "सयादरी चाय",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 0.5,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 18500,
+      "priceType": "total"
+    }
+  ],
+  "मार्वल चाय 1 किलो 300 रुपए, रजवाडी गुड 1 किलो 80 रुपए": [
+    {
+      "spokenName": "मार्वल चाय",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 30000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "रजवाडी गुड",
+      "catalogId": "31",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 8000,
+      "priceType": "total"
+    }
+  ],
+  "एवरेस्ट किचन किंग मसाला 100 ग्राम 100 रुपए": [
+    {
+      "spokenName": "एवरेस्ट किचन किंग मसाला",
+      "catalogId": "124",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 100,
+      "unit": "gm",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  ],
+  "कि चिन्नवर काली मूच 1 किलो 80 रुपए थूप अगर बत्ती साइकल 20 रुपए वुश निर्मा 1 किलो 70 रुपए अ": [
+    {
+      "spokenName": "काली मूच",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 8000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "थूप",
+      "catalogId": "204",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    },
+    {
+      "spokenName": "अगर बत्ती साइकल",
+      "catalogId": "203",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 2000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "वुश",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": null,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 0,
+      "priceType": "unknown"
+    },
+    {
+      "spokenName": "निर्मा",
+      "catalogId": "193",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 7000,
+      "priceType": "total"
+    }
+  ],
+  "इंडिपेंडेंस हर सो तेल 1 लिटर 200 रुपए, पॉंट्स पाउडर 1 बाडा 100 रुपए": [
+    {
+      "spokenName": "इंडिपेंडेंस हर सो तेल",
+      "catalogId": "34",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 20000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "पॉंट्स पाउडर",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 10000,
+      "priceType": "total"
+    }
+  ],
+  "फुटाने 110 रुपए किलो, लाइजॉल 110 रुपए": [
+    {
+      "spokenName": "फुटाने",
+      "catalogId": "609",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": 11000,
+      "rateUnit": "kg",
+      "total": 11000,
+      "priceType": "rate"
+    },
+    {
+      "spokenName": "लाइजॉल",
+      "catalogId": "200",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 11000,
+      "priceType": "total"
+    }
+  ],
+  "इंडिपेंडेंस तेल सरसो साथ 200 रुपएं दंतलाल मंजन एक 20 रुपएं": [
+    {
+      "spokenName": "तेल सरसो",
+      "catalogId": "34",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": null,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 20000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "दंतलाल मंजन",
+      "catalogId": "168",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 2000,
+      "priceType": "total"
+    }
+  ],
+  "रिफाइंड सोयाबिन ओयल 170 रुपए, ग्राउंड नट ओयल 200 रुपए": [
+    {
+      "spokenName": "रिफाइंड सोयाबिन ओयल",
+      "catalogId": "36",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "liter",
+      "rate": null,
+      "rateUnit": null,
+      "total": 17000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "ग्राउंड नट ओयल",
+      "catalogId": null,
+      "isCustom": true,
+      "matchStatus": "none",
+      "qty": 1,
+      "unit": "",
+      "rate": null,
+      "rateUnit": null,
+      "total": 20000,
+      "priceType": "total"
+    }
+  ],
+  "स्वाद चायपत्ती 1 किलो 500 रुपए, सायद तूद ब्रस 1 पाइतीस रुपए, तूद ब्रस 1 60 रुपए": [
+    {
+      "spokenName": "स्वाद चायपत्ती",
+      "catalogId": "89",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "kg",
+      "rate": null,
+      "rateUnit": null,
+      "total": 50000,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "तूद ब्रस",
+      "catalogId": "172",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 3500,
+      "priceType": "total"
+    },
+    {
+      "spokenName": "तूद ब्रस",
+      "catalogId": "172",
+      "isCustom": false,
+      "matchStatus": "matched",
+      "qty": 1,
+      "unit": "piece",
+      "rate": null,
+      "rateUnit": null,
+      "total": 6000,
+      "priceType": "total"
+    }
+  ]
+}

@@ -70,6 +70,79 @@ describe("WRONG: a confident number that is not what was said", () => {
   });
 });
 
+describe("KB-364 first live run: the comparer judges a bill as a set, and is fair about names it cannot resolve", () => {
+  it("lines match by product, not by position (Layer 1 lines come before Layer 2 lines on the bill)", () => {
+    const e = exp([line("चीनी", 2, "kg", { kind: "default" }), line("चावल", 5, "kg", { kind: "default" })]);
+    expect(run(e, bill([chawal(), chini()])).exact).toBe(true);
+  });
+  it("the heard name is close to the name the owner wrote -> the same product, whatever id the app gave", () => {
+    const e = exp([line("फल्ली दाना", 1, "kg", { kind: "default" })]);
+    const a = chini({ spokenName: "फल्ली दाने", catalogId: "228", rate: 12000, total: 12000, qty: 1 });
+    expect(run(e, bill([a])).exact).toBe(true);
+  });
+  it("a generic name the owner wrote ('तेल') that the app read with the same word is not a wrong product", () => {
+    const e = exp([line("तेल", 1, "liter", { kind: "default" })]);
+    const a = chini({ spokenName: "तेल", catalogId: "39", unit: "liter", qty: 1, rate: 14000, rateUnit: "liter", total: 14000 });
+    expect(run(e, bill([a])).wrong).toEqual([]);
+  });
+  it("a name the catalog cannot resolve, read as a DIFFERENT product: inexact (the owner's spelling may simply be unknown), never wrong", () => {
+    const e = exp([line("xyzzy khaas", 2, "kg", { kind: "default" })]);
+    const v = run(e, bill([chini()]));
+    expect(v.wrong).toEqual([]);
+    expect(v.exact).toBe(false);
+    expect(v.inexact.join()).toMatch(/name/);
+  });
+  it("a name that DOES resolve, read as a different product with different words: WRONG", () => {
+    const v = run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([chawal({ qty: 2, total: 10000 })]));
+    expect(v.wrong).toHaveLength(1);
+  });
+  it("a wrong line says whether a Theek hai warned about it", () => {
+    const e = exp([line("चीनी", 2, "kg", { kind: "default" })]);
+    const a = chini({ qty: 3, total: 13500 });
+    const silent = run(e, bill([a]));
+    expect(silent.silentWrong).toBe(1);
+    const warned = run(e, bill([a], { warnedLines: [0] }));
+    expect(warned.wrong).toHaveLength(1);
+    expect(warned.wrong[0]).toMatch(/Theek hai warned/);
+    expect(warned.silentWrong).toBe(0);
+  });
+  it("the gate reports silent wrong lines separately", () => {
+    const g = gate([{ id: "A01", exact: false, wrong: ["x"], missing: [], extra: [], inexact: [], notAddedOk: true, unexpectedChecks: false, silentWrong: 1 }]);
+    expect(g.wrongLines).toBe(1);
+    expect(g.silentWrongLines).toBe(1);
+  });
+});
+
+describe("KB-364: what the first live run showed the comparer was unfair about", () => {
+  const custom = (over: Partial<ParsedItem>) => chini({ catalogId: null, isCustom: true, matchStatus: "none", ...over });
+  it("a custom line (the app claims NO catalog product) is never a wrong PRODUCT - the heard word was just not in the catalog", () => {
+    const v = run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([custom({ spokenName: "बिलकुल अलग शब्द", priceType: "unknown", rate: null, total: null })]));
+    expect(v.wrong).toEqual([]);
+    expect(v.exact).toBe(false);
+  });
+  it("at quantity 1 a rate and a total are the same bill", () => {
+    const e = exp([line("चीनी", 1, "kg", { kind: "rate", paise: 12000 })]);
+    expect(run(e, bill([chini({ qty: 1, rate: null, rateUnit: null, total: 12000, priceType: "total" })])).exact).toBe(true);
+    // but a different amount is still wrong
+    expect(run(e, bill([chini({ qty: 1, rate: null, rateUnit: null, total: 15000, priceType: "total" })])).wrong).toHaveLength(1);
+  });
+  it("2 kg at a spoken Rs 150 TOTAL is not 2 kg at Rs 150 a kilo (the draft-v7 class stays wrong)", () => {
+    const e = exp([line("चीनी", 2, "kg", { kind: "rate", paise: 15000 })]);
+    expect(run(e, bill([chini({ rate: null, rateUnit: null, total: 15000, priceType: "total" })])).wrong).toHaveLength(1);
+  });
+  it("piece and packet (and the other count units) are one unit for a catalog price; kg and gm are not", () => {
+    const e = exp([line("चीनी", 1, "packet", { kind: "total", paise: 14000 })]);
+    expect(run(e, bill([chini({ qty: 1, unit: "piece", rate: null, total: 14000, priceType: "total" })])).wrong).toEqual([]);
+    expect(run(exp([line("चीनी", 1, "kg", { kind: "total", paise: 14000 })]), bill([chini({ qty: 1, unit: "gm", rate: null, total: 14000, priceType: "total" })])).wrong).toHaveLength(1);
+  });
+  it("leftovers are paired only when they are a plain substitution (same number each side); otherwise they are missing / extra", () => {
+    const e = exp([line("चीनी", 2, "kg", { kind: "default" }), line("चावल", 5, "kg", { kind: "default" }), line("बेसन", 1, "kg", { kind: "default" })]);
+    const v = run(e, bill([chini({ spokenName: "तेल पैकेट", catalogId: "39", qty: 1, unit: "liter", rate: 14000, total: 14000 })]));
+    expect(v.missing).toHaveLength(3);
+    expect(v.wrong.length).toBe(1); // only the extra line, not a wrong product / quantity / unit on three imaginary pairs
+  });
+});
+
 describe("NOT exact but NOT wrong: the app did not guess", () => {
   it("a missing line", () => {
     const v = run(exp([line("चीनी", 2, "kg", { kind: "default" }), line("चावल", 5, "kg", { kind: "default" })]), bill([chini()]));
@@ -124,7 +197,7 @@ describe("checksOf - the Theek hai checks the screen would show", () => {
 });
 
 describe("the release gate", () => {
-  const v = (id: string, over: Partial<OrderVerdict> = {}): OrderVerdict => ({ id, exact: true, wrong: [], missing: [], extra: [], notAddedOk: true, unexpectedChecks: false, ...over });
+  const v = (id: string, over: Partial<OrderVerdict> = {}): OrderVerdict => ({ id, exact: true, wrong: [], missing: [], extra: [], inexact: [], notAddedOk: true, unexpectedChecks: false, silentWrong: 0, ...over });
   it("passes: 0 wrong, 90% exact, no unexpected checks", () => {
     const vs = [...Array.from({ length: 9 }, (_, i) => v(`A0${i + 1}`)), v("A10", { exact: false, missing: ["x"] })];
     const g = gate(vs);

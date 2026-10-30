@@ -65,7 +65,13 @@ try {
       await sleep(PACE_MS);
     } catch (e) {
       console.log(`ERR   ${o.id} ${o.category}: transcription failed (${(e as Error).message})`);
-      verdicts.push({ id: o.id, exact: false, wrong: [], missing: ["transcription failed"], extra: [], notAddedOk: false, unexpectedChecks: false });
+      verdicts.push({ id: o.id, exact: false, wrong: [], missing: ["transcription failed"], extra: [], inexact: [], notAddedOk: false, unexpectedChecks: false, silentWrong: 0 });
+      continue;
+    }
+    if (transcript.trim() === "") {
+      // Whisper answered with nothing (A14, 30 Oct): that is a failure of the run, never a frozen text
+      console.log(`ERR   ${o.id} ${o.category}: Whisper returned no text`);
+      verdicts.push({ id: o.id, exact: false, wrong: [], missing: ["Whisper returned no text"], extra: [], inexact: [], notAddedOk: false, unexpectedChecks: false, silentWrong: 0 });
       continue;
     }
     transcripts.set(o.id, transcript);
@@ -87,6 +93,7 @@ try {
     console.log(`${tag.padEnd(7)} ${o.id} ${o.category}: "${transcript}"${drift}`);
     for (const w of v.wrong) console.log(`          ! ${w}`);
     for (const m of v.missing) console.log(`          - ${m}`);
+    for (const x of v.inexact) console.log(`          ~ ${x}`);
     if (!v.notAddedOk) console.log(`          - the number of "Not added" pieces differs (${actual.unresolved}, expected ${o.expected.notAdded})`);
     if (v.unexpectedChecks) console.log(`          - ${actual.checks} Theek hai check(s), ${o.expected.checks} accepted`);
   }
