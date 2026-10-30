@@ -51,6 +51,7 @@ export type ReviewCode =
   | "number_unconsumed"
   | "number_misaligned"
   | "layer2_disagrees"
+  | "weak_product"
   | "duplicate_line"
   | "already_on_bill";
 

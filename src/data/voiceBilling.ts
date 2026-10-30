@@ -3,6 +3,7 @@ import { buildCatalogSlice, type ParserCatalog } from "@/domain/catalogIndex";
 import { parseUtteranceParts, type ParsedItem } from "@/domain/grammar";
 import { settleLayer2Items } from "@/domain/layer2";
 import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "@/domain/layer2Check";
+import { flagWeakProducts } from "@/domain/weakProduct";
 import { checkLayer2NumberOrder, evaluateReviewFlags, type ReviewCode, type ReviewFlag } from "@/domain/reviewFlags";
 
 // KB-302: steps 3-6 of the one-turn flow (16-APP-FLOW.md section 3;
@@ -94,6 +95,8 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
   const fastLines: BillLine[] = parts.flatMap((p, i) =>
     keep[i] ? [{ item: p.item!, displayName: deps.shop.byId.get(p.item!.catalogId ?? "")?.displayName ?? p.item!.spokenName, source: "fastpath" as const }] : [],
   );
+  // KB-368: a product chosen from a name nothing about it explains is never silent (Layer 1 and, below, Layer 2)
+  flags = [...flags, ...flagWeakProducts(fastLines.map((l) => l.item), deps.shop.entries)];
   const left = parts.filter((_, i) => !keep[i]);
   if (left.length === 0) return { layer: "fastpath", lines: fastLines, flags, timings: { layer1Ms, layer2Ms: null }, unresolved: [] };
 
@@ -137,7 +140,7 @@ export async function resolveUtterance(transcript: string, deps: ResolveDeps): P
 
   const items = lines.map((l) => l.item);
   const misaligned = checkLayer2NumberOrder(asked, items);
-  const layer2Flags = [...evaluateReviewFlags(asked, items, deps.shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])];
+  const layer2Flags = [...evaluateReviewFlags(asked, items, deps.shop.entries), ...flagWeakProducts(items, deps.shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])];
   const offset = fastLines.length; // the screen counts the Layer 1 lines first
   return {
     layer: "voice",

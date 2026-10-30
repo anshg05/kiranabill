@@ -370,6 +370,8 @@ const NUMBER_REASONS: ReadonlySet<string> = new Set(["number_dropped", "qty_drop
 export function checkHeadline(highs: readonly (Pick<ReviewFlag, "code" | "message"> & { readonly lineId?: string | null })[]): string {
   const specific = highs.find((f) => f.code === "layer2_disagrees");
   if (specific) return specific.message;
+  const product = highs.find((f) => f.code === "weak_product"); // KB-368: a line whose PRODUCT is in doubt says so before its numbers
+  if (product) return product.message;
   const numbers = highs.filter((f) => NUMBER_REASONS.has(f.code));
   if (numbers.length > 0) return numbers.some((f) => !f.lineId) ? "Check these lines' numbers" : "Check this line's numbers";
   return highs[0]!.message;

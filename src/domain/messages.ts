@@ -84,6 +84,7 @@ export const MESSAGES = {
   "flag.missingTotal": m("This line's total couldn't be computed.", "इस लाइन का कुल नहीं निकल पाया।", "Is line ka kul nahi nikal paaya."),
   "flag.unknownProduct": m(`"{name}" isn't in your catalog yet — added anyway.`, `“{name}” आपकी सूची में नहीं है — फिर भी जोड़ दिया।`, `“{name}” aapki list mein nahi hai — phir bhi jod diya.`),
   "flag.weakMatch": m(`"{name}" matched more than one product — pick the right one.`, `“{name}” कई सामान से मिलता है — सही वाला चुनें।`, `“{name}” kai saaman se milta hai — sahi wala chunein.`),
+  "flag.weakProduct": m(`Check this item — heard "{heard}", chose "{name}".`, `इस सामान को देख लें — सुना “{heard}”, चुना “{name}”।`, `Is saaman ko dekh lein — suna “{heard}”, chuna “{name}”.`),
   "flag.incomplete": m(`"{name}" has no price yet — add one to include it.`, `“{name}” का भाव नहीं है — भाव डालें, तभी बिल में जुड़ेगा।`, `“{name}” ka bhav nahi hai — bhav daalein, tabhi bill mein judega.`),
   "flag.invalidQty": m(`The quantity for "{name}" doesn't look right ({qty}). Check?`, `“{name}” की मात्रा ठीक नहीं लग रही ({qty})। देख लें?`, `“{name}” ki matra theek nahi lag rahi ({qty}). Dekh lein?`),
   "flag.invalidUnit": m(`"{unit}" isn't a recognised unit for "{name}". Check?`, `“{unit}” “{name}” की पहचानी हुई इकाई नहीं। देख लें?`, `“{unit}” “{name}” ki pehchaani hui unit nahi. Dekh lein?`),
