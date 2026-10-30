@@ -111,7 +111,7 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 
 1. `npm test`, `npm run test:e2e`, `npm run test:rls`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm audit --omit=dev`, `npm run bench:numbers`, `npm run eval:real`.
 2. `npm run smoke:voice` (Layer-2 wiring, 7 calls).
-3. `npm run accept:live` — **PASSED** (0 wrong, ≥ 90% exact, no unexpected check).
+3. The acceptance gate: **0 wrong lines** (`npm test` enforces it; `npm run accept:report` for the plain-words replay, `npm run accept:live` when the audio or the prompt changed). **Release rule (owner, 30 Oct 2026): 0 wrong lines.** The exact rate (>= 90%, 71% on 30 Oct) and "no unexpected Theek hai check" are TARGETS to raise (catalog aliases, re-recording the Whisper-misheard orders), reported on every run but not a stop - the 12 orders that are not exact are the app declining to guess.
 4. `npm run check:recorder` on the production build.
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
