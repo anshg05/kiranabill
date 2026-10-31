@@ -3,7 +3,8 @@ import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import type { ActualBill } from "../acceptance/compare.js";
 import type { ExpectedBill } from "../acceptance/types.js";
-import { declare, groqUsd, monthlyInr, perRecording, scoreRun, summarize, tokensUsd, webmSeconds, type RunResult } from "./score.js";
+import { declare, groqUsd, monthlyInr, perRecording, SCORING_SPELLINGS, scoringCatalog, scoreRun, summarize, tokensUsd, webmSeconds, type RunResult } from "./score.js";
+import { matchProductName } from "../../src/domain/grammar.js";
 
 // KB-370: the bake-off's scoring. Every metric the owner asked for: exact bills, wrong numbers on a final line (0 for any winner),
 // dropped / duplicated / invented items, lines with a Theek hai, seconds, rupees per bill and per month.
@@ -18,12 +19,12 @@ const chiniAt45: ExpectedBill = { lines: [{ name: "चीनी", qty: 2, unit: 
 
 describe("scoreRun", () => {
   it("an exact bill is exact, with nothing dropped, duplicated or invented", () => {
-    expect(scoreRun("A01", chiniAt45, bill([line({})]), shop)).toMatchObject({ exact: true, wrongLines: 0, dropped: 0, duplicated: 0, invented: 0 });
+    expect(scoreRun("A01", chiniAt45, bill([line({})]), shop)).toMatchObject({ exact: true, wrongLines: 0, dropped: 0, silentDuplicated: 0, warnedDuplicated: 0, invented: 0 });
   });
 
   it("the same product twice is DUPLICATED (the dal-order failure); a product nobody said is INVENTED", () => {
     const s = scoreRun("A62", chiniAt45, bill([line({}), line({}), line({ spokenName: "साबुन", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: null, rateUnit: null, total: 1000, priceType: "total" })]), shop);
-    expect(s).toMatchObject({ exact: false, duplicated: 1, invented: 1, dropped: 0 });
+    expect(s).toMatchObject({ exact: false, silentDuplicated: 1, warnedDuplicated: 0, invented: 1, dropped: 0 });
     expect(s.wrongLines).toBe(2); // both extra lines carry a number: wrong, and silent
   });
 
@@ -37,6 +38,61 @@ describe("scoreRun", () => {
     expect(s).toMatchObject({ wrongNumbers: 1, wrongProducts: 0, silentWrong: 0, warnedLines: 1, checks: 1 });
     const p = scoreRun("A27", chiniAt45, bill([line({ spokenName: "चावल", catalogId: "11" })]), shop);
     expect(p).toMatchObject({ wrongProducts: 1, wrongNumbers: 0 });
+  });
+});
+
+// KB-370 scoring rules (owner, 1 Nov 2026) - the bake-off only; the gate's comparison (eval/acceptance/compare.ts) is unchanged.
+const custom = (spokenName: string, over: Partial<ParsedItem> = {}) => line({ spokenName, catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "unknown", ...over });
+const shopPrice = (name: string): ExpectedBill => ({ lines: [{ name, qty: 1, unit: "kg", price: { kind: "default" } }], notAdded: 0, checks: 0 });
+
+describe("rule 1 - shop price for a product the eval catalog does not have", () => {
+  it("'Price needed' is RIGHT (there is no shop price to fill in)", () => {
+    expect(scoreRun("A61", shopPrice("पोपट दाल"), bill([custom("पोपट दाल")]), shop)).toMatchObject({ exact: true, wrongLines: 0 });
+  });
+  it("the correct catalog product (a spelling mismatch, reviewed list) with its shop price is ALSO right", () => {
+    const futana = line({ spokenName: "फुटाना", catalogId: "609", qty: 1, unit: "kg", rate: null, rateUnit: null, total: 9000, priceType: "default" });
+    expect(scoreRun("A52", shopPrice("फुटाने"), bill([futana]), shop)).toMatchObject({ exact: true, wrongLines: 0, wrongProducts: 0 });
+  });
+  it("a wrong price is never right", () => {
+    const futana = line({ spokenName: "फुटाना", catalogId: "609", qty: 1, unit: "kg", rate: 12000, rateUnit: "kg", total: 12000, priceType: "rate" });
+    expect(scoreRun("A55", shopPrice("फुटाने"), bill([futana]), shop).wrongNumbers).toBe(1);
+  });
+  it("for a product the catalog DOES have, 'Price needed' is still only inexact (the shop price was there)", () => {
+    expect(scoreRun("A55", shopPrice("चना दाल"), bill([custom("चना दाल")]), shop)).toMatchObject({ exact: false, wrongLines: 0 });
+  });
+  it("the reviewed spellings resolve only in the scoring catalog, to the product the owner meant", () => {
+    const sc = scoringCatalog(shop);
+    for (const [name, id] of Object.entries(SCORING_SPELLINGS)) expect(matchProductName(name, sc).catalogId, name).toBe(id);
+    expect(matchProductName("फुटाने", shop).catalogId).toBeNull(); // the app's own catalog is untouched
+  });
+});
+
+describe("rule 2 - custom lines", () => {
+  const popat: ExpectedBill = { lines: [{ name: "पोपट दाल", qty: 1, unit: "kg", price: { kind: "rate", paise: 7200 } }], notAdded: 0, checks: 0 };
+  const priced = { qty: 1, rate: 7200, rateUnit: "kg", total: 7200, priceType: "rate" as const };
+  it("numbers right and the name looks alike = right", () => {
+    expect(scoreRun("A62", popat, bill([custom("पोपट दाल", priced)]), shop)).toMatchObject({ exact: true, numbersRightNameWrong: 0 });
+  });
+  it("numbers right but the name does NOT look alike = 'numbers right, name wrong': not exact, not a wrong number", () => {
+    expect(scoreRun("A62", popat, bill([custom("पॉप कॉर्न", priced)]), shop)).toMatchObject({ exact: false, numbersRightNameWrong: 1, wrongLines: 0 });
+  });
+  it("a different CATALOG product chosen = a wrong product (silent when no Theek hai)", () => {
+    const chana = line({ spokenName: "पोपट दाल", catalogId: "21", ...priced });
+    expect(scoreRun("A62", popat, bill([chana]), shop)).toMatchObject({ wrongProducts: 1, silentWrong: 1, exact: false });
+    expect(scoreRun("A62", popat, bill([chana], { checks: 1, warnedLines: [0] }), shop)).toMatchObject({ wrongProducts: 1, silentWrong: 0 });
+  });
+});
+
+describe("rule 3 - a correction said in the order (A59: ONE 3 kg line is the bill)", () => {
+  const sugar3: ExpectedBill = { lines: [{ name: "चीनी", qty: 3, unit: "kg", price: { kind: "rate", paise: 5600 } }], notAdded: 0, checks: 0 };
+  const sugar = (qty: number) => line({ qty, rate: 5600, total: qty * 5600 });
+  it("a second line WITH a Theek hai is a warned duplicate: listed, not a silent wrong, and the order is not exact", () => {
+    const s = scoreRun("A59", sugar3, bill([sugar(2), sugar(3)], { checks: 1, warnedLines: [0] }), shop);
+    expect(s).toMatchObject({ warnedDuplicated: 1, silentDuplicated: 0, wrongLines: 0, silentWrong: 0, exact: false });
+    expect(s.wrong).toEqual([]);
+  });
+  it("a second line with NO warning is a silent duplicate - a wrong line", () => {
+    expect(scoreRun("A59", sugar3, bill([sugar(2), sugar(3)]), shop)).toMatchObject({ silentDuplicated: 1, warnedDuplicated: 0, wrongLines: 1, silentWrong: 1 });
   });
 });
 
@@ -69,7 +125,7 @@ describe("webmSeconds", () => {
 
 const run = (over: Partial<RunResult>): RunResult => ({
   candidate: "A", id: "A01", set: "short", run: 1, transcript: "x", seconds: 2, usd: 0.001, exact: true, wrongLines: 0, silentWrong: 0, wrongNumbers: 0, wrongProducts: 0,
-  dropped: 0, duplicated: 0, invented: 0, checks: 0, warnedLines: 0, wrong: [], ...over,
+  dropped: 0, silentDuplicated: 0, warnedDuplicated: 0, invented: 0, numbersRightNameWrong: 0, checks: 0, warnedLines: 0, wrong: [], audioSeconds: 12, ...over,
 });
 
 describe("summarize and perRecording", () => {
@@ -81,7 +137,7 @@ describe("summarize and perRecording", () => {
   });
   it("per recording over its runs: best, worst and average", () => {
     const r = perRecording([run({ set: "long", id: "A51", run: 1, wrongLines: 0, exact: true }), run({ set: "long", id: "A51", run: 2, wrongLines: 3, exact: false }), run({ set: "long", id: "A51", run: 3, wrongLines: 1, exact: false })]);
-    expect(r).toEqual([{ candidate: "A", id: "A51", runs: 3, exactRuns: 1, bestWrong: 0, worstWrong: 3, avgWrong: 4 / 3, avgSeconds: 2 }]);
+    expect(r).toEqual([{ candidate: "A", id: "A51", runs: 3, exactRuns: 1, bestWrong: 0, worstWrong: 3, avgWrong: 4 / 3, avgSeconds: 2, audioSeconds: 12 }]);
   });
 });
 

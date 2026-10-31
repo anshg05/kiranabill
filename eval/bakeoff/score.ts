@@ -1,4 +1,5 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
+import { prepareParserCatalog } from "../../src/domain/catalogIndex.js";
 import { matchProductName } from "../../src/domain/grammar.js";
 import type { TokenUsage } from "../../src/voice/parseProvider.js";
 import { compareOrder, type ActualBill } from "../acceptance/compare.js";
@@ -63,8 +64,13 @@ export interface RunScore {
   readonly wrongNumbers: number;
   readonly wrongProducts: number;
   readonly dropped: number;
-  readonly duplicated: number;
+  /** A product said once, billed twice, with NO Theek hai on the extra line - a wrong line (the dal-order failure). */
+  readonly silentDuplicated: number;
+  /** The same, but the extra line carries a Theek hai (owner, 1 Nov 2026: listed, not a silent wrong; the order is not exact). */
+  readonly warnedDuplicated: number;
   readonly invented: number;
+  /** A custom line whose numbers are right but whose name does not look like what was said (rule 2): not exact, not a wrong number. */
+  readonly numbersRightNameWrong: number;
   readonly checks: number;
   /** Lines a Theek hai is shown on. */
   readonly warnedLines: number;
@@ -72,33 +78,122 @@ export interface RunScore {
   readonly wrong: readonly string[];
 }
 
-/** The acceptance comparison (eval/acceptance/compare.ts) plus what a long order breaks: a product said once billed twice is DUPLICATED,
- * an extra line for a product nobody said is INVENTED, a line that never arrived is DROPPED. */
+/**
+ * Owner, 1 Nov 2026 (rule 1): products the eval catalog DOES have, under another spelling than the owner's - reviewed by hand. Used only to
+ * SCORE (scoringCatalog); the app under test keeps the plain catalog. सैगी मूंग and काटा चना are left out: which product they are is not certain.
+ */
+export const SCORING_SPELLINGS: Readonly<Record<string, string>> = {
+  "फुटाने": "609", // Futana
+  "रिन साबुन": "192", // Rin
+  "पार्ले जी बिस्किट": "53", // Parle-G 30 (A57: "30 वाला")
+  "फेना साबुन": "614", // Sabun (alias फेना, Rs 10)
+  "फेना डिटर्जेंट": "472", // Fena Detergent
+  "गुड डे बिस्किट": "57", // Good Day
+  "कुलथा दाना": "630", // कुलथा
+  "पतला पोहा": "14", // Poha (the variety spoken as part of the name)
+  "जाड़ा पोहा": "14",
+};
+
+/** The catalog a bill is JUDGED against: the same products, plus the owner's spellings above as aliases. */
+export function scoringCatalog(shop: ParserCatalog): ParserCatalog {
+  const extra = new Map<string, string[]>();
+  for (const [name, id] of Object.entries(SCORING_SPELLINGS)) extra.set(id, [...(extra.get(id) ?? []), name]);
+  return prepareParserCatalog(shop.entries.map((e) => (extra.has(e.id) ? { ...e, aliases: [...e.aliases, ...extra.get(e.id)!] } : e)));
+}
+const scoringCache = new WeakMap<ParserCatalog, ParserCatalog>();
+
+const NO_WARNING = " [NO warning]";
+const WARNED = " [a Theek hai warned]";
+
+/**
+ * The acceptance comparison (eval/acceptance/compare.ts, unchanged - it is the gate's) against the scoring catalog, then the bake-off's own
+ * rules (owner, 1 Nov 2026):
+ * 1. "shop price" for a product the eval catalog does not have: "Price needed" is right (there is no shop price to fill in);
+ * 2. a custom line for such a product: numbers right + a name that looks alike = right (compare.ts's rule); numbers right + a name that does
+ *    not = "numbers right, name wrong"; a CATALOG product chosen instead = a wrong product;
+ * 3. a product said once and billed twice: a warned duplicate (listed, not a wrong line, not exact) or a silent duplicate (a wrong line).
+ * A line that never arrived is DROPPED; any other extra line is INVENTED.
+ */
 export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill, shop: ParserCatalog): RunScore {
-  const v = compareOrder(id, expected, actual, shop);
+  let sc = scoringCache.get(shop);
+  if (!sc) scoringCache.set(shop, (sc = scoringCatalog(shop)));
+  const v = compareOrder(id, expected, actual, sc);
+  const wrong = [...v.wrong];
+  const inexact: string[] = [];
+  let numbersRightNameWrong = 0;
+  const notInCatalog = new Set(expected.lines.filter((e) => !matchProductName(e.name, sc).catalogId).map((e) => e.name));
+  const shopPriced = new Set(expected.lines.filter((e) => e.price.kind === "default").map((e) => e.name));
+  // another finding about the same expected line (a number) means its numbers are not right
+  const otherFinding = (name: string, x: string) => [...v.wrong, ...v.inexact].some((y) => y !== x && y.startsWith(`${name}:`));
+  for (const x of v.inexact) {
+    const name = x.slice(0, x.indexOf(":"));
+    if (!notInCatalog.has(name)) {
+      inexact.push(x);
+      continue;
+    }
+    if (x === `${name}: the price was left out` && shopPriced.has(name)) continue; // rule 1
+    const heard = /: the name differs - heard "(.*)" \((.*)\)$/.exec(x);
+    if (!heard || otherFinding(name, x)) {
+      inexact.push(x);
+      continue;
+    }
+    if (heard[2] === "not in the catalog") numbersRightNameWrong++; // rule 2
+    else {
+      // rule 2: the owner's product is not in the catalog and the app claimed a catalog one - a wrong product
+      const j = actual.lines.findIndex((l) => l.item.spokenName === heard[1] && l.item.catalogId !== null);
+      wrong.push(`${name}: wrong product - heard "${heard[1]}" (${heard[2]})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
+    }
+  }
+
+  // rule 2, the case compare.ts calls right: the heard WORDS match the owner's name but the line claims a catalog product - and the owner's
+  // product is not in the catalog, so that product cannot be it (e.g. "पोपट दाल" billed as Chana Daal). Each such line once.
+  const claimed = new Set<number>();
+  for (const e of expected.lines.filter((x) => notInCatalog.has(x.name))) {
+    const j = actual.lines.findIndex((l, k) => {
+      if (l.item.catalogId === null || claimed.has(k)) return false;
+      const one = compareOrder(id, { lines: [e], notAdded: 0, checks: 0 }, { lines: [l], unresolved: 0, checks: 0 }, sc);
+      return one.extra.length === 0 && ![...one.wrong, ...one.inexact].some((y) => y.includes("name differs") || y.includes("wrong product"));
+    });
+    if (j < 0) continue;
+    claimed.add(j);
+    const l = actual.lines[j]!;
+    wrong.push(`${e.name}: wrong product - heard "${l.item.spokenName}" (${l.displayName})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
+  }
+
+  // rule 3: an extra line for a product the owner said once (and that is already on the bill) is a duplicate - warned or silent
   const want = new Map<string, number>();
   for (const e of expected.lines) {
-    const cid = matchProductName(e.name, shop).catalogId;
+    const cid = matchProductName(e.name, sc).catalogId;
     if (cid) want.set(cid, (want.get(cid) ?? 0) + 1);
   }
   const got = new Map<string, number>();
   for (const l of actual.lines) if (l.item.catalogId) got.set(l.item.catalogId, (got.get(l.item.catalogId) ?? 0) + 1);
-  let duplicated = 0;
-  for (const [cid, n] of got) if ((want.get(cid) ?? 0) >= 1) duplicated += Math.max(0, n - want.get(cid)!);
-  duplicated = Math.min(duplicated, v.extra.length);
-  const wrongProducts = v.wrong.filter((w) => w.includes("wrong product")).length;
+  const surplus = new Set([...got].filter(([cid, n]) => (want.get(cid) ?? 0) >= 1 && n > want.get(cid)!).map(([cid]) => cid));
+  let silentDuplicated = 0;
+  let warnedDuplicated = 0;
+  for (let k = wrong.length - 1; k >= 0; k--) {
+    const m = /^an extra line: (.*?)( \[a Theek hai warned\]| \[NO warning\])$/.exec(wrong[k]!);
+    if (!m || !actual.lines.some((l) => l.item.spokenName === m[1] && l.item.catalogId !== null && surplus.has(l.item.catalogId))) continue;
+    if (m[2] === WARNED) (warnedDuplicated++, wrong.splice(k, 1));
+    else silentDuplicated++;
+  }
+
+  const wrongProducts = wrong.filter((w) => w.includes("wrong product")).length;
+  const exact = v.notAddedOk && actual.checks <= expected.checks && wrong.length === 0 && inexact.length === 0 && v.missing.length === 0 && numbersRightNameWrong === 0 && warnedDuplicated === 0;
   return {
-    exact: v.exact,
-    wrongLines: v.wrong.length,
-    silentWrong: v.silentWrong,
-    wrongNumbers: v.wrong.length - wrongProducts,
+    exact,
+    wrongLines: wrong.length,
+    silentWrong: wrong.filter((w) => w.endsWith(NO_WARNING)).length,
+    wrongNumbers: wrong.length - wrongProducts,
     wrongProducts,
     dropped: v.missing.length,
-    duplicated,
-    invented: v.extra.length - duplicated,
+    silentDuplicated,
+    warnedDuplicated,
+    invented: v.extra.length - silentDuplicated - warnedDuplicated,
+    numbersRightNameWrong,
     checks: actual.checks,
     warnedLines: actual.warnedLines?.length ?? 0,
-    wrong: v.wrong,
+    wrong,
   };
 }
 
@@ -111,6 +206,8 @@ export interface RunResult extends RunScore {
   /** Wall time from the end of the recording to the items (the PC's network + the models), seconds. */
   readonly seconds: number;
   readonly usd: number;
+  /** The recording's length in seconds (from its header) - the report marks those over 40 s. */
+  readonly audioSeconds: number;
   /** A provider failure or timeout - the order shows nothing (or "Not added"), never a wrong line. */
   readonly error?: string;
 }
@@ -133,7 +230,9 @@ export function summarize(results: readonly RunResult[], inrPerUsd: number) {
     wrongNumbers: sum((r) => r.wrongNumbers),
     wrongProducts: sum((r) => r.wrongProducts),
     dropped: sum((r) => r.dropped),
-    duplicated: sum((r) => r.duplicated),
+    silentDuplicated: sum((r) => r.silentDuplicated),
+    warnedDuplicated: sum((r) => r.warnedDuplicated),
+    numbersRightNameWrong: sum((r) => r.numbersRightNameWrong),
     invented: sum((r) => r.invented),
     warnedLines: sum((r) => r.warnedLines),
     errors: results.filter((r) => r.error).length,
@@ -159,6 +258,7 @@ export function perRecording(results: readonly RunResult[]) {
     worstWrong: Math.max(...rs.map((r) => r.wrongLines)),
     avgWrong: rs.reduce((a, r) => a + r.wrongLines, 0) / rs.length,
     avgSeconds: rs.reduce((a, r) => a + r.seconds, 0) / rs.length,
+    audioSeconds: rs[0]!.audioSeconds,
   }));
 }
 

@@ -22,15 +22,17 @@ const { meta, results } = JSON.parse(readFileSync(file, "utf8")) as {
   results: RunResult[];
 };
 
+/** A recording's length, marked when it is over 40 s (owner, 1 Nov 2026: Whisper's restart was on a ~40 s order). */
+const len = (sec: number) => `${sec.toFixed(1)} s${sec > 40 ? " **(over 40 s)**" : ""}`;
 const rs = (n: number) => `Rs ${n < 1 ? n.toFixed(2) : n.toFixed(0)}`;
 const s1 = (n: number) => n.toFixed(1);
 function table(rows: RunResult[]): string {
-  const head = "| Candidate | Orders x runs | Exact | Wrong lines (silent) | Wrong numbers | Wrong products | Dropped | Duplicated | Invented | Lines with a Theek hai | Errors | Seconds median / p90 / max | Rs per bill | Rs per month (100 bills a day) |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|";
+  const head = "| Candidate | Orders x runs | Exact | Wrong lines (silent) | Wrong numbers | Wrong products | Dropped | Duplicated silent / warned | Invented | Numbers right, name wrong | Lines with a Theek hai | Errors | Seconds median / p90 / max | Rs per bill | Rs per month (100 bills a day) |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|";
   const lines = CANDIDATES.filter((c) => rows.some((r) => r.candidate === c)).map((c) => {
     const mine = rows.filter((r) => r.candidate === c);
     const s = summarize(mine, meta.inrPerUsd);
     const orders = new Set(mine.map((r) => r.id)).size;
-    return `| **${c}** | ${orders} x ${s.runs / Math.max(1, orders)} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | **${s.wrongLines}** (${s.silentWrong}) | ${s.wrongNumbers} | ${s.wrongProducts} | ${s.dropped} | ${s.duplicated} | ${s.invented} | ${s.warnedLines} | ${s.errors} | ${s1(s.secondsMedian)} / ${s1(s.secondsP90)} / ${s1(s.secondsMax)} | ${rs(s.inrPerBill)} | ${rs(s.inrPerMonth)} |`;
+    return `| **${c}** | ${orders} x ${s.runs / Math.max(1, orders)} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | **${s.wrongLines}** (${s.silentWrong}) | ${s.wrongNumbers} | ${s.wrongProducts} | ${s.dropped} | ${s.silentDuplicated} / ${s.warnedDuplicated} | ${s.invented} | ${s.numbersRightNameWrong} | ${s.warnedLines} | ${s.errors} | ${s1(s.secondsMedian)} / ${s1(s.secondsP90)} / ${s1(s.secondsMax)} | ${rs(s.inrPerBill)} | ${rs(s.inrPerMonth)} |`;
   });
   return [head, ...lines].join("\n");
 }
@@ -38,9 +40,9 @@ function table(rows: RunResult[]): string {
 const short = results.filter((r) => r.set === "short");
 const long = results.filter((r) => r.set === "long");
 const setAside = short.filter((r) => meta.setAside.includes(r.id));
-const wrongRows = results.filter((r) => r.wrong.length > 0).flatMap((r) => r.wrong.map((w) => `| ${r.id} | ${r.candidate} | ${r.run} | ${w} | ${(r.transcript ?? "").replace(/\|/g, "/").slice(0, 160)} |`));
+const wrongRows = results.filter((r) => r.wrong.length > 0).flatMap((r) => r.wrong.map((w) => `| ${r.id} | ${len(r.audioSeconds)} | ${r.candidate} | ${r.run} | ${w} | ${(r.transcript ?? "").replace(/\|/g, "/").slice(0, 160)} |`));
 const errorRows = results.filter((r) => r.error).map((r) => `| ${r.id} | ${r.candidate} | ${r.run} | ${r.error} |`);
-const perRec = perRecording(long).map((p) => `| ${p.id} | ${p.candidate} | ${p.exactRuns}/${p.runs} | ${p.bestWrong} | ${p.worstWrong} | ${p.avgWrong.toFixed(1)} | ${s1(p.avgSeconds)} |`);
+const perRec = perRecording(long).map((p) => `| ${p.id} | ${len(p.audioSeconds)} | ${p.candidate} | ${p.exactRuns}/${p.runs} | ${p.bestWrong} | ${p.worstWrong} | ${p.avgWrong.toFixed(1)} | ${s1(p.avgSeconds)} |`);
 
 const old = existsSync(REPORT) ? readFileSync(REPORT, "utf8") : "";
 const kept = /<!-- summary -->([\s\S]*?)<!-- \/summary -->/.exec(old)?.[1] ?? "\n_Written by hand after the run: which candidate, why, and what it costs - in plain words._\n";
@@ -70,10 +72,10 @@ ${table(setAside)}
 ${long.length ? table(long) : "_No long order recorded yet._"}
 
 ### Long orders per recording (over the runs)
-${perRec.length ? `| Recording | Candidate | Exact runs | Best (fewest wrong lines) | Worst | Average | Avg seconds |\n|---|---|---|---|---|---|---|\n${perRec.join("\n")}` : "_None yet._"}
+${perRec.length ? `| Recording | Length | Candidate | Exact runs | Best (fewest wrong lines) | Worst | Average | Avg seconds |\n|---|---|---|---|---|---|---|---|\n${perRec.join("\n")}` : "_None yet._"}
 
 ## Every wrong line
-${wrongRows.length ? `| Recording | Candidate | Run | What was wrong | What it heard |\n|---|---|---|---|---|\n${wrongRows.join("\n")}` : "_None._"}
+${wrongRows.length ? `| Recording | Length | Candidate | Run | What was wrong | What it heard |\n|---|---|---|---|---|---|\n${wrongRows.join("\n")}` : "_None._"}
 
 ## Errors and timeouts (the order showed nothing, never a wrong line)
 ${errorRows.length ? `| Recording | Candidate | Run | Error |\n|---|---|---|---|\n${errorRows.join("\n")}` : "_None._"}

@@ -179,7 +179,7 @@ for (const rec of recordings) {
       // D runs B and C side by side: its seconds are the slower of the two
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
       const score = scoreRun(rec.id, expected, actual, shop);
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, ...(error ? { error } : {}), ...score });
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...(error ? { error } : {}), ...score });
       console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
     }
