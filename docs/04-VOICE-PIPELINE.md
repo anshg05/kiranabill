@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 31 Oct 2026 (rev 11) · **Status:** Final for MVP
+**Last updated:** 31 Oct 2026 (rev 12) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -266,6 +266,8 @@ These exist because Pilloo violates 1, 2 and 4, and that is why it needs four tu
 ## 8. Evaluation
 
 The eval is not optional infrastructure — it is how the differentiator is defended.
+
+**`KB-370` voice bake-off (V1, D100):** `eval/bakeoff/` compares the current ear (Whisper) with `gemini-3.5-transcribe`, audio straight to Gemini, and a hybrid, on the owner's acceptance recordings plus 12 long orders; the result is `eval/bakeoff/REPORT.md`. Nothing in the app changes until the owner picks (V2).
 
 ### Current state
 **Replaced by D69 (10 Oct 2026).** The baseline is `npm run eval:real` (25 hits / 25 correct / 0 wrong of 39 real transcripts), `npm run bench:numbers` (129/129, 0 wrong) and `npm run coverage:probe` (145/154 = 94.2%); "no regression" means none of the three gets worse. `npm run eval` (`run-eval.ts`: 0 pass · 10 warn · 3 fail · 12 never run when last wired) is retired.

@@ -1,6 +1,6 @@
 # 23 — Acceptance: the owner's recorded orders, the release gate, the two-phone session
 
-**Last updated:** 31 Oct 2026 (D100 note)
+**Last updated:** 31 Oct 2026 (D100 note; KB-370 long orders)
 
 **Owner decision, 30 Oct 2026 (`KB-364`).** The owner records about 50 real orders in his own voice and writes the bill each one must give.
 They become a PERMANENT, automatic regression test: no release without a pass. A final two-phone session (below) is the manual half.
@@ -30,7 +30,7 @@ They become a PERMANENT, automatic regression test: no release without a pass. A
 - **Tier A — automatic, in `npm test`** (`eval/acceptance/gate.test.ts`): offline, free, deterministic. The frozen Whisper text goes through the shipped resolver; Gemini's recorded answer is replayed where Layer 2 is asked; the result is compared with the expected bill. A wrong line fails at any time. Once the set is **locked** (≥ 40 orders, a passing live run) the full gate is enforced.
 - **Tier B — live, before every release** (`npm run accept:live`): each recording goes through the real `/voice` (Groq Whisper) and the real Gemini, exactly as the app does it. Prints how far Whisper's text drifted from the frozen one. **Declares its calls first** (one Groq call per recording, at most `--max-gemini` Gemini calls, default 30) and shares production's quota (D99 item 11).
 
-## 4. Coverage checklist — what to record (50 orders)
+## 4. Coverage checklist — what to record (50 orders, + 12 long orders for `KB-370`)
 
 Say each order in your own words, the way a customer's order is really said. Nothing is scripted. The phone shows the same list.
 
@@ -46,6 +46,7 @@ Say each order in your own words, the way a customer's order is really said. Not
 | A39–A41 | Repeated or corrected | 3 | the same item twice; a quick correction in the middle |
 | A42–A46 | Unclear or unusual names | 5 | a brand, a mumbled product, a name that is not in the catalog |
 | A47–A50 | A price you cannot say clearly | 4 | trail off or mumble the price — the bill must show **Price needed**, never a guessed number |
+| A51–A62 | **Long orders, 30-90 seconds** (`KB-370`, 31 Oct 2026) | 12 | a whole real order in one go, 8-12 items, the way a customer says it; **A62 = the 31 Oct dal order** (10 items). Added AFTER the first 50 so A01-A50 keep their ids. Used by the voice bake-off (`eval/bakeoff`); they join the gate only if the owner decides so in `KB-373` (V4). |
 
 ## 5. The steps
 

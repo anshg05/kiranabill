@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 31 Oct 2026 (rev 3) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 31 Oct 2026 (rev 4) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -21,7 +21,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | todo |
+| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **in progress** - harness built 31 Oct 2026 (`eval/bakeoff`, commits `2070a26` - `b6821cd`); waits for the owner's long recordings A51-A62 and his OK on the declared calls |
 | V2 | `KB-371` | **Owner picks** from the report. | Owner | todo |
 | V3 | `KB-372` | **Build the winner behind a setting, Whisper kept as the fallback.** Long orders (30-90 s) must work: no restart, no duplicated lines. | yes | todo |
 | V4 | `KB-373` | **Re-run the acceptance set** (`23`) on the new voice; decide the >= 90% exact unlock (the set is not locked today: 28 of 41, 68%). | yes | todo |
@@ -119,7 +119,7 @@ The strongest available model runs every item that touches **numbers, money, syn
 
 | What | For | Status |
 |---|---|---|
-| Record **at least 10 long orders (30-90 s)** in his own voice, with the bill each must give (the dal order of 31 Oct too) | V1 | todo |
+| Record **at least 10 long orders (30-90 s)** in his own voice, with the bill each must give (the dal order of 31 Oct too) - **slots A51-A62** on the recorder | V1 | todo |
 | Pick the winner from the V1 report | V2 | todo |
 | The phone check of the draft, and approval of the release marker | V5 | todo |
 | The "Before the real shop" checklist (`17`) and Review mode for the first 20 bills | P1 | todo |
