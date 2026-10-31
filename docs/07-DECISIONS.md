@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 31 Oct 2026 (rev 58) · Supersedes rev 40
+**Last updated:** 31 Oct 2026 (rev 59) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2253,10 +2253,25 @@ order by suspect nulls last, b.finalized_at desc;
 
 ---
 
+### D100 — Voice accuracy before the pilot; the Android app is Capacitor, Android only; the priority order (owner, 31 Oct 2026) 🟢
+
+**Owner decisions, 31 Oct 2026, from the review chat.** The plan and its status per item: `24-ROADMAP.md`. Tickets `KB-370` - `KB-377`, `KB-406`, `KB-408` - `KB-410` (`06`).
+
+1. **The finding (owner-reported; not re-verified by the agent).** A competitor study: Ezy Parchi (Play Store `com.parchi.parchi`, Android, free, 4.8 stars on about 690 reviews, 10K+ installs). The owner's head-to-head test: the same 10-item dal order, about 40 s, one tap. Ezy billed all 10 lines correctly (Rs 1,672); KiranaBill did not. The cause is visible in our "Heard" text: Whisper (`whisper-large-v3` on Groq) transcribed the first seven items correctly, then **restarted and repeated the order with garbled number words** (डेड़सो, नबे, छैननो ...), so lines were duplicated or "Price needed". **The safety held:** 9 checks pending, no silent wrong bill, total shown Rs 2,148. Long audio (over about 30 s) is a Whisper failure mode, and our provider sends the whole recording with no length handling.
+2. **Voice accuracy is the top priority, BEFORE the pilot.** `KB-405` waits for Phase V (`KB-370` - `KB-374`). The goal: Ezy-level accuracy WITH the never-silently-wrong safety. `KB-369` (Whisper vs `gemini-3.5-transcribe`, parked 30 Oct) is **folded into `KB-370`** (the bake-off), and its "after the pilot starts" timing is withdrawn. Hard rules and D99 are unchanged: the AI may use only numbers that were spoken; one warning per line.
+3. **The Android app is Capacitor around the existing code, NOT Flutter** (a Flutter app would be a second codebase for a solo developer; `11` SD-008 already rejected it). **Android only: no iOS app.** iOS stays the PWA, as it is (`NI-30`). `KB-406` becomes the umbrella that points to Phase A of `24`; its work is `KB-408` (thermal printing), `KB-409` (native Google sign-in), `KB-410` (Play Store release).
+4. **The priority order:** voice accuracy (Phase V) -> the pilot (`KB-405`) -> hold bills, discount / charges / old due, one-script item names (Phase F) -> the Android app with thermal printing, 58 mm and 80 mm (Phase A) -> later: UPI QR, khata, photo orders, day totals, item calculator, receipt customization, referral (Phase L).
+5. **Money:** discount, charges and old due change what a bill adds up to, so `KB-376` needs its own decision record (the next D-number) BEFORE any code. No change to hard rule 1 or 2.
+6. **One source of truth.** `24-ROADMAP.md` owns the order and the status of work; `12-PARKED.md` owns the description of each deferred idea, by its id (Phase L in `24` is ids only).
+7. **Model policy (D33)** applies to every item that touches numbers, money, sync, RLS or migrations: `24` marks them.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 31 Oct 2026 | Tracker / `06` (30 Oct): "the next step is the owner's shop pilot (`KB-405`)"; `KB-369` PARKED "after the pilot starts" | **Phase V (voice accuracy, `KB-370` - `KB-374`) first; the pilot waits; `KB-369` is folded into `KB-370`** (D100) | Owner's head-to-head test against a competitor on a 40 s, 10-item order: our Whisper restarted and garbled the numbers on long audio. |
 | 18 Oct 2026 | D83: "units that do not fit (or a line with no unit yet): the quantity is CLEARED and the unit becomes the product's" | **A line with NO unit fits every product: it keeps its qty and its "—" unit (D86, `KB-338`)** | Owner: "—" is a choice on every line and the product's own unit never changes - only the line's. |
 | 18 Oct 2026 | `KB-002` / `04`: "whole-utterance" command matching (in fact any utterance of up to 6 words that contained a phrase), and the matcher never called by the app | **A command is the whole utterance (fillers and "theek / hai / ab / ji" aside) and is wired before parsing (D86, `KB-339`)** | Owner, audit Part 4: "chini aur bas" is an order; "bas" never finalises by voice. |
 | 18 Oct 2026 | `KB-303` decision 1 (owner, 1 Oct 2026): "amount only where there is no rate" (`billEdit.ts` header, `06`'s `KB-303` row) | **The amount can be typed on every line; the rate can be cleared or typed on any line (D85, `KB-337`)** | Owner: the legacy behaviour, before Bill Banao. A typed amount is stored like a spoken "ka" total; no flag on it (the TOTAL is the check). |

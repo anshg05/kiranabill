@@ -1,6 +1,6 @@
 # 11 — Stack Decisions
 
-**Last updated:** 11 Oct 2026 (rev 12)
+**Last updated:** 31 Oct 2026 (rev 13)
 
 Every technology choice, with the alternatives that were considered and why they were rejected.
 
@@ -150,6 +150,8 @@ Schema stays phone-ready. Revisit when there's a registered entity.
 | TWA / Bubblewrap | Genuinely simpler than Capacitor and worth considering: it just wraps the PWA. **Rejected because it gives no native plugin access** — and native mic handling and offline speech are both plausible needs. If those never materialise, TWA would have been the better call. |
 
 **Deferred until the web MVP is validated.** $25 one-time. iOS deferred further — $99/year.
+
+**Update, 31 Oct 2026 (D100, owner):** Capacitor, **not Flutter**, confirmed; **Android only, no iOS app**. The order of work (voice accuracy, the pilot, bill features, then the Android app with thermal printing) is `24-ROADMAP.md`.
 
 ---
 

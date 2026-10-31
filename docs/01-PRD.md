@@ -1,6 +1,6 @@
 # 01 — Product Requirements Document
 
-**Last updated:** 11 Oct 2026 (rev 5) · **Status:** Final · **Supersedes:** rev 3
+**Last updated:** 31 Oct 2026 (rev 6) · **Status:** Final · **Supersedes:** rev 3
 
 **Rev 4 note:** S6 updated with `KB-009`'s real fast-path coverage measurement (92.8%, Phase 0
 fixture data) — the number that used to be an assumption everything else in this document rested on.
@@ -105,12 +105,12 @@ adoption friction.
 | Customer database | Bills carry an optional free-text customer name. No profiles, ~~no phone numbers~~. **Corrected 3 Oct 2026 (owner, `KB-306`), per `07-DECISIONS.md` D6 / D52:** a bill may carry an optional customer mobile, stored on that bill only — for sending the receipt to the customer's WhatsApp (`KB-308`/`KB-309`) and, later, udhaar. Still no profiles, no customers list, no recent-customers suggestions. |
 | Inventory / stock | Different product |
 | GST | Pilot shop doesn't need it. Adding it later is additive, not structural. |
-| Thermal printing | Hardware dependency, small audience initially |
+| Thermal printing | Hardware dependency. **Planned in the Android app (`KB-408`, D100, `24`).** |
 | Staff accounts / roles | One user per shop in MVP. Schema carries `role` anyway. |
 | Multi-store | One shop per account. Schema carries `shop_id` anyway. |
 | Reports / analytics | Not why anyone switches |
 | Offline **voice** | Requires on-device STT. Offline *manual* billing IS in MVP. |
-| Discounts, UPI on receipt, item reordering | Post-MVP polish |
+| Discounts, UPI on receipt, item reordering | Post-MVP polish (discounts are `KB-376`, UPI QR is in `24` Phase L; D100) |
 
 ### Explicitly not in scope, ever
 
@@ -126,8 +126,8 @@ Cement/steel/building materials. This is a grocery product.
 |---|---|---|
 | Website | React PWA | MVP |
 | Installable PWA | Manifest, service worker and offline app load (D67); installed from the browser's own menu - no in-app install button | MVP |
-| Android app | Capacitor wrapper around the same build, Play Store | After web MVP is validated in the pilot shop |
-| iOS app | Same wrapper | Deferred — Apple charges $99/year vs Google's $25 one-time |
+| Android app | Capacitor wrapper around the same build, Play Store; **Android only (D100)** | After voice accuracy (Phase V), the pilot and Phase F - order in `24-ROADMAP.md` |
+| iOS app | Same wrapper | **Not planned (D100, 31 Oct 2026): Android only; iOS stays the PWA.** Apple charges $99/year vs Google's $25 one-time |
 
 Must work on **both mobile and desktop**. The bill table is a table on desktop and cards on mobile
 — the predecessor already does this.

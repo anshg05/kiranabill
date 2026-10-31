@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 31 Oct 2026 (rev 8) · **Phase:** 3 complete, next `KB-405` (the pilot) - current state: `10-TRACKER.md` "Right now" · **Status:** Phase 4 (pilot)
+**Last updated:** 31 Oct 2026 (rev 9) · **Phase:** 3 complete, next `KB-370` (the voice bake-off; the pilot waits - D100) - current state: `10-TRACKER.md` "Right now" · **Status:** Phase 4 (pilot)
 
 ---
 
@@ -70,6 +70,7 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 21 | `21-AUDIT-2026-10.md` | The October 2026 audit, kept as a record |
 | 22 | `22-BACKUP-AND-RESTORE.md` | Backups to Google Drive, key custody, restore rehearsal |
 | 23 | `23-ACCEPTANCE.md` | The owner's recorded orders, the release gate, the two-phone session |
+| 24 | `24-ROADMAP.md` | **What is next and in what order** - voice accuracy, the pilot, bill features, the Android app; status per item (D100) |
 
 ### Documents that don't exist yet, on purpose
 
