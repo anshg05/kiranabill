@@ -13,6 +13,8 @@ export interface SheetOrder {
   readonly ownerCheck?: string;
   /** Why the block is kept out of the gate ("# SKIP: reason": the owner's call, or Whisper heard other words). */
   readonly skipped?: string;
+  /** KB-370: the bill a SKIP block still writes down - the bake-off scores it (a better ear may fix what Whisper misheard); the gate never does. */
+  readonly skippedExpected?: ExpectedBill;
 }
 
 export interface ParsedSheet {
@@ -115,7 +117,7 @@ export function parseSheet(text: string): ParsedSheet {
     }
     if (bad) continue;
     const pending = ownerCheck !== undefined || skipped !== undefined || (said === "" && lines.length === 0 && notAdded === 0);
-    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks }, ...(ownerCheck !== undefined ? { ownerCheck } : {}), ...(skipped !== undefined ? { skipped } : {}) });
+    orders.push({ id, category: m[2] ?? "", said, expected: pending ? null : { lines, notAdded, checks }, ...(ownerCheck !== undefined ? { ownerCheck } : {}), ...(skipped !== undefined ? { skipped } : {}), ...(skipped !== undefined && (lines.length > 0 || notAdded > 0) ? { skippedExpected: { lines, notAdded, checks } } : {}) });
   }
   if (blocks.length === 0 && text.trim() !== "") errors.push(`no "## A01 ..." block found`);
   return { orders, errors };

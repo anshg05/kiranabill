@@ -95,6 +95,13 @@ checks: 1
     expect(r.orders[0]!.ownerCheck).toBeUndefined();
   });
 
+  it("KB-370: a SKIP block still carries its written bill as skippedExpected (the bake-off scores it; the gate does not)", () => {
+    const r = sheet("## A33 x\nsaid: heard text\n# SKIP: Whisper heard other numbers\n- 1 kg चीनी @80\nchecks: 0\n");
+    expect(r.orders[0]).toMatchObject({ expected: null, skippedExpected: { lines: [{ name: "चीनी", qty: 1, unit: "kg", price: { kind: "rate", paise: 8000 } }], notAdded: 0, checks: 0 } });
+    const notWritten = sheet("## A13 x\nsaid:\n# SKIPPED: could not be read\nchecks: 0\n");
+    expect(notWritten.orders[0]!.skippedExpected).toBeUndefined();
+  });
+
   it("duplicate ids and ids that are not A01..A99 are errors", () => {
     expect(sheet("## A01 x\nsaid: x\n- 1 kg चीनी\n## A01 x\nsaid: y\n- 1 kg चीनी\n").errors.join()).toMatch(/twice/);
     expect(sheet("## B1 x\nsaid: x\n").errors.join()).toMatch(/id/);
