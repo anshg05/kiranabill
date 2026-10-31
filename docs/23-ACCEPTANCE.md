@@ -46,7 +46,7 @@ Say each order in your own words, the way a customer's order is really said. Not
 | A39–A41 | Repeated or corrected | 3 | the same item twice; a quick correction in the middle |
 | A42–A46 | Unclear or unusual names | 5 | a brand, a mumbled product, a name that is not in the catalog |
 | A47–A50 | A price you cannot say clearly | 4 | trail off or mumble the price — the bill must show **Price needed**, never a guessed number |
-| A51–A62 | **Long orders, 30-90 seconds** (`KB-370`, 31 Oct 2026) | 12 | a whole real order in one go, 8-12 items, the way a customer says it; **A62 = the 31 Oct dal order** (10 items). Added AFTER the first 50 so A01-A50 keep their ids. Used by the voice bake-off (`eval/bakeoff`); they join the gate only if the owner decides so in `KB-373` (V4). |
+| A51–A62 | **Long orders, 30-90 seconds** (`KB-370`, 31 Oct 2026) | 12 | a whole real order in one go, 8-12 items, the way a customer says it (recorded 31 Oct 2026; the expected bills were written by the reviewer from the owner's words and confirmed by the owner, 1 Nov 2026; A62 is an ordinary long order, NOT the 31 Oct dal order, which was not re-recorded). Added AFTER the first 50 so A01-A50 keep their ids. Used by the voice bake-off (`eval/bakeoff`); they join the gate only if the owner decides so in `KB-373` (V4). |
 
 ## 5. The steps
 

@@ -406,3 +406,153 @@ said: स्वाद चायपत्ती 1 किलो 500 रुपए �
 - 1 piece टूथ ब्रश =60
 checks: 0
 
+## A51 long-30-90s
+said: (the reviewer wrote this bill from the owner's own words; the owner confirmed it, 1 Nov 2026) total 626
+- 1 kg तुअर दाल @150
+- 1 kg मसूर दाल @80
+- 1 kg बरबटी दाल @88
+- 1 kg मूंग दाल @96
+- 1 kg चना दाल @92
+- 1 kg मोठ @120
+checks: 0
+
+## A52 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 492
+- 1 kg पतला पोहा @60
+- 1 kg फुटाने @120
+- 1 kg दालिया @120
+- 1 kg चना दाल @92
+- 1 kg हरा बटाना @56
+- 1 kg रवा @44
+checks: 0
+
+## A53 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 672
+- 1 kg राजमा @130
+- 1 kg कुलथा @120
+- 1 kg हरा बटाना @56
+- 1 kg जाड़ा पोहा @50
+- 1 kg सैगी मूंग @96
+- 1 kg काबुली चना @120
+- 1 kg मेथी दाना @100
+checks: 0
+
+## A54 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 1953
+# तुअर दाल: "फटका" (the variety) was spoken as part of the name. The two आटा lines are different items (a 5 kg packet and 1 kg loose), never a duplicate.
+- 1 kg तुअर दाल @150
+- 1 kg मूंग दाल @96
+- 5 kg चावल =600
+- 5 kg बासमती चावल =800
+- 5 kg आटा =175
+- 1 kg चना दाल @92
+- 1 kg आटा @40
+checks: 0
+
+## A55 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) no prices spoken - every line takes the shop's price
+- 1 kg चना दाल
+- 1 kg तुअर दाल
+- 1 packet बंसल तेल
+- 1 liter फॉर्च्यून तेल
+- 1 kg मूंग दाल
+- 1 kg उड़द मोगर
+- 1 kg मूंग मोगर
+- 1 kg हरा बटाना
+- 1 kg मोठ
+- 1 kg फुटाने
+- 1 kg दालिया
+checks: 0
+
+## A56 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) no prices spoken; fractions: सवा 1.25, डेढ़ 1.5, पौने दो 1.75
+- 1.25 kg मूंग दाल
+- 1.5 kg हरा बटाना
+- 2 kg चना दाल
+- 1.5 kg रवा
+- 1.25 kg मैदा
+- 1.25 kg शक्कर
+- 1.75 kg बरबटी दाल
+- 1.5 kg राजमा
+checks: 0
+
+## A57 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 710; "10 वाली", "30 वाला", "55 वाला" are rates per piece / packet; वुश is the brand as spoken
+- 5 piece रिन साबुन @10
+- 5 packet पार्ले जी बिस्किट @30
+- 1 packet बंसल तेल पाउच =140
+- 5 piece फेना साबुन @10
+- 1 packet फेना डिटर्जेंट =75
+- 1 packet वुश डिटर्जेंट =20
+- 1 packet सर्फ एक्सेल =140
+- 1 packet पतंजलि कोकोनट बिस्किट =30
+- 1 packet गुड डे बिस्किट @55
+checks: 0
+
+## A58 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 796; the last five: no quantity spoken, a per-kilo price -> 1 kg (the owner's ruling under D47)
+- 1 kg मूंग दाल =96
+- 1 kg चना दाल =92
+- 1 kg बरबटी दाल @88
+- 1 kg मूंग मोगर @110
+- 1 kg उड़द मोगर @130
+- 1 kg फुटाने @120
+- 1 kg डालडा @160
+checks: 0
+
+## A59 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 829; corrections: चीनी "2 kilo... नहीं नहीं 3 kilo" and चना दाल "4 kilo... नहीं नहीं 3 kilo करो" are ONE line each; the two आटा lines are different items
+- 1 kg आटा @40
+- 5 kg आटा =175
+- 3 kg चीनी @56
+- 5 kg गेहूँ @34
+- 3 kg चना दाल @92
+checks: 0
+
+## A60 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 380; हार्पिक बड़ा and हार्पिक छोटा are two sizes, never a duplicate
+- 1 liter मदर डिलाइट तेल =150
+- 1 piece हार्पिक बड़ा =110
+- 1 piece हार्पिक छोटा =60
+- 1 bottle फिनाइल =60
+checks: 0
+
+## A61 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 2955; 76 s, in the shop; तुअर दाल was spoken "तुअल"
+# "1 set" is not a unit the app knows: the two sets are written as 1 packet (piece, packet, box and bottle count as one unit).
+- 5 kg तुअर दाल @150
+- 1 packet डेटॉल साबुन =175
+- 12 piece फेना साबुन =110
+- 1 packet रिन साबुन =105
+- 3 kg फेना डिटर्जेंट =285
+- 1 kg विदिशा डिटर्जेंट =70
+- 1 kg चना दाल @92
+- 2 kg मूंग दाल @96
+- 3 kg बरबटी दाल @88
+- 1 kg उड़द मोगर @130
+- 1 kg मूंग मोगर @110
+- 1 kg राजमा @120
+- 1 kg कुलथा दाना @120
+- 1 kg हरा बटाना @56
+- 1 kg सैगी मूंग @96
+- 1 kg पोपट दाल @72
+- 1 kg काटा चना @88
+- 1 kg मोठ @120
+checks: 0
+
+## A62 long-30-90s
+said: (reviewer's bill, owner confirmed 1 Nov 2026) total 1512; Hinglish
+- 1 kg तुअर दाल @150
+- 1 kg मूंग दाल @96
+- 2 kg बरबटी दाल @88
+- 1 kg मूंग मोगर @110
+- 1 kg उड़द मोगर @130
+- 2 kg चना दाल @92
+- 1 kg पोपट दाल @72
+- 1 kg मोठ @120
+- 1 kg राजमा @130
+- 1 kg मेथी दाना @100
+- 1 kg खड़ा धनिया @200
+- 1 kg रवा =44
+checks: 0
+

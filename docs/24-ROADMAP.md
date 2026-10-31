@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 31 Oct 2026 (rev 4) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 1 Nov 2026 (rev 5) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -37,7 +37,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 | **D** | Hybrid: B and C in parallel; **C's numbers must appear in B's transcript** (a number only C heard is not trusted) | the same checks |
 | **E** | *Optional:* Sarvam `saaras:v4`. Note its **30 s real-time limit** (owner-reported; check the vendor's page when planning). | the same checks |
 
-**Test data:** the owner's 50 acceptance recordings (`eval/acceptance/audio`, never in git) + **at least 10 NEW long orders (30-90 s) that the owner records** + the dal order of 31 Oct.
+**Test data:** the owner's 50 acceptance recordings (`eval/acceptance/audio`, never in git) + **12 NEW long orders, A51-A62** (recorded 31 Oct 2026, 20-76 s; bills confirmed by the owner 1 Nov). The 31 Oct dal order itself was not re-recorded.
 **Metrics, per candidate:** exact-bill rate; **wrong numbers reaching a final line** (the release rule is 0); dropped or duplicated items; lines flagged; seconds from stop to bill (compare `KB-355`, budget 1.5 s to transcript); rupees per bill.
 **Rules:** pin exact model names; declare the call count first (`D99` item 11, shared quota); one table, one report, no change to the app. Related: `KB-007` (the Whisper vocabulary prompt, built OFF) is measured in the same run.
 
@@ -119,7 +119,7 @@ The strongest available model runs every item that touches **numbers, money, syn
 
 | What | For | Status |
 |---|---|---|
-| Record **at least 10 long orders (30-90 s)** in his own voice, with the bill each must give (the dal order of 31 Oct too) - **slots A51-A62** on the recorder | V1 | todo |
+| Record **at least 10 long orders (30-90 s)** in his own voice, with the bill each must give - **slots A51-A62** on the recorder | V1 | **done** 31 Oct 2026 (recorded); bills confirmed 1 Nov 2026 |
 | Pick the winner from the V1 report | V2 | todo |
 | The phone check of the draft, and approval of the release marker | V5 | todo |
 | The "Before the real shop" checklist (`17`) and Review mode for the first 20 bills | P1 | todo |
