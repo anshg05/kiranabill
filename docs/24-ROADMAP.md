@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 31 Oct 2026 (rev 1) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 31 Oct 2026 (rev 2) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -49,6 +49,8 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
+| P0a | - | **Owner decides before P1 - PRD `01` section 8 S3** (median mic-tap to items < 2 s on the fast path, < 5 s otherwise). It is not in the `06` release gate, and today's voice probably fails it. **Reviewer's recommendation: keep S3 as a measured target, not a pass/fail gate; re-measure after Phase V.** | Owner | open |
+| P0b | - | **Owner decides before P1 - one fresh restore of a real backup before the pilot.** The last restore of a real production backup with the real key was 11 Oct 2026 (15 tables, 553 rows, `22`); `bill_cancellations`, `bill_metrics` and the bill-number tables (migrations of 14 - 22 Oct) were added since. **Reviewer's recommendation: one step in the pilot checklist (`17`), run as in `22`.** | Owner | open |
 | P1 | `KB-405` | The owner's shop pilot **on the new voice**: the "Before the real shop" checklist in `17` unchanged, Review mode on for the first 20 bills, the weekly Drive look (`M-38`). Waits for Phase V. | Owner | todo (waits for V) |
 | P2 | - | After the first 20 bills: read the Heard -> Billed pairs, decide whether to unlock the acceptance set, then the next big thing (`10`). | - | todo |
 
@@ -58,7 +60,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| F1 | `KB-375` | **Hold bills:** several open bills on one phone at once (park one, serve the next, come back). | if it touches sync or the draft store | todo |
+| F1 | `KB-375` | **Hold bills:** several open bills on one phone at once (park one, serve the next, come back). It always touches the draft store. | yes | todo |
 | F2 | `KB-376` | **Discount, charges, old due.** Money rules: **a decision record (the next D-number) BEFORE any code**; it replaces `SG-11` (round-off / discount), which keeps its text in `12`. | yes | todo |
 | F3 | `KB-377` | **One-script item names** on the bill and the receipt (the owner's wording: "one-script item names"). What exactly is shown, and where, is fixed in its own PLAN. | no | todo |
 
@@ -71,7 +73,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
 | A1 | `KB-408` | **Thermal printing** - the list below. | no | todo |
-| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. | no | todo |
+| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | todo |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
 
@@ -109,7 +111,7 @@ Everything else deferred stays in `12` (staff roles `SG-16`, GST `SG-17`, error 
 
 ## g. Model policy (D33) — which items need the strongest model
 
-The strongest available model runs every item that touches **numbers, money, sync, RLS or migrations**: V1, V3, V4, V5 (the number path and the release gate), F2 (money), and F1 if it touches sync or the draft store. Mechanical work (docs, scaffolding, the Android shell) may use a lighter model.
+The strongest available model runs every item that touches **numbers, money, sync, RLS or migrations**: V1, V3, V4, V5 (the number path and the release gate), F1 (it always touches the draft store), F2 (money) and A2 (native sign-in decides which shop's data a phone can see: auth -> shop -> RLS). Mechanical work (docs, scaffolding, the Android shell) may use a lighter model.
 
 ---
 
