@@ -19,10 +19,10 @@ const capture = (blob: Blob | null): VoiceCapture =>
 const click = (name: string) => act(() => screen.getByRole("button", { name }).click());
 
 describe("the recorder session page", () => {
-  it("lists all 50 slots in the ten groups, none recorded, and nothing to export", () => {
+  it("lists all 62 slots in the eleven groups, none recorded, and nothing to export", () => {
     render(<Session capture={capture(null)} store={fakeStore()} />);
-    expect(screen.getByText(/0 of 50 recorded/)).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: /^Record A\d\d$/ })).toHaveLength(50);
+    expect(screen.getByText(/0 of 62 recorded/)).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /^Record A\d\d$/ })).toHaveLength(62);
     expect(screen.getByRole("heading", { name: "Mixed: some priced, some not" })).toBeTruthy();
     expect((screen.getByRole("button", { name: /^Download session file/ }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -37,12 +37,12 @@ describe("the recorder session page", () => {
     expect(mic.start).toHaveBeenCalledTimes(1);
     expect((screen.getByRole("button", { name: "Record A08" }) as HTMLButtonElement).disabled).toBe(true); // one at a time
     click("Stop A07");
-    await waitFor(() => expect(screen.getByText(/1 of 50 recorded/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/1 of 62 recorded/)).toBeTruthy());
     expect(store.rows.get("A07")).toMatchObject({ id: "A07", category: "short-priceless", mime: "audio/webm;codecs=opus" });
     click("Play A07");
     expect(play).toHaveBeenCalledTimes(1);
     click("Delete A07");
-    await waitFor(() => expect(screen.getByText(/0 of 50 recorded/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/0 of 62 recorded/)).toBeTruthy());
     expect(store.rows.size).toBe(0);
   });
 
@@ -62,7 +62,7 @@ describe("the recorder session page", () => {
     store.rows.set("A41", { id: "A41", category: "unclear-words", mime: "audio/webm", durationMs: 2000, blob: new Blob([new Uint8Array([4, 5])]) });
     const onExport = vi.fn<(f: SessionFile) => void>();
     render(<Session capture={capture(null)} store={store} onExport={onExport} />);
-    await waitFor(() => expect(screen.getByText(/2 of 50 recorded/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/2 of 62 recorded/)).toBeTruthy());
     click("Download session file (2 clips)");
     await waitFor(() => expect(onExport).toHaveBeenCalledTimes(1));
     const file = onExport.mock.calls[0]![0];

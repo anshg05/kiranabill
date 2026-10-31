@@ -20,6 +20,8 @@ export const CATEGORIES: readonly AcceptanceCategory[] = [
   { id: "repeated", title: "Repeated or corrected", count: 3, hint: "the same item said twice, or a quick correction in the middle" },
   { id: "unclear-words", title: "Unclear or unusual names", count: 5, hint: "a brand name, a mumbled product, a name that is not in the catalog" },
   { id: "unreadable-price", title: "A price you cannot say clearly", count: 4, hint: "trail off or mumble the price: the bill must show \"Price needed\", never a guessed number" },
+  // KB-370 (owner, 31 Oct 2026): Whisper restarted on a 40 s order. Last, so A01-A50 keep their ids; A62 is the 31 Oct dal order.
+  { id: "long-30-90s", title: "Long orders, 30-90 seconds", count: 12, hint: "a whole real order in one go, 30-90 s, 8-12 items, the way a customer says it; A62 = the 31 Oct dal order (10 items)" },
 ];
 
 export const TOTAL_ORDERS = CATEGORIES.reduce((n, c) => n + c.count, 0);

@@ -5,19 +5,22 @@ import { blobToBase64, buildSessionFile, extensionFor, parseSessionFile } from "
 // KB-364: the coverage list, and the file the phone exports for the PC.
 
 describe("the coverage list", () => {
-  it("is about 50 orders in the ten groups the owner asked for", () => {
-    expect(TOTAL_ORDERS).toBe(50);
+  it("is 62 orders: the ten groups of 30 Oct, plus the twelve long orders of KB-370 (31 Oct)", () => {
+    expect(TOTAL_ORDERS).toBe(62);
     expect(CATEGORIES.map((c) => c.id)).toEqual([
-      "short-priced", "short-priceless", "long-priced", "long-priceless", "mixed", "number-words", "units-fractions", "repeated", "unclear-words", "unreadable-price",
+      "short-priced", "short-priceless", "long-priced", "long-priceless", "mixed", "number-words", "units-fractions", "repeated", "unclear-words", "unreadable-price", "long-30-90s",
     ]);
   });
-  it("gives every slot a stable id A01..A50, in category order, with its position in the group", () => {
+  it("gives every slot a stable id A01..A62, in category order, with its position in the group", () => {
     const all = slots();
-    expect(all).toHaveLength(50);
+    expect(all).toHaveLength(62);
     expect(all[0]).toEqual({ id: "A01", category: "short-priced", nth: 1 });
     expect(all[6]).toEqual({ id: "A07", category: "short-priceless", nth: 1 });
     expect(all[49]).toEqual({ id: "A50", category: "unreadable-price", nth: 4 });
-    expect(new Set(all.map((s) => s.id)).size).toBe(50);
+    // KB-370: the long orders come AFTER the first 50, so A01-A50 keep their ids (the recordings and the sheet use them)
+    expect(all[50]).toEqual({ id: "A51", category: "long-30-90s", nth: 1 });
+    expect(all[61]).toEqual({ id: "A62", category: "long-30-90s", nth: 12 });
+    expect(new Set(all.map((s) => s.id)).size).toBe(62);
   });
 });
 

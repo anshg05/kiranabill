@@ -5,11 +5,11 @@ import type { OrdersFile } from "./store";
 // KB-364: the tools between the phone's session file, the sheet and orders.json.
 
 describe("addMissingBlocks", () => {
-  it("a new sheet gets the header and a block for every one of the 50 slots, in order", () => {
+  it("a new sheet gets the header and a block for every one of the 62 slots, in order", () => {
     const s = addMissingBlocks("");
     expect(s.startsWith(SHEET_HEADER)).toBe(true);
     const ids = [...s.matchAll(/^## (A\d\d) (\S+)/gm)].map((m) => m[1]);
-    expect(ids).toHaveLength(50);
+    expect(ids).toHaveLength(62);
     expect(ids[0]).toBe("A01");
     expect(ids[49]).toBe("A50");
     expect(s).toMatch(/## A07 short-priceless/);
@@ -18,7 +18,7 @@ describe("addMissingBlocks", () => {
     const filled = `${SHEET_HEADER}## A01 short-priced\nsaid: दो किलो चीनी\n- 2 kg चीनी\nchecks: 0\n\n`;
     const s = addMissingBlocks(filled);
     expect(s.startsWith(filled)).toBe(true);
-    expect([...s.matchAll(/^## (A\d\d)/gm)].map((m) => m[1])).toHaveLength(50);
+    expect([...s.matchAll(/^## (A\d\d)/gm)].map((m) => m[1])).toHaveLength(62);
     expect(s.match(/^## A01 /gm)).toHaveLength(1);
   });
   it("running it again changes nothing", () => {
@@ -58,7 +58,7 @@ said: बेसन एक किलो
     expect(r.errors).toHaveLength(1);
     expect(r.file).toBeNull();
   });
-  it("an id that is not one of the 50 slots is refused", () => {
+  it("an id that is not one of the 62 slots is refused", () => {
     const r = buildOrders("## A77 x\nsaid: x\n- 1 kg चीनी\n", { frozen: false, orders: [] });
     expect(r.errors.join()).toMatch(/A77/);
     expect(r.file).toBeNull();
