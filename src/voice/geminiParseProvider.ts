@@ -73,7 +73,8 @@ function quotaIdOf(status: number, bodyText: string): string | undefined {
   return undefined;
 }
 
-const RESPONSE_SCHEMA = {
+/** Exported for the KB-370 bake-off's audio candidate (geminiAudioParseProvider.ts) - the same item shape. */
+export const RESPONSE_SCHEMA = {
   type: "array",
   items: {
     type: "object",
@@ -90,7 +91,7 @@ const RESPONSE_SCHEMA = {
   },
 };
 
-interface GeminiRawItem {
+export interface GeminiRawItem {
   spokenName: string;
   catalogId: string | null;
   qty: number | null;
@@ -100,7 +101,7 @@ interface GeminiRawItem {
   priceType: PriceType;
 }
 
-function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): ParsedItem {
+export function mapToParsedItem(raw: GeminiRawItem, catalogSlice: { id: string }[]): ParsedItem {
   const inSlice = raw.catalogId !== null && catalogSlice.some((c) => c.id === raw.catalogId);
   const catalogId = inSlice ? raw.catalogId : null;
   const matchStatus: MatchStatus = catalogId !== null ? "matched" : "none";
