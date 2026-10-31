@@ -28,7 +28,9 @@
     "accept:import": "tsx eval/acceptance/import.ts",
     "accept:build": "tsx eval/acceptance/build.ts",
     "accept:live": "tsx eval/acceptance/live.ts",
-    "accept:report": "tsx eval/acceptance/report.ts"
+    "accept:report": "tsx eval/acceptance/report.ts",
+    "bakeoff": "tsx eval/bakeoff/run.ts",
+    "bakeoff:report": "tsx eval/bakeoff/report.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",

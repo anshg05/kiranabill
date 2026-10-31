@@ -250,6 +250,14 @@ describe("groqTranscriptionProvider", () => {
       expect(GROQ_TIMEOUT_MS).toBe(8_000);
     });
 
+    it("KB-370: the bake-off's A-30s passes a longer deadline (production never does - the default stays 8 s)", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("fetch", vi.fn(() => new Promise((r) => setTimeout(() => r({ ok: true, json: async () => ({ text: "लंबा ऑर्डर" }) }), 12_000))));
+      const result = createGroqTranscriptionProvider("k", undefined, 30_000).transcribe(new Blob(["a"]), {});
+      await vi.advanceTimersByTimeAsync(12_000);
+      expect((await result).text).toBe("लंबा ऑर्डर");
+    });
+
     it("a normal answer inside the deadline is untouched", async () => {
       vi.useFakeTimers();
       vi.stubGlobal("fetch", vi.fn(() => new Promise((r) => setTimeout(() => r({ ok: true, json: async () => ({ text: "do kilo chini" }) }), 2_600))));

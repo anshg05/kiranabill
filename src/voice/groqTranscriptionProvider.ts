@@ -73,8 +73,9 @@ function isSilence(segments: { no_speech_prob: number }[] | undefined): boolean 
 }
 
 /** `model` exists for the KB-317 eval's large-v3 vs turbo comparison
- * (eval/real-audio.ts); the app always uses the default (04 section 2). */
-export function createGroqTranscriptionProvider(apiKey: string, model: string = GROQ_MODEL): TranscriptionProvider {
+ * (eval/real-audio.ts); the app always uses the default (04 section 2).
+ * `timeoutMs` exists for the KB-370 bake-off's A-30s; the app always uses GROQ_TIMEOUT_MS. */
+export function createGroqTranscriptionProvider(apiKey: string, model: string = GROQ_MODEL, timeoutMs: number = GROQ_TIMEOUT_MS): TranscriptionProvider {
   return {
     name: `groq-${model}`,
     async transcribe(audio, opts) {
@@ -90,7 +91,7 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
 
       const start = performance.now();
       return withDeadline(
-        GROQ_TIMEOUT_MS,
+        timeoutMs,
         async (signal) => {
           const response = await fetch(GROQ_TRANSCRIPTION_URL, {
             method: "POST",
@@ -109,7 +110,7 @@ export function createGroqTranscriptionProvider(apiKey: string, model: string = 
           // verbose_json's text starts with a space; trimmed so /voice returns what it always did.
           return { text: isSilence(data.segments) ? "" : data.text.trim(), latencyMs, region: response.headers?.get("x-groq-region") ?? null };
         },
-        () => new ProviderError("timeout", `Groq transcription timed out after ${GROQ_TIMEOUT_MS} ms`),
+        () => new ProviderError("timeout", `Groq transcription timed out after ${timeoutMs} ms`),
       );
     },
   };
