@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 31 Oct 2026 (rev 2) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 31 Oct 2026 (rev 3) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -49,8 +49,8 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| P0a | - | **Owner decides before P1 - PRD `01` section 8 S3** (median mic-tap to items < 2 s on the fast path, < 5 s otherwise). It is not in the `06` release gate, and today's voice probably fails it. **Reviewer's recommendation: keep S3 as a measured target, not a pass/fail gate; re-measure after Phase V.** | Owner | open |
-| P0b | - | **Owner decides before P1 - one fresh restore of a real backup before the pilot.** The last restore of a real production backup with the real key was 11 Oct 2026 (15 tables, 553 rows, `22`); `bill_cancellations`, `bill_metrics` and the bill-number tables (migrations of 14 - 22 Oct) were added since. **Reviewer's recommendation: one step in the pilot checklist (`17`), run as in `22`.** | Owner | open |
+| P0a | - | **Owner decides before P1 - PRD `01` section 8 S3** (median mic-tap to items < 2 s on the fast path, < 5 s otherwise). It is not in the `06` release gate, and today's voice probably fails it. **Reviewer's recommendation: keep S3 as a measured target, not a pass/fail gate; re-measure after Phase V.** **Decided (owner, 31 Oct 2026): as recommended - S3 is a measured target, not a gate.** | Owner | done 31 Oct 2026 |
+| P0b | - | **Owner decides before P1 - one fresh restore of a real backup before the pilot.** The last restore of a real production backup with the real key was 11 Oct 2026 (15 tables, 553 rows, `22`); `bill_cancellations`, `bill_metrics` and the bill-number tables (migrations of 14 - 22 Oct) were added since. **Reviewer's recommendation: one step in the pilot checklist (`17`), run as in `22`.** **Decided (owner, 31 Oct 2026): as recommended - it is step 5 of the `17` checklist.** | Owner | done 31 Oct 2026 (decided; the restore itself is in P1) |
 | P1 | `KB-405` | The owner's shop pilot **on the new voice**: the "Before the real shop" checklist in `17` unchanged, Review mode on for the first 20 bills, the weekly Drive look (`M-38`). Waits for Phase V. | Owner | todo (waits for V) |
 | P2 | - | After the first 20 bills: read the Heard -> Billed pairs, decide whether to unlock the acceptance set, then the next big thing (`10`). | - | todo |
 
