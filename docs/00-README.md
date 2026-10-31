@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 31 Oct 2026 (rev 8) · **Phase:** 3 complete, next `KB-405` (the pilot) - current state: `10-TRACKER.md` "Right now" · **Status:** Building
+**Last updated:** 31 Oct 2026 (rev 8) · **Phase:** 3 complete, next `KB-405` (the pilot) - current state: `10-TRACKER.md` "Right now" · **Status:** Phase 4 (pilot)
 
 ---
 

@@ -191,7 +191,7 @@ tracked product metric**, target ≥60%. **Not built (10 Oct 2026 audit):** only
 
 **A parse response is a proposal, never financial truth.** It always passes through Layer 3.
 
-**Two later checks on a Layer 2 answer:** `KB-359` (`domain/layer2Check.ts`) rejects a rate or total that was not spoken, raising one "Theek hai" (D99 item 14); `KB-368` (`domain/weakProduct.ts`, `flagWeakProducts`, both layers) flags a product chosen from a name nothing about it explains (D99 item 19).
+**Two later checks on a Layer 2 answer:** `KB-359` (`domain/layer2Check.ts`, D99 item 14) drops a rate or total that is not a number anyone spoke - the line shows "Price needed", no Theek hai (check E) - and discards any AI price the same way, unflagged, when a price word was said that nobody could read (check B); when Layer 1 read the piece's quantity, unit and price and the AI's line differs, the AI's numbers stay and the line gets one HIGH "Theek hai" (check A, hard rule 7); `KB-368` (`domain/weakProduct.ts`, `flagWeakProducts`, both layers) flags a product chosen from a name nothing about it explains (D99 item 19).
 
 **Settling a Layer 2 line (`KB-302`, D42; closed `KI-34`).** Gemini's own `total`, default `rate` and
 `rateUnit` are never trusted. Its `catalogId` must exist in the **shop's** catalog (else the line is
