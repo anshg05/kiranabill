@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 18 Oct 2026 (rev 10) · **Status:** Final for MVP
+**Last updated:** 31 Oct 2026 (rev 11) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -186,10 +186,12 @@ tracked product metric**, target ≥60%. **Not built (10 Oct 2026 audit):** only
 | Catalog slice | Top 30 relevant products, down from the predecessor's 80 — measure whether accuracy drops before assuming it does |
 | Caching | ~~Cache the static grammar block; it is byte-identical on every call and ~43% of the prompt~~ **Not currently achievable — verified against the real API in `KB-205`.** Gemini's explicit context caching requires 2,048 minimum tokens; the actual grammar prompt tokenizes to 1,233. See `07-DECISIONS.md` D26. |
 | Temperature | 0.1 |
-| Retries | **None** - one attempt, cut at 6 s server / 8 s client, no fallback model; on failure the transcript stays and the shopkeeper adds by hand or taps Retry (D50, `KB-319`) |
+| Retries | **None** - one attempt, cut at 10 s server / 12 s client (`GEMINI_TIMEOUT_MS`, `PARSE_TIMEOUT_MS`; D99 item 4, was 6 s / 8 s), no fallback model; on failure the transcript stays and the shopkeeper adds by hand or taps Retry (D50, `KB-319`) |
 | Output | Strict JSON array of proposed items |
 
 **A parse response is a proposal, never financial truth.** It always passes through Layer 3.
+
+**Two later checks on a Layer 2 answer:** `KB-359` (`domain/layer2Check.ts`) rejects a rate or total that was not spoken, raising one "Theek hai" (D99 item 14); `KB-368` (`domain/weakProduct.ts`, `flagWeakProducts`, both layers) flags a product chosen from a name nothing about it explains (D99 item 19).
 
 **Settling a Layer 2 line (`KB-302`, D42; closed `KI-34`).** Gemini's own `total`, default `rate` and
 `rateUnit` are never trusted. Its `catalogId` must exist in the **shop's** catalog (else the line is

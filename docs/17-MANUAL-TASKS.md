@@ -1,6 +1,6 @@
 # 17 — Manual Tasks
 
-**Last updated:** 30 Oct 2026 · **Status:** Active
+**Last updated:** 31 Oct 2026 · **Status:** Active
 
 Everything only **you** can do. The agent cannot create accounts, click consent screens, hold
 credit cards, or paste secrets into dashboards.
@@ -204,8 +204,10 @@ Do these once, in this order, before the first real customer. Each says what to 
 | | |
 |---|---|
 | Phase 0–3 | **₹0** |
-| Phase 4 (Supabase Pro, for PITR) | **$25/month** |
+| Supabase | **Free** - backups are the scheduled Drive dump (D70, `KB-407`); Pro/PITR ($25/month) stays deferred |
 | Groq + Gemini during development | **~₹200–500/month** |
+| Gemini, paid tier (since 29 Oct 2026) | **prepaid balance**, about **₹0.1 per Layer-2 call** (owner's figure) |
+| Netlify | **~15 credits per production deploy** (28 Oct release; drafts and pushes without `[deploy]` cost none) |
 | Android, later | **$25 one-time** |
 
 Nothing here needs real money until Phase 4.

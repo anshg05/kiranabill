@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 26 Sep 2026 (rev 7) · **Phase:** 3 — billing UI (current state: `10-TRACKER.md`) · **Status:** Building
+**Last updated:** 31 Oct 2026 (rev 8) · **Phase:** 3 complete, next `KB-405` (the pilot) - current state: `10-TRACKER.md` "Right now" · **Status:** Building
 
 ---
 
@@ -65,17 +65,22 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 16 | `16-APP-FLOW.md` | Before building a journey, a sequence, or anything stateful. Mermaid diagrams. |
 | 17 | `17-MANUAL-TASKS.md` | Everything only the human can do — accounts, keys, OAuth, migrations, costs |
 | 18 | `18-AGENT-CONTRACT.md` | **If you are an AI agent: read this first, in full. It is binding.** |
+| 19 | `19-MACHINE-SETUP.md` | Setting up a new machine; also the draft-deploy procedure (§8) |
+| 20 | `20-CONTINUITY.md` | One-time handoff of the chat role (18 Oct 2026); **not maintained** - the tracker is the live state |
+| 21 | `21-AUDIT-2026-10.md` | The October 2026 audit, kept as a record |
+| 22 | `22-BACKUP-AND-RESTORE.md` | Backups to Google Drive, key custody, restore rehearsal |
+| 23 | `23-ACCEPTANCE.md` | The owner's recorded orders, the release gate, the two-phone session |
 
 ### Documents that don't exist yet, on purpose
 
-`SECURITY.md`, `API-CONTRACTS.md`, `TESTING.md`, `DEPLOYMENT.md`, `BACKUP-RECOVERY.md`,
+`SECURITY.md`, `API-CONTRACTS.md`, `TESTING.md`, `DEPLOYMENT.md`,
 `SCALABILITY.md`, `GST.md`, `PERFORMANCE.md`.
 
 `12-PARKED.md` splits into `KNOWN_ISSUES.md`, `SUGGESTIONS.md` and `NOT_YET_INVESTIGATED.md`
 when it passes ~500 lines.
 
-Each is written **when its trigger fires**, not before. `BACKUP-RECOVERY.md` when real shop data
-exists. `GST.md` when a shop asks for GST. Writing them now would mean writing guesses, and guesses
+Each is written **when its trigger fires**, not before. (Backup and recovery is now
+`22-BACKUP-AND-RESTORE.md`.) `GST.md` when a shop asks for GST. Writing them now would mean writing guesses, and guesses
 in a source-of-truth document are worse than gaps.
 
 ---

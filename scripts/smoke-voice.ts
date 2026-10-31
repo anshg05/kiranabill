@@ -3,7 +3,7 @@
 // the real netlify/functions/voice.mts (auth, shop lookup, rate limit, GEMINI_MODEL, the provider) -> the real Gemini, with a throwaway user
 // on the local Supabase stack. Run it before every draft and release that touches Layer 2:
 //     npm run smoke:voice
-// It spends 11 Gemini calls (declared below; they share production's quota if the key is the same - keep it <= 10) and starts/stops
+// It spends 11 Gemini calls (declared below; they share production's quota if the key is the same - count them against D99 item 11's daily rule) and starts/stops
 // `netlify functions:serve` itself. Needs the local Docker stack (npx supabase start) and GEMINI_API_KEY / GEMINI_MODEL / GROQ_API_KEY in .env.local.
 // It proves the key in .env.local - NOT the key in Netlify; the owner's first signed-in call on the deployed draft proves that one.
 import { parseTranscript, VoiceApiError } from "../src/data/voiceApi.js";

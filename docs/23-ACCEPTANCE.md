@@ -1,5 +1,7 @@
 # 23 — Acceptance: the owner's recorded orders, the release gate, the two-phone session
 
+**Last updated:** 31 Oct 2026
+
 **Owner decision, 30 Oct 2026 (`KB-364`).** The owner records about 50 real orders in his own voice and writes the bill each one must give.
 They become a PERMANENT, automatic regression test: no release without a pass. A final two-phone session (below) is the manual half.
 
@@ -110,7 +112,7 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 ## 8. Before every release (checklist)
 
 1. `npm test`, `npm run test:e2e`, `npm run test:rls`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm audit --omit=dev`, `npm run bench:numbers`, `npm run eval:real`.
-2. `npm run smoke:voice` (Layer-2 wiring, 7 calls).
+2. `npm run smoke:voice` (Layer-2 wiring, 11 calls - the count in `scripts/smoke-voice.ts`).
 3. The acceptance gate: **0 wrong lines** (`npm test` enforces it; `npm run accept:report` for the plain-words replay, `npm run accept:live` when the audio or the prompt changed). **Release rule (owner, 30 Oct 2026): 0 wrong lines.** The exact rate (>= 90%, 71% on 30 Oct) and "no unexpected Theek hai check" are TARGETS to raise (catalog aliases, re-recording the Whisper-misheard orders), reported on every run but not a stop - the 12 orders that are not exact are the app declining to guess.
 4. `npm run check:recorder` on the production build.
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.

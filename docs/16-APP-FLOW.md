@@ -1,6 +1,6 @@
 # 16 — App Flow
 
-**Last updated:** 18 Oct 2026 · **Status:** Final for MVP
+**Last updated:** 31 Oct 2026 · **Status:** Final for MVP
 
 Journeys, sequences and state machines. `05-FRONTEND-SPEC.md` describes screens; this describes
 how a person moves through them and what the system does underneath.
@@ -310,7 +310,7 @@ flowchart LR
 | Situation | Behaviour |
 |---|---|
 | Voice fails (network, STT error) | Inline message + "Add by hand" (transcript prefilled). Never a dead end. (Built `KB-331`, D76: the button is on every failure message and on each "Not added" entry; offline keeps its plain reason line, with Add item right under it.) |
-| Gemini fails (one attempt, 6 s - D50) | Keep the transcript on screen, offer manual add and Retry. The transcript is not lost. |
+| Gemini fails (one attempt, 10 s server / 12 s client - D99 item 4, was 6 s in D50) | Keep the transcript on screen, offer manual add and Retry. The transcript is not lost. |
 | Unknown product | Added with a REVIEW flag. **Never blocks, never asks.** |
 | HIGH number flag | Finalise blocked until fixed or acknowledged |
 | Receipt number block exhausted offline | Full-device-UUID fallback number (D23), marked `receipt_number_source = 'fallback'`; never renumbered |
