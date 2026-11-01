@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 1 Nov 2026 (rev 5) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 1 Nov 2026 (rev 6) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -40,6 +40,8 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 **Test data:** the owner's 50 acceptance recordings (`eval/acceptance/audio`, never in git) + **12 NEW long orders, A51-A62** (recorded 31 Oct 2026, 20-76 s; bills confirmed by the owner 1 Nov). The 31 Oct dal order itself was not re-recorded.
 **Metrics, per candidate:** exact-bill rate; **wrong numbers reaching a final line** (the release rule is 0); dropped or duplicated items; lines flagged; seconds from stop to bill (compare `KB-355`, budget 1.5 s to transcript); rupees per bill.
 **Rules:** pin exact model names; declare the call count first (`D99` item 11, shared quota); one table, one report, no change to the app. Related: `KB-007` (the Whisper vocabulary prompt, built OFF) is measured in the same run.
+
+**`gemini-3.5-transcribe` limits - what they mean for B and D (1 Nov 2026).** The owner's AI Studio: Tier 1 = **10 requests and 10K tokens a minute, 100 requests a DAY**, per project - and the eval key and production are the SAME project ("Kirana Bill"), so they share the 100. Daily caps reset at midnight Pacific (13:30 IST). Google's rate-limits page (28 Oct 2026): **Tier 2 comes automatically after $100 paid + 3 days** from the first payment (Tier 3: $1,000 + 30 days); this model's per-day figure on Tier 2 / 3 is shown only in AI Studio, not on the page; a paid-tier increase can be requested (no guarantee). **Plainly: on Tier 1, B or D as the production ear would allow at most 100 voice orders a day for the whole app - every shop together, minus any tests - and the 101st order of the day would fail to transcribe.** The owner's shop alone may pass that. So B or D can be a production choice only after Tier 2 (and its per-day figure read in AI Studio) or a granted increase; C runs on `gemini-3.5-flash-lite`, whose limits are separate (to be read in AI Studio before V2). The bake-off itself stops at 90 transcribe calls a Pacific day (`eval/bakeoff/quota.ts`) and resumes the next day.
 
 **V3 constraints that do not change:** a rate or total must be a number that was spoken (`KB-359`); a product from a name nothing explains is never silent (`KB-368`); a line with no price is priced before Bill Banao; one warning per line.
 

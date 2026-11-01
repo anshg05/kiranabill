@@ -30,8 +30,11 @@ import { parseSheet } from "../acceptance/sheet.js";
 import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
 import { checkAudioAnswer, hybridItems } from "./pipeline.js";
-import { CANDIDATES, candidatesFor, declare, groqUsd, RUN1, scoreRun, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
+import { CANDIDATES, candidatesFor, declare, GST, groqUsd, scoreRun, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
 import { geminiUrl, inlineAudio } from "../../src/voice/geminiAudio.js";
+import { AUDIO_PARSE_ADDENDUM } from "../../src/voice/geminiAudioParseProvider.js";
+import { PRICING_GRAMMAR_PROMPT } from "../../src/voice/pricingGrammarPrompt.js";
+import { DAILY_STOP, pacificDay, transcribeTokens, waitMs, type Sent } from "./quota.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const arg = (name: string) => {
@@ -44,7 +47,8 @@ const diagnose = process.argv.includes("--diagnose");
 const mergeFile = arg("merge");
 const drop = arg("drop")?.split(",") ?? [];
 const capInr = arg("cap-inr") ? Number(arg("cap-inr")) : Infinity;
-const pace = { transcribeS: Number(arg("pace-transcribe-s") ?? 12), otherS: 3 };
+/** gemini-3.5-transcribe: 10 RPM less 10% = one call every 6.7 s at most; long clips wait longer for the 10K TPM (quota.ts). */
+const pace = { transcribeS: Number(arg("pace-transcribe-s") ?? 60 / 9), otherS: 3 };
 /** docs/23 section 8: one short order and the two longest. */
 const CANARY_IDS = ["A01", "A61", "A62"];
 const only = canary ? CANARY_IDS : arg("only")?.split(",");
@@ -89,19 +93,25 @@ const vocabulary = [...freq.entries()]
   .slice(0, 100);
 
 // ---- the declaration (always printed; nothing is called without --go) -------------------------------------------------------------
-const now = declare(recordings, longRuns, chosen, pace);
-const projected = declare([...recordings, ...Array.from({ length: LONG_SLOTS - longHave }, (_, i) => ({ id: `A${51 + longHave + i}`, set: "long" as const, seconds: 60 }))], longRuns, chosen, pace);
+// Prompt tokens estimated from the characters actually sent (about 3 characters a token for this mix of English, JSON and Devanagari).
+const sliceChars = JSON.stringify(shop.entries.slice(0, 30).map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
+const catalogChars = JSON.stringify(shop.entries.map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
+const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3) };
+const now = declare(recordings, longRuns, chosen, pace, est);
+const projected = declare([...recordings, ...Array.from({ length: LONG_SLOTS - longHave }, (_, i) => ({ id: `A${51 + longHave + i}`, set: "long" as const, seconds: 60 }))], longRuns, chosen, pace, est);
 const audioMin = recordings.reduce((a, r) => a + r.seconds, 0) / 60;
 const fmt = (d: ReturnType<typeof declare>) =>
   `${d.total} calls - Groq ${d.calls.groq}, ${GEMINI_TRANSCRIBE_MODEL} ${d.calls.transcribe}, Layer 2 (${DEFAULT_GEMINI_MODEL}, text) at most ${d.calls.layer2Max}, ` +
-  `audio ${DEFAULT_GEMINI_MODEL} ${d.calls.audioLite}, audio ${C2_MODEL} ${d.calls.audioFlash}; about Rs ${(d.usd * inrPerUsd).toFixed(0)} ($${d.usd.toFixed(2)} at Rs ${inrPerUsd}/$; ` +
-  `the 1 Nov run's real per-call cost x its real bill ratio ${RUN1.billRatio.toFixed(2)}); about ${Math.ceil(d.minutes)} min if the machine stays awake`;
+  `audio ${DEFAULT_GEMINI_MODEL} ${d.calls.audioLite}, audio ${C2_MODEL} ${d.calls.audioFlash}; about Rs ${(d.usd * inrPerUsd).toFixed(0)} ($${d.usd.toFixed(2)} at Rs ${inrPerUsd}/$: ` +
+  `list prices x estimated tokens (prompts from their characters: Layer 2 ${est.layer2In}, C ${est.cIn} + audio) + a thinking allowance + ${GST * 100}% GST); ` +
+  `about ${Math.ceil(d.minutes)} min if the machine stays awake` +
+  (d.calls.transcribe ? `; ${GEMINI_TRANSCRIBE_MODEL} ${d.calls.transcribe} calls at most ${DAILY_STOP} a Pacific day = ${Math.ceil(d.calls.transcribe / DAILY_STOP)} day(s) (the run stops at ${DAILY_STOP} and resumes with the same command)` : "");
 console.log(`KB-370 bake-off${canary ? " - CANARY (docs/23 section 8: A01, A61, A62 once each, then STOP)" : ""} - candidates: ${chosen.join(", ")}${chosen.includes("D") ? " (D reuses B's and C's answers: no calls of its own)" : ""}`);
 console.log(`Recordings with a written bill: ${recordings.filter((r) => r.set === "short").length} short (A01-A50, ${[...expectedOf.values()].filter((o) => o.setAside).length} of them the set-aside Whisper-misheard orders), ${longHave} of ${LONG_SLOTS} long (A51-A62); ${audioMin.toFixed(1)} min of audio in all`);
 console.log(`Runs: short orders once, long orders ${longRuns} times. Vocabulary: ${vocabulary.length} terms from eval/real-transcripts.json.`);
 console.log(`NOW:          ${fmt(now)}`);
 if (longHave < LONG_SLOTS && !only) console.log(`WITH A51-A62: ${fmt(projected)}  (the missing long orders estimated at 60 s each)`);
-console.log(`Pace: ${GEMINI_TRANSCRIBE_MODEL} calls ${pace.transcribeS} s apart, the others ${pace.otherS} s.${Number.isFinite(capInr) ? ` Spend cap: the run stops itself at Rs ${capInr} of logged spend.` : ""}`);
+console.log(`Pace: ${GEMINI_TRANSCRIBE_MODEL} kept within 90% of 10 RPM and 10K TPM (quota.ts), stopping at ${DAILY_STOP} calls a Pacific day (production shares the 100); the others ${pace.otherS} s apart.${Number.isFinite(capInr) ? ` Spend cap: the run stops itself at Rs ${capInr} of logged spend.` : ""}`);
 console.log(`Key: GEMINI_API_KEY_EVAL (treated as sharing production's quota - calls are paced). Layer 2 is called only for pieces Layer 1 cannot read, so its count is a ceiling.`);
 if (!go) {
   console.log("\nNo call made. Re-run with --go after the owner's OK.");
@@ -115,10 +125,30 @@ const geminiKey = process.env.GEMINI_API_KEY_EVAL;
 if (!groqKey || !geminiKey) throw new Error("GROQ_API_KEY / GEMINI_API_KEY_EVAL not set (.env.local)");
 const mime = (file: string) => ({ webm: "audio/webm", m4a: "audio/mp4", ogg: "audio/ogg", wav: "audio/wav" })[path.extname(file).slice(1)] ?? "application/octet-stream";
 
+// ---- the transcribe quota: every gemini-3.5-transcribe request is counted here (this machine's; production's own calls are not visible) ----
+const QUOTA_FILE = path.join(HERE, ".transcribe-quota.json");
+class StopRun extends Error {}
+interface QuotaState { day: string; count: number; sent: { at: string; tokens: number }[] }
+async function transcribeGate(audioSeconds: number): Promise<void> {
+  const state: QuotaState = existsSync(QUOTA_FILE) ? JSON.parse(readFileSync(QUOTA_FILE, "utf8")) : { day: "", count: 0, sent: [] };
+  const today = pacificDay(new Date());
+  if (state.day !== today) Object.assign(state, { day: today, count: 0 });
+  if (state.count >= DAILY_STOP) throw new StopRun(`${state.count} ${GEMINI_TRANSCRIBE_MODEL} calls today (Pacific ${today}) - the daily stop is ${DAILY_STOP}: run the same command again after midnight Pacific (13:30 IST); finished rows are skipped`);
+  const tokens = transcribeTokens(audioSeconds);
+  const sent: Sent[] = state.sent.map((s) => ({ at: new Date(s.at), tokens: s.tokens }));
+  const wait = waitMs(sent, new Date(), tokens);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  const stamp = new Date();
+  state.count++;
+  state.sent = [...state.sent.filter((s) => stamp.getTime() - new Date(s.at).getTime() < 60_000), { at: stamp.toISOString(), tokens }];
+  writeFileSync(QUOTA_FILE, JSON.stringify(state, null, 2) + "\n");
+}
+
 if (diagnose) {
   // ONE call, the raw answer's SHAPE: which fields the transcribe model fills (KB-370: the first run read "" from it). Never the key.
   const rec = recordings.find((r) => r.id === "A01") ?? recordings[0]!;
   const body = { contents: [{ role: "user", parts: [{ inlineData: await inlineAudio(new Blob([readFileSync(path.join(AUDIO_DIR, rec.file))], { type: mime(rec.file) })) }] }], generationConfig: { audioTranscriptionConfig: { languageCodes: ["hi-IN"] } } };
+  await transcribeGate(rec.seconds);
   const res = await fetch(geminiUrl(GEMINI_TRANSCRIBE_MODEL), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey }, body: JSON.stringify(body) });
   const raw = (await res.json()) as Record<string, unknown>;
   const shape = (v: unknown, depth = 0): unknown => (depth > 6 ? "..." : Array.isArray(v) ? (v.length ? [shape(v[0], depth + 1), `(${v.length} items)`] : []) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, shape(x, depth + 1)])) : typeof v === "string" ? `string(${v.length})` : v);
@@ -130,6 +160,9 @@ if (diagnose) {
     if (words) console.log(`audioTranscription.words (${words.length}): "${words.slice(0, 40).map((w) => w.word).join(" ")}"`);
   }
   console.log(`usageMetadata: ${JSON.stringify(raw.usageMetadata ?? null)}`);
+  const u = (raw.usageMetadata ?? {}) as { promptTokenCount?: number; totalTokenCount?: number };
+  const usd = tokensUsd(GEMINI_TRANSCRIBE_MODEL, { promptTokens: u.promptTokenCount ?? 0, completionTokens: (u.totalTokenCount ?? 0) - (u.promptTokenCount ?? 0), totalTokens: u.totalTokenCount ?? 0 });
+  console.log(`logged cost of this call: Rs ${(usd * inrPerUsd).toFixed(3)} at list price (+${GST * 100}% GST = Rs ${(usd * (1 + GST) * inrPerUsd).toFixed(3)})`);
   process.exit(0);
 }
 
@@ -158,9 +191,11 @@ const parseWith = (cost: { usd: number; ms: number }) => async (text: string, sl
 };
 const entries = [...shop.entries];
 const out = canary ? path.join(HERE, `results-canary-${new Date().toISOString().slice(0, 10)}.json`) : mergeFile ? path.resolve(mergeFile) : path.join(HERE, `results-${new Date().toISOString().slice(0, 10)}.json`);
-// --merge: keep every earlier row except the candidates re-run now and those dropped (e.g. B-novocab, measured as "" on 1 Nov)
+// --merge: keep every earlier row except the candidates re-run now and those dropped (e.g. B-novocab, measured as "" on 1 Nov). Rows a
+// re-run already produced (`rerun`) are kept and skipped: running the same command again after a stop RESUMES it.
 const earlier = mergeFile ? (JSON.parse(readFileSync(path.resolve(mergeFile), "utf8")) as { meta: Record<string, unknown>; results: RunResult[] }) : null;
-const kept = (earlier?.results ?? []).filter((r) => !chosen.includes(r.candidate) && !drop.includes(r.candidate));
+const kept = (earlier?.results ?? []).filter((r) => (!chosen.includes(r.candidate) || r.rerun) && !drop.includes(r.candidate));
+const done = new Map(kept.filter((r) => r.rerun && !r.error).map((r) => [`${r.candidate}|${r.id}|${r.run}`, r]));
 const results: RunResult[] = [];
 let spentUsd = 0;
 const save = () =>
@@ -174,6 +209,13 @@ outer: for (const rec of recordings) {
   for (let run = 1; run <= runs; run++) {
     const answers: Partial<Record<"B" | "C", { transcript: string; items?: ParsedItem[]; seconds: number; usd: number }>> = {};
     for (const candidate of candidatesFor(rec.set).concat("D").filter((c) => chosen.includes(c))) {
+      const prior = done.get(`${candidate}|${rec.id}|${run}`);
+      if (prior) {
+        // resumed: this row exists - give D the saved B transcript and C items, call nothing
+        if (candidate === "B" && prior.transcript !== null) answers.B = { transcript: prior.transcript, seconds: prior.seconds, usd: prior.usd };
+        if (candidate === "C" && prior.items) answers.C = { transcript: prior.transcript ?? "", items: [...prior.items], seconds: prior.seconds, usd: prior.usd };
+        continue;
+      }
       if (spentUsd * inrPerUsd >= capInr) {
         console.log(`\nSPEND CAP reached: Rs ${(spentUsd * inrPerUsd).toFixed(1)} logged >= Rs ${capInr} - the run stops here (results so far are saved).`);
         break outer;
@@ -193,7 +235,12 @@ outer: for (const rec of recordings) {
           actual = await runOrder(transcript, parseWith(cost));
         } else if (candidate.startsWith("B")) {
           const b = createGeminiTranscriptionProvider(geminiKey);
-          const r = await paced(() => b.transcribe(blob(), { language: "hi", ...(candidate === "B" ? { vocabulary } : {}) }), pace.transcribeS);
+          // one request through the quota; a 429 stops the run (on 1 Nov it was the shared DAILY cap - retrying only burns production's)
+          await transcribeGate(rec.seconds);
+          const r = await b.transcribe(blob(), { language: "hi", ...(candidate === "B" ? { vocabulary } : {}) }).catch((e: unknown) => {
+            if (e instanceof ProviderError && e.status === 429) throw new StopRun(`${GEMINI_TRANSCRIBE_MODEL} answered 429 (most likely the shared 100-a-day cap) - stopped; run the same command again after midnight Pacific (13:30 IST)`);
+            throw e;
+          });
           transcript = r.text;
           cost.usd += tokensUsd(GEMINI_TRANSCRIBE_MODEL, r.usage);
           cost.ms += r.latencyMs;
@@ -216,6 +263,10 @@ outer: for (const rec of recordings) {
           cost.usd = b.usd + c.usd;
         }
       } catch (e) {
+        if (e instanceof StopRun) {
+          console.log(`\nSTOPPED: ${e.message}.`);
+          break outer;
+        }
         error = e instanceof ProviderError ? `${e.kind}${e.status ? ` ${e.status}` : ""}` : (e as Error).message.slice(0, 160);
         actual = { lines: [], unresolved: 1, checks: 0 };
       }
@@ -223,7 +274,7 @@ outer: for (const rec of recordings) {
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
       const score = scoreRun(rec.id, expected, actual, shop);
       if (candidate !== "D") spentUsd += cost.usd; // D's cost is B's and C's, already counted
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, lines: compact(actual), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(error ? { error } : {}), ...score });
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, lines: compact(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(error ? { error } : {}), ...score });
       console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
       if (canary) {

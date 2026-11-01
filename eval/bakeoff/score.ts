@@ -4,6 +4,7 @@ import { matchProductName, type ParsedItem } from "../../src/domain/grammar.js";
 import { flagWeakProducts } from "../../src/domain/weakProduct.js";
 import type { TokenUsage } from "../../src/voice/parseProvider.js";
 import { compareOrder, type ActualBill } from "../acceptance/compare.js";
+import { LIMITS, transcribeTokens } from "./quota.js";
 import type { ExpectedBill } from "../acceptance/types.js";
 
 // KB-370 (V1 bake-off): scoring, cost and the call declaration. Pure - no network, no files (score.test.ts).
@@ -107,6 +108,18 @@ const scoringCache = new WeakMap<ParserCatalog, ParserCatalog>();
  * no flag = every content word of his name is close to the product's name or aliases - the same product under another spelling. */
 const explains = (ownerName: string, item: ParsedItem, sc: ParserCatalog) => flagWeakProducts([{ ...item, spokenName: ownerName }], sc.entries).length === 0;
 
+/** Kind-of-goods words: "पोपट दाल" minus its first word is only "दाल", which names no product. */
+const CATEGORY_WORDS = new Set(["दाल", "तेल", "साबुन", "बिस्किट", "डिटर्जेंट", "मसाला", "आटा", "पाउडर", "पैकेट"]);
+/**
+ * Owner, 1 Nov 2026: a BRAND billed as the generic catalog product (एवरेस्ट किचन किंग मसाला -> Kitchen King) is "numbers right, name differs"
+ * when the numbers are right. A brand = his name's FIRST word is the unexplained one, and the rest - with a word that is not just a
+ * category - is explained by the product. "पोपट दाल" -> Chana Daal is no brand case: a different product, wrong.
+ */
+const brandOfGeneric = (ownerName: string, item: ParsedItem, sc: ParserCatalog) => {
+  const rest = ownerName.trim().split(/\s+/).slice(1);
+  return rest.some((w) => !CATEGORY_WORDS.has(w)) && explains(rest.join(" "), item, sc);
+};
+
 const NO_WARNING = " [NO warning]";
 const WARNED = " [a Theek hai warned]";
 
@@ -147,7 +160,8 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
       // rule 2: the owner's spelling is not in the catalog and the app claimed a catalog product - wrong, unless that product explains it
       const j = actual.lines.findIndex((l) => l.item.spokenName === heard[1] && l.item.catalogId !== null);
       if (j >= 0 && explains(name, actual.lines[j]!.item, sc)) continue;
-      wrong.push(`${name}: wrong product - heard "${heard[1]}" (${heard[2]})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
+      if (j >= 0 && brandOfGeneric(name, actual.lines[j]!.item, sc)) (numbersRightNameWrong++); // its numbers are right: no other finding
+      else wrong.push(`${name}: wrong product - heard "${heard[1]}" (${heard[2]})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
     }
   }
 
@@ -163,6 +177,11 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
     if (j < 0) continue;
     claimed.add(j);
     const l = actual.lines[j]!;
+    // the brand case with right numbers (no other finding about this line) is a name that differs, not a wrong product
+    if (brandOfGeneric(e.name, l.item, sc) && !otherFinding(e.name, "")) {
+      numbersRightNameWrong++;
+      continue;
+    }
     wrong.push(`${e.name}: wrong product - heard "${l.item.spokenName}" (${l.displayName})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
   }
 
@@ -218,6 +237,8 @@ export interface RunResult extends RunScore {
   readonly lines?: readonly { name: string; catalogId: string | null; qty: number | null; unit: string; rate: number | null; total: number | null; priceType: string }[];
   /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
   readonly items?: readonly ParsedItem[];
+  /** Produced by a --merge re-run: kept and skipped when the same command runs again (resume after a daily stop). */
+  readonly rerun?: boolean;
   /** A provider failure or timeout - the order shows nothing (or "Not added"), never a wrong line. */
   readonly error?: string;
 }
@@ -282,37 +303,42 @@ export interface Recording {
 export const candidatesFor = (set: OrderSet): CandidateId[] => CANDIDATES.filter((c) => c !== "D" && (c !== "A-30s" || set === "long"));
 
 /**
- * What one call REALLY cost and took in the 1 Nov 2026 run (results-2026-10-31.json, logged from usageMetadata): Gemini Rs 198.6 logged
- * against Rs ~404 taken from the owner's prepaid balance - the logged figure missed the billed thinking tokens (fixed since: geminiAudio.ts
- * answerOf) and whatever else Google adds. So a declaration multiplies the logged per-call cost by that run's real bill ratio.
+ * The declaration's estimate (owner, 1 Nov 2026: list prices + thinking tokens + 18% GST - the Rs 404 drop was the whole of October, not
+ * the run). Prompt tokens are estimated by the runner from the characters it sends; audio is 32 tokens a second (docs/audio). Answers and
+ * the thinking allowance are estimates the canary replaces with real counts (usageMetadata, thinking included since geminiAudio.ts).
  */
-export const RUN1 = {
-  usdPerTranscribe: 0.124 / 56, // B: 56 calls answered (its empty transcripts made no Layer 2 call)
-  usdPerLayer2Order: 0.1156 / 84, // A's Gemini spend over its 84 orders (an order Layer 1 reads makes no call)
-  usdPerC: 0.52 / 83,
-  usdPerC2: 1.005 / 71,
-  billRatio: 404 / 198.6,
-  seconds: { groq: 0.8, transcribe: 3.6, layer2: 1.5, c: 3.3, c2: 20 }, // medians measured in the run
-};
+export const GST = 0.18;
+export interface TokenEstimate {
+  readonly layer2In: number; // the grammar prompt + a 30-product slice + one order
+  readonly cIn: number; // the grammar prompt + the audio addendum + the whole catalog (without the audio)
+}
+const OUT = { transcribePerSecond: 8, layer2: 400, c: 900 };
+const THINKING = 1; // allowance: as many thinking tokens as answer tokens (gemini-3.5-flash-lite thinks "minimal" by default)
+const withThinking = (out: number) => out * (1 + THINKING);
+/** Medians measured on 1 Nov 2026 (results-2026-10-31.json), for the time estimate. */
+export const MEASURED_SECONDS = { groq: 0.8, transcribe: 3.6, layer2: 1.5, c: 3.3, c2: 20 };
 
-/** Every call a run makes, BEFORE it makes one (D99 item 11), its estimated bill and its minutes. Layer 2 is at most one call per order
- * and run for the Whisper-like candidates. `chosen` narrows a re-run; D never calls anything itself. */
-export function declare(recordings: readonly Recording[], longRuns: number, chosen: readonly CandidateId[] = CANDIDATES, pace = { transcribeS: 3, otherS: 3 }) {
+/** Every call a run makes, BEFORE it makes one (D99 item 11), its estimated bill (USD, GST included) and its minutes. Layer 2 is at most one
+ * call per order and run for the Whisper-like candidates. `chosen` narrows a re-run; D never calls anything itself. */
+export function declare(recordings: readonly Recording[], longRuns: number, chosen: readonly CandidateId[] = CANDIDATES, pace = { transcribeS: 3, otherS: 3 }, est: TokenEstimate = { layer2In: 4_000, cIn: 14_000 }) {
   const calls = { groq: 0, transcribe: 0, layer2Max: 0, audioLite: 0, audioFlash: 0 };
   let usd = 0;
   let seconds = 0;
-  const s = RUN1.seconds;
+  const s = MEASURED_SECONDS;
+  const t = (model: string, input: number, output: number) => tokensUsd(model, { promptTokens: input, completionTokens: output, totalTokens: input + output });
   for (const r of recordings) {
     const runs = r.set === "long" ? longRuns : 1;
+    const audio = r.seconds * 32;
     for (const c of candidatesFor(r.set).filter((x) => chosen.includes(x))) {
       for (let i = 0; i < runs; i++) {
-        if (c === "A" || c === "A+vocab" || c === "A-30s") (calls.groq++, (usd += groqUsd(r.seconds)), (seconds += pace.otherS + s.groq));
-        if (c === "B" || c === "B-novocab") (calls.transcribe++, (usd += RUN1.usdPerTranscribe * RUN1.billRatio), (seconds += pace.transcribeS + s.transcribe));
-        if (c.startsWith("A") || c.startsWith("B")) (calls.layer2Max++, (usd += RUN1.usdPerLayer2Order * RUN1.billRatio), (seconds += pace.otherS + s.layer2));
-        if (c === "C") (calls.audioLite++, (usd += RUN1.usdPerC * RUN1.billRatio), (seconds += pace.otherS + s.c));
-        if (c === "C2") (calls.audioFlash++, (usd += RUN1.usdPerC2 * RUN1.billRatio), (seconds += pace.otherS + s.c2));
+        if (c === "A" || c === "A+vocab" || c === "A-30s") (calls.groq++, (usd += groqUsd(r.seconds) / (1 + GST)), (seconds += pace.otherS + s.groq)); // Groq bills in USD, no Indian GST
+        // a long clip waits for the token minute (9,000 of 10K) rather than the request minute
+        if (c === "B" || c === "B-novocab") (calls.transcribe++, (usd += t("gemini-3.5-transcribe", audio, r.seconds * OUT.transcribePerSecond)), (seconds += Math.max(pace.transcribeS, (transcribeTokens(r.seconds) / (LIMITS.tpm * LIMITS.margin)) * 60) + s.transcribe));
+        if (c.startsWith("A") || c.startsWith("B")) (calls.layer2Max++, (usd += t("gemini-3.5-flash-lite", est.layer2In, withThinking(OUT.layer2))), (seconds += pace.otherS + s.layer2));
+        if (c === "C") (calls.audioLite++, (usd += t("gemini-3.5-flash-lite", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c));
+        if (c === "C2") (calls.audioFlash++, (usd += t("gemini-3.8-flash", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
       }
     }
   }
-  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash, usd, minutes: seconds / 60 };
+  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash, usd: usd * (1 + GST), minutes: seconds / 60 };
 }

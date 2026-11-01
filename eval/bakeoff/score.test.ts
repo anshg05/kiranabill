@@ -85,10 +85,16 @@ describe("rule 2 - custom lines", () => {
     expect(scoreRun("A17", lizolBill, bill([lizall]), shop)).toMatchObject({ wrongProducts: 0, wrongLines: 0 });
   });
 
-  it("a BRAND the catalog product does not explain stays a wrong product (A44: 'एवरेस्ट' is in no name or alias of Kitchen King - KI-47, the app's own KB-368 rule)", () => {
+  it("owner, 1 Nov 2026: a BRAND billed as the generic catalog product with the right numbers is 'numbers right, name differs' - not exact, not wrong (A44)", () => {
     const kingBill: ExpectedBill = { lines: [{ name: "एवरेस्ट किचन किंग मसाला", qty: 1, unit: "packet", price: { kind: "default" } }], notAdded: 0, checks: 0 };
     const king = line({ spokenName: "एवरेस्ट किचन किंग मसाला 100 ग्राम", catalogId: "124", qty: 1, unit: "packet", rate: null, rateUnit: null, total: 5000, priceType: "default" });
-    expect(scoreRun("A44", kingBill, bill([king]), shop).wrongProducts).toBe(1);
+    expect(scoreRun("A44", kingBill, bill([king]), shop)).toMatchObject({ wrongProducts: 0, wrongLines: 0, numbersRightNameWrong: 1, exact: false });
+  });
+
+  it("the same brand case with a DIFFERENT price is wrong", () => {
+    const kingBill: ExpectedBill = { lines: [{ name: "एवरेस्ट किचन किंग मसाला", qty: 1, unit: "packet", price: { kind: "total", paise: 6000 } }], notAdded: 0, checks: 0 };
+    const king = line({ spokenName: "एवरेस्ट किचन किंग मसाला", catalogId: "124", qty: 1, unit: "packet", rate: null, rateUnit: null, total: 5000, priceType: "total" });
+    expect(scoreRun("A44", kingBill, bill([king]), shop).wrongLines).toBeGreaterThan(0);
   });
 
   it("a different CATALOG product chosen = a wrong product (silent when no Theek hai)", () => {
@@ -169,9 +175,11 @@ describe("declare - the calls a run will make, before it makes any", () => {
     expect(d.calls).toEqual({ groq: 0, transcribe: 1 + 3, layer2Max: 1 + 3, audioLite: 1 + 3, audioFlash: 0 });
   });
 
-  it("prices the run from the 1 Nov run's REAL per-call cost x its real bill ratio (Rs 404 billed / Rs 198.6 logged)", () => {
-    const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3, ["C"]);
-    expect(d.usd).toBeCloseTo((0.52 / 83) * (404 / 198.6), 6);
+  it("owner, 1 Nov 2026: prices from LIST prices x estimated tokens, + a thinking allowance (as many tokens as the answer), + 18% GST", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3, ["C"], { transcribeS: 12, otherS: 3 }, { layer2In: 4_000, cIn: 14_000 });
+    expect(d.usd).toBeCloseTo((((14_000 + 8 * 32) * 0.3 + 900 * 2 * 2.5) / 1e6) * 1.18, 9);
+    const b = declare([{ id: "A01", set: "short", seconds: 8 }], 3, ["B"], { transcribeS: 12, otherS: 3 }, { layer2In: 4_000, cIn: 14_000 });
+    expect(b.usd).toBeCloseTo((((8 * 32 * 2 + 8 * 8 * 12) + (4_000 * 0.3 + 400 * 2 * 2.5)) / 1e6) * 1.18, 9);
   });
 
   it("estimates the time from the measured call times plus the pace (B's transcribe calls at least 12 s apart)", () => {
