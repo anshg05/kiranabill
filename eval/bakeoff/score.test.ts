@@ -76,6 +76,21 @@ describe("rule 2 - custom lines", () => {
   it("numbers right but the name does NOT look alike = 'numbers right, name wrong': not exact, not a wrong number", () => {
     expect(scoreRun("A62", popat, bill([custom("पॉप कॉर्न", priced)]), shop)).toMatchObject({ exact: false, numbersRightNameWrong: 1, wrongLines: 0 });
   });
+  it("KB-370 fix: the SAME product under another spelling is not a 'different catalog product' (A47: लाइज़ॉल billed as Lizol)", () => {
+    const lizolBill: ExpectedBill = { lines: [{ name: "लाइज़ॉल", qty: null, unit: "", price: { kind: "total", paise: 11000 } }], notAdded: 0, checks: 0 };
+    const lizol = line({ spokenName: "लाइजॉल", catalogId: "200", qty: null, unit: "", rate: null, rateUnit: null, total: 11000, priceType: "total" });
+    expect(scoreRun("A47", lizolBill, bill([lizol]), shop)).toMatchObject({ wrongProducts: 0, wrongLines: 0 });
+    // A17: the heard WORD looks nothing like his (Whisper wrote "lizall"), but the product chosen is still Lizol - right
+    const lizall = line({ spokenName: "lizall", catalogId: "200", qty: null, unit: "", rate: null, rateUnit: null, total: 11000, priceType: "total" });
+    expect(scoreRun("A17", lizolBill, bill([lizall]), shop)).toMatchObject({ wrongProducts: 0, wrongLines: 0 });
+  });
+
+  it("a BRAND the catalog product does not explain stays a wrong product (A44: 'एवरेस्ट' is in no name or alias of Kitchen King - KI-47, the app's own KB-368 rule)", () => {
+    const kingBill: ExpectedBill = { lines: [{ name: "एवरेस्ट किचन किंग मसाला", qty: 1, unit: "packet", price: { kind: "default" } }], notAdded: 0, checks: 0 };
+    const king = line({ spokenName: "एवरेस्ट किचन किंग मसाला 100 ग्राम", catalogId: "124", qty: 1, unit: "packet", rate: null, rateUnit: null, total: 5000, priceType: "default" });
+    expect(scoreRun("A44", kingBill, bill([king]), shop).wrongProducts).toBe(1);
+  });
+
   it("a different CATALOG product chosen = a wrong product (silent when no Theek hai)", () => {
     const chana = line({ spokenName: "पोपट दाल", catalogId: "21", ...priced });
     expect(scoreRun("A62", popat, bill([chana]), shop)).toMatchObject({ wrongProducts: 1, silentWrong: 1, exact: false });
@@ -147,5 +162,20 @@ describe("declare - the calls a run will make, before it makes any", () => {
     expect(d.calls).toEqual({ groq: 2 + 3 + 2 + 3 + 3, transcribe: 5 + 5, layer2Max: 13 + 10, audioLite: 5, audioFlash: 5 });
     expect(d.total).toBe(13 + 10 + 23 + 5 + 5);
     expect(d.usd).toBeGreaterThan(0);
+  });
+
+  it("KB-370 re-run: counts only the chosen candidates (B, C, D: D still makes no call of its own)", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 8 }, { id: "A61", set: "long", seconds: 76 }], 3, ["B", "C", "D"]);
+    expect(d.calls).toEqual({ groq: 0, transcribe: 1 + 3, layer2Max: 1 + 3, audioLite: 1 + 3, audioFlash: 0 });
+  });
+
+  it("prices the run from the 1 Nov run's REAL per-call cost x its real bill ratio (Rs 404 billed / Rs 198.6 logged)", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3, ["C"]);
+    expect(d.usd).toBeCloseTo((0.52 / 83) * (404 / 198.6), 6);
+  });
+
+  it("estimates the time from the measured call times plus the pace (B's transcribe calls at least 12 s apart)", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3, ["B"], { transcribeS: 12, otherS: 3 });
+    expect(d.minutes).toBeCloseTo((12 + 3.6 + (3 + 1.5)) / 60, 6);
   });
 });

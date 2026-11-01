@@ -36,6 +36,44 @@ describe("geminiTranscriptionProvider (KB-370 candidate B)", () => {
     expect(r.usage).toEqual({ promptTokens: 640, completionTokens: 30, totalTokens: 670 });
   });
 
+  it("KB-370 fix: reads the words from audioTranscription - Google's own REST example, copied unchanged (no text part, no usageMetadata)", async () => {
+    // https://ai.google.dev/gemini-api/docs/generate-content/transcribe ("Parsing transcription output", REST), fetched 1 Nov 2026
+    const googleExample = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                audioTranscription: {
+                  speakerLabel: "spk_1",
+                  words: [
+                    { word: "Hello", startOffset: "0.100s", endOffset: "0.400s" },
+                    { word: "world", startOffset: "0.500s", endOffset: "0.800s" },
+                  ],
+                },
+              },
+            ],
+            role: "model",
+          },
+          finishReason: "STOP",
+        },
+      ],
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => googleExample }));
+    const r = await createGeminiTranscriptionProvider("k").transcribe(audio(), { language: "hi" });
+    expect(r.text).toBe("Hello world");
+    expect(r.usage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+  });
+
+  it("KB-370 fix: a billed thinking token counts as output (totalTokenCount - promptTokenCount), not only candidatesTokenCount", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: "दो किलो" }] } }], usageMetadata: { promptTokenCount: 640, candidatesTokenCount: 30, thoughtsTokenCount: 200, totalTokenCount: 870 } }),
+    }));
+    expect((await createGeminiTranscriptionProvider("k").transcribe(audio(), {})).usage).toEqual({ promptTokens: 640, completionTokens: 230, totalTokens: 870 });
+  });
+
   it("sends the vocabulary, capped at the documented best size", async () => {
     const fetchMock = vi.fn().mockResolvedValue(ok("x"));
     vi.stubGlobal("fetch", fetchMock);

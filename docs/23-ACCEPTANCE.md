@@ -119,6 +119,8 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
 
+**Every LIVE run starts with a CANARY (owner, 1 Nov 2026 - after the `KB-370` run continued past a B result that was "inexact" at A01 and measured nothing for B on 624 results).** Applies to `accept:live`, `bakeoff -- --go` and any other run that spends API calls: first run ONLY three recordings - one short order, **A61** and **A62** (the two longest) - for every candidate, then **STOP** and show the owner each candidate's transcript and items side by side. The full run starts only after he has looked. A canary that shows an empty transcript, an error on every call, or a result nobody can explain is a stop, not a note. The canary's calls are part of the declared count. Keep the machine awake for the whole run (a sleeping laptop froze the 1 Nov run for 7 h 24 min).
+
 ## 9. The two-phone session (about 20 minutes)
 
 **Setup.** Phone A and phone B, **same Google account / same shop**, both on the draft URL, both online. Settings shows the **same build id** on both. Tick each step; write down any failure with a screenshot.

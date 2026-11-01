@@ -1,6 +1,7 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
 import { prepareParserCatalog } from "../../src/domain/catalogIndex.js";
-import { matchProductName } from "../../src/domain/grammar.js";
+import { matchProductName, type ParsedItem } from "../../src/domain/grammar.js";
+import { flagWeakProducts } from "../../src/domain/weakProduct.js";
 import type { TokenUsage } from "../../src/voice/parseProvider.js";
 import { compareOrder, type ActualBill } from "../acceptance/compare.js";
 import type { ExpectedBill } from "../acceptance/types.js";
@@ -102,6 +103,10 @@ export function scoringCatalog(shop: ParserCatalog): ParserCatalog {
 }
 const scoringCache = new WeakMap<ParserCatalog, ParserCatalog>();
 
+/** Does the chosen catalog product explain the OWNER's written name? The app's own KB-368 rule (flagWeakProducts), read with his words:
+ * no flag = every content word of his name is close to the product's name or aliases - the same product under another spelling. */
+const explains = (ownerName: string, item: ParsedItem, sc: ParserCatalog) => flagWeakProducts([{ ...item, spokenName: ownerName }], sc.entries).length === 0;
+
 const NO_WARNING = " [NO warning]";
 const WARNED = " [a Theek hai warned]";
 
@@ -139,8 +144,9 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
     }
     if (heard[2] === "not in the catalog") numbersRightNameWrong++; // rule 2
     else {
-      // rule 2: the owner's product is not in the catalog and the app claimed a catalog one - a wrong product
+      // rule 2: the owner's spelling is not in the catalog and the app claimed a catalog product - wrong, unless that product explains it
       const j = actual.lines.findIndex((l) => l.item.spokenName === heard[1] && l.item.catalogId !== null);
+      if (j >= 0 && explains(name, actual.lines[j]!.item, sc)) continue;
       wrong.push(`${name}: wrong product - heard "${heard[1]}" (${heard[2]})${(actual.warnedLines ?? []).includes(j) ? WARNED : NO_WARNING}`);
     }
   }
@@ -152,7 +158,7 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
     const j = actual.lines.findIndex((l, k) => {
       if (l.item.catalogId === null || claimed.has(k)) return false;
       const one = compareOrder(id, { lines: [e], notAdded: 0, checks: 0 }, { lines: [l], unresolved: 0, checks: 0 }, sc);
-      return one.extra.length === 0 && ![...one.wrong, ...one.inexact].some((y) => y.includes("name differs") || y.includes("wrong product"));
+      return one.extra.length === 0 && ![...one.wrong, ...one.inexact].some((y) => y.includes("name differs") || y.includes("wrong product")) && !explains(e.name, l.item, sc);
     });
     if (j < 0) continue;
     claimed.add(j);
@@ -208,6 +214,10 @@ export interface RunResult extends RunScore {
   readonly usd: number;
   /** The recording's length in seconds (from its header) - the report marks those over 40 s. */
   readonly audioSeconds: number;
+  /** The bill's lines as the candidate produced them - kept so a scoring fix is re-scored offline, with no new call. */
+  readonly lines?: readonly { name: string; catalogId: string | null; qty: number | null; unit: string; rate: number | null; total: number | null; priceType: string }[];
+  /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
+  readonly items?: readonly ParsedItem[];
   /** A provider failure or timeout - the order shows nothing (or "Not added"), never a wrong line. */
   readonly error?: string;
 }
@@ -271,29 +281,38 @@ export interface Recording {
 /** The candidates that run on a set (A-30s only on long orders; D reuses B's and C's answers). */
 export const candidatesFor = (set: OrderSet): CandidateId[] => CANDIDATES.filter((c) => c !== "D" && (c !== "A-30s" || set === "long"));
 
-// Estimates for the declaration only - the report uses each call's real token counts. A Layer 2 call (the grammar prompt + a 30-product
-// slice + one order) and a C call (the prompt + the whole catalog + the audio at 32 tokens a second).
-const LAYER2_TOKENS = { in: 4_000, out: 400 };
-const C_TEXT_TOKENS_IN = 14_000;
-const C_TOKENS_OUT = 900;
+/**
+ * What one call REALLY cost and took in the 1 Nov 2026 run (results-2026-10-31.json, logged from usageMetadata): Gemini Rs 198.6 logged
+ * against Rs ~404 taken from the owner's prepaid balance - the logged figure missed the billed thinking tokens (fixed since: geminiAudio.ts
+ * answerOf) and whatever else Google adds. So a declaration multiplies the logged per-call cost by that run's real bill ratio.
+ */
+export const RUN1 = {
+  usdPerTranscribe: 0.124 / 56, // B: 56 calls answered (its empty transcripts made no Layer 2 call)
+  usdPerLayer2Order: 0.1156 / 84, // A's Gemini spend over its 84 orders (an order Layer 1 reads makes no call)
+  usdPerC: 0.52 / 83,
+  usdPerC2: 1.005 / 71,
+  billRatio: 404 / 198.6,
+  seconds: { groq: 0.8, transcribe: 3.6, layer2: 1.5, c: 3.3, c2: 20 }, // medians measured in the run
+};
 
-/** Every call a run makes, BEFORE it makes one (D99 item 11). Layer 2 is at most one call per order and run for the Whisper-like candidates. */
-export function declare(recordings: readonly Recording[], longRuns: number) {
+/** Every call a run makes, BEFORE it makes one (D99 item 11), its estimated bill and its minutes. Layer 2 is at most one call per order
+ * and run for the Whisper-like candidates. `chosen` narrows a re-run; D never calls anything itself. */
+export function declare(recordings: readonly Recording[], longRuns: number, chosen: readonly CandidateId[] = CANDIDATES, pace = { transcribeS: 3, otherS: 3 }) {
   const calls = { groq: 0, transcribe: 0, layer2Max: 0, audioLite: 0, audioFlash: 0 };
   let usd = 0;
+  let seconds = 0;
+  const s = RUN1.seconds;
   for (const r of recordings) {
     const runs = r.set === "long" ? longRuns : 1;
-    for (const c of candidatesFor(r.set)) {
+    for (const c of candidatesFor(r.set).filter((x) => chosen.includes(x))) {
       for (let i = 0; i < runs; i++) {
-        const audioTokens = r.seconds * 32;
-        if (c === "A" || c === "A+vocab" || c === "A-30s") (calls.groq++, (usd += groqUsd(r.seconds)));
-        if (c === "B" || c === "B-novocab") (calls.transcribe++, (usd += tokensUsd("gemini-3.5-transcribe", { promptTokens: audioTokens, completionTokens: 200, totalTokens: 0 })));
-        if (c.startsWith("A") || c.startsWith("B")) (calls.layer2Max++, (usd += tokensUsd("gemini-3.5-flash-lite", { promptTokens: LAYER2_TOKENS.in, completionTokens: LAYER2_TOKENS.out, totalTokens: 0 })));
-        const cIn = { promptTokens: C_TEXT_TOKENS_IN + audioTokens, completionTokens: C_TOKENS_OUT, totalTokens: 0 };
-        if (c === "C") (calls.audioLite++, (usd += tokensUsd("gemini-3.5-flash-lite", cIn)));
-        if (c === "C2") (calls.audioFlash++, (usd += tokensUsd("gemini-3.8-flash", cIn)));
+        if (c === "A" || c === "A+vocab" || c === "A-30s") (calls.groq++, (usd += groqUsd(r.seconds)), (seconds += pace.otherS + s.groq));
+        if (c === "B" || c === "B-novocab") (calls.transcribe++, (usd += RUN1.usdPerTranscribe * RUN1.billRatio), (seconds += pace.transcribeS + s.transcribe));
+        if (c.startsWith("A") || c.startsWith("B")) (calls.layer2Max++, (usd += RUN1.usdPerLayer2Order * RUN1.billRatio), (seconds += pace.otherS + s.layer2));
+        if (c === "C") (calls.audioLite++, (usd += RUN1.usdPerC * RUN1.billRatio), (seconds += pace.otherS + s.c));
+        if (c === "C2") (calls.audioFlash++, (usd += RUN1.usdPerC2 * RUN1.billRatio), (seconds += pace.otherS + s.c2));
       }
     }
   }
-  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash, usd };
+  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash, usd, minutes: seconds / 60 };
 }
