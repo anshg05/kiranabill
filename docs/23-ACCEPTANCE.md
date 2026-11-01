@@ -1,6 +1,6 @@
 # 23 — Acceptance: the owner's recorded orders, the release gate, the two-phone session
 
-**Last updated:** 31 Oct 2026 (D100 note; KB-370 long orders)
+**Last updated:** 1 Nov 2026 (canary rule; known issue: products)
 
 **Owner decision, 30 Oct 2026 (`KB-364`).** The owner records about 50 real orders in his own voice and writes the bill each one must give.
 They become a PERMANENT, automatic regression test: no release without a pass. A final two-phone session (below) is the manual half.
@@ -15,6 +15,8 @@ They become a PERMANENT, automatic regression test: no release without a pass. A
 | **Not wrong, only inexact** | The app did not guess: a missing line, a price left as "Price needed" where a price was said, a custom line instead of a catalog match, a name that differs where the owner's spelling is not in the catalog. Costs "exact", never "wrong". |
 | **How a bill is judged** | As a **set**: Layer 1 lines come before Layer 2 lines on the screen, so position says nothing. A heard line is the product the owner wrote if it is the same catalog product **or** its name is close to what he wrote. "Wrong product" is only called when the owner's name resolves to one catalog product and the app claims another. A custom line claims none, so it is never a wrong product. piece / packet / box / bottle / pouch / bag / can / tin are one unit for a catalog price. |
 | **Silent or warned** | Every wrong line is reported with whether a Theek hai warned about it. The hard stop counts all of them; the report shows the silent ones separately (the dangerous kind: "never SILENTLY gets a number wrong"). |
+
+> **KNOWN ISSUE - the gate's "0 wrong" is not trustworthy on PRODUCTS (found 1 Nov 2026 by the `KB-370` canary; NOT fixed in the gate - `KB-373` decides).** `eval/acceptance/compare.ts` accepts a line as the owner's product when the heard WORDS match his name, whichever catalog product the line claims. The canary's candidate C billed रिन साबुन as **Lifebuoy**, फेना साबुन as **Godrej No.1 Soap**, फेना डिटर्जेंट as **Nirma** and रवा as **Chhena**, and the comparison scored all four as right. The app's own KB-368 rule puts a MEDIUM "Check this item" badge on such lines, but it does not block Bill Banao. So until `KB-373` fixes the comparison, "0 wrong lines" says nothing reliable about wrong products (numbers are unaffected). The bake-off's own scoring (`eval/bakeoff/score.ts`) already counts these as wrong products.
 
 ## 2. What is stored where
 

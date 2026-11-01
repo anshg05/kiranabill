@@ -30,7 +30,7 @@ import { parseSheet } from "../acceptance/sheet.js";
 import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
 import { checkAudioAnswer, hybridItems } from "./pipeline.js";
-import { CANDIDATES, candidatesFor, declare, GST, groqUsd, scoreRun, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
+import { CANDIDATES, candidatesFor, declare, GST, groqUsd, scoreRun, toSaved, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
 import { geminiUrl, inlineAudio } from "../../src/voice/geminiAudio.js";
 import { AUDIO_PARSE_ADDENDUM } from "../../src/voice/geminiAudioParseProvider.js";
 import { PRICING_GRAMMAR_PROMPT } from "../../src/voice/pricingGrammarPrompt.js";
@@ -202,7 +202,6 @@ const results: RunResult[] = [];
 let spentUsd = 0;
 const save = () =>
   writeFileSync(out, JSON.stringify({ meta: { ...(earlier?.meta ?? {}), date: new Date().toISOString(), longRuns: earlier ? earlier.meta.longRuns : longRuns, inrPerUsd, vocabulary, models: { groq: "whisper-large-v3", transcribe: GEMINI_TRANSCRIBE_MODEL, layer2: DEFAULT_GEMINI_MODEL, c: DEFAULT_GEMINI_MODEL, c2: C2_MODEL }, setAside: [...expectedOf].filter(([, o]) => o.setAside).map(([id]) => id), ...(mergeFile ? { rerun: { candidates: chosen, dropped: drop, at: new Date().toISOString() } } : {}) }, results: [...kept, ...results] }, null, 2) + "\n");
-const compact = (bill: ActualBill) => bill.lines.map(({ item: i }) => ({ name: i.spokenName, catalogId: i.catalogId, qty: i.qty, unit: i.unit, rate: i.rate, total: i.total, priceType: i.priceType }));
 
 outer: for (const rec of recordings) {
   const { expected } = expectedOf.get(rec.id)!;
@@ -276,13 +275,13 @@ outer: for (const rec of recordings) {
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
       const score = scoreRun(rec.id, expected, actual, shop);
       if (candidate !== "D") spentUsd += cost.usd; // D's cost is B's and C's, already counted
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, lines: compact(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(error ? { error } : {}), ...score });
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(error ? { error } : {}), ...score });
       console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
       if (canary) {
         // docs/23 section 8: the owner sees each candidate's transcript and items side by side before the full run
         console.log(`          heard: "${transcript ?? ""}"`);
-        for (const l of compact(actual)) console.log(`          - ${l.qty ?? "?"} ${l.unit} ${l.name}${l.catalogId ? ` [${shop.byId.get(l.catalogId)?.displayName}]` : " [custom]"} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
+        for (const l of toSaved(actual).lines) console.log(`          - ${l.qty ?? "?"} ${l.unit} ${l.name}${l.catalogId ? ` [${shop.byId.get(l.catalogId)?.displayName}]` : " [custom]"} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
       }
     }
     save();

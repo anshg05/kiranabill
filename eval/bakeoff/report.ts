@@ -18,7 +18,7 @@ if (!file) {
   process.exit(1);
 }
 const { meta, results } = JSON.parse(readFileSync(file, "utf8")) as {
-  meta: { date: string; longRuns: number; inrPerUsd: number; vocabulary: string[]; models: Record<string, string>; setAside: string[] };
+  meta: { date: string; longRuns: number; inrPerUsd: number; vocabulary: string[]; models: Record<string, string>; setAside: string[]; rerun?: { candidates: string[]; dropped: string[]; at: string } };
   results: RunResult[];
 };
 
@@ -32,7 +32,9 @@ function table(rows: RunResult[]): string {
     const mine = rows.filter((r) => r.candidate === c);
     const s = summarize(mine, meta.inrPerUsd);
     const orders = new Set(mine.map((r) => r.id)).size;
-    return `| **${c}** | ${orders} x ${s.runs / Math.max(1, orders)} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | **${s.wrongLines}** (${s.silentWrong}) | ${s.wrongNumbers} | ${s.wrongProducts} | ${s.dropped} | ${s.silentDuplicated} / ${s.warnedDuplicated} | ${s.invented} | ${s.numbersRightNameWrong} | ${s.warnedLines} | ${s.errors} | ${s1(s.secondsMedian)} / ${s1(s.secondsP90)} / ${s1(s.secondsMax)} | ${rs(s.inrPerBill)} | ${rs(s.inrPerMonth)} |`;
+    // owner, 1 Nov 2026: a candidate the re-run did not repeat keeps its run-1 numbers, scored by the OLD rules - for reference only
+    const label = meta.rerun && mine.every((r) => !r.rerun) ? `${c} (run 1, old scoring - reference only)` : c;
+    return `| **${label}** | ${orders} x ${s.runs / Math.max(1, orders)} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | **${s.wrongLines}** (${s.silentWrong}) | ${s.wrongNumbers} | ${s.wrongProducts} | ${s.dropped} | ${s.silentDuplicated} / ${s.warnedDuplicated} | ${s.invented} | ${s.numbersRightNameWrong} | ${s.warnedLines} | ${s.errors} | ${s1(s.secondsMedian)} / ${s1(s.secondsP90)} / ${s1(s.secondsMax)} | ${rs(s.inrPerBill)} | ${rs(s.inrPerMonth)} |`;
   });
   return [head, ...lines].join("\n");
 }

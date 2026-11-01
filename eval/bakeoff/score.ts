@@ -167,9 +167,12 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
 
   // rule 2, the case compare.ts calls right: the heard WORDS match the owner's name but the line claims a catalog product - and the owner's
   // product is not in the catalog, so that product cannot be it (e.g. "पोपट दाल" billed as Chana Daal). Each such line once.
+  // Also (owner, 1 Nov 2026 - the canary's hole): his name resolves to product X, the line claims ANOTHER catalog product Y with his words
+  // (C: रिन साबुन -> Lifebuoy, फेना साबुन -> Godrej No.1, फेना डिटर्जेंट -> Nirma, रवा -> Chhena) - compare.ts calls that right; it is not.
   const claimed = new Set<number>();
-  for (const e of expected.lines.filter((x) => notInCatalog.has(x.name))) {
+  for (const e of expected.lines) {
     const j = actual.lines.findIndex((l, k) => {
+      // the product his name resolves to always explains it (its names, or the scoring spellings) - so no separate "same id" test is needed
       if (l.item.catalogId === null || claimed.has(k)) return false;
       const one = compareOrder(id, { lines: [e], notAdded: 0, checks: 0 }, { lines: [l], unresolved: 0, checks: 0 }, sc);
       return one.extra.length === 0 && ![...one.wrong, ...one.inexact].some((y) => y.includes("name differs") || y.includes("wrong product")) && !explains(e.name, l.item, sc);
@@ -222,6 +225,37 @@ export function scoreRun(id: string, expected: ExpectedBill, actual: ActualBill,
   };
 }
 
+export interface SavedLine {
+  readonly name: string;
+  readonly catalogId: string | null;
+  readonly qty: number | null;
+  readonly unit: string;
+  readonly rate: number | null;
+  readonly total: number | null;
+  readonly priceType: string;
+  /** A Theek hai is shown on this line (saved since the canary; the canary's rows have no such field). */
+  readonly warned?: boolean;
+}
+
+/** What a run saves of a bill - everything scoreRun reads. */
+export function toSaved(actual: ActualBill): { lines: SavedLine[]; unresolved: number } {
+  const warned = new Set(actual.warnedLines ?? []);
+  return {
+    lines: actual.lines.map(({ item: i }, k) => ({ name: i.spokenName, catalogId: i.catalogId, qty: i.qty, unit: i.unit, rate: i.rate, total: i.total, priceType: i.priceType, warned: warned.has(k) })),
+    unresolved: actual.unresolved,
+  };
+}
+
+/** The bill back from what was saved, for re-scoring offline. The shown name is rebuilt the app's way: the catalog's for a matched line. */
+export function fromSaved(saved: { lines: readonly SavedLine[]; unresolved?: number }, shop: ParserCatalog, checks = 0): ActualBill {
+  const lines = saved.lines.map((l) => {
+    const item: ParsedItem = { spokenName: l.name, catalogId: l.catalogId, isCustom: l.catalogId === null, matchStatus: l.catalogId === null ? "none" : "matched", qty: l.qty, unit: l.unit, rate: l.rate, rateUnit: l.rate === null ? null : l.unit, total: l.total, priceType: l.priceType as ParsedItem["priceType"] };
+    return { item, displayName: (l.catalogId && shop.byId.get(l.catalogId)?.displayName) || l.name };
+  });
+  const warnedLines = saved.lines.flatMap((l, k) => (l.warned ? [k] : []));
+  return { lines, unresolved: saved.unresolved ?? 0, checks: Math.max(checks, warnedLines.length), warnedLines };
+}
+
 export interface RunResult extends RunScore {
   readonly candidate: CandidateId;
   readonly id: string;
@@ -233,8 +267,10 @@ export interface RunResult extends RunScore {
   readonly usd: number;
   /** The recording's length in seconds (from its header) - the report marks those over 40 s. */
   readonly audioSeconds: number;
-  /** The bill's lines as the candidate produced them - kept so a scoring fix is re-scored offline, with no new call. */
-  readonly lines?: readonly { name: string; catalogId: string | null; qty: number | null; unit: string; rate: number | null; total: number | null; priceType: string }[];
+  /** The bill's lines as the candidate produced them - kept so a scoring fix is re-scored offline, with no new call (fromSaved). */
+  readonly lines?: readonly SavedLine[];
+  /** "Not added" pieces (saved since the canary; older rows have none). */
+  readonly unresolved?: number;
   /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
   readonly items?: readonly ParsedItem[];
   /** Produced by a --merge re-run: kept and skipped when the same command runs again (resume after a daily stop). */
