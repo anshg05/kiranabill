@@ -156,6 +156,8 @@ if (diagnose) {
   const parts = ((raw.candidates as { content?: { parts?: Record<string, unknown>[] } }[] | undefined)?.[0]?.content?.parts ?? []);
   for (const p of parts) {
     if (typeof p.text === "string") console.log(`text part: "${p.text.slice(0, 200)}"`);
+    const at = p.audioTranscription as { text?: string } | undefined;
+    if (typeof at?.text === "string") console.log(`audioTranscription.text: "${at.text.slice(0, 300)}"`);
     const words = (p.audioTranscription as { words?: { word?: string }[] } | undefined)?.words;
     if (words) console.log(`audioTranscription.words (${words.length}): "${words.slice(0, 40).map((w) => w.word).join(" ")}"`);
   }

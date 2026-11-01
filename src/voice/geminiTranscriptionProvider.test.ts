@@ -65,6 +65,21 @@ describe("geminiTranscriptionProvider (KB-370 candidate B)", () => {
     expect(r.usage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
   });
 
+  it("KB-370 fix 2: reads audioTranscription.text - the shape the LIVE model returned to the diagnostic call (1 Nov 2026), not the docs' words[]", () => {
+    // field names and counts exactly as the diagnostic printed them (the text value here is a sample, not the owner's recording)
+    const live = {
+      candidates: [{ content: { parts: [{ audioTranscription: { text: "दो किलो चीनी छप्पन रुपए किलो" } }], role: "model" }, finishReason: "STOP", index: 0 }],
+      usageMetadata: { promptTokenCount: 162, candidatesTokenCount: 15, totalTokenCount: 177, promptTokensDetails: [{ modality: "AUDIO", tokenCount: 161 }, { modality: "TEXT", tokenCount: 1 }], serviceTier: "standard" },
+      modelVersion: "gemini-3.5-transcribe",
+      responseId: "x",
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => live }));
+    return createGeminiTranscriptionProvider("k").transcribe(audio(), { language: "hi" }).then((r) => {
+      expect(r.text).toBe("दो किलो चीनी छप्पन रुपए किलो");
+      expect(r.usage).toEqual({ promptTokens: 162, completionTokens: 15, totalTokens: 177 });
+    });
+  });
+
   it("KB-370 fix: a billed thinking token counts as output (totalTokenCount - promptTokenCount), not only candidatesTokenCount", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,

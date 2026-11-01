@@ -28,20 +28,22 @@ export async function failedAnswer(what: string, response: Response): Promise<Pr
 }
 
 interface GeminiAnswer {
-  candidates: { content: { parts: { text?: string; thought?: boolean; audioTranscription?: { words?: { word?: string }[] } }[] } }[];
+  candidates: { content: { parts: { text?: string; thought?: boolean; audioTranscription?: { text?: string; words?: { word?: string }[] } }[] } }[];
   usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
 }
 
 /**
  * The answer's text and its BILLED token counts. Text: the parts that are not thoughts; gemini-3.5-transcribe answers with
- * parts[].audioTranscription.words[] instead (Google's REST example, docs/generate-content/transcribe) - KB-370's first run read "" from it.
+ * parts[].audioTranscription instead - LIVE (the 1 Nov diagnostic call) its `.text`, in Google's REST example its `.words[]`.
+ * KB-370's first run read "" from it.
  * Output tokens = total - prompt: thinking tokens are billed as output (docs/thinking) but are not in candidatesTokenCount.
  */
 export async function answerOf(response: Response): Promise<{ text: string; usage: TokenUsage }> {
   const data = (await response.json()) as GeminiAnswer;
   const parts = data.candidates[0]?.content.parts ?? [];
   const text = parts.filter((p) => typeof p.text === "string" && !p.thought).map((p) => p.text).join("");
-  const words = parts.flatMap((p) => p.audioTranscription?.words ?? []).map((w) => w.word ?? "").filter(Boolean).join(" ");
+  const transcribed = parts.map((p) => p.audioTranscription?.text ?? "").filter(Boolean).join(" ");
+  const words = transcribed || parts.flatMap((p) => p.audioTranscription?.words ?? []).map((w) => w.word ?? "").filter(Boolean).join(" ");
   const u = data.usageMetadata;
   const prompt = u?.promptTokenCount ?? 0;
   const total = u?.totalTokenCount ?? 0;
