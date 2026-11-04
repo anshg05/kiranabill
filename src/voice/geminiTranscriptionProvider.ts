@@ -16,7 +16,8 @@ export interface GeminiTranscriptionProvider extends TranscriptionProvider {
   transcribe(audio: Blob, opts: { vocabulary?: string[]; language?: string }): Promise<{ text: string; latencyMs: number; usage: TokenUsage }>;
 }
 
-export function createGeminiTranscriptionProvider(apiKey: string, options: { model?: string; timeoutMs?: number } = {}): GeminiTranscriptionProvider {
+/** `mode` (KB-370 round 2): "SMART" resolves spoken corrections and removes false starts (docs/transcribe); unset = the default, verbatim. */
+export function createGeminiTranscriptionProvider(apiKey: string, options: { model?: string; timeoutMs?: number; mode?: "VERBATIM" | "SMART" } = {}): GeminiTranscriptionProvider {
   const model = pinnedModel(options.model ?? GEMINI_TRANSCRIBE_MODEL);
   const timeoutMs = options.timeoutMs ?? TRANSCRIBE_BAKEOFF_TIMEOUT_MS;
   return {
@@ -29,6 +30,7 @@ export function createGeminiTranscriptionProvider(apiKey: string, options: { mod
           audioTranscriptionConfig: {
             ...(opts.language ? { languageCodes: [opts.language === "hi" ? "hi-IN" : opts.language] } : {}),
             ...(vocabulary.length ? { customVocabulary: vocabulary } : {}),
+            ...(options.mode ? { mode: options.mode } : {}),
           },
         },
       };

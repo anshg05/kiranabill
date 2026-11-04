@@ -29,7 +29,7 @@ export async function failedAnswer(what: string, response: Response): Promise<Pr
 
 interface GeminiAnswer {
   candidates: { content: { parts: { text?: string; thought?: boolean; audioTranscription?: { text?: string; words?: { word?: string }[] } }[] } }[];
-  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number; totalTokenCount?: number };
 }
 
 /**
@@ -38,7 +38,7 @@ interface GeminiAnswer {
  * KB-370's first run read "" from it.
  * Output tokens = total - prompt: thinking tokens are billed as output (docs/thinking) but are not in candidatesTokenCount.
  */
-export async function answerOf(response: Response): Promise<{ text: string; usage: TokenUsage }> {
+export async function answerOf(response: Response): Promise<{ text: string; usage: TokenUsage; thoughts: number }> {
   const data = (await response.json()) as GeminiAnswer;
   const parts = data.candidates[0]?.content.parts ?? [];
   const text = parts.filter((p) => typeof p.text === "string" && !p.thought).map((p) => p.text).join("");
@@ -47,5 +47,5 @@ export async function answerOf(response: Response): Promise<{ text: string; usag
   const u = data.usageMetadata;
   const prompt = u?.promptTokenCount ?? 0;
   const total = u?.totalTokenCount ?? 0;
-  return { text: text || words, usage: { promptTokens: prompt, completionTokens: Math.max(0, total - prompt), totalTokens: total } };
+  return { text: text || words, usage: { promptTokens: prompt, completionTokens: Math.max(0, total - prompt), totalTokens: total }, thoughts: u?.thoughtsTokenCount ?? 0 };
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // KB-370 (V1 is a report only): the bake-off's providers exist for the measurement and for V3 - nothing the app or /voice runs imports them.
 
 const ROOT = path.resolve(__dirname, "..", "..");
-const BAKEOFF_ONLY = ["geminiTranscriptionProvider", "geminiAudioParseProvider", "geminiAudio\""];
+const BAKEOFF_ONLY = ["geminiTranscriptionProvider", "geminiAudioParseProvider", "geminiAudio\"", "sarvamTranscriptionProvider"];
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {

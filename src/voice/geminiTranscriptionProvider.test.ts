@@ -97,6 +97,16 @@ describe("geminiTranscriptionProvider (KB-370 candidate B)", () => {
     expect(sent(fetchMock).body.generationConfig.audioTranscriptionConfig.customVocabulary).toEqual(names.slice(0, TRANSCRIBE_VOCABULARY_MAX));
   });
 
+  it("KB-370 round 2: sends the transcription mode only when asked (SMART resolves spoken corrections; the default is verbatim)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok("x"));
+    vi.stubGlobal("fetch", fetchMock);
+    await createGeminiTranscriptionProvider("k", { mode: "SMART" }).transcribe(audio(), { language: "hi" });
+    expect(sent(fetchMock).body.generationConfig.audioTranscriptionConfig.mode).toBe("SMART");
+    fetchMock.mockClear();
+    await createGeminiTranscriptionProvider("k").transcribe(audio(), { language: "hi" });
+    expect(sent(fetchMock).body.generationConfig.audioTranscriptionConfig.mode).toBeUndefined();
+  });
+
   it("refuses a '-latest' alias - a pinned model only", () => {
     expect(() => createGeminiTranscriptionProvider("k", { model: "gemini-transcribe-latest" })).toThrow(/pinned/);
   });

@@ -203,14 +203,27 @@ describe("summarize and perRecording", () => {
 describe("declare - the calls a run will make, before it makes any", () => {
   it("counts each API per candidate: short orders once, long orders three times; A-30s only on long orders; D makes none", () => {
     const d = declare([{ id: "A01", set: "short", seconds: 8 }, { id: "A02", set: "short", seconds: 12 }, { id: "A51", set: "long", seconds: 60 }], 3);
-    expect(d.calls).toEqual({ groq: 2 + 3 + 2 + 3 + 3, transcribe: 5 + 5, layer2Max: 13 + 10, audioLite: 5, audioFlash: 5 });
+    expect(d.calls).toEqual({ groq: 2 + 3 + 2 + 3 + 3, transcribe: 5 + 5, layer2Max: 13 + 10, audioLite: 5, audioFlash: 5, sarvam: 0 });
     expect(d.total).toBe(13 + 10 + 23 + 5 + 5);
     expect(d.usd).toBeGreaterThan(0);
   });
 
+  it("round 2: B-smart is a transcribe call + Layer 2; E-lite / E-flash one audio call; S (Sarvam) its own call + Layer 2, priced Rs 0.49 a minute", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 60 }], 3, ["B-smart", "E-lite", "E-flash", "S"], { transcribeS: 7, otherS: 3 }, { layer2In: 4_000, cIn: 14_000 }, 100);
+    expect(d.calls).toEqual({ groq: 0, transcribe: 1, layer2Max: 2, audioLite: 1, audioFlash: 1, sarvam: 1 });
+    const s = declare([{ id: "A01", set: "short", seconds: 60 }], 3, ["S"], { transcribeS: 7, otherS: 3 }, { layer2In: 4_000, cIn: 14_000 }, 100);
+    const layer2 = ((4_000 * 0.3 + 400 * 2 * 2.5) / 1e6) * 1.18;
+    expect(s.usd).toBeCloseTo((0.49 / 100) * 1.18 + layer2, 9);
+  });
+
+  it("the default candidates stay round 1's - a round-2 candidate runs only when chosen", () => {
+    const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3);
+    expect(d.calls.sarvam).toBe(0);
+  });
+
   it("KB-370 re-run: counts only the chosen candidates (B, C, D: D still makes no call of its own)", () => {
     const d = declare([{ id: "A01", set: "short", seconds: 8 }, { id: "A61", set: "long", seconds: 76 }], 3, ["B", "C", "D"]);
-    expect(d.calls).toEqual({ groq: 0, transcribe: 1 + 3, layer2Max: 1 + 3, audioLite: 1 + 3, audioFlash: 0 });
+    expect(d.calls).toEqual({ groq: 0, transcribe: 1 + 3, layer2Max: 1 + 3, audioLite: 1 + 3, audioFlash: 0, sarvam: 0 });
   });
 
   it("owner, 1 Nov 2026: prices from LIST prices x estimated tokens, + a thinking allowance (as many tokens as the answer), + 18% GST", () => {

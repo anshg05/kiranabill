@@ -1,5 +1,5 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
-import { extractSpokenNumbers, parseUtteranceParts, pieceHasPerUnitPrice, type ParsedItem } from "../../src/domain/grammar.js";
+import { extractSpokenNumbers, matchProductName, parseUtteranceParts, pieceHasPerUnitPrice, type ParsedItem } from "../../src/domain/grammar.js";
 import { settleLayer2Items } from "../../src/domain/layer2.js";
 import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "../../src/domain/layer2Check.js";
 import { checkLayer2NumberOrder, evaluateReviewFlags } from "../../src/domain/reviewFlags.js";
@@ -42,4 +42,35 @@ export function hybridItems(bTranscript: string, cItems: readonly ParsedItem[]):
   const heard = extractSpokenNumbers(bTranscript);
   const perUnit = pieceHasPerUnitPrice(bTranscript);
   return cItems.map((it) => (it.qty === null || heard.some((n) => Math.abs(n - it.qty!) < 1e-9) || (it.qty === 1 && perUnit) ? it : { ...it, qty: null }));
+}
+
+/**
+ * KB-370 round 2 (D102): the catalog only FILLS A PRICE THAT WAS NOT SAID, and only when the spoken name clearly matches ONE item - the
+ * one the answer claims. Anything else (a different product, several, none) loses the claim and shows "Price needed"; the name stays as said.
+ */
+export function d102Fill(items: readonly ParsedItem[], shop: ParserCatalog): ParsedItem[] {
+  return items.map((it) => {
+    if (it.priceType !== "default") return it;
+    const match = matchProductName(it.spokenName, shop);
+    if (it.catalogId !== null && match.matchStatus === "matched" && match.catalogId === it.catalogId) return it;
+    return { ...it, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "unknown" };
+  });
+}
+
+/**
+ * KB-370 round 2: two independent ears must agree. A line whose quantity, rate or total B's transcript of the SAME recording does not have
+ * (the 1 of a per-kilo price excepted, as in hybridItems) gets a Theek hai - the line is kept, never changed (hard rule 7).
+ */
+export function flagNotHeardByB(bill: ActualBill, bTranscript: string): ActualBill {
+  const heard = extractSpokenNumbers(bTranscript).map((n) => Math.round(n * 100));
+  const has = (paise: number) => heard.includes(paise);
+  const perUnit = pieceHasPerUnitPrice(bTranscript);
+  const warned = new Set(bill.warnedLines ?? []);
+  bill.lines.forEach(({ item: i }, k) => {
+    const qtyOk = i.qty === null || has(Math.round(i.qty * 100)) || (i.qty === 1 && perUnit);
+    const price = i.priceType === "rate" ? i.rate : i.priceType === "total" ? i.total : null;
+    if (!qtyOk || (price !== null && !has(price))) warned.add(k);
+  });
+  const warnedLines = [...warned].sort((a, b) => a - b);
+  return { ...bill, warnedLines, checks: Math.max(bill.checks, warnedLines.length) };
 }

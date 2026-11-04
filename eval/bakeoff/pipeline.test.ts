@@ -3,7 +3,7 @@ import { resolveUtterance } from "../../src/data/voiceBilling.js";
 import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { checksOf } from "../acceptance/compare.js";
-import { checkAudioAnswer, hybridItems } from "./pipeline.js";
+import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems } from "./pipeline.js";
 
 // KB-370: candidates C (one audio call: transcript + items) and D (C's items, numbers only if B's ear heard them) get the SAME checks
 // a Layer 2 answer gets today.
@@ -41,6 +41,24 @@ describe("checkAudioAnswer", () => {
   it("a spoken rate stays", () => {
     const r = checkAudioAnswer("दो किलो चीनी पैंतालीस रुपए किलो", [item({})], shop);
     expect(r.lines[0]!.item).toMatchObject({ priceType: "rate", rate: 4500, total: 9000 });
+  });
+});
+
+describe("KB-370 round 2 - Ezy-style candidates", () => {
+  it("d102Fill: a shop price stays only when the SAID name clearly matches that one product; otherwise Price needed", () => {
+    const [kept, dropped] = d102Fill([item({ spokenName: "चीनी", catalogId: "27", rate: null, rateUnit: null, total: null, priceType: "default" }), item({ spokenName: "पोपट दाल", catalogId: "21", rate: null, rateUnit: null, total: null, priceType: "default" })], shop);
+    expect(kept!.priceType).toBe("default");
+    expect(dropped).toMatchObject({ priceType: "unknown", catalogId: null, spokenName: "पोपट दाल" });
+  });
+
+  it("flagNotHeardByB: a line whose numbers B's transcript does not have gets a Theek hai (the line stays)", () => {
+    // the audio answer heard "साठ" (60) for chawal; B, the other ear, heard ₹50
+    const bill = checkAudioAnswer("दो किलो चीनी पैंतालीस रुपए किलो, तीन किलो चावल साठ रुपए किलो", [item({}), item({ spokenName: "चावल", catalogId: "11", qty: 3, rate: 6000, rateUnit: "kg", total: 18000 })], shop);
+    const flagged = flagNotHeardByB(bill, "2 किलो चीनी ₹45 किलो, 3 किलो चावल ₹50 किलो");
+    expect(flagged.lines).toHaveLength(bill.lines.length);
+    expect(flagged.warnedLines).toContain(1); // B heard 50 for chawal, not 60
+    expect(flagged.warnedLines).not.toContain(0);
+    expect(flagged.checks).toBeGreaterThanOrEqual(1);
   });
 });
 

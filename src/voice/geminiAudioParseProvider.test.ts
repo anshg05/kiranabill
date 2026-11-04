@@ -45,6 +45,21 @@ describe("geminiAudioParseProvider (KB-370 candidate C)", () => {
     expect(r.usage.promptTokens).toBe(9000);
   });
 
+  it("KB-370 round 2: another system prompt and a thinking level replace the defaults; the thinking tokens are reported", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ transcript: "x", items: [] }) }] } }], usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20, thoughtsTokenCount: 40, totalTokenCount: 160 } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const r = await createGeminiAudioParseProvider("k", { model: "gemini-3.8-flash", systemPrompt: "EZY PROMPT", thinkingConfig: { thinkingLevel: "low" } }).parseAudio(audio(), { catalog: [chini] });
+    const body = JSON.parse((fetchMock.mock.calls[0]! as [string, RequestInit])[1].body as string);
+    expect(body.systemInstruction.parts[0].text).toBe("EZY PROMPT");
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
+    expect(r.thoughts).toBe(40);
+    expect(r.usage.completionTokens).toBe(60); // thinking billed as output
+  });
+
   it("refuses a '-latest' alias, and a 429 is busy", async () => {
     expect(() => createGeminiAudioParseProvider("k", { model: "gemini-flash-latest" })).toThrow(/pinned/);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "{}" }));

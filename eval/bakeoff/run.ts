@@ -9,6 +9,8 @@
  *     npm run bakeoff -- --go --candidates B,C,D --merge eval/bakeoff/results-2026-10-31.json --drop B-novocab --cap-inr 170
  *   --merge replaces those candidates' rows (and --drop's) in an earlier results file; --cap-inr stops the run when its logged spend reaches it;
  *   --pace-transcribe-s spaces gemini-3.5-transcribe calls (default 12: its per-minute limit is not published, 429s on 1 Nov).
+ *     npm run bakeoff -- --round2 [--canary] [--go] --cap-inr N   KB-370 round 2: B-smart, E-lite, E-flash, S - scored under D102;
+ *       E-* need B's saved transcripts (--b-from, default eval/bakeoff/results-2026-10-31.json); B-smart runs on SMART_IDS once each.
  * Then:  npm run bakeoff:report   (writes eval/bakeoff/REPORT.md from the results file; offline, free)
  * Keys: GROQ_API_KEY and GEMINI_API_KEY_EVAL from .env.local - read here, never printed. The recordings are never committed.
  */
@@ -29,8 +31,11 @@ import { runOrder } from "../acceptance/run.js";
 import { parseSheet } from "../acceptance/sheet.js";
 import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
-import { checkAudioAnswer, hybridItems } from "./pipeline.js";
-import { CANDIDATES, candidatesFor, declare, GST, groqUsd, scoreRun, toSaved, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
+import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems } from "./pipeline.js";
+import { scoreRunD102 } from "./d102.js";
+import { EZY_D102_PROMPT } from "./ezyPrompt.js";
+import { createSarvamTranscriptionProvider } from "../../src/voice/sarvamTranscriptionProvider.js";
+import { candidatesFor, declare, GST, groqUsd, ROUND1_CANDIDATES, SARVAM_INR_PER_MINUTE, scoreRun, toSaved, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
 import { geminiUrl, inlineAudio } from "../../src/voice/geminiAudio.js";
 import { AUDIO_PARSE_ADDENDUM } from "../../src/voice/geminiAudioParseProvider.js";
 import { PRICING_GRAMMAR_PROMPT } from "../../src/voice/pricingGrammarPrompt.js";
@@ -52,7 +57,15 @@ const pace = { transcribeS: Number(arg("pace-transcribe-s") ?? 60 / 9), otherS: 
 /** docs/23 section 8: one short order and the two longest. */
 const CANARY_IDS = ["A01", "A61", "A62"];
 const only = canary ? CANARY_IDS : arg("only")?.split(",");
-const chosen = (arg("candidates")?.split(",") ?? [...CANDIDATES]) as CandidateId[];
+/** KB-370 round 2 (owner, 5 Nov 2026): the new candidates, scored under D102. */
+const round2 = process.argv.includes("--round2");
+const ROUND2: CandidateId[] = ["B-smart", "E-lite", "E-flash", "S"];
+const chosen = (arg("candidates")?.split(",") ?? (round2 ? ROUND2 : [...ROUND1_CANDIDATES])) as CandidateId[];
+/** B-smart (owner): the correction orders A39, A40, A59, all 12 long orders, and 10 short ones - once each. The 10 short: one or two from
+ * each coverage group of A01-A50 (A13 has no written bill). */
+const SMART_IDS = new Set(["A39", "A40", "A59", ...Array.from({ length: 12 }, (_, i) => `A${51 + i}`), "A01", "A02", "A07", "A14", "A18", "A23", "A28", "A34", "A42", "A47"]);
+/** The lowest gemini-3.8-flash allows (docs/thinking); the canary confirms from the thinking tokens that it took effect. */
+const E_FLASH_THINKING = { thinkingLevel: "low" };
 const longRuns = canary ? 1 : Number(arg("long-runs") ?? 3);
 /** The last RBI reference rate found on 31 Oct 2026: 95.17 (2 Jun 2026, cbonds). Pass today's with --inr-per-usd. */
 const inrPerUsd = Number(arg("inr-per-usd") ?? 95.17);
@@ -97,12 +110,21 @@ const vocabulary = [...freq.entries()]
 const sliceChars = JSON.stringify(shop.entries.slice(0, 30).map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
 const catalogChars = JSON.stringify(shop.entries.map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
 const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3) };
-const now = declare(recordings, longRuns, chosen, pace, est);
+// round 2: B-smart only on its recordings, once; the others on every recording, long ones `longRuns` times
+const sum = (a: ReturnType<typeof declare>, b: ReturnType<typeof declare>): ReturnType<typeof declare> => ({
+  calls: Object.fromEntries(Object.entries(a.calls).map(([k, v]) => [k, v + b.calls[k as keyof typeof a.calls]])) as typeof a.calls,
+  total: a.total + b.total,
+  usd: a.usd + b.usd,
+  minutes: a.minutes + b.minutes,
+});
+const now = round2
+  ? sum(declare(recordings.filter((r) => SMART_IDS.has(r.id)), 1, chosen.filter((c) => c === "B-smart"), pace, est, inrPerUsd), declare(recordings, longRuns, chosen.filter((c) => c !== "B-smart"), pace, est, inrPerUsd))
+  : declare(recordings, longRuns, chosen, pace, est);
 const projected = declare([...recordings, ...Array.from({ length: LONG_SLOTS - longHave }, (_, i) => ({ id: `A${51 + longHave + i}`, set: "long" as const, seconds: 60 }))], longRuns, chosen, pace, est);
 const audioMin = recordings.reduce((a, r) => a + r.seconds, 0) / 60;
 const fmt = (d: ReturnType<typeof declare>) =>
   `${d.total} calls - Groq ${d.calls.groq}, ${GEMINI_TRANSCRIBE_MODEL} ${d.calls.transcribe}, Layer 2 (${DEFAULT_GEMINI_MODEL}, text) at most ${d.calls.layer2Max}, ` +
-  `audio ${DEFAULT_GEMINI_MODEL} ${d.calls.audioLite}, audio ${C2_MODEL} ${d.calls.audioFlash}; about Rs ${(d.usd * inrPerUsd).toFixed(0)} ($${d.usd.toFixed(2)} at Rs ${inrPerUsd}/$: ` +
+  `audio ${DEFAULT_GEMINI_MODEL} ${d.calls.audioLite}, audio ${C2_MODEL} ${d.calls.audioFlash}, Sarvam ${d.calls.sarvam}; about Rs ${(d.usd * inrPerUsd).toFixed(0)} ($${d.usd.toFixed(2)} at Rs ${inrPerUsd}/$: ` +
   `list prices x estimated tokens (prompts from their characters: Layer 2 ${est.layer2In}, C ${est.cIn} + audio) + a thinking allowance + ${GST * 100}% GST); ` +
   `about ${Math.ceil(d.minutes)} min if the machine stays awake` +
   (d.calls.transcribe ? `; ${GEMINI_TRANSCRIBE_MODEL} ${d.calls.transcribe} calls at most ${DAILY_STOP} a Pacific day = ${Math.ceil(d.calls.transcribe / DAILY_STOP)} day(s) (the run stops at ${DAILY_STOP} and resumes with the same command)` : "");
@@ -184,6 +206,15 @@ async function paced<T>(call: () => Promise<T>, paceS = pace.otherS): Promise<T>
 }
 
 const layer2 = createGeminiParseProvider(geminiKey);
+// round 2: B's saved transcripts (the second ear for E-*), and Sarvam
+const bFrom = arg("b-from") ?? path.join(HERE, "results-2026-10-31.json");
+const bTranscripts = new Map<string, string>();
+if (round2 && existsSync(bFrom)) {
+  for (const r of (JSON.parse(readFileSync(bFrom, "utf8")) as { results: RunResult[] }).results) if (r.candidate === "B" && r.rerun && !r.error && r.transcript) bTranscripts.set(`${r.id}|${r.run}`, r.transcript);
+}
+const sarvamKey = process.env.SARVAM_API_KEY;
+if (chosen.includes("S") && !sarvamKey) throw new Error("SARVAM_API_KEY not set (.env.local)");
+const sarvam = createSarvamTranscriptionProvider(sarvamKey ?? "");
 /** Layer 2 through the SHIPPED provider and prompt, counting its cost (thinking tokens included: total - prompt) and its seconds. */
 const parseWith = (cost: { usd: number; ms: number }) => async (text: string, slice: readonly CatalogEntry[]): Promise<ParsedItem[]> => {
   const r = await paced(() => layer2.parse(text, { catalogSlice: [...slice] }));
@@ -201,7 +232,7 @@ const done = new Map(kept.filter((r) => r.rerun && !r.error).map((r) => [`${r.ca
 const results: RunResult[] = [];
 let spentUsd = 0;
 const save = () =>
-  writeFileSync(out, JSON.stringify({ meta: { ...(earlier?.meta ?? {}), date: new Date().toISOString(), longRuns: earlier ? earlier.meta.longRuns : longRuns, inrPerUsd, vocabulary, models: { groq: "whisper-large-v3", transcribe: GEMINI_TRANSCRIBE_MODEL, layer2: DEFAULT_GEMINI_MODEL, c: DEFAULT_GEMINI_MODEL, c2: C2_MODEL }, setAside: [...expectedOf].filter(([, o]) => o.setAside).map(([id]) => id), ...(mergeFile ? { rerun: { candidates: chosen, dropped: drop, at: new Date().toISOString() } } : {}) }, results: [...kept, ...results] }, null, 2) + "\n");
+  writeFileSync(out, JSON.stringify({ meta: { ...(earlier?.meta ?? {}), date: new Date().toISOString(), longRuns: earlier ? earlier.meta.longRuns : longRuns, inrPerUsd, vocabulary, models: { groq: "whisper-large-v3", transcribe: GEMINI_TRANSCRIBE_MODEL, layer2: DEFAULT_GEMINI_MODEL, c: DEFAULT_GEMINI_MODEL, c2: C2_MODEL }, setAside: [...expectedOf].filter(([, o]) => o.setAside).map(([id]) => id), ...(mergeFile ? { rerun: { candidates: chosen, dropped: drop, at: new Date().toISOString() } } : {}), ...(round2 ? { scoring: "D102 - names as said (owner, 4 Nov 2026)", round: 2 } : {}) }, results: [...kept, ...results] }, null, 2) + "\n");
 
 outer: for (const rec of recordings) {
   const { expected } = expectedOf.get(rec.id)!;
@@ -210,6 +241,7 @@ outer: for (const rec of recordings) {
   for (let run = 1; run <= runs; run++) {
     const answers: Partial<Record<"B" | "C", { transcript: string; items?: ParsedItem[]; seconds: number; usd: number }>> = {};
     for (const candidate of candidatesFor(rec.set).concat("D").filter((c) => chosen.includes(c))) {
+      if (candidate === "B-smart" && (!SMART_IDS.has(rec.id) || run > 1)) continue;
       const prior = done.get(`${candidate}|${rec.id}|${run}`);
       if (prior) {
         // resumed: this row exists - give D the saved B transcript and C items, call nothing
@@ -226,6 +258,8 @@ outer: for (const rec of recordings) {
       let transcript: string | null = null;
       let actual: ActualBill;
       let error: string | undefined;
+      let thoughts: number | undefined;
+      let waits: RunResult["waits"];
       try {
         if (candidate.startsWith("A")) {
           const groq = createGroqTranscriptionProvider(groqKey, undefined, candidate === "A-30s" ? A30_TIMEOUT_MS : undefined);
@@ -235,10 +269,10 @@ outer: for (const rec of recordings) {
           cost.ms += r.latencyMs;
           actual = await runOrder(transcript, parseWith(cost));
         } else if (candidate.startsWith("B")) {
-          const b = createGeminiTranscriptionProvider(geminiKey);
+          const b = createGeminiTranscriptionProvider(geminiKey, candidate === "B-smart" ? { mode: "SMART" } : {});
           // one request through the quota; a 429 stops the run (on 1 Nov it was the shared DAILY cap - retrying only burns production's)
           await transcribeGate(rec.seconds);
-          const r = await b.transcribe(blob(), { language: "hi", ...(candidate === "B" ? { vocabulary } : {}) }).catch((e: unknown) => {
+          const r = await b.transcribe(blob(), { language: "hi", ...(candidate === "B" || candidate === "B-smart" ? { vocabulary } : {}) }).catch((e: unknown) => {
             if (e instanceof ProviderError && e.status === 429) throw new StopRun(`${GEMINI_TRANSCRIBE_MODEL} answered 429 (most likely the shared 100-a-day cap) - stopped; run the same command again after midnight Pacific (13:30 IST)`);
             throw e;
           });
@@ -246,6 +280,24 @@ outer: for (const rec of recordings) {
           cost.usd += tokensUsd(GEMINI_TRANSCRIBE_MODEL, r.usage);
           cost.ms += r.latencyMs;
           if (candidate === "B") answers.B = { transcript, seconds: r.latencyMs / 1000, usd: cost.usd };
+          actual = await runOrder(transcript, parseWith(cost));
+        } else if (candidate === "E-lite" || candidate === "E-flash") {
+          // Ezy-style (round 2): the D102 prompt; the catalog fills only an unspoken price on one clear match; our checks; then B must agree
+          const bTranscript = bTranscripts.get(`${rec.id}|${run}`) ?? bTranscripts.get(`${rec.id}|1`);
+          if (bTranscript === undefined) throw new Error(`no saved B transcript for ${rec.id} run ${run} - E needs B as its second ear`);
+          const model = candidate === "E-lite" ? DEFAULT_GEMINI_MODEL : C2_MODEL;
+          const r = await paced(() => createGeminiAudioParseProvider(geminiKey, { model, systemPrompt: EZY_D102_PROMPT, ...(candidate === "E-flash" ? { thinkingConfig: E_FLASH_THINKING } : {}) }).parseAudio(blob(), { catalog: entries }));
+          transcript = r.transcript;
+          cost.usd += tokensUsd(model, r.usage);
+          cost.ms += r.latencyMs;
+          thoughts = r.thoughts;
+          actual = flagNotHeardByB(checkAudioAnswer(transcript, d102Fill(r.items, shop), shop), bTranscript);
+        } else if (candidate === "S") {
+          const r = await paced(() => sarvam.transcribe(blob(), { language: "hi", vocabulary, audioSeconds: rec.seconds }));
+          transcript = r.text;
+          cost.usd += ((rec.seconds / 60) * SARVAM_INR_PER_MINUTE) / inrPerUsd; // billed per second, before GST
+          cost.ms += r.latencyMs;
+          waits = r.waits;
           actual = await runOrder(transcript, parseWith(cost));
         } else if (candidate === "C" || candidate === "C2") {
           const model = candidate === "C" ? DEFAULT_GEMINI_MODEL : C2_MODEL;
@@ -273,14 +325,16 @@ outer: for (const rec of recordings) {
       }
       // D runs B and C side by side: its seconds are the slower of the two
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
-      const score = scoreRun(rec.id, expected, actual, shop);
+      const score = round2 ? scoreRunD102(rec.id, expected, actual, shop) : scoreRun(rec.id, expected, actual, shop);
       if (candidate !== "D") spentUsd += cost.usd; // D's cost is B's and C's, already counted
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(error ? { error } : {}), ...score });
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(thoughts !== undefined ? { thoughts } : {}), ...(waits ? { waits } : {}), ...(error ? { error } : {}), ...score });
       console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
       if (canary) {
         // docs/23 section 8: the owner sees each candidate's transcript and items side by side before the full run
         console.log(`          heard: "${transcript ?? ""}"`);
+        if (thoughts !== undefined) console.log(`          thinking tokens: ${thoughts}`);
+        if (waits) console.log(`          Sarvam waits: upload ${(waits.uploadMs / 1000).toFixed(1)} s, queue + processing ${(waits.queueMs / 1000).toFixed(1)} s (${waits.polls} polls), download ${(waits.downloadMs / 1000).toFixed(1)} s`);
         for (const l of toSaved(actual).lines) console.log(`          - ${l.qty ?? "?"} ${l.unit} ${l.name}${l.catalogId ? ` [${shop.byId.get(l.catalogId)?.displayName}]` : " [custom]"} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
       }
     }

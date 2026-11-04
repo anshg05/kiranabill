@@ -9,7 +9,9 @@ import type { ExpectedBill } from "../acceptance/types.js";
 
 // KB-370 (V1 bake-off): scoring, cost and the call declaration. Pure - no network, no files (score.test.ts).
 
-export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D"] as const;
+export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "S"] as const;
+/** Round 1's set - what a run without --candidates measures (round-2 candidates run only when chosen). */
+export const ROUND1_CANDIDATES: readonly CandidateId[] = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D"];
 export type CandidateId = (typeof CANDIDATES)[number];
 export type OrderSet = "short" | "long";
 
@@ -23,6 +25,10 @@ export const CANDIDATE_LABEL: Record<CandidateId, string> = {
   C: "audio -> gemini-3.5-flash-lite: transcript + items in one call -> the same checks on its transcript",
   C2: "C with gemini-3.8-flash",
   D: "hybrid: C's items, a number counts only if B's transcript has it (no extra calls)",
+  "B-smart": "round 2: B with gemini-3.5-transcribe's SMART mode (resolves spoken corrections) -> Layer 1 + Layer 2 + checks",
+  "E-lite": "round 2, Ezy-style: audio -> gemini-3.5-flash-lite with the D102 prompt (names as said, corrections edit the line) -> checks; every number must also be in B's transcript",
+  "E-flash": "round 2, Ezy-style: the same with gemini-3.8-flash at thinking level low",
+  S: "round 2: Sarvam saaras:v4 (verbatim) as the ear -> Layer 1 + Layer 2 + checks; batch API over 30 s",
 };
 
 /** USD. Gemini: Standard paid tier per 1M tokens, https://ai.google.dev/gemini-api/docs/pricing (page "last updated 2026-10-30");
@@ -273,6 +279,10 @@ export interface RunResult extends RunScore {
   readonly unresolved?: number;
   /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
   readonly items?: readonly ParsedItem[];
+  /** E-*: the thinking tokens Gemini reported (round 2 checks the thinking level took effect). */
+  readonly thoughts?: number;
+  /** S: Sarvam's batch waits (upload; queue + processing; download), ms. */
+  readonly waits?: { readonly uploadMs: number; readonly queueMs: number; readonly downloadMs: number; readonly polls: number };
   /** Produced by a --merge re-run: kept and skipped when the same command runs again (resume after a daily stop). */
   readonly rerun?: boolean;
   /** A provider failure or timeout - the order shows nothing (or "Not added"), never a wrong line. */
@@ -352,12 +362,14 @@ const OUT = { transcribePerSecond: 8, layer2: 400, c: 900 };
 const THINKING = 1; // allowance: as many thinking tokens as answer tokens (gemini-3.5-flash-lite thinks "minimal" by default)
 const withThinking = (out: number) => out * (1 + THINKING);
 /** Medians measured on 1 Nov 2026 (results-2026-10-31.json), for the time estimate. */
-export const MEASURED_SECONDS = { groq: 0.8, transcribe: 3.6, layer2: 1.5, c: 3.3, c2: 20 };
+export const MEASURED_SECONDS = { groq: 0.8, transcribe: 3.6, layer2: 1.5, c: 3.3, c2: 20, sarvamRest: 2, sarvamBatch: 60 }; // Sarvam: NOT measured yet - the canary measures it
+/** Sarvam speech-to-text, Pay as you go: Rs 0.49 a minute, billed per second, before GST (docs.sarvam.ai/api/getting-started/pricing, read 5 Nov 2026). */
+export const SARVAM_INR_PER_MINUTE = 0.49;
 
 /** Every call a run makes, BEFORE it makes one (D99 item 11), its estimated bill (USD, GST included) and its minutes. Layer 2 is at most one
  * call per order and run for the Whisper-like candidates. `chosen` narrows a re-run; D never calls anything itself. */
-export function declare(recordings: readonly Recording[], longRuns: number, chosen: readonly CandidateId[] = CANDIDATES, pace = { transcribeS: 3, otherS: 3 }, est: TokenEstimate = { layer2In: 4_000, cIn: 14_000 }) {
-  const calls = { groq: 0, transcribe: 0, layer2Max: 0, audioLite: 0, audioFlash: 0 };
+export function declare(recordings: readonly Recording[], longRuns: number, chosen: readonly CandidateId[] = ROUND1_CANDIDATES, pace = { transcribeS: 3, otherS: 3 }, est: TokenEstimate = { layer2In: 4_000, cIn: 14_000 }, inrPerUsd = 95.17) {
+  const calls = { groq: 0, transcribe: 0, layer2Max: 0, audioLite: 0, audioFlash: 0, sarvam: 0 };
   let usd = 0;
   let seconds = 0;
   const s = MEASURED_SECONDS;
@@ -369,12 +381,14 @@ export function declare(recordings: readonly Recording[], longRuns: number, chos
       for (let i = 0; i < runs; i++) {
         if (c === "A" || c === "A+vocab" || c === "A-30s") (calls.groq++, (usd += groqUsd(r.seconds) / (1 + GST)), (seconds += pace.otherS + s.groq)); // Groq bills in USD, no Indian GST
         // a long clip waits for the token minute (9,000 of 10K) rather than the request minute
-        if (c === "B" || c === "B-novocab") (calls.transcribe++, (usd += t("gemini-3.5-transcribe", audio, r.seconds * OUT.transcribePerSecond)), (seconds += Math.max(pace.transcribeS, (transcribeTokens(r.seconds) / (LIMITS.tpm * LIMITS.margin)) * 60) + s.transcribe));
+        if (c === "B" || c === "B-novocab" || c === "B-smart") (calls.transcribe++, (usd += t("gemini-3.5-transcribe", audio, r.seconds * OUT.transcribePerSecond)), (seconds += Math.max(pace.transcribeS, (transcribeTokens(r.seconds) / (LIMITS.tpm * LIMITS.margin)) * 60) + s.transcribe));
         if (c.startsWith("A") || c.startsWith("B")) (calls.layer2Max++, (usd += t("gemini-3.5-flash-lite", est.layer2In, withThinking(OUT.layer2))), (seconds += pace.otherS + s.layer2));
-        if (c === "C") (calls.audioLite++, (usd += t("gemini-3.5-flash-lite", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c));
-        if (c === "C2") (calls.audioFlash++, (usd += t("gemini-3.8-flash", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
+        if (c === "S") (calls.sarvam++, (usd += (r.seconds / 60) * SARVAM_INR_PER_MINUTE / inrPerUsd), (seconds += pace.otherS + (r.seconds > 30 ? s.sarvamBatch : s.sarvamRest)));
+        if (c === "S") (calls.layer2Max++, (usd += t("gemini-3.5-flash-lite", est.layer2In, withThinking(OUT.layer2))), (seconds += pace.otherS + s.layer2));
+        if (c === "C" || c === "E-lite") (calls.audioLite++, (usd += t("gemini-3.5-flash-lite", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c));
+        if (c === "C2" || c === "E-flash") (calls.audioFlash++, (usd += t("gemini-3.8-flash", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
       }
     }
   }
-  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash, usd: usd * (1 + GST), minutes: seconds / 60 };
+  return { calls, total: calls.groq + calls.transcribe + calls.layer2Max + calls.audioLite + calls.audioFlash + calls.sarvam, usd: usd * (1 + GST), minutes: seconds / 60 };
 }
