@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 4 Nov 2026 (rev 9) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 4 Nov 2026 (rev 10) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -21,13 +21,24 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **done** 4 Nov 2026 - `eval/bakeoff/REPORT.md`: B best (exact 73% short, 58% long; A 56% / 11%), no candidate at 0 wrong lines; B in production is capped by 100 transcribe requests a day on Tier 1 |
-| V2 | `KB-371` | **Owner picks** from the report. | Owner | todo |
+| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **done** 4 Nov 2026 - `eval/bakeoff/REPORT.md`: B best (exact 73% short, 58% long; A 56% / 11%), no candidate at 0 wrong lines; B in production is capped by 100 transcribe requests a day on Tier 1 **Note (4 Nov 2026): on short orders B still had 7 wrong numbers - B is the best ear tested, not a solved one.** |
+| V2 | `KB-371` | **Owner picks** from the report. | Owner | **OPEN** - the owner is doing his own outside research before choosing (started 4 Nov 2026); see the open questions below |
 | V3 | `KB-372` | **Build the winner behind a setting, Whisper kept as the fallback.** Long orders (30-90 s) must work: no restart, no duplicated lines. **Built TOGETHER with `KB-378`** (the new recording flow, D101). | yes | todo |
 | V3a | `KB-378` | **Record-review-generate flow** (owner, Nov 2026, D101 - the Ezy Parchi style): tap to record -> a timer -> Pause / Resume (paused time is NOT recorded) -> Stop -> optional playback -> Re-record or Generate bill -> a processing screen -> the full bill with the usual checks; "add more by voice" inside a bill uses the same flow and APPENDS lines; maximum length 5 min (owner to confirm). Why: today's push-to-talk has no pause (side conversations get billed) and no review step (a bad take goes straight into the bill); the owner's head-to-head with Ezy Parchi. **Safety rules unchanged** (only spoken numbers, one warning per line, Price needed, never a question mid-bill). Built with `KB-372`. | yes (the voice path and the draft) | todo |
 | V3b | - | **The owner repeats the head-to-head test against Ezy Parchi** on the V3 draft (the new ear + the new flow) - **before the pilot**. | Owner | todo |
 | V4 | `KB-373` | **Re-run the acceptance set** (`23`) on the new voice; decide the >= 90% exact unlock (the set is not locked today: 28 of 41, 68%). **First fix the gate's product hole** (`23` known issue, found by the `KB-370` canary 1 Nov 2026: a wrong catalog product carrying the owner's words scores as right). | yes | todo |
 | V5 | `KB-374` | **Draft -> the owner's phone check -> release** (marker only on his approval, D55; rollback target recorded first). | yes | todo |
+
+**Open questions before V2 / V3 - NOT decided (recorded 4 Nov 2026).** V2 (`KB-371`) is **open**: the owner is doing his own outside research before choosing (started 4 Nov 2026). Nothing below is decided; a "suggestion only" is the reviewer's current view, recorded as the question was asked, and changes nothing.
+
+1. **Which ear - and a backup ear?** B (`gemini-3.5-transcribe`) was best in `KB-370`, but still had 7 wrong numbers on short orders. A backup ear is needed for failures and for the Tier 1 cap of 100 a day. *Suggestion only:* B as the ear, with a backup ear for failures and the daily cap.
+2. **Keep the recording on the phone until the bill is made?** *Suggestion only:* yes - Retry resends the same audio, and recordings wait in an offline queue (today Retry needs the order spoken again - `12` SG-12).
+3. **Spoken corrections** ("नहीं नहीं 3 किलो", A59) - handle them or not? `KB-367` was dropped on 30 Oct. *No suggestion recorded.*
+4. **Product names:** bill the name the shopkeeper SAID (the catalog only fills a missing rate) vs today's catalog matching. The trade-offs are still to be designed. *No suggestion recorded.*
+5. **"1 किलो पैकेट"** - the same as 1 kg, or a packet? *No suggestion recorded.*
+6. **Maximum recording length and the upload size limit:** 5 min is proposed in D101; to be checked against the Netlify request size limit, the base64 overhead and the recording bitrate. *No suggestion recorded* beyond D101's proposed 5 min.
+7. **The 100-a-day limit, the path to Tier 2 or Vertex AI, and the cost per bill.** *No suggestion recorded.*
+8. **Every error state ends in Retry or Add by hand.** *Suggestion only:* yes - no error leaves the shopkeeper without one of the two.
 
 **V1 - the four candidates and the optional fifth**
 
