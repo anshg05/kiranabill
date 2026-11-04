@@ -7,10 +7,13 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { aroundWords } from "./d102.js";
 import { CANDIDATE_LABEL, CANDIDATES, PRICE_SOURCES, perRecording, summarize, type RunResult } from "./score.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const REPORT = path.join(HERE, "REPORT.md");
+// --out: another report file (round 2's D102 scores go to REPORT-D102.md; REPORT.md keeps the KB-370 report)
+const outAt = process.argv.indexOf("--out");
+const REPORT = outAt > 0 ? path.resolve(process.argv[outAt + 1]!) : path.join(HERE, "REPORT.md");
 const i = process.argv.indexOf("--file");
 const file = i > 0 ? process.argv[i + 1]! : readdirSync(HERE).filter((f) => /^results-\d.*\.json$/.test(f)) /* never a canary file by default */.sort().map((f) => path.join(HERE, f)).pop();
 if (!file) {
@@ -18,7 +21,7 @@ if (!file) {
   process.exit(1);
 }
 const { meta, results } = JSON.parse(readFileSync(file, "utf8")) as {
-  meta: { date: string; longRuns: number; inrPerUsd: number; vocabulary: string[]; models: Record<string, string>; setAside: string[]; rerun?: { candidates: string[]; dropped: string[]; at: string } };
+  meta: { date: string; longRuns: number; inrPerUsd: number; vocabulary: string[]; models: Record<string, string>; setAside: string[]; rerun?: { candidates: string[]; dropped: string[]; at: string }; scoring?: string };
   results: RunResult[];
 };
 
@@ -42,7 +45,7 @@ function table(rows: RunResult[]): string {
 const short = results.filter((r) => r.set === "short");
 const long = results.filter((r) => r.set === "long");
 const setAside = short.filter((r) => meta.setAside.includes(r.id));
-const wrongRows = results.filter((r) => r.wrong.length > 0).flatMap((r) => r.wrong.map((w) => `| ${r.id} | ${len(r.audioSeconds)} | ${r.candidate} | ${r.run} | ${w} | ${(r.transcript ?? "").replace(/\|/g, "/").slice(0, 160)} |`));
+const wrongRows = results.filter((r) => r.wrong.length > 0).flatMap((r) => r.wrong.map((w) => `| ${r.id} | ${len(r.audioSeconds)} | ${r.candidate} | ${r.run} | ${w} | ${aroundWords(r.transcript ?? "", /heard "([^"]*)"/.exec(w)?.[1] ?? "").replace(/\|/g, "/")} |`));
 const errorRows = results.filter((r) => r.error).map((r) => `| ${r.id} | ${r.candidate} | ${r.run} | ${r.error} |`);
 const perRec = perRecording(long).map((p) => `| ${p.id} | ${len(p.audioSeconds)} | ${p.candidate} | ${p.exactRuns}/${p.runs} | ${p.bestWrong} | ${p.worstWrong} | ${p.avgWrong.toFixed(1)} | ${s1(p.avgSeconds)} |`);
 
@@ -51,7 +54,7 @@ const kept = /<!-- summary -->([\s\S]*?)<!-- \/summary -->/.exec(old)?.[1] ?? "\
 
 const md = `# KB-370 — Voice bake-off (V1, report only)
 
-**Run:** ${meta.date.slice(0, 10)} · **Results file:** \`${path.relative(path.join(HERE, "..", ".."), file).replace(/\\/g, "/")}\` · Nothing in the app changed; no deploy.
+**Scoring:** ${meta.scoring ?? "the KB-370 rules (catalog products)"} · **Run:** ${meta.date.slice(0, 10)} · **Results file:** \`${path.relative(path.join(HERE, "..", ".."), file).replace(/\\/g, "/")}\` · Nothing in the app changed; no deploy.
 **Rule for any winner:** 0 wrong numbers on a final line (\`docs/24-ROADMAP.md\` Phase V, D100). "Wrong" = a confident number or product that is not what was said; "silent" = no Theek hai warned about it.
 
 ## Summary

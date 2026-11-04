@@ -61,7 +61,8 @@ function distance(a: string, b: string): number {
 const closeWord = (a: string, b: string) => distance(a, b) <= (Math.min(a.length, b.length) >= 6 ? 2 : 1);
 
 /** Every word of the shorter name has a close word in the other: "फल्ली दाना" ~ "फल्ली दाने", "पतंजलि पेस्ट बड़ा" ~ "पतंजली पेस्ट बडा वाला". */
-function sameName(a: string, b: string): boolean {
+/** Exported (unchanged) for the KB-370 bake-off's D102 scoring. */
+export function sameName(a: string, b: string): boolean {
   const x = norm(a).split(" ").filter(Boolean);
   const y = norm(b).split(" ").filter(Boolean);
   if (x.length === 0 || y.length === 0) return false;
@@ -70,13 +71,13 @@ function sameName(a: string, b: string): boolean {
 }
 
 /** At least half of the owner's words have a close word in the heard name ("इंडिपेंडेंस सरसों तेल" ~ "इंडिपेंडेंस हर सो तेल 1 लिटर"). */
-function mostlySame(written: string, heard: string): boolean {
+export function mostlySame(written: string, heard: string): boolean {
   const x = norm(written).split(" ").filter(Boolean);
   const y = norm(heard).split(" ").filter(Boolean);
   return x.length > 0 && x.filter((w) => y.some((v) => closeWord(w, v))).length >= Math.ceil(x.length / 2);
 }
 
-type Verdict = { wrong: string } | { inexact: string } | "ok";
+export type Verdict = { wrong: string } | { inexact: string } | "ok";
 
 /** Is this heard line the product the owner wrote? ok = yes; inexact = cannot tell (his spelling is not in the catalog); wrong = it is another product. */
 function productOf(exp: ExpectedLine, line: { item: ParsedItem; displayName: string }, shop: ParserCatalog): Verdict {
@@ -98,7 +99,7 @@ const COUNT_UNITS = new Set(["piece", "packet", "box", "bottle", "pouch", "bag",
 const sameUnit = (a: string, b: string) => a === b || (COUNT_UNITS.has(a) && COUNT_UNITS.has(b));
 
 /** The numbers of one line: quantity, unit and price. */
-function numbersOf(exp: ExpectedLine, act: ParsedItem): Verdict {
+export function numbersOf(exp: ExpectedLine, act: ParsedItem): Verdict {
   if (exp.qty !== null) {
     if (act.qty === null) return { inexact: `${exp.name}: no quantity` };
     if (act.qty !== exp.qty) return { wrong: `${exp.name}: wrong quantity ${act.qty} (expected ${exp.qty})` };
