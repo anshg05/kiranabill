@@ -12,7 +12,7 @@ import { CANDIDATE_LABEL, CANDIDATES, PRICE_SOURCES, perRecording, summarize, ty
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPORT = path.join(HERE, "REPORT.md");
 const i = process.argv.indexOf("--file");
-const file = i > 0 ? process.argv[i + 1]! : readdirSync(HERE).filter((f) => /^results-.*\.json$/.test(f)).sort().map((f) => path.join(HERE, f)).pop();
+const file = i > 0 ? process.argv[i + 1]! : readdirSync(HERE).filter((f) => /^results-\d.*\.json$/.test(f)) /* never a canary file by default */.sort().map((f) => path.join(HERE, f)).pop();
 if (!file) {
   console.error("No results-*.json in eval/bakeoff - run npm run bakeoff -- --go first.");
   process.exit(1);

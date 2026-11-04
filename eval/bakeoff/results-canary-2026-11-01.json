@@ -1,0 +1,1560 @@
+{
+  "meta": {
+    "date": "2026-11-01T09:38:31.591Z",
+    "longRuns": 1,
+    "inrPerUsd": 95.17,
+    "vocabulary": [
+      "Chini",
+      "चीनी",
+      "Parle-G 10",
+      "पारले जी",
+      "Chawal",
+      "चावल",
+      "Sabun",
+      "फेना",
+      "Chakki Aata",
+      "पिसा आटा",
+      "Besan",
+      "बेसन",
+      "Jeera",
+      "साबुत जीरा",
+      "बरबटी दाल",
+      "बरबटी दाल",
+      "Surf Excel",
+      "सर्फ",
+      "Toor Daal",
+      "दाल",
+      "Moong Daal",
+      "मूंग दाल",
+      "Kala Chana",
+      "काला चना",
+      "गेहूं",
+      "गेहूं",
+      "Moong Mogar",
+      "धुली मूंग दाल",
+      "Chai Patti",
+      "चाय",
+      "Maggi",
+      "मैगी",
+      "Tel (1L)",
+      "तेल",
+      "Masoor Daal",
+      "मसूर दाल",
+      "Futana",
+      "फ़ुटाना",
+      "हरा बटाना",
+      "हरा बटाना"
+    ],
+    "models": {
+      "groq": "whisper-large-v3",
+      "transcribe": "gemini-3.5-transcribe",
+      "layer2": "gemini-3.5-flash-lite",
+      "c": "gemini-3.5-flash-lite",
+      "c2": "gemini-3.8-flash"
+    },
+    "setAside": [
+      "A19",
+      "A27",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A39"
+    ]
+  },
+  "results": [
+    {
+      "candidate": "B",
+      "id": "A01",
+      "set": "short",
+      "run": 1,
+      "transcript": "2 किलो चीनी ₹56 किलो, 5 किलो चावल ₹225",
+      "seconds": 2.6350883999999994,
+      "usd": 0.000516,
+      "audioSeconds": 6.360287109375,
+      "lines": [
+        {
+          "name": "चीनी",
+          "catalogId": "27",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 11200,
+          "priceType": "rate"
+        },
+        {
+          "name": "चावल",
+          "catalogId": "11",
+          "qty": 5,
+          "unit": "kg",
+          "rate": null,
+          "total": 22500,
+          "priceType": "total"
+        }
+      ],
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
+      "wrongProducts": 0,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": []
+    },
+    {
+      "candidate": "C",
+      "id": "A01",
+      "set": "short",
+      "run": 1,
+      "transcript": "दो किलो चीनी छप्पन रुपए किलो, पाँच किलो चावल दो सौ पच्चीस रुपए",
+      "seconds": 2.3942583999999987,
+      "usd": 0.0053428,
+      "audioSeconds": 6.360287109375,
+      "lines": [
+        {
+          "name": "चीनी",
+          "catalogId": "27",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 11200,
+          "priceType": "rate"
+        },
+        {
+          "name": "चावल",
+          "catalogId": "11",
+          "qty": 5,
+          "unit": "kg",
+          "rate": null,
+          "total": 22500,
+          "priceType": "total"
+        }
+      ],
+      "items": [
+        {
+          "spokenName": "चीनी",
+          "catalogId": "27",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 5600,
+          "rateUnit": "kg",
+          "total": 11200,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "चावल",
+          "catalogId": "11",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 5,
+          "unit": "kg",
+          "rate": null,
+          "rateUnit": null,
+          "total": 22500,
+          "priceType": "total"
+        }
+      ],
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
+      "wrongProducts": 0,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": []
+    },
+    {
+      "candidate": "D",
+      "id": "A01",
+      "set": "short",
+      "run": 1,
+      "transcript": "2 किलो चीनी ₹56 किलो, 5 किलो चावल ₹225",
+      "seconds": 2.6350883999999994,
+      "usd": 0.0058588,
+      "audioSeconds": 6.360287109375,
+      "lines": [
+        {
+          "name": "चीनी",
+          "catalogId": "27",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 11200,
+          "priceType": "rate"
+        },
+        {
+          "name": "चावल",
+          "catalogId": "11",
+          "qty": 5,
+          "unit": "kg",
+          "rate": null,
+          "total": 22500,
+          "priceType": "total"
+        }
+      ],
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
+      "wrongProducts": 0,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": []
+    },
+    {
+      "candidate": "B",
+      "id": "A61",
+      "set": "long",
+      "run": 1,
+      "transcript": "Toor Daal 5 किलो ₹150 किलो, डेटॉल साबुन सेट 1 ₹175, फेना साबुन 12 ₹110, रिन साबुन सेट 1 ₹105, फेना डिटर्जेंट 3 किलो ₹285, विदिशा डिटर्जेंट 1 किलो ₹70, चना दाल 1 किलो ₹92 किलो, मूंग दाल 2 किलो ₹96 किलो, बरबटी दाल 3 किलो ₹88 किलो, उड़द मोगर 1 किलो ₹130 किलो, मूंग मोगर 1 किलो ₹110 किलो, राजमा 1 किलो ₹120 किलो, कुलथा दाना 1 किलो ₹120 किलो, हरा बटाना 1 किलो ₹56 किलो, सैगी मूंग 1 किलो ₹96 किलो, पोपट दाल 1 किलो ₹72 किलो, काटा चना 1 किलो ₹88 किलो, मोठ 1 किलो ₹120 किलो।",
+      "seconds": 6.5497742,
+      "usd": 0.0084687,
+      "audioSeconds": 76.140203125,
+      "lines": [
+        {
+          "name": "toor daal",
+          "catalogId": "16",
+          "qty": 5,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 75000,
+          "priceType": "rate"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 9200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 19200,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 3,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 26400,
+          "priceType": "rate"
+        },
+        {
+          "name": "उडद मोगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मोगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "कुलथा दाना",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "हरा बटाना",
+          "catalogId": "626",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 5600,
+          "priceType": "rate"
+        },
+        {
+          "name": "सैगी मूंग",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "काटा चना",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 8800,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": "26",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "डेटॉल साबुन",
+          "catalogId": "163",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 17500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना साबुन",
+          "catalogId": null,
+          "qty": 12,
+          "unit": "piece",
+          "rate": null,
+          "total": 11000,
+          "priceType": "total"
+        },
+        {
+          "name": "रिन साबुन",
+          "catalogId": "192",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 10500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना डिटर्जेंट",
+          "catalogId": "472",
+          "qty": 3,
+          "unit": "kg",
+          "rate": null,
+          "total": 28500,
+          "priceType": "total"
+        },
+        {
+          "name": "विदिशा डिटर्जेंट",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": null,
+          "total": 7000,
+          "priceType": "total"
+        }
+      ],
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
+      "wrongProducts": 0,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": []
+    },
+    {
+      "candidate": "C",
+      "id": "A61",
+      "set": "long",
+      "run": 1,
+      "transcript": "तूर दाल पांच किलो ₹150 किलो डेटॉल साबुन सेट एक ₹175 फेना साबुन 12 ₹110 रिन साबुन सेट एक ₹105 फेना डिटर्जेंट 3 किलो ₹285 विदिसा डिटर्जेंट 1 किलो ₹70 चना दाल 1 किलो ₹92 किलो मूंग दाल 2 किलो ₹96 किलो बरबटी दाल 3 किलो ₹88 किलो उड़द मूगर 1 किलो ₹130 किलो मूंग मूगर 1 किलो ₹110 किलो राजमा 1 किलो ₹120 किलो कुलथा दाना 1 किलो ₹120 किलो हरा वटाना 1 किलो ₹56 किलो सैगी मूंग 1 किलो ₹96 किलो पोपट दाल 1 किलो ₹72 किलो काटा चना 1 किलो ₹88 किलो मोठ 1 किलो ₹120 किलो",
+      "seconds": 5.685610199999999,
+      "usd": 0.009296,
+      "audioSeconds": 76.140203125,
+      "lines": [
+        {
+          "name": "तूर दाल",
+          "catalogId": "16",
+          "qty": 5,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 75000,
+          "priceType": "rate"
+        },
+        {
+          "name": "डेटॉल साबुन",
+          "catalogId": "163",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 17500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना साबुन",
+          "catalogId": "453",
+          "qty": 12,
+          "unit": "piece",
+          "rate": null,
+          "total": 11000,
+          "priceType": "total"
+        },
+        {
+          "name": "रिन साबुन",
+          "catalogId": "162",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 10500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना डिटर्जेंट",
+          "catalogId": "193",
+          "qty": 3,
+          "unit": "kg",
+          "rate": null,
+          "total": 28500,
+          "priceType": "total"
+        },
+        {
+          "name": "विदिसा डिटर्जेंट",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": null,
+          "total": 7000,
+          "priceType": "total"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 9200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 19200,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 3,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 26400,
+          "priceType": "rate"
+        },
+        {
+          "name": "उड़द मूगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मूगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "कुलथा दाना",
+          "catalogId": "630",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "हरा वटाना",
+          "catalogId": "626",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 5600,
+          "priceType": "rate"
+        },
+        {
+          "name": "सैगी मूंग",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "काटा चना",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 8800,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        }
+      ],
+      "items": [
+        {
+          "spokenName": "तूर दाल",
+          "catalogId": "16",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 5,
+          "unit": "kg",
+          "rate": 15000,
+          "rateUnit": "kg",
+          "total": 75000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "डेटॉल साबुन",
+          "catalogId": "163",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "rateUnit": null,
+          "total": 17500,
+          "priceType": "total"
+        },
+        {
+          "spokenName": "फेना साबुन",
+          "catalogId": "453",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 12,
+          "unit": "piece",
+          "rate": null,
+          "rateUnit": null,
+          "total": 11000,
+          "priceType": "total"
+        },
+        {
+          "spokenName": "रिन साबुन",
+          "catalogId": "162",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "rateUnit": null,
+          "total": 10500,
+          "priceType": "total"
+        },
+        {
+          "spokenName": "फेना डिटर्जेंट",
+          "catalogId": "193",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 3,
+          "unit": "kg",
+          "rate": null,
+          "rateUnit": null,
+          "total": 28500,
+          "priceType": "total"
+        },
+        {
+          "spokenName": "विदिसा डिटर्जेंट",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": null,
+          "rateUnit": null,
+          "total": 7000,
+          "priceType": "total"
+        },
+        {
+          "spokenName": "चना दाल",
+          "catalogId": "21",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9200,
+          "rateUnit": "kg",
+          "total": 9200,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मूंग दाल",
+          "catalogId": "18",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9600,
+          "rateUnit": "kg",
+          "total": 19200,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "बरबटी दाल",
+          "catalogId": "629",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 3,
+          "unit": "kg",
+          "rate": 8800,
+          "rateUnit": "kg",
+          "total": 26400,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "उड़द मूगर",
+          "catalogId": "624",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "rateUnit": "kg",
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मूंग मूगर",
+          "catalogId": "622",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "rateUnit": "kg",
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "राजमा",
+          "catalogId": "22",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "rateUnit": "kg",
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "कुलथा दाना",
+          "catalogId": "630",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "rateUnit": "kg",
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "हरा वटाना",
+          "catalogId": "626",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 5600,
+          "rateUnit": "kg",
+          "total": 5600,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "सैगी मूंग",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "rateUnit": "kg",
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "पोपट दाल",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "rateUnit": "kg",
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "काटा चना",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 8800,
+          "rateUnit": "kg",
+          "total": 8800,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मोठ",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "rateUnit": "kg",
+          "total": 12000,
+          "priceType": "rate"
+        }
+      ],
+      "exact": false,
+      "wrongLines": 3,
+      "silentWrong": 3,
+      "wrongNumbers": 0,
+      "wrongProducts": 3,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": [
+        "फेना साबुन: wrong product - heard \"फेना साबुन\" (Godrej No.1 Soap) [NO warning]",
+        "रिन साबुन: wrong product - heard \"रिन साबुन\" (Lifebuoy) [NO warning]",
+        "फेना डिटर्जेंट: wrong product - heard \"फेना डिटर्जेंट\" (Nirma) [NO warning]"
+      ]
+    },
+    {
+      "candidate": "D",
+      "id": "A61",
+      "set": "long",
+      "run": 1,
+      "transcript": "Toor Daal 5 किलो ₹150 किलो, डेटॉल साबुन सेट 1 ₹175, फेना साबुन 12 ₹110, रिन साबुन सेट 1 ₹105, फेना डिटर्जेंट 3 किलो ₹285, विदिशा डिटर्जेंट 1 किलो ₹70, चना दाल 1 किलो ₹92 किलो, मूंग दाल 2 किलो ₹96 किलो, बरबटी दाल 3 किलो ₹88 किलो, उड़द मोगर 1 किलो ₹130 किलो, मूंग मोगर 1 किलो ₹110 किलो, राजमा 1 किलो ₹120 किलो, कुलथा दाना 1 किलो ₹120 किलो, हरा बटाना 1 किलो ₹56 किलो, सैगी मूंग 1 किलो ₹96 किलो, पोपट दाल 1 किलो ₹72 किलो, काटा चना 1 किलो ₹88 किलो, मोठ 1 किलो ₹120 किलो।",
+      "seconds": 5.685610199999999,
+      "usd": 0.015676000000000002,
+      "audioSeconds": 76.140203125,
+      "lines": [
+        {
+          "name": "तूर दाल",
+          "catalogId": "16",
+          "qty": 5,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 75000,
+          "priceType": "rate"
+        },
+        {
+          "name": "डेटॉल साबुन",
+          "catalogId": "163",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 17500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना साबुन",
+          "catalogId": "453",
+          "qty": 12,
+          "unit": "piece",
+          "rate": null,
+          "total": 11000,
+          "priceType": "total"
+        },
+        {
+          "name": "रिन साबुन",
+          "catalogId": "162",
+          "qty": 1,
+          "unit": "piece",
+          "rate": null,
+          "total": 10500,
+          "priceType": "total"
+        },
+        {
+          "name": "फेना डिटर्जेंट",
+          "catalogId": "193",
+          "qty": 3,
+          "unit": "kg",
+          "rate": null,
+          "total": 28500,
+          "priceType": "total"
+        },
+        {
+          "name": "विदिसा डिटर्जेंट",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": null,
+          "total": 7000,
+          "priceType": "total"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 9200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 19200,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 3,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 26400,
+          "priceType": "rate"
+        },
+        {
+          "name": "उड़द मूगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मूगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "कुलथा दाना",
+          "catalogId": "630",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "हरा वटाना",
+          "catalogId": "626",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 5600,
+          "total": 5600,
+          "priceType": "rate"
+        },
+        {
+          "name": "सैगी मूंग",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "काटा चना",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 8800,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        }
+      ],
+      "exact": false,
+      "wrongLines": 3,
+      "silentWrong": 3,
+      "wrongNumbers": 0,
+      "wrongProducts": 3,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": [
+        "फेना साबुन: wrong product - heard \"फेना साबुन\" (Godrej No.1 Soap) [NO warning]",
+        "रिन साबुन: wrong product - heard \"रिन साबुन\" (Lifebuoy) [NO warning]",
+        "फेना डिटर्जेंट: wrong product - heard \"फेना डिटर्जेंट\" (Nirma) [NO warning]"
+      ]
+    },
+    {
+      "candidate": "B",
+      "id": "A62",
+      "set": "long",
+      "run": 1,
+      "transcript": "Toor Daal 1 किलो ₹150 किलो, मूंग दाल 1 किलो ₹96 किलो, बरबटी दाल 2 किलो ₹88 किलो, मूंग मोगर 1 किलो ₹110 किलो, उड़द मोगर 1 किलो ₹130 किलो, चना दाल 2 किलो ₹92 किलो, पोपट दाल 1 किलो ₹72 किलो, मोठ 1 किलो ₹120 किलो, राजमा 1 किलो ₹130 किलो, मेथी दाना 1 किलो ₹100 किलो, खड़ी धनिया 1 किलो ₹200 किलो, रवा 1 किलो ₹44 किलो।",
+      "seconds": 2.9163695000000005,
+      "usd": 0.004244,
+      "audioSeconds": 51.42047265625,
+      "lines": [
+        {
+          "name": "toor daal",
+          "catalogId": "16",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 15000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 17600,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मोगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "उडद मोगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 18400,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": "26",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मेथी दाना",
+          "catalogId": "118",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 10000,
+          "total": 10000,
+          "priceType": "rate"
+        },
+        {
+          "name": "खडी धनिया",
+          "catalogId": "621",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 20000,
+          "total": 20000,
+          "priceType": "rate"
+        },
+        {
+          "name": "रवा",
+          "catalogId": "5",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 4400,
+          "total": 4400,
+          "priceType": "rate"
+        }
+      ],
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
+      "wrongProducts": 0,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 0,
+      "warnedLines": 0,
+      "wrong": []
+    },
+    {
+      "candidate": "C",
+      "id": "A62",
+      "set": "long",
+      "run": 1,
+      "transcript": "तुअर दाल एक किलो 150 रुपए किलो मूंग दाल 1 किलो 96 रुपए किलो बरबटी दाल 2 किलो 88 रुपए किलो मूंग मोगर 1 किलो 110 रुपए किलो उड़द मोगर 1 किलो 130 रुपए किलो चना दाल 2 किलो 92 रुपए किलो पोपट दाल 1 किलो 72 रुपए किलो मोठ 1 किलो 120 रुपए किलो राजमा 1 किलो 130 रुपए मेथी दाना 1 किलो 100 रुपए किलो खड़ी धनिया 1 किलो 200 रुपए किलो रवा 1 किलो 44 रुपए किलो",
+      "seconds": 4.5094781,
+      "usd": 0.007950599999999999,
+      "audioSeconds": 51.42047265625,
+      "lines": [
+        {
+          "name": "तुअर दाल",
+          "catalogId": "16",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 15000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 17600,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मोगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "उड़द मोगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 18400,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": "26",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "default"
+        },
+        {
+          "name": "मेथी दाना",
+          "catalogId": "118",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 10000,
+          "total": 10000,
+          "priceType": "rate"
+        },
+        {
+          "name": "खड़ी धनिया",
+          "catalogId": "621",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 20000,
+          "total": 20000,
+          "priceType": "rate"
+        },
+        {
+          "name": "रवा",
+          "catalogId": "48",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 4400,
+          "total": 4400,
+          "priceType": "rate"
+        }
+      ],
+      "items": [
+        {
+          "spokenName": "तुअर दाल",
+          "catalogId": "16",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 15000,
+          "rateUnit": "kg",
+          "total": 15000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मूंग दाल",
+          "catalogId": "18",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "rateUnit": "kg",
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "बरबटी दाल",
+          "catalogId": "629",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 8800,
+          "rateUnit": "kg",
+          "total": 17600,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मूंग मोगर",
+          "catalogId": "622",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "rateUnit": "kg",
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "उड़द मोगर",
+          "catalogId": "624",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "rateUnit": "kg",
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "चना दाल",
+          "catalogId": "21",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9200,
+          "rateUnit": "kg",
+          "total": 18400,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "पोपट दाल",
+          "catalogId": null,
+          "isCustom": true,
+          "matchStatus": "none",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "rateUnit": "kg",
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "मोठ",
+          "catalogId": "26",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "rateUnit": "kg",
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "राजमा",
+          "catalogId": "22",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "rateUnit": "kg",
+          "total": 13000,
+          "priceType": "default"
+        },
+        {
+          "spokenName": "मेथी दाना",
+          "catalogId": "118",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 10000,
+          "rateUnit": "kg",
+          "total": 10000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "खड़ी धनिया",
+          "catalogId": "621",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 20000,
+          "rateUnit": "kg",
+          "total": 20000,
+          "priceType": "rate"
+        },
+        {
+          "spokenName": "रवा",
+          "catalogId": "48",
+          "isCustom": false,
+          "matchStatus": "matched",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 4400,
+          "rateUnit": "kg",
+          "total": 4400,
+          "priceType": "rate"
+        }
+      ],
+      "exact": false,
+      "wrongLines": 2,
+      "silentWrong": 2,
+      "wrongNumbers": 1,
+      "wrongProducts": 1,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 2,
+      "warnedLines": 0,
+      "wrong": [
+        "राजमा: wrong price 12000/12000 (expected rate 13000) [NO warning]",
+        "रवा: wrong product - heard \"रवा\" (Chhena) [NO warning]"
+      ]
+    },
+    {
+      "candidate": "D",
+      "id": "A62",
+      "set": "long",
+      "run": 1,
+      "transcript": "Toor Daal 1 किलो ₹150 किलो, मूंग दाल 1 किलो ₹96 किलो, बरबटी दाल 2 किलो ₹88 किलो, मूंग मोगर 1 किलो ₹110 किलो, उड़द मोगर 1 किलो ₹130 किलो, चना दाल 2 किलो ₹92 किलो, पोपट दाल 1 किलो ₹72 किलो, मोठ 1 किलो ₹120 किलो, राजमा 1 किलो ₹130 किलो, मेथी दाना 1 किलो ₹100 किलो, खड़ी धनिया 1 किलो ₹200 किलो, रवा 1 किलो ₹44 किलो।",
+      "seconds": 4.5094781,
+      "usd": 0.0121946,
+      "audioSeconds": 51.42047265625,
+      "lines": [
+        {
+          "name": "तुअर दाल",
+          "catalogId": "16",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 15000,
+          "total": 15000,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग दाल",
+          "catalogId": "18",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 9600,
+          "total": 9600,
+          "priceType": "rate"
+        },
+        {
+          "name": "बरबटी दाल",
+          "catalogId": "629",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 8800,
+          "total": 17600,
+          "priceType": "rate"
+        },
+        {
+          "name": "मूंग मोगर",
+          "catalogId": "622",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 11000,
+          "total": 11000,
+          "priceType": "rate"
+        },
+        {
+          "name": "उड़द मोगर",
+          "catalogId": "624",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 13000,
+          "total": 13000,
+          "priceType": "rate"
+        },
+        {
+          "name": "चना दाल",
+          "catalogId": "21",
+          "qty": 2,
+          "unit": "kg",
+          "rate": 9200,
+          "total": 18400,
+          "priceType": "rate"
+        },
+        {
+          "name": "पोपट दाल",
+          "catalogId": null,
+          "qty": 1,
+          "unit": "kg",
+          "rate": 7200,
+          "total": 7200,
+          "priceType": "rate"
+        },
+        {
+          "name": "मोठ",
+          "catalogId": "26",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "rate"
+        },
+        {
+          "name": "राजमा",
+          "catalogId": "22",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 12000,
+          "total": 12000,
+          "priceType": "default"
+        },
+        {
+          "name": "मेथी दाना",
+          "catalogId": "118",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 10000,
+          "total": 10000,
+          "priceType": "rate"
+        },
+        {
+          "name": "खड़ी धनिया",
+          "catalogId": "621",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 20000,
+          "total": 20000,
+          "priceType": "rate"
+        },
+        {
+          "name": "रवा",
+          "catalogId": "48",
+          "qty": 1,
+          "unit": "kg",
+          "rate": 4400,
+          "total": 4400,
+          "priceType": "rate"
+        }
+      ],
+      "exact": false,
+      "wrongLines": 2,
+      "silentWrong": 2,
+      "wrongNumbers": 1,
+      "wrongProducts": 1,
+      "dropped": 0,
+      "silentDuplicated": 0,
+      "warnedDuplicated": 0,
+      "invented": 0,
+      "numbersRightNameWrong": 0,
+      "checks": 2,
+      "warnedLines": 0,
+      "wrong": [
+        "राजमा: wrong price 12000/12000 (expected rate 13000) [NO warning]",
+        "रवा: wrong product - heard \"रवा\" (Chhena) [NO warning]"
+      ]
+    }
+  ]
+}
