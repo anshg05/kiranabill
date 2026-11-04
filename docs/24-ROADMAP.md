@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 4 Nov 2026 (rev 10) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 5 Nov 2026 (rev 11) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -34,11 +34,19 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 1. **Which ear - and a backup ear?** B (`gemini-3.5-transcribe`) was best in `KB-370`, but still had 7 wrong numbers on short orders. A backup ear is needed for failures and for the Tier 1 cap of 100 a day. *Suggestion only:* B as the ear, with a backup ear for failures and the daily cap.
 2. **Keep the recording on the phone until the bill is made?** *Suggestion only:* yes - Retry resends the same audio, and recordings wait in an offline queue (today Retry needs the order spoken again - `12` SG-12).
 3. **Spoken corrections** ("नहीं नहीं 3 किलो", A59) - handle them or not? `KB-367` was dropped on 30 Oct. *No suggestion recorded.*
-4. **Product names:** bill the name the shopkeeper SAID (the catalog only fills a missing rate) vs today's catalog matching. The trade-offs are still to be designed. *No suggestion recorded.*
+4. **Product names - DECIDED (D102, owner, 4 Nov 2026):** the bill line keeps the name the shopkeeper SAID, with the spoken quantity and price; the catalog / the shop's remembered prices only fill a price that was NOT said, and only when the name clearly matches one item - several or none = "Price needed", never a guess or another product's name. All reader rules stay. Affected, designed in V3 (not changed now): `KB-368`'s weak-match badge, the learning engine, the Catalog screen.
 5. **"1 किलो पैकेट"** - the same as 1 kg, or a packet? *No suggestion recorded.*
 6. **Maximum recording length and the upload size limit:** 5 min is proposed in D101; to be checked against the Netlify request size limit, the base64 overhead and the recording bitrate. *No suggestion recorded* beyond D101's proposed 5 min.
 7. **The 100-a-day limit, the path to Tier 2 or Vertex AI, and the cost per bill.** *No suggestion recorded.*
 8. **Every error state ends in Retry or Add by hand.** *Suggestion only:* yes - no error leaves the shopkeeper without one of the two.
+
+**Outside research (owner, 4 Nov 2026) - a note, nothing approved by it.** The owner ran the same brief in ChatGPT, Perplexity, Google AI Studio, Google AI Mode and Gemini.
+- **Consensus:** names as said (now D102); a spoken correction edits the earlier line; every number traced to the transcript (the app already does this - `KB-359`, `KB-366`); keep the recording until the bill exists, Retry resends the same audio, an offline queue, one recording = one bill (no duplicates on a retry); upload the audio directly to Supabase Storage, not through Netlify; record at about 24 kbps Opus.
+- **Disagreement:** "audio straight to one AI" (AI Studio, Gemini) is contradicted by our own `KB-370` result for candidate C.
+- **Candidate ears for a round 2 (NOT approved):** `gemini-3.5-transcribe` (B), Sarvam Saaras v4 (the batch API is needed over 30 s), OpenAI gpt-transcribe.
+- **Facts to verify in V3:** Gemini transcribe's "smart mode" may delete spoken corrections; Tier 2 = $100 paid + 3 days; the Vertex AI / Google Cloud quotas for `gemini-3.5-transcribe`; our recordings are about 126 kbps today (A61: 1,198 KB for 76 s - checked on the file), so a 5-min order is about 4.7 MB before encoding - too close to Netlify's 6 MB.
+- **Ezy Parchi user reviews (AppBrain, Oct 2026):** users want saved per-item prices, an udhari khata and a UPI QR; one reports being locked out after a logout.
+- **Proposed (NOT approved):** an Ezy benchmark - the owner plays the 12 long recordings into Ezy Parchi and records its bills.
 
 **V1 - the four candidates and the optional fifth**
 

@@ -1,6 +1,6 @@
 # 04 — Voice Pipeline
 
-**Last updated:** 31 Oct 2026 (rev 12) · **Status:** Final for MVP
+**Last updated:** 5 Nov 2026 (rev 13) · **Status:** Final for MVP
 
 This is the differentiator. Everything else in the product is table stakes.
 
@@ -195,7 +195,7 @@ tracked product metric**, target ≥60%. **Not built (10 Oct 2026 audit):** only
 
 **Settling a Layer 2 line (`KB-302`, D42; closed `KI-34`).** Gemini's own `total`, default `rate` and
 `rateUnit` are never trusted. Its `catalogId` must exist in the **shop's** catalog (else the line is
-custom/unknown); a matched line displays the shop entry's name. `default` → the shop's price per the
+custom/unknown); a matched line displays the shop entry's name (as built today - **D102, 4 Nov 2026: the line will keep the name that was said; built in V3**). `default` → the shop's price per the
 entry's unit, total recomputed with D36's exact cross-unit arithmetic; `rate` (wala) → per the spoken
 unit, total recomputed; `total` (ka / rupay) → the spoken total stands; `unknown` → no price. qty must be a
 valid `numeric(12,3)` (finite, > 0, < 10^9, ≤ 3 decimals) or it is dropped and flagged `invalid_qty`; money

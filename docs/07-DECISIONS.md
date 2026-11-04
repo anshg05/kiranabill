@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 4 Nov 2026 (rev 60) · Supersedes rev 40
+**Last updated:** 5 Nov 2026 (rev 61) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2278,10 +2278,22 @@ order by suspect nulls last, b.finalized_at desc;
 
 ---
 
+### D102 — Bill lines use the name the shopkeeper SAID; the catalog only fills a price that was not said (owner, 4 Nov 2026) 🟢
+
+1. **The name on a bill line is the name that was SAID** - "रिन" stays रिन, "पाउडर" stays पाउडर, "फेयर एंड लवली" stays फेयर एंड लवली - with the spoken quantity and the spoken price.
+2. **The catalog and the shop's remembered prices only FILL A PRICE THAT WAS NOT SAID,** and only when the spoken name clearly matches ONE item. If it matches several items or none, the line shows **"Price needed"** - never a guess, never a different product's name.
+3. **Every existing reader rule stays:** "10 वाला", का / की / वाला, "रुपये किलो", price-less items, सवा / डेढ़ / पौने, one warning per line, a number must be spoken (`KB-359`, `KB-366`, D99).
+4. **Why:** the `KB-370` bake-off's wrong-product errors (रिन साबुन -> Lifebuoy, वुश डिटर्जेंट -> Washing Powder, फेना -> Godrej No.1 / Nirma, रवा -> Chhena) and the owner's head-to-head with Ezy Parchi (D100). A wrong product is a silent wrong line; a name as said cannot be.
+5. **Supersedes** the naming part of D48 item 4 ("the bill shows the shop catalog's name for a Layer 1 line, never the spoken words") and of D42 ("a matched line shows the shop's name"). Nothing else in D42 or D48 changes.
+6. **Affected - designed in V3, NOT changed now:** `KB-368`'s weak-match badge (what it checks when the line keeps the said name), the learning engine (aliases and remembered prices, `08`), and the Catalog screen (what a catalog entry is for when it no longer names the line). `24` Phase V open question 4 is answered by this decision.
+
+---
+
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 4 Nov 2026 | D48 item 4: "the bill shows the shop catalog's name for a Layer 1 line, never the spoken words"; D42: "a matched line shows the shop's name" | **The bill line keeps the name that was SAID; the catalog only fills a price that was not said, when the name clearly matches one item, else Price needed** (D102) | `KB-370`'s wrong products (रिन -> Lifebuoy, वुश -> Washing Powder) and the owner's head-to-head with Ezy Parchi. Built in V3. |
 | 31 Oct 2026 | Tracker / `06` (30 Oct): "the next step is the owner's shop pilot (`KB-405`)"; `KB-369` PARKED "after the pilot starts" | **Phase V (voice accuracy, `KB-370` - `KB-374`) first; the pilot waits; `KB-369` is folded into `KB-370`** (D100) | Owner's head-to-head test against a competitor on a 40 s, 10-item order: our Whisper restarted and garbled the numbers on long audio. |
 | 18 Oct 2026 | D83: "units that do not fit (or a line with no unit yet): the quantity is CLEARED and the unit becomes the product's" | **A line with NO unit fits every product: it keeps its qty and its "—" unit (D86, `KB-338`)** | Owner: "—" is a choice on every line and the product's own unit never changes - only the line's. |
 | 18 Oct 2026 | `KB-002` / `04`: "whole-utterance" command matching (in fact any utterance of up to 6 words that contained a phrase), and the matcher never called by the app | **A command is the whole utterance (fillers and "theek / hai / ab / ji" aside) and is wired before parsing (D86, `KB-339`)** | Owner, audit Part 4: "chini aur bas" is an order; "bas" never finalises by voice. |
