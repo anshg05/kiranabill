@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 31 Oct 2026 (rev 59) · Supersedes rev 40
+**Last updated:** 4 Nov 2026 (rev 60) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2264,6 +2264,17 @@ order by suspect nulls last, b.finalized_at desc;
 5. **Money:** discount, charges and old due change what a bill adds up to, so `KB-376` needs its own decision record (the next D-number) BEFORE any code. No change to hard rule 1 or 2.
 6. **One source of truth.** `24-ROADMAP.md` owns the order and the status of work; `12-PARKED.md` owns the description of each deferred idea, by its id (Phase L in `24` is ids only).
 7. **Model policy (D33)** applies to every item that touches numbers, money, sync, RLS or migrations: `24` marks them.
+
+---
+
+### D101 — The recording flow becomes record-review-generate (the Ezy Parchi style), built with the winning ear in V3 (owner, Nov 2026) 🟢
+
+1. **The flow (`KB-378`):** tap to record -> a timer -> Pause / Resume (paused time is NOT recorded) -> Stop -> optional playback -> Re-record or Generate bill -> a processing screen -> the full bill with the usual checks; "add more by voice" inside a bill uses the same flow and APPENDS lines; maximum length 5 min (owner to confirm).
+2. **Why:** today's push-to-talk has no pause, so side conversations get billed, and no review step, so a bad take goes straight into the bill. The owner's head-to-head with Ezy Parchi (D100 item 1) showed the difference.
+3. **When:** in Phase V, **built together with the winning ear** (`KB-372`, V3) - one change to the voice path, tested once. **After V3 the owner repeats the head-to-head test against Ezy Parchi, before the pilot** (`24` V3b).
+4. **Unchanged:** every safety rule - a rate or total must be a spoken number (`KB-359`), a product from a name nothing explains is never silent (`KB-368`), one warning per line, a line with no price is priced before Bill Banao, never a question mid-bill (hard rules 5 and 6).
+5. **Open:** the maximum length (proposed 5 min) is the owner's to confirm; how a recording that long fits the upload path and the ear's limits is settled in `KB-378`'s PLAN.
+6. **Model policy (D33):** yes - it touches the voice path and the draft.
 
 ---
 

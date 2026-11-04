@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 4 Nov 2026 (rev 8) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 4 Nov 2026 (rev 9) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -23,7 +23,9 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 |---|---|---|---|---|
 | V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **done** 4 Nov 2026 - `eval/bakeoff/REPORT.md`: B best (exact 73% short, 58% long; A 56% / 11%), no candidate at 0 wrong lines; B in production is capped by 100 transcribe requests a day on Tier 1 |
 | V2 | `KB-371` | **Owner picks** from the report. | Owner | todo |
-| V3 | `KB-372` | **Build the winner behind a setting, Whisper kept as the fallback.** Long orders (30-90 s) must work: no restart, no duplicated lines. | yes | todo |
+| V3 | `KB-372` | **Build the winner behind a setting, Whisper kept as the fallback.** Long orders (30-90 s) must work: no restart, no duplicated lines. **Built TOGETHER with `KB-378`** (the new recording flow, D101). | yes | todo |
+| V3a | `KB-378` | **Record-review-generate flow** (owner, Nov 2026, D101 - the Ezy Parchi style): tap to record -> a timer -> Pause / Resume (paused time is NOT recorded) -> Stop -> optional playback -> Re-record or Generate bill -> a processing screen -> the full bill with the usual checks; "add more by voice" inside a bill uses the same flow and APPENDS lines; maximum length 5 min (owner to confirm). Why: today's push-to-talk has no pause (side conversations get billed) and no review step (a bad take goes straight into the bill); the owner's head-to-head with Ezy Parchi. **Safety rules unchanged** (only spoken numbers, one warning per line, Price needed, never a question mid-bill). Built with `KB-372`. | yes (the voice path and the draft) | todo |
+| V3b | - | **The owner repeats the head-to-head test against Ezy Parchi** on the V3 draft (the new ear + the new flow) - **before the pilot**. | Owner | todo |
 | V4 | `KB-373` | **Re-run the acceptance set** (`23`) on the new voice; decide the >= 90% exact unlock (the set is not locked today: 28 of 41, 68%). **First fix the gate's product hole** (`23` known issue, found by the `KB-370` canary 1 Nov 2026: a wrong catalog product carrying the owner's words scores as right). | yes | todo |
 | V5 | `KB-374` | **Draft -> the owner's phone check -> release** (marker only on his approval, D55; rollback target recorded first). | yes | todo |
 
@@ -113,7 +115,7 @@ Everything else deferred stays in `12` (staff roles `SG-16`, GST `SG-17`, error 
 
 ## g. Model policy (D33) — which items need the strongest model
 
-The strongest available model runs every item that touches **numbers, money, sync, RLS or migrations**: V1, V3, V4, V5 (the number path and the release gate), F1 (it always touches the draft store), F2 (money) and A2 (native sign-in decides which shop's data a phone can see: auth -> shop -> RLS). Mechanical work (docs, scaffolding, the Android shell) may use a lighter model.
+The strongest available model runs every item that touches **numbers, money, sync, RLS or migrations**: V1, V3, V3a (`KB-378`: the voice path and the draft), V4, V5 (the number path and the release gate), F1 (it always touches the draft store), F2 (money) and A2 (native sign-in decides which shop's data a phone can see: auth -> shop -> RLS). Mechanical work (docs, scaffolding, the Android shell) may use a lighter model.
 
 ---
 
@@ -123,6 +125,8 @@ The strongest available model runs every item that touches **numbers, money, syn
 |---|---|---|
 | Record **at least 10 long orders (30-90 s)** in his own voice, with the bill each must give - **slots A51-A62** on the recorder | V1 | **done** 31 Oct 2026 (recorded); bills confirmed 1 Nov 2026 |
 | Pick the winner from the V1 report | V2 | todo |
+| Confirm the recording flow's maximum length (proposed 5 min) | V3a | todo |
+| Repeat the head-to-head test against Ezy Parchi on the V3 draft, before the pilot | V3b | todo |
 | The phone check of the draft, and approval of the release marker | V5 | todo |
 | The "Before the real shop" checklist (`17`) and Review mode for the first 20 bills | P1 | todo |
 | Test on his own 58 mm and 80 mm printers | A1 | todo |
