@@ -35,7 +35,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 2. **Keep the recording on the phone until the bill is made?** *Suggestion only:* yes - Retry resends the same audio, and recordings wait in an offline queue (today Retry needs the order spoken again - `12` SG-12).
 3. **Spoken corrections** ("नहीं नहीं 3 किलो", A59) - handle them or not? `KB-367` was dropped on 30 Oct. *No suggestion recorded.*
 4. **Product names - DECIDED (D102, owner, 4 Nov 2026):** the bill line keeps the name the shopkeeper SAID, with the spoken quantity and price; the catalog / the shop's remembered prices only fill a price that was NOT said, and only when the name clearly matches one item - several or none = "Price needed", never a guess or another product's name. All reader rules stay. Affected, designed in V3 (not changed now): `KB-368`'s weak-match badge, the learning engine, the Catalog screen.
-5. **"1 किलो पैकेट"** - the same as 1 kg, or a packet? *No suggestion recorded.*
+5. **Units - DECIDED (D103, owner, 5 Nov 2026):** units as said ("सेट" = set, "पैकेट" = packet, "किलो" = kg), money unchanged; when a phrase has two unit words ("1 किलो पैकेट", "आधा किलो रवा पैकेट"), the unit next to the NUMBER wins. Repeated identical items stay two lines with the "said twice or heard twice?" warning, never merged.
 6. **Maximum recording length and the upload size limit:** 5 min is proposed in D101; to be checked against the Netlify request size limit, the base64 overhead and the recording bitrate. *No suggestion recorded* beyond D101's proposed 5 min.
 7. **The 100-a-day limit, the path to Tier 2 or Vertex AI, and the cost per bill.** *No suggestion recorded.*
 8. **Every error state ends in Retry or Add by hand.** *Suggestion only:* yes - no error leaves the shopkeeper without one of the two.
@@ -63,6 +63,21 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 **Rules:** pin exact model names; declare the call count first (`D99` item 11, shared quota); one table, one report, no change to the app. Related: `KB-007` (the Whisper vocabulary prompt, built OFF) is measured in the same run.
 
 **`gemini-3.5-transcribe` limits - what they mean for B and D (1 Nov 2026).** The owner's AI Studio: Tier 1 = **10 requests and 10K tokens a minute, 100 requests a DAY**, per project - and the eval key and production are the SAME project ("Kirana Bill"), so they share the 100. Daily caps reset at midnight Pacific (13:30 IST). Google's rate-limits page (28 Oct 2026): **Tier 2 comes automatically after $100 paid + 3 days** from the first payment (Tier 3: $1,000 + 30 days); this model's per-day figure on Tier 2 / 3 is shown only in AI Studio, not on the page; a paid-tier increase can be requested (no guarantee). **Plainly: on Tier 1, B or D as the production ear would allow at most 100 voice orders a day for the whole app - every shop together, minus any tests - and the 101st order of the day would fail to transcribe.** The owner's shop alone may pass that. So B or D can be a production choice only after Tier 2 (and its per-day figure read in AI Studio) or a granted increase; C runs on `gemini-3.5-flash-lite`, whose limits are separate (to be read in AI Studio before V2). The bake-off itself stops at 90 transcribe calls a Pacific day (`eval/bakeoff/quota.ts`) and resumes the next day.
+
+**V3 must also fix (found offline in round 2, 5 Nov 2026 - `eval/bakeoff/REPORT-ROUND2.md`; D103):**
+- **A38's 1,000x total - both fixes are required (D103 item 3):**
+  - (a) our code reads the price unit from the spoken words ("56 रुपए किलो" after 500 ग्राम = per kilo), whatever the AI labels it;
+  - (b) a backstop a Theek hai tap cannot clear - a line wildly out of proportion must be edited before Bill Banao.
+- **The "पौने 2" reader bug:** `extractSpokenNumbers` reads "पौने 2" as 0.75 and 2 (it reads "पौने दो" as 1.75). Any ear that writes the digit hits it.
+- **Old checks that give false alarms on an AI-read bill** (77 of E-flash's 112 long-order Theek hai):
+  - `number_dropped` / `qty_dropped` on a spoken correction (A59) and on a pack size ("1 लीटर एक पैकेट", A55);
+  - `number_misaligned`'s qty-1 rule - an unspoken 1 kg is excused only when no "1" is said anywhere in the order (A58);
+  - `layer2_disagrees` / `number_unconsumed` when Layer 1 cuts the pieces differently from the AI (A57);
+  - `unusual_rate` against the price of a catalog product the as-said name happens to claim (A34);
+  - `duplicate_line` when two different as-said names claim one catalog product (A40).
+- **Suspected:** `KB-359`'s quantity drop strips a correct quantity when Layer 1 puts the number in the next piece (A57 "रिन साबुन 10 वाली 5 पीस", A42 "दंतकांति 60 वाला"). This was shown by simulation only; E-flash's raw answer was not saved.
+- **The E-flash D102 prompt's rule 3 ("1 किलो पैकेट" = 1 packet) contradicts D103** (the unit next to the number wins: 1 kg). Whatever prompt V3 ships must follow D103.
+- **A line with a packet unit for a product priced per kg** shows a Theek hai (`missing_total`) where it should show Price needed (A19).
 
 **V3 constraints that do not change:** a rate or total must be a number that was spoken (`KB-359`); a product from a name nothing explains is never silent (`KB-368`); a line with no price is priced before Bill Banao; one warning per line.
 

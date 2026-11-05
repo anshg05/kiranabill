@@ -16,11 +16,45 @@
 
 - **No candidate reaches 0 wrong lines.**
 - **E-flash is the only one that applies spoken corrections** (A59: right in all three runs; B and Sarvam each bill A59's "नहीं नहीं" as extra lines - 9 wrong lines each). **Its only wrong lines on long orders are A61's "सेट" unit** (6 = 2 x 3 runs): it bills unit "set" where the sheet says packet - and the sheet says packet only because "set" was not a unit the sheet knew. On short orders its 15 are mostly units again ("पैकेट" billed as packet where the sheet says kg; "सेट" as set) - open question 5 - plus A38's three totals 1,000 times too big (the gram / kilo sum; each warned), and A50 "टूथ ब्रश" vs "टूथब्रश" (likely a scoring artifact of the space).
-- **But E-flash shows about 3 Theek hai per long order** (112 over 36 runs) - from the app's own checks, not the B cross-check: that is why its exact rate is lower. Which check raises them is not saved; it must be found before E-flash could be chosen.
+- **But E-flash shows about 3 Theek hai per long order** (112 over 36 runs) - from the app's own checks, not the B cross-check: that is why its exact rate is lower. **Found offline on 5 Nov - see "Offline analysis" below: 77 of the 112 are false alarms from checks built for the old pipeline.**
 - **Two ears vs one ear for E-flash: no difference at all** (the same wrong lines; B's transcript always had E-flash's numbers). The second ear costs a second call and adds nothing on these 60 recordings.
 - **Sarvam is the cheapest and has the fewest wrong lines on short orders**; its batch wait is short (upload 1.5 s, queue + processing 3.7 s, download 0.8 s on average; worst queue 4.0 s) - it could work at the counter. Its losses: A59's corrections (9) and 4 catalog prices from the wrong product (it feeds today's pipeline, which is not D102 yet).
-- **Every ear hears the same thing in three places** - A17 "₹185" (the bill says Rs 125), A27 "हार्पिक एक", A32 "मूंग दाल" (the owner says he did not say it). Worth one more listen.
+- **Every ear hears the same thing in three places** - A17 "₹185" (the bill said Rs 125), A27 "हार्पिक एक", A32 "मूंग दाल". **The owner listened again (5 Nov): all three ears were right** - the sheet now has 185, 1 हार्पिक and 1 kg मूंग दाल =88 (the tables below are from before that correction; the re-scores below include it).
 - **Thinking:** gemini-3.8-flash returned no thinking-token field at level `low` on any of the 84 calls.
+
+### Offline analysis (5 Nov 2026, after round 2 - no call; the saved lines and transcripts)
+
+**1. Where E-flash's Theek hai come from.** Our checks were re-run on E-flash's saved lines: the rebuilt warnings match the saved ones exactly (21 short-order lines, 112 long, 0 mismatches). **All 112 long-order lines come from whole-bill checks** (they warn every line of the order), in 13 runs of 6 recordings:
+
+| Recording (runs) | Lines | Check | What happened | Verdict |
+|---|---|---|---|---|
+| A59 (3) | 15 | number_dropped, qty_dropped | E-flash applied "नहीं नहीं"; the corrected-away "2 किलो", "56", "4 किलो" are on no line | **False alarm** - the check assumes every spoken number lands on a line |
+| A58 (3) | 21 | number_misaligned | "बरबटी दाल ₹88 किलो" = 1 kg (D47); the check excuses an unspoken 1 only when no "1" is said anywhere, and "1 किलो" is said twice earlier | **False alarm** - the check's qty-1 rule |
+| A55 (3) | 33 | number_dropped, qty_dropped | "बंसल तेल 1 लीटर एक पैकेट": 1 litre is the pack size; E-flash bills 1 packet (the sheet's line) | **False alarm** - pack size |
+| A56 (run 3) | 8 | number_dropped, number_misaligned | The transcript wrote "पौने 2"; our reader reads it as [0.75, 2] (and "पौने दो" as [1.75] - runs 1 and 2) | **False alarm - a reader BUG for V3** (any ear writing the digit hits it) |
+| A57 (3) | 27 | missing_total, number_dropped, layer2_disagrees, number_unconsumed | Rin and Fena soap have no quantity. Layer 1 cuts "रिन साबुन 10 वाली / 5 पीस पारले जी ..." so the 5 is in the next piece, and `KB-359` drops a quantity it cannot find in the line's own piece | **Real problem, SUSPECTED to be caused by our check** - in a simulation, qty 5 is stripped to none; E-flash's raw answer was not saved, so not proven |
+| A54 (run 3) | 8 | missing_total, number_misaligned | "फटका" (part of तुवर दाल फटका) became a second line, with ₹150 copied to it | **Real** - an extra line |
+
+**77 lines (10 runs) are false alarms; 35 lines (4 runs) point to a real problem, 27 of them (A57) suspected to be our `KB-359`.**
+Short orders (21 lines): A38 3 (real, 1,000x); A39 5 and A40 5 (real: E-flash MERGED the repeated items - D103 says they stay two lines; A40 also has a false `duplicate_line`: बंसल and मदर डिलाइट claim one catalog product); A42 2 (real, suspected `KB-359` again - "दंतकांति 60 वाला" with qty 1 is stripped in a simulation); A19 1 (no price: a packet for a per-kg product - should be Price needed, not a Theek hai); A34 1 (false: the as-said "तेल" claims a Rs 25 product and the spoken Rs 140 is judged against it); A35 1 and A36 3 (false: the unit, and the "1 लीटर" pack size).
+
+**2. Units.** First scored with a looser rule (a unit word said anywhere near the item counts): E-flash 0 wrong lines on long orders. **The owner decided D103 instead: the unit next to the NUMBER wins.** Re-scored with the owner's A17 / A27 / A32 corrections, D103's sheet units applied in memory (A27 and A61 "सेट" = set; A57 "1 किलो पैकेट" = kg), litre = liter:
+
+| Candidate | Exact short: D102 -> D103 | Exact long: D102 -> D103 | Wrong short (silent): D102 -> D103 | Wrong long (silent): D102 -> D103 |
+|---|---|---|---|---|
+| A | 26/48 (54%) -> 26/48 (54%) | 8/36 (22%) -> 7/36 (19%) | 12 (6) -> 15 (9) | 30 (9) -> 38 (17) |
+| B | 38/48 (79%) -> 37/48 (77%) | 23/36 (64%) -> 22/36 (61%) | 8 (6) -> 11 (9) | 15 (14) -> 17 (16) |
+| C | 31/48 (65%) -> 30/48 (63%) | 17/36 (47%) -> 15/36 (42%) | 14 (6) -> 13 (8) | 12 (3) -> 8 (7) |
+| D | 33/48 (69%) -> 32/48 (67%) | 18/36 (50%) -> 17/36 (47%) | 12 (5) -> 11 (7) | 9 (8) -> 8 (8) |
+| E-flash | 33/48 (69%) -> 34/48 (71%) | 17/36 (47%) -> 20/36 (56%) | 12 (6) -> 9 (3) | 6 (6) -> **6 (0)** |
+| S | 31/48 (65%) -> 31/48 (65%) | 11/36 (31%) -> 11/36 (31%) | 6 (4) -> 9 (7) | 13 (9) -> 22 (15) |
+
+Under D103, **E-flash's 6 long-order wrong lines are all A57's "1 किलो पैकेट" billed as packet - each warned. Its prompt's rule 3 says exactly that ("1 किलो पैकेट" = 1 packet), so the prompt contradicts D103.** Its short-order 9: A38 x3 (warned), the same packet rule in A19 / A20 / A35 / A36, and A50 "टूथ ब्रश" vs "टूथब्रश" x2 (likely a scoring artifact, not checked). The sheet itself still has the old units: D103's sheet edits are made with the next scoring change.
+
+**3. Totals.** Every one of E-flash's 483 saved lines is our arithmetic or a spoken number - 233 qty x spoken rate, 101 qty x shop price, 117 a total that is in the transcript, 32 with no total; **0 unexplained**. The grand total is `sumPaise` of our line totals (`buildFinalBill`, `src/domain/finalBill.ts`). The AI's own sum is never billed; `KB-366` only uses it to choose between two readings that are both our arithmetic.
+**A38 is NOT impossible to bill today.** E-flash labelled "56 रुपए किलो" as Rs 56 per GRAM; our code multiplies literally (500 x Rs 56 = Rs 28,000) unless the AI's own total is exactly the per-kilo one (Rs 28). Replay: AI total 2800 -> 2800; 2800000 -> 2800000; 999 -> 2800000; none -> 2800000. Three HIGH checks warn, but one Theek hai tap clears them (`canFinalize`) and `buildFinalBill` only refuses a line with no amount. **D103 item 3: both fixes in V3** - our code reads the price unit from the words, and a backstop a Theek hai cannot clear.
+
+**Not approved: "ear + brain"** (a saved B or Sarvam transcript as text to gemini-3.8-flash with the D102 prompt) - estimated Rs 1.14-1.17 a short bill and Rs 1.38-1.42 a long one against E-flash's Rs 1.08 / 1.20, slower (two calls in a row), and B keeps its 100-a-day cap (D103 item 5).
 
 <!-- /summary -->
 

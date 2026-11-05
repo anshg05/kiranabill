@@ -2287,6 +2287,18 @@ order by suspect nulls last, b.finalized_at desc;
 5. **Supersedes** the naming part of D48 item 4 ("the bill shows the shop catalog's name for a Layer 1 line, never the spoken words") and of D42 ("a matched line shows the shop's name"). Nothing else in D42 or D48 changes.
 6. **Affected - designed in V3, NOT changed now:** `KB-368`'s weak-match badge (what it checks when the line keeps the said name), the learning engine (aliases and remembered prices, `08`), and the Catalog screen (what a catalog entry is for when it no longer names the line). `24` Phase V open question 4 is answered by this decision.
 
+### D103 — Units as said; repeated items stay two lines; A38's 1,000x total needs two fixes in V3 (owner, 5 Nov 2026) 🟢
+
+1. **Units as said, money unchanged:** "सेट" = set, "पैकेट" = packet, "किलो" = kg, "पीस" = piece, "लीटर" = liter. When one phrase has two unit words ("आधा किलो रवा पैकेट"), **the unit next to the NUMBER wins** (0.5 kg). A line's money never changes because of its unit. This answers `24` Phase V open question 5. The bake-off scoring uses this rule from the next run.
+2. **Repeated identical items stay TWO lines** ("2 किलो शक्कर, 2 किलो शक्कर"), each carrying the "said twice, or heard twice?" warning (`KB-317`'s `duplicate_line`). They are never silently merged into one line, by any ear or model.
+3. **A38 (500 g at "56 रुपए किलो" billed as Rs 28,000): BOTH fixes are required in V3.**
+   - **(a) Our code reads the price unit from the spoken words,** whatever the AI labels it: "X रुपए किलो" after a gram quantity is a per-kilo rate.
+   - **(b) A backstop that a Theek hai tap cannot clear:** a line wildly out of proportion must be edited before Bill Banao.
+   
+   Today the line is warned by three HIGH checks, but one Theek hai tap clears them (`canFinalize`), and `buildFinalBill` only refuses a line with no amount (`eval/bakeoff/REPORT-ROUND2.md`, 5 Nov 2026).
+4. **Why:** the round-2 offline analysis (`REPORT-ROUND2.md`). Under the unit rule, E-flash has 0 wrong lines on long orders. E-flash merged A39's and A40's repeats, losing lines. Every line total is our arithmetic, but a mis-labelled rate unit still makes our arithmetic 1,000x wrong.
+5. **Not approved (recorded): "ear + brain"** (a saved B or Sarvam transcript sent as text to gemini-3.8-flash with the D102 prompt). It costs more than E-flash, it is slower, and B keeps its 100-a-day cap.
+
 ---
 
 ## Superseded

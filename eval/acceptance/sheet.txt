@@ -116,7 +116,8 @@ checks: 0
 
 ## A17 long-priced
 said: एक डेटॉल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हार पिक 100 रुपए, एक लाइजॉल 110 रुपए,
-- 1 piece डेटॉल सेट =125
+# OWNER, 5 Nov 2026 (listened to the recording): he said 185, not 125 (every ear heard 185).
+- 1 piece डेटॉल सेट =185
 - 1 piece संतूर सेट =40
 - 1 piece संतूर हैंडवॉश सेट =105
 - 1 piece हार्पिक =100
@@ -221,7 +222,8 @@ said: डेटॉल साबुन सेट 1, 185 रुपए, संत�
 - 1 piece संतूर साबुन सेट =140
 - 1 piece डेटॉल हैंडवॉश =100
 - 1 piece लाइज़ॉल =110
-- हार्पिक =100
+# OWNER, 5 Nov 2026 (listened to the recording): he said "हार्पिक एक" - 1 Harpic.
+- 1 piece हार्पिक =100
 - 1 piece रिन साबुन =100
 - 5 piece फेना साबुन =50
 - 3 kg फेना डिटर्जेंट =300
@@ -265,7 +267,9 @@ said: मोह थेक किलो 1200 रुपए किलो काब�
 - 1 kg मोठ @130
 - 1 kg काबुली चना @120
 - 1 kg काबुली चना मीडियम @100
+# OWNER, 5 Nov 2026 (listened to the recording): he DID say मूंग दाल (his earlier "not said" was a mistake); all four ears heard "मूंग दाल 1 किलो 88".
 - 1 kg आटा @40
+- 1 kg मूंग दाल =88
 - 1 kg चना =88
 checks: 0
 
