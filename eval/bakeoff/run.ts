@@ -11,6 +11,9 @@
  *   --pace-transcribe-s spaces gemini-3.5-transcribe calls (default 12: its per-minute limit is not published, 429s on 1 Nov).
  *     npm run bakeoff -- --round2 [--canary] [--go] --cap-inr N   KB-370 round 2: B-smart, E-lite, E-flash, S - scored under D102;
  *       E-* need B's saved transcripts (--b-from, default eval/bakeoff/results-2026-10-31.json); B-smart runs on SMART_IDS once each.
+ *     npm run bakeoff -- --round3 [--canary] [--go] --cap-inr N [--out FILE]   KB-370 nocat (6 Nov 2026): nocat-old, nocat-D103 - E-flash's call
+ *       WITHOUT the catalog (our code fills an unspoken price), scored under D102 + D103; every audio answer's RAW items are saved.
+ *     --out FILE writes the results there (two runs on one day must not overwrite each other).
  * Then:  npm run bakeoff:report   (writes eval/bakeoff/REPORT.md from the results file; offline, free)
  * Keys: GROQ_API_KEY and GEMINI_API_KEY_EVAL from .env.local - read here, never printed. The recordings are never committed.
  */
@@ -31,9 +34,9 @@ import { runOrder } from "../acceptance/run.js";
 import { parseSheet } from "../acceptance/sheet.js";
 import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
-import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems } from "./pipeline.js";
+import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems } from "./pipeline.js";
 import { scoreRunD102 } from "./d102.js";
-import { EZY_D102_PROMPT } from "./ezyPrompt.js";
+import { EZY_D102_NOCAT_PROMPT, EZY_D102_PROMPT, EZY_D103_NOCAT_PROMPT } from "./ezyPrompt.js";
 import { createSarvamTranscriptionProvider } from "../../src/voice/sarvamTranscriptionProvider.js";
 import { candidatesFor, declare, GST, groqUsd, ROUND1_CANDIDATES, SARVAM_INR_PER_MINUTE, scoreRun, toSaved, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
 import { geminiUrl, inlineAudio } from "../../src/voice/geminiAudio.js";
@@ -62,7 +65,12 @@ const only = canary ? CANARY_IDS : arg("only")?.split(",");
 const round2 = process.argv.includes("--round2");
 // owner, 5 Nov 2026 (after the canary): B-smart (its reformatting breaks our reader) and E-lite (the "12 ... 110 rupees" line total) dropped
 const ROUND2: CandidateId[] = ["E-flash", "E-flash-1ear", "S"];
-const chosen = (arg("candidates")?.split(",") ?? (round2 ? ROUND2 : [...ROUND1_CANDIDATES])) as CandidateId[];
+/** KB-370 nocat (owner, 6 Nov 2026): E-flash's call without the catalog, the D102 prompt as it was and rewritten to D103 - scored D102 + D103. */
+const round3 = process.argv.includes("--round3");
+const ROUND3: CandidateId[] = ["nocat-old", "nocat-D103"];
+const NOCAT_PROMPT: Partial<Record<CandidateId, string>> = { "nocat-old": EZY_D102_NOCAT_PROMPT, "nocat-D103": EZY_D103_NOCAT_PROMPT };
+const d102Scoring = round2 || round3;
+const chosen = (arg("candidates")?.split(",") ?? (round3 ? ROUND3 : round2 ? ROUND2 : [...ROUND1_CANDIDATES])) as CandidateId[];
 /** B-smart (owner): the correction orders A39, A40, A59, all 12 long orders, and 10 short ones - once each. The 10 short: one or two from
  * each coverage group of A01-A50 (A13 has no written bill). */
 const SMART_IDS = new Set(["A39", "A40", "A59", ...Array.from({ length: 12 }, (_, i) => `A${51 + i}`), "A01", "A02", "A07", "A14", "A18", "A23", "A28", "A34", "A42", "A47"]);
@@ -111,7 +119,7 @@ const vocabulary = [...freq.entries()]
 // Prompt tokens estimated from the characters actually sent (about 3 characters a token for this mix of English, JSON and Devanagari).
 const sliceChars = JSON.stringify(shop.entries.slice(0, 30).map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
 const catalogChars = JSON.stringify(shop.entries.map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
-const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3) };
+const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3), nocatIn: Math.ceil((EZY_D103_NOCAT_PROMPT.length + 30) / 3) };
 // round 2: B-smart only on its recordings, once; the others on every recording, long ones `longRuns` times
 const sum = (a: ReturnType<typeof declare>, b: ReturnType<typeof declare>): ReturnType<typeof declare> => ({
   calls: Object.fromEntries(Object.entries(a.calls).map(([k, v]) => [k, v + b.calls[k as keyof typeof a.calls]])) as typeof a.calls,
@@ -134,12 +142,12 @@ console.log(`KB-370 bake-off${canary ? " - CANARY (docs/23 section 8: A01, A61, 
 console.log(`Recordings with a written bill: ${recordings.filter((r) => r.set === "short").length} short (A01-A50, ${[...expectedOf.values()].filter((o) => o.setAside).length} of them the set-aside Whisper-misheard orders), ${longHave} of ${LONG_SLOTS} long (A51-A62); ${audioMin.toFixed(1)} min of audio in all`);
 console.log(`Runs: short orders once, long orders ${longRuns} times. Vocabulary: ${vocabulary.length} terms from eval/real-transcripts.json.`);
 console.log(`NOW:          ${fmt(now)}`);
-if (chosen.includes("E-flash")) {
-  // E-flash alone, per bill: gemini-3.8-flash doubles BOTH rates on 1 Jan 2027 (the pricing page, 30 Oct 2026), so its bill doubles
-  const e = declare(recordings, longRuns, ["E-flash"], pace, est, inrPerUsd);
+for (const c of (["E-flash", "nocat-old", "nocat-D103"] as const).filter((x) => chosen.includes(x))) {
+  // per bill: gemini-3.8-flash doubles BOTH rates on 1 Jan 2027 (the pricing page, 30 Oct 2026), so the bill doubles
+  const e = declare(recordings, longRuns, [c], pace, est, inrPerUsd);
   const bills = recordings.reduce((a, r) => a + (r.set === "long" ? longRuns : 1), 0);
   const perBill = (e.usd / Math.max(1, bills)) * inrPerUsd;
-  console.log(`E-flash per bill (estimate, GST included): today Rs ${perBill.toFixed(2)} (Rs ${(perBill * 3000).toFixed(0)} a month at 100 bills a day); from 1 Jan 2027 Rs ${(perBill * 2).toFixed(2)} (Rs ${(perBill * 6000).toFixed(0)} a month)`);
+  console.log(`${c} per bill (estimate, GST included): today Rs ${perBill.toFixed(2)} (Rs ${(perBill * 3000).toFixed(0)} a month at 100 bills a day); from 1 Jan 2027 Rs ${(perBill * 2).toFixed(2)} (Rs ${(perBill * 6000).toFixed(0)} a month)`);
 }
 if (longHave < LONG_SLOTS && !only) console.log(`WITH A51-A62: ${fmt(projected)}  (the missing long orders estimated at 60 s each)`);
 console.log(`Pace: ${GEMINI_TRANSCRIBE_MODEL} kept within 90% of 10 RPM and 10K TPM (quota.ts), stopping at ${DAILY_STOP} calls a Pacific day (production shares the 100); the others ${pace.otherS} s apart.${Number.isFinite(capInr) ? ` Spend cap: the run stops itself at Rs ${capInr} of logged spend.` : ""}`);
@@ -245,7 +253,7 @@ const parseWith = (cost: { usd: number; ms: number }) => async (text: string, sl
   return r.items;
 };
 const entries = [...shop.entries];
-const out = canary ? path.join(HERE, `results-canary-${new Date().toISOString().slice(0, 10)}.json`) : mergeFile ? path.resolve(mergeFile) : path.join(HERE, `results-${new Date().toISOString().slice(0, 10)}.json`);
+const out = arg("out") ? path.resolve(arg("out")!) : canary ? path.join(HERE, `results-canary-${new Date().toISOString().slice(0, 10)}.json`) : mergeFile ? path.resolve(mergeFile) : path.join(HERE, `results-${new Date().toISOString().slice(0, 10)}.json`);
 // --merge: keep every earlier row except the candidates re-run now and those dropped (e.g. B-novocab, measured as "" on 1 Nov). Rows a
 // re-run already produced (`rerun`) are kept and skipped: running the same command again after a stop RESUMES it.
 const earlier = mergeFile ? (JSON.parse(readFileSync(path.resolve(mergeFile), "utf8")) as { meta: Record<string, unknown>; results: RunResult[] }) : null;
@@ -254,7 +262,7 @@ const done = new Map(kept.filter((r) => r.rerun && !r.error).map((r) => [`${r.ca
 const results: RunResult[] = [];
 let spentUsd = 0;
 const save = () =>
-  writeFileSync(out, JSON.stringify({ meta: { ...(earlier?.meta ?? {}), date: new Date().toISOString(), longRuns: earlier ? earlier.meta.longRuns : longRuns, inrPerUsd, vocabulary, models: { groq: "whisper-large-v3", transcribe: GEMINI_TRANSCRIBE_MODEL, layer2: DEFAULT_GEMINI_MODEL, c: DEFAULT_GEMINI_MODEL, c2: C2_MODEL }, setAside: [...expectedOf].filter(([, o]) => o.setAside).map(([id]) => id), ...(mergeFile ? { rerun: { candidates: chosen, dropped: drop, at: new Date().toISOString() } } : {}), ...(round2 ? { scoring: "D102 - names as said (owner, 4 Nov 2026)", round: 2 } : {}) }, results: [...kept, ...results] }, null, 2) + "\n");
+  writeFileSync(out, JSON.stringify({ meta: { ...(earlier?.meta ?? {}), date: new Date().toISOString(), longRuns: earlier ? earlier.meta.longRuns : longRuns, inrPerUsd, vocabulary, models: { groq: "whisper-large-v3", transcribe: GEMINI_TRANSCRIBE_MODEL, layer2: DEFAULT_GEMINI_MODEL, c: DEFAULT_GEMINI_MODEL, c2: C2_MODEL }, setAside: [...expectedOf].filter(([, o]) => o.setAside).map(([id]) => id), ...(mergeFile ? { rerun: { candidates: chosen, dropped: drop, at: new Date().toISOString() } } : {}), ...(round3 ? { scoring: "D102 + D103 - names and units as said (owner, 4 and 5 Nov 2026)", round: 3 } : round2 ? { scoring: "D102 - names as said (owner, 4 Nov 2026)", round: 2 } : {}) }, results: [...kept, ...results] }, null, 2) + "\n");
 
 outer: for (const rec of recordings) {
   const { expected } = expectedOf.get(rec.id)!;
@@ -283,6 +291,8 @@ outer: for (const rec of recordings) {
       let thoughts: number | null | undefined;
       let errorDetail: string | undefined;
       let waits: RunResult["waits"];
+      let rawItems: ParsedItem[] | undefined; // the model's items before any of our checks (C, E-flash, nocat-*)
+      let usage: { promptTokens: number; totalTokens: number } | undefined;
       try {
         if (candidate.startsWith("A")) {
           const groq = createGroqTranscriptionProvider(groqKey, undefined, candidate === "A-30s" ? A30_TIMEOUT_MS : undefined);
@@ -314,7 +324,8 @@ outer: for (const rec of recordings) {
           cost.usd += tokensUsd(model, r.usage);
           cost.ms += r.latencyMs;
           thoughts = r.thoughts;
-          if (candidate === "E-flash") answers.E = { transcript, items: r.items, seconds: r.latencyMs / 1000, usd: cost.usd };
+          if (candidate === "E-flash") ((answers.E = { transcript, items: r.items, seconds: r.latencyMs / 1000, usd: cost.usd }), (rawItems = r.items));
+          usage = r.usage;
           actual = flagNotHeardByB(checkAudioAnswer(transcript, d102Fill(r.items, shop), shop), bTranscript);
         } else if (candidate === "E-flash-1ear") {
           // the same call, one ear: only E-flash's own transcript checks its numbers (no call of its own)
@@ -324,6 +335,16 @@ outer: for (const rec of recordings) {
           actual = checkAudioAnswer(e.transcript, d102Fill(e.items!, shop), shop);
           cost.usd = e.usd;
           cost.ms = e.seconds * 1000;
+        } else if (candidate === "nocat-old" || candidate === "nocat-D103") {
+          // E-flash's call with an EMPTY catalog: the model never sees a product; our code fills an unspoken price (D102); our checks; one ear
+          const r = await paced(() => createGeminiAudioParseProvider(geminiKey, { model: C2_MODEL, systemPrompt: NOCAT_PROMPT[candidate]!, thinkingConfig: E_FLASH_THINKING }).parseAudio(blob(), { catalog: [] }));
+          transcript = r.transcript;
+          cost.usd += tokensUsd(C2_MODEL, r.usage);
+          cost.ms += r.latencyMs;
+          thoughts = r.thoughts;
+          rawItems = r.items;
+          usage = r.usage;
+          actual = checkAudioAnswer(transcript, fillFromCatalog(r.items, shop), shop);
         } else if (candidate === "S") {
           const r = await paced(() => sarvam.transcribe(blob(), { language: "hi", vocabulary, audioSeconds: rec.seconds }));
           transcript = r.text;
@@ -337,7 +358,7 @@ outer: for (const rec of recordings) {
           transcript = r.transcript;
           cost.usd += tokensUsd(model, r.usage);
           cost.ms += r.latencyMs;
-          if (candidate === "C") answers.C = { transcript, items: r.items, seconds: r.latencyMs / 1000, usd: cost.usd };
+          if (candidate === "C") ((answers.C = { transcript, items: r.items, seconds: r.latencyMs / 1000, usd: cost.usd }), (rawItems = r.items));
           actual = checkAudioAnswer(transcript, r.items, shop);
         } else {
           const b = answers.B;
@@ -358,15 +379,17 @@ outer: for (const rec of recordings) {
       }
       // D runs B and C side by side: its seconds are the slower of the two
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
-      const score = round2 ? scoreRunD102(rec.id, expected, actual, shop) : scoreRun(rec.id, expected, actual, shop);
+      const score = d102Scoring ? scoreRunD102(rec.id, expected, actual, shop) : scoreRun(rec.id, expected, actual, shop);
       if (candidate !== "D" && candidate !== "E-flash-1ear") spentUsd += cost.usd; // D and E-flash-1ear reuse calls already counted
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(thoughts !== undefined ? { thoughts } : {}), ...(waits ? { waits } : {}), ...(error ? { error, errorDetail } : {}), ...score });
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(rawItems ? { items: rawItems } : {}), ...(thoughts !== undefined ? { thoughts } : {}), ...(waits ? { waits } : {}), ...(error ? { error, errorDetail } : {}), ...score });
       console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}: ${errorDetail}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
       if (canary) {
         // docs/23 section 8: the owner sees each candidate's transcript and items side by side before the full run
         console.log(`          heard: "${transcript ?? ""}"`);
         if (thoughts !== undefined) console.log(`          thinking tokens: ${thoughts === null ? "ABSENT from the answer (not 0)" : thoughts}`);
+        if (usage) console.log(`          cost of this call: Rs ${(cost.usd * inrPerUsd).toFixed(3)} at list price, Rs ${(cost.usd * inrPerUsd * (1 + GST)).toFixed(3)} with GST (tokens: ${usage.promptTokens} in, ${usage.totalTokens - usage.promptTokens} out incl. thinking)`);
+        if (rawItems) for (const l of rawItems) console.log(`          RAW (before our checks): ${l.qty ?? "?"} ${l.unit} ${l.spokenName} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
         if (waits) console.log(`          Sarvam waits: upload ${(waits.uploadMs / 1000).toFixed(1)} s, queue + processing ${(waits.queueMs / 1000).toFixed(1)} s (${waits.polls} polls), download ${(waits.downloadMs / 1000).toFixed(1)} s`);
         for (const l of toSaved(actual).lines) console.log(`          - ${l.qty ?? "?"} ${l.unit} ${l.name}${l.catalogId ? ` [${shop.byId.get(l.catalogId)?.displayName}]` : " [custom]"} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
       }

@@ -53,6 +53,12 @@ checks: 1
     expect(r.orders[0]!.expected!.lines.map((l) => [l.qty, l.unit])).toEqual([[0.5, "kg"], [1.5, "liter"], [2, "packet"]]);
   });
 
+  it("D103 (owner, 5 Nov 2026): 'set' is a unit the sheet accepts (सेट as said - the app's grammar is not changed)", () => {
+    const r = sheet("## A27 x\nsaid: x\n- 1 set रिन साबुन =100\n");
+    expect(r.errors).toEqual([]);
+    expect(r.orders[0]!.expected!.lines[0]).toMatchObject({ qty: 1, unit: "set" });
+  });
+
   it("NOT ADDED alone is one piece; checks default to 0", () => {
     const r = sheet("## A04 x\nsaid: x\n- NOT ADDED\n");
     expect(r.orders[0]!.expected).toEqual({ lines: [], notAdded: 1, checks: 0 });

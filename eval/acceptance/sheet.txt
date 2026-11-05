@@ -218,13 +218,14 @@ checks: 0
 ## A27 mixed
 said: डेटॉल साबुन सेट 1, 185 रुपए, संतूर साबुन सेट 1, 140 रुपए, डेटॉल हैंड वाश 1, 100 रुपए, लाइजॉल 1, 110 रुपए, हारपी केक 100 रुपए, रिन साबुन एक सेट 100 रुपए फेना साबुन 5 50 रुपए फेना डिटरजन 3 किलो 300 रुपए फेना डिटरजन 5 किलो 500 रुपए
 # SKIP: Whisper wrote 'हारपी केक' for Harpic (matched Cake) - re-record to bring it back
-- 1 piece डेटॉल साबुन सेट =185
-- 1 piece संतूर साबुन सेट =140
+# D103 (owner, 5 Nov 2026): units as said - "सेट 1" / "एक सेट" = set.
+- 1 set डेटॉल साबुन सेट =185
+- 1 set संतूर साबुन सेट =140
 - 1 piece डेटॉल हैंडवॉश =100
 - 1 piece लाइज़ॉल =110
 # OWNER, 5 Nov 2026 (listened to the recording): he said "हार्पिक एक" - 1 Harpic.
 - 1 piece हार्पिक =100
-- 1 piece रिन साबुन =100
+- 1 set रिन साबुन =100
 - 5 piece फेना साबुन =50
 - 3 kg फेना डिटर्जेंट =300
 - 5 kg फेना डिटर्जेंट =500
@@ -489,9 +490,10 @@ said: (reviewer's bill, owner confirmed 1 Nov 2026) total 710; "10 वाली"
 - 5 packet पार्ले जी बिस्किट @30
 - 1 packet बंसल तेल पाउच =140
 - 5 piece फेना साबुन @10
-- 1 packet फेना डिटर्जेंट =75
+# D103 (owner, 5 Nov 2026): the unit next to the NUMBER wins - "1 किलो पैकेट" = 1 kg.
+- 1 kg फेना डिटर्जेंट =75
 - 1 packet वुश डिटर्जेंट =20
-- 1 packet सर्फ एक्सेल =140
+- 1 kg सर्फ एक्सेल =140
 - 1 packet पतंजलि कोकोनट बिस्किट =30
 - 1 packet गुड डे बिस्किट @55
 checks: 0
@@ -528,9 +530,10 @@ checks: 0
 said: (reviewer's bill, owner confirmed 1 Nov 2026) total 2955; 76 s, in the shop; तुअर दाल was spoken "तुअल"
 # "1 set" is not a unit the app knows: the two sets are written as 1 packet (piece, packet, box and bottle count as one unit).
 - 5 kg तुअर दाल @150
-- 1 packet डेटॉल साबुन =175
+# D103 (owner, 5 Nov 2026): units as said - "डेटॉल साबुन सेट 1", "रिन साबुन सेट 1" = set.
+- 1 set डेटॉल साबुन =175
 - 12 piece फेना साबुन =110
-- 1 packet रिन साबुन =105
+- 1 set रिन साबुन =105
 - 3 kg फेना डिटर्जेंट =285
 - 1 kg विदिशा डिटर्जेंट =70
 - 1 kg चना दाल @92

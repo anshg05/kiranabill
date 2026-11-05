@@ -58,6 +58,20 @@ export function d102Fill(items: readonly ParsedItem[], shop: ParserCatalog): Par
 }
 
 /**
+ * KB-370 nocat (owner, 6 Nov 2026): the model never saw the catalog, so OUR code fills a price that was NOT said - only when the spoken
+ * name clearly matches ONE catalog item (D102); several or none = Price needed. A line with a spoken price is never touched; the name
+ * stays as said; settleLayer2Items then computes the total from the shop price.
+ */
+export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalog): ParsedItem[] {
+  return items.map((it) => {
+    if (it.priceType !== "default") return it;
+    const match = matchProductName(it.spokenName, shop);
+    if (match.matchStatus === "matched" && match.catalogId !== null) return { ...it, catalogId: match.catalogId, isCustom: false, matchStatus: "matched" };
+    return { ...it, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "unknown" };
+  });
+}
+
+/**
  * KB-370 round 2: two independent ears must agree. A line whose quantity, rate or total B's transcript of the SAME recording does not have
  * (the 1 of a per-kilo price excepted, as in hybridItems) gets a Theek hai - the line is kept, never changed (hard rule 7).
  */

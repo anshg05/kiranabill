@@ -216,6 +216,15 @@ describe("declare - the calls a run will make, before it makes any", () => {
     expect(s.usd).toBeCloseTo((0.49 / 100) * 1.18 + layer2, 9);
   });
 
+  it("nocat (owner, 6 Nov 2026): nocat-old / nocat-D103 are one gemini-3.8-flash audio call each, WITHOUT the catalog - far cheaper than E-flash", () => {
+    const est = { layer2In: 4_000, cIn: 14_000, nocatIn: 900 };
+    const n = declare([{ id: "A01", set: "short", seconds: 12 }], 3, ["nocat-old", "nocat-D103"], { transcribeS: 7, otherS: 3 }, est, 100);
+    expect(n.calls).toEqual({ groq: 0, transcribe: 0, layer2Max: 0, audioLite: 0, audioFlash: 2, sarvam: 0 });
+    expect(n.usd).toBeCloseTo(2 * (((900 + 12 * 32) * 0.75 + 900 * 2 * 3.75) / 1e6) * 1.18, 9);
+    const e = declare([{ id: "A01", set: "short", seconds: 12 }], 3, ["E-flash"], { transcribeS: 7, otherS: 3 }, est, 100);
+    expect(n.usd / 2).toBeLessThan(e.usd);
+  });
+
   it("the default candidates stay round 1's - a round-2 candidate runs only when chosen", () => {
     const d = declare([{ id: "A01", set: "short", seconds: 8 }], 3);
     expect(d.calls.sarvam).toBe(0);

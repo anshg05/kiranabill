@@ -3,7 +3,7 @@ import { resolveUtterance } from "../../src/data/voiceBilling.js";
 import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { checksOf } from "../acceptance/compare.js";
-import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems } from "./pipeline.js";
+import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems } from "./pipeline.js";
 
 // KB-370: candidates C (one audio call: transcript + items) and D (C's items, numbers only if B's ear heard them) get the SAME checks
 // a Layer 2 answer gets today.
@@ -59,6 +59,24 @@ describe("KB-370 round 2 - Ezy-style candidates", () => {
     expect(flagged.warnedLines).toContain(1); // B heard 50 for chawal, not 60
     expect(flagged.warnedLines).not.toContain(0);
     expect(flagged.checks).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("KB-370 nocat (owner, 6 Nov 2026): the model never sees the catalog; OUR code fills an unspoken price (D102's one-clear-match rule)", () => {
+  const unpriced = (spokenName: string) => item({ spokenName, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "default" });
+
+  it("a name that clearly matches ONE catalog product gets that product's shop price - computed by our code, the name kept as said", () => {
+    const [line] = checkAudioAnswer("दो किलो शक्कर", fillFromCatalog([unpriced("शक्कर")], shop), shop).lines;
+    expect(line!.item).toMatchObject({ spokenName: "शक्कर", catalogId: "27", priceType: "default", rate: shop.byId.get("27")!.suggestedPricePaise, total: 2 * shop.byId.get("27")!.suggestedPricePaise });
+  });
+
+  it("a name that matches nothing is Price needed - never a guess", () => {
+    expect(fillFromCatalog([unpriced("पोपट दाल")], shop)[0]).toMatchObject({ spokenName: "पोपट दाल", catalogId: null, priceType: "unknown", rate: null, total: null });
+  });
+
+  it("a line with a SPOKEN price is never touched (the catalog only fills a price that was not said)", () => {
+    const said = item({ spokenName: "शक्कर", catalogId: null, isCustom: true, matchStatus: "none", rate: 5600, total: 11200 });
+    expect(fillFromCatalog([said], shop)[0]).toEqual(said);
   });
 });
 

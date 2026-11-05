@@ -19,3 +19,15 @@ items: one per product ordered, in the order said. Rules:
    - a price was said but cannot be understood = priceType "unknown", rate null, total null.
 6. Never invent or compute a number that was not spoken.
 7. catalogId: the id of a candidate product ONLY when the spoken name clearly names exactly that one candidate; otherwise null. It never changes spokenName.`;
+
+// KB-370 nocat (owner, 6 Nov 2026): the same call WITHOUT the catalog - our code fills an unspoken price afterwards (pipeline.ts
+// fillFromCatalog). nocat-old changes only rule 7 (there is nothing to pick from); nocat-D103 also follows D103 in rule 3.
+const RULE_7 = EZY_D102_PROMPT.split("\n").find((l) => l.startsWith("7. catalogId"))!;
+const RULE_3 = EZY_D102_PROMPT.split("\n").find((l) => l.startsWith("3. "))!;
+
+export const EZY_D102_NOCAT_PROMPT = EZY_D102_PROMPT.replace(RULE_7, "7. catalogId is always null - there is no product list. Never invent one.");
+
+export const EZY_D103_NOCAT_PROMPT = EZY_D102_NOCAT_PROMPT.replace(
+  RULE_3,
+  `3. qty and unit only as spoken. The unit is the unit word next to the NUMBER: "1 किलो पैकेट" = 1 kg, "आधा किलो रवा पैकेट" = 0.5 kg. "पैकेट" / "packet" alone = "packet", "सेट" / "set" alone = "set", "पीस" = "piece". kilo = "kg", gram = "gm", litre = "liter". सवा 1.25, डेढ़ 1.5, पौने दो 1.75, ढाई 2.5, आधा 0.5. The unit never changes a price.`,
+);

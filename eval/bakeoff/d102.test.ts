@@ -31,6 +31,16 @@ describe("scoreRunD102", () => {
     expect(scoreRunD102("A62", e, bill([it_({ spokenName: "toor daal", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, rate: 15000, total: 15000 })]), shop)).toMatchObject({ exact: true, numbersRightNameWrong: 0 });
   });
 
+  it("D103: units as said - 'litre' is liter; set is not piece; a packet where the number sat next to किलो (kg) is a wrong unit", () => {
+    const oil = one("बंसल तेल", 1, "liter", { kind: "total", paise: 15000 });
+    expect(scoreRunD102("A34", oil, bill([it_({ spokenName: "बंसल तेल", catalogId: null, qty: 1, unit: "litre", rate: null, rateUnit: null, total: 15000, priceType: "total" })]), shop).exact).toBe(true);
+    const set = one("रिन साबुन", 1, "set", { kind: "total", paise: 10000 });
+    expect(scoreRunD102("A27", set, bill([it_({ spokenName: "रिन साबुन", catalogId: null, qty: 1, unit: "set", rate: null, rateUnit: null, total: 10000, priceType: "total" })]), shop).exact).toBe(true);
+    expect(scoreRunD102("A27", set, bill([it_({ spokenName: "रिन साबुन", catalogId: null, qty: 1, unit: "piece", rate: null, rateUnit: null, total: 10000, priceType: "total" })]), shop).wrongLines).toBe(1);
+    const surf = one("सर्फ एक्सेल", 1, "kg", { kind: "total", paise: 14000 });
+    expect(scoreRunD102("A57", surf, bill([it_({ spokenName: "सर्फ एक्सेल", catalogId: null, qty: 1, unit: "packet", rate: null, rateUnit: null, total: 14000, priceType: "total" })]), shop).wrongLines).toBe(1);
+  });
+
   it("a DIFFERENT product's name is wrong, even with the right numbers", () => {
     const e = one("चीनी", 2, "kg", { kind: "rate", paise: 4500 });
     expect(scoreRunD102("A01", e, bill([it_({ spokenName: "चावल", catalogId: "11" })]), shop)).toMatchObject({ wrongProducts: 1, wrongLines: 1, exact: false });

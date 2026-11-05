@@ -9,7 +9,7 @@ import type { ExpectedBill } from "../acceptance/types.js";
 
 // KB-370 (V1 bake-off): scoring, cost and the call declaration. Pure - no network, no files (score.test.ts).
 
-export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "E-flash-1ear", "S"] as const;
+export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "E-flash-1ear", "S", "nocat-old", "nocat-D103"] as const;
 /** Round 1's set - what a run without --candidates measures (round-2 candidates run only when chosen). */
 export const ROUND1_CANDIDATES: readonly CandidateId[] = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D"];
 export type CandidateId = (typeof CANDIDATES)[number];
@@ -30,6 +30,8 @@ export const CANDIDATE_LABEL: Record<CandidateId, string> = {
   "E-flash": "round 2, Ezy-style: the same with gemini-3.8-flash at thinking level low - TWO ears: every number must also be in B's saved transcript",
   "E-flash-1ear": "the SAME E-flash answers checked only against E-flash's own transcript - one call per bill, as Ezy probably works (no extra calls)",
   S: "round 2: Sarvam saaras:v4 (verbatim) as the ear -> Layer 1 + Layer 2 + checks; batch API over 30 s",
+  "nocat-old": "nocat (6 Nov 2026): E-flash's call (gemini-3.8-flash, thinking low, the D102 prompt) WITHOUT the catalog; our code fills an unspoken price on one clear match; one ear",
+  "nocat-D103": "nocat-old with the prompt's rule 3 rewritten to D103 (the unit next to the number wins: '1 किलो पैकेट' = 1 kg) - the version that would ship",
 };
 
 /** USD. Gemini: Standard paid tier per 1M tokens, https://ai.google.dev/gemini-api/docs/pricing (page "last updated 2026-10-30");
@@ -278,7 +280,8 @@ export interface RunResult extends RunScore {
   readonly lines?: readonly SavedLine[];
   /** "Not added" pieces (saved since the canary; older rows have none). */
   readonly unresolved?: number;
-  /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
+  /** The model's RAW items, before any of our checks: C (so D can be rebuilt), and since 6 Nov 2026 E-flash and nocat-* (owner: to prove
+   * whether KB-359 stripped a quantity the model did give - A57 / A42). The raw transcript is `transcript`. */
   readonly items?: readonly ParsedItem[];
   /** E-*: the thinking tokens Gemini reported; null = the answer carried no such field (round 2 checks the thinking level took effect). */
   readonly thoughts?: number | null;
@@ -360,6 +363,7 @@ export const GST = 0.18;
 export interface TokenEstimate {
   readonly layer2In: number; // the grammar prompt + a 30-product slice + one order
   readonly cIn: number; // the grammar prompt + the audio addendum + the whole catalog (without the audio)
+  readonly nocatIn?: number; // the no-catalog prompt alone (without the audio)
 }
 const OUT = { transcribePerSecond: 8, layer2: 400, c: 900 };
 const THINKING = 1; // allowance: as many thinking tokens as answer tokens (gemini-3.5-flash-lite thinks "minimal" by default)
@@ -390,6 +394,7 @@ export function declare(recordings: readonly Recording[], longRuns: number, chos
         if (c === "S") (calls.layer2Max++, (usd += t("gemini-3.5-flash-lite", est.layer2In, withThinking(OUT.layer2))), (seconds += pace.otherS + s.layer2));
         if (c === "C" || c === "E-lite") (calls.audioLite++, (usd += t("gemini-3.5-flash-lite", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c));
         if (c === "C2" || c === "E-flash") (calls.audioFlash++, (usd += t("gemini-3.8-flash", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
+        if (c === "nocat-old" || c === "nocat-D103") (calls.audioFlash++, (usd += t("gemini-3.8-flash", (est.nocatIn ?? 1_000) + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
       }
     }
   }

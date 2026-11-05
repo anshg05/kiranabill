@@ -1,5 +1,5 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
-import { matchProductName } from "../../src/domain/grammar.js";
+import { canonicalUnit, matchProductName } from "../../src/domain/grammar.js";
 import { mostlySame, numbersOf, sameName, type ActualBill, type Verdict } from "../acceptance/compare.js";
 import type { ExpectedBill, ExpectedLine } from "../acceptance/types.js";
 import { scoringCatalog, type RunScore } from "./score.js";
@@ -31,7 +31,8 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
 
   /** The numbers, under D102: numbersOf, plus WHERE a "shop price" came from (it must be the said product's, or Price needed if none). */
   const numbers = (e: ExpectedLine, l: Line): Verdict => {
-    const v = numbersOf(e, l.item);
+    // D103: units as said, spelled the app's way ("litre" = liter); a unit the app does not know ("set") is kept as it is
+    const v = numbersOf(e, { ...l.item, unit: canonicalUnit(l.item.unit) ?? l.item.unit });
     if (e.price.kind !== "default") return v;
     const mine = own(e.name);
     const priced = l.item.priceType !== "unknown" && l.item.total !== null;

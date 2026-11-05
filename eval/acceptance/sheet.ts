@@ -1,6 +1,9 @@
 import { canonicalUnit } from "../../src/domain/grammar.js";
 import type { ExpectedBill, ExpectedLine, ExpectedPrice } from "./types.js";
 
+/** D103 (owner, 5 Nov 2026): units as said - "सेट" = set. Sheet-only: the app's grammar does not read "set" as a unit (not changed). */
+const SHEET_UNITS: Record<string, string> = { set: "set", "सेट": "set" };
+
 // KB-364: the expected-bill sheet (eval/acceptance/sheet.txt) in plain words - docs/23-ACCEPTANCE.md has the format and examples.
 
 export interface SheetOrder {
@@ -56,7 +59,7 @@ function parseLine(text: string): ExpectedLine | { error: string } | { notAdded:
   let qty: number | null = null;
   let unit = "";
   if (/^\d+(\.\d+)?$/.test(words[0]!)) {
-    const u = canonicalUnit(words[1] ?? "");
+    const u = canonicalUnit(words[1] ?? "") ?? SHEET_UNITS[words[1] ?? ""];
     if (!u) return { error: `a quantity needs a unit right after it ("${text}")` };
     qty = Number(words[0]);
     unit = u;
