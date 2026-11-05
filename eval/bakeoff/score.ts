@@ -9,7 +9,7 @@ import type { ExpectedBill } from "../acceptance/types.js";
 
 // KB-370 (V1 bake-off): scoring, cost and the call declaration. Pure - no network, no files (score.test.ts).
 
-export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "S"] as const;
+export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "E-flash-1ear", "S"] as const;
 /** Round 1's set - what a run without --candidates measures (round-2 candidates run only when chosen). */
 export const ROUND1_CANDIDATES: readonly CandidateId[] = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D"];
 export type CandidateId = (typeof CANDIDATES)[number];
@@ -27,7 +27,8 @@ export const CANDIDATE_LABEL: Record<CandidateId, string> = {
   D: "hybrid: C's items, a number counts only if B's transcript has it (no extra calls)",
   "B-smart": "round 2: B with gemini-3.5-transcribe's SMART mode (resolves spoken corrections) -> Layer 1 + Layer 2 + checks",
   "E-lite": "round 2, Ezy-style: audio -> gemini-3.5-flash-lite with the D102 prompt (names as said, corrections edit the line) -> checks; every number must also be in B's transcript",
-  "E-flash": "round 2, Ezy-style: the same with gemini-3.8-flash at thinking level low",
+  "E-flash": "round 2, Ezy-style: the same with gemini-3.8-flash at thinking level low - TWO ears: every number must also be in B's saved transcript",
+  "E-flash-1ear": "the SAME E-flash answers checked only against E-flash's own transcript - one call per bill, as Ezy probably works (no extra calls)",
   S: "round 2: Sarvam saaras:v4 (verbatim) as the ear -> Layer 1 + Layer 2 + checks; batch API over 30 s",
 };
 
@@ -279,14 +280,16 @@ export interface RunResult extends RunScore {
   readonly unresolved?: number;
   /** C only: its raw items, so D can be rebuilt from saved B and C answers. */
   readonly items?: readonly ParsedItem[];
-  /** E-*: the thinking tokens Gemini reported (round 2 checks the thinking level took effect). */
-  readonly thoughts?: number;
+  /** E-*: the thinking tokens Gemini reported; null = the answer carried no such field (round 2 checks the thinking level took effect). */
+  readonly thoughts?: number | null;
   /** S: Sarvam's batch waits (upload; queue + processing; download), ms. */
   readonly waits?: { readonly uploadMs: number; readonly queueMs: number; readonly downloadMs: number; readonly polls: number };
   /** Produced by a --merge re-run: kept and skipped when the same command runs again (resume after a daily stop). */
   readonly rerun?: boolean;
   /** A provider failure or timeout - the order shows nothing (or "Not added"), never a wrong line. */
   readonly error?: string;
+  /** The provider's own message for that failure (the full error body). */
+  readonly errorDetail?: string;
 }
 
 const quantile = (xs: number[], q: number) => {

@@ -49,6 +49,7 @@ const arg = (name: string) => {
 const go = process.argv.includes("--go");
 const canary = process.argv.includes("--canary");
 const diagnose = process.argv.includes("--diagnose");
+const diagnoseSarvam = process.argv.includes("--diagnose-sarvam");
 const mergeFile = arg("merge");
 const drop = arg("drop")?.split(",") ?? [];
 const capInr = arg("cap-inr") ? Number(arg("cap-inr")) : Infinity;
@@ -59,7 +60,8 @@ const CANARY_IDS = ["A01", "A61", "A62"];
 const only = canary ? CANARY_IDS : arg("only")?.split(",");
 /** KB-370 round 2 (owner, 5 Nov 2026): the new candidates, scored under D102. */
 const round2 = process.argv.includes("--round2");
-const ROUND2: CandidateId[] = ["B-smart", "E-lite", "E-flash", "S"];
+// owner, 5 Nov 2026 (after the canary): B-smart (its reformatting breaks our reader) and E-lite (the "12 ... 110 rupees" line total) dropped
+const ROUND2: CandidateId[] = ["E-flash", "E-flash-1ear", "S"];
 const chosen = (arg("candidates")?.split(",") ?? (round2 ? ROUND2 : [...ROUND1_CANDIDATES])) as CandidateId[];
 /** B-smart (owner): the correction orders A39, A40, A59, all 12 long orders, and 10 short ones - once each. The 10 short: one or two from
  * each coverage group of A01-A50 (A13 has no written bill). */
@@ -132,6 +134,13 @@ console.log(`KB-370 bake-off${canary ? " - CANARY (docs/23 section 8: A01, A61, 
 console.log(`Recordings with a written bill: ${recordings.filter((r) => r.set === "short").length} short (A01-A50, ${[...expectedOf.values()].filter((o) => o.setAside).length} of them the set-aside Whisper-misheard orders), ${longHave} of ${LONG_SLOTS} long (A51-A62); ${audioMin.toFixed(1)} min of audio in all`);
 console.log(`Runs: short orders once, long orders ${longRuns} times. Vocabulary: ${vocabulary.length} terms from eval/real-transcripts.json.`);
 console.log(`NOW:          ${fmt(now)}`);
+if (chosen.includes("E-flash")) {
+  // E-flash alone, per bill: gemini-3.8-flash doubles BOTH rates on 1 Jan 2027 (the pricing page, 30 Oct 2026), so its bill doubles
+  const e = declare(recordings, longRuns, ["E-flash"], pace, est, inrPerUsd);
+  const bills = recordings.reduce((a, r) => a + (r.set === "long" ? longRuns : 1), 0);
+  const perBill = (e.usd / Math.max(1, bills)) * inrPerUsd;
+  console.log(`E-flash per bill (estimate, GST included): today Rs ${perBill.toFixed(2)} (Rs ${(perBill * 3000).toFixed(0)} a month at 100 bills a day); from 1 Jan 2027 Rs ${(perBill * 2).toFixed(2)} (Rs ${(perBill * 6000).toFixed(0)} a month)`);
+}
 if (longHave < LONG_SLOTS && !only) console.log(`WITH A51-A62: ${fmt(projected)}  (the missing long orders estimated at 60 s each)`);
 console.log(`Pace: ${GEMINI_TRANSCRIBE_MODEL} kept within 90% of 10 RPM and 10K TPM (quota.ts), stopping at ${DAILY_STOP} calls a Pacific day (production shares the 100); the others ${pace.otherS} s apart.${Number.isFinite(capInr) ? ` Spend cap: the run stops itself at Rs ${capInr} of logged spend.` : ""}`);
 console.log(`Key: GEMINI_API_KEY_EVAL (treated as sharing production's quota - calls are paced). Layer 2 is called only for pieces Layer 1 cannot read, so its count is a ceiling.`);
@@ -164,6 +173,19 @@ async function transcribeGate(audioSeconds: number): Promise<void> {
   state.count++;
   state.sent = [...state.sent.filter((s) => stamp.getTime() - new Date(s.at).getTime() < 60_000), { at: stamp.toISOString(), tokens }];
   writeFileSync(QUOTA_FILE, JSON.stringify(state, null, 2) + "\n");
+}
+
+if (diagnoseSarvam) {
+  // ONE Sarvam REST call on A01 through the real provider; on a refusal it prints Sarvam's FULL error body (KB-370 round 2)
+  const rec = recordings.find((r) => r.id === "A01")!;
+  if (!process.env.SARVAM_API_KEY) throw new Error("SARVAM_API_KEY not set (.env.local)");
+  try {
+    const r = await createSarvamTranscriptionProvider(process.env.SARVAM_API_KEY).transcribe(new Blob([readFileSync(path.join(AUDIO_DIR, rec.file))], { type: mime(rec.file) }), { language: "hi", vocabulary, audioSeconds: rec.seconds });
+    console.log(`OK in ${(r.latencyMs / 1000).toFixed(1)} s - transcript: "${r.text}"`);
+  } catch (e) {
+    console.log(`REFUSED - ${(e as Error).message}`);
+  }
+  process.exit(0);
 }
 
 if (diagnose) {
@@ -239,7 +261,7 @@ outer: for (const rec of recordings) {
   const blob = () => new Blob([readFileSync(path.join(AUDIO_DIR, rec.file))], { type: mime(rec.file) });
   const runs = rec.set === "long" ? longRuns : 1;
   for (let run = 1; run <= runs; run++) {
-    const answers: Partial<Record<"B" | "C", { transcript: string; items?: ParsedItem[]; seconds: number; usd: number }>> = {};
+    const answers: Partial<Record<"B" | "C" | "E", { transcript: string; items?: ParsedItem[]; seconds: number; usd: number }>> = {};
     for (const candidate of candidatesFor(rec.set).concat("D").filter((c) => chosen.includes(c))) {
       if (candidate === "B-smart" && (!SMART_IDS.has(rec.id) || run > 1)) continue;
       const prior = done.get(`${candidate}|${rec.id}|${run}`);
@@ -258,7 +280,8 @@ outer: for (const rec of recordings) {
       let transcript: string | null = null;
       let actual: ActualBill;
       let error: string | undefined;
-      let thoughts: number | undefined;
+      let thoughts: number | null | undefined;
+      let errorDetail: string | undefined;
       let waits: RunResult["waits"];
       try {
         if (candidate.startsWith("A")) {
@@ -291,7 +314,16 @@ outer: for (const rec of recordings) {
           cost.usd += tokensUsd(model, r.usage);
           cost.ms += r.latencyMs;
           thoughts = r.thoughts;
+          if (candidate === "E-flash") answers.E = { transcript, items: r.items, seconds: r.latencyMs / 1000, usd: cost.usd };
           actual = flagNotHeardByB(checkAudioAnswer(transcript, d102Fill(r.items, shop), shop), bTranscript);
+        } else if (candidate === "E-flash-1ear") {
+          // the same call, one ear: only E-flash's own transcript checks its numbers (no call of its own)
+          const e = answers.E;
+          if (!e) throw new Error("E-flash-1ear needs E-flash's answer for this run (it failed or was not run)");
+          transcript = e.transcript;
+          actual = checkAudioAnswer(e.transcript, d102Fill(e.items!, shop), shop);
+          cost.usd = e.usd;
+          cost.ms = e.seconds * 1000;
         } else if (candidate === "S") {
           const r = await paced(() => sarvam.transcribe(blob(), { language: "hi", vocabulary, audioSeconds: rec.seconds }));
           transcript = r.text;
@@ -321,19 +353,20 @@ outer: for (const rec of recordings) {
           break outer;
         }
         error = e instanceof ProviderError ? `${e.kind}${e.status ? ` ${e.status}` : ""}` : (e as Error).message.slice(0, 160);
+        errorDetail = (e as Error).message; // the provider's own message, saved on every failure (KB-370 round 2: a bare "failed 400" hid Sarvam's reason)
         actual = { lines: [], unresolved: 1, checks: 0 };
       }
       // D runs B and C side by side: its seconds are the slower of the two
       const seconds = candidate === "D" && answers.B && answers.C ? Math.max(answers.B.seconds, answers.C.seconds) : cost.ms / 1000;
       const score = round2 ? scoreRunD102(rec.id, expected, actual, shop) : scoreRun(rec.id, expected, actual, shop);
-      if (candidate !== "D") spentUsd += cost.usd; // D's cost is B's and C's, already counted
-      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(thoughts !== undefined ? { thoughts } : {}), ...(waits ? { waits } : {}), ...(error ? { error } : {}), ...score });
-      console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}` : ""}`);
+      if (candidate !== "D" && candidate !== "E-flash-1ear") spentUsd += cost.usd; // D and E-flash-1ear reuse calls already counted
+      results.push({ candidate, id: rec.id, set: rec.set, run, transcript, seconds, usd: cost.usd, audioSeconds: rec.seconds, ...toSaved(actual), ...(mergeFile ? { rerun: true } : {}), ...(candidate === "C" && answers.C?.items ? { items: answers.C.items } : {}), ...(thoughts !== undefined ? { thoughts } : {}), ...(waits ? { waits } : {}), ...(error ? { error, errorDetail } : {}), ...score });
+      console.log(`${(error ? "ERR" : score.wrongLines ? "WRONG" : score.exact ? "exact" : "inexact").padEnd(7)} ${rec.id} run ${run} ${candidate.padEnd(9)} ${seconds.toFixed(1)} s${error ? `  ${error}: ${errorDetail}` : ""}`);
       for (const w of score.wrong) console.log(`          ! ${w}`);
       if (canary) {
         // docs/23 section 8: the owner sees each candidate's transcript and items side by side before the full run
         console.log(`          heard: "${transcript ?? ""}"`);
-        if (thoughts !== undefined) console.log(`          thinking tokens: ${thoughts}`);
+        if (thoughts !== undefined) console.log(`          thinking tokens: ${thoughts === null ? "ABSENT from the answer (not 0)" : thoughts}`);
         if (waits) console.log(`          Sarvam waits: upload ${(waits.uploadMs / 1000).toFixed(1)} s, queue + processing ${(waits.queueMs / 1000).toFixed(1)} s (${waits.polls} polls), download ${(waits.downloadMs / 1000).toFixed(1)} s`);
         for (const l of toSaved(actual).lines) console.log(`          - ${l.qty ?? "?"} ${l.unit} ${l.name}${l.catalogId ? ` [${shop.byId.get(l.catalogId)?.displayName}]` : " [custom]"} ${l.priceType}${l.rate !== null ? ` rate Rs ${l.rate / 100}` : ""}${l.total !== null ? ` total Rs ${l.total / 100}` : ""}`);
       }

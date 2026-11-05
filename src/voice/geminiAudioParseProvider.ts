@@ -25,7 +25,7 @@ const SCHEMA = { type: "object", properties: { transcript: { type: "string" }, i
 
 export interface GeminiAudioParseProvider {
   readonly name: string;
-  parseAudio(audio: Blob, opts: { catalog: readonly CatalogEntry[] }): Promise<{ transcript: string; items: ParsedItem[]; usage: TokenUsage; latencyMs: number; thoughts: number }>;
+  parseAudio(audio: Blob, opts: { catalog: readonly CatalogEntry[] }): Promise<{ transcript: string; items: ParsedItem[]; usage: TokenUsage; latencyMs: number; thoughts: number | null }>;
 }
 
 /** KB-370 round 2: `systemPrompt` replaces the shipped prompt + addendum (the Ezy-style D102 prompt); `thinkingConfig` is sent as it is. */

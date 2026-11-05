@@ -9464,7 +9464,7 @@
       "silentWrong": 0,
       "wrongNumbers": 0,
       "wrongProducts": 0,
-      "dropped": 4,
+      "dropped": 6,
       "silentDuplicated": 0,
       "warnedDuplicated": 0,
       "invented": 0,
@@ -9556,22 +9556,19 @@
       ],
       "unresolved": 0,
       "rerun": true,
-      "exact": false,
-      "wrongLines": 2,
-      "silentWrong": 2,
-      "wrongNumbers": 2,
+      "exact": true,
+      "wrongLines": 0,
+      "silentWrong": 0,
+      "wrongNumbers": 0,
       "wrongProducts": 0,
       "dropped": 0,
-      "silentDuplicated": 2,
+      "silentDuplicated": 0,
       "warnedDuplicated": 0,
       "invented": 0,
       "numbersRightNameWrong": 0,
       "checks": 0,
       "warnedLines": 0,
-      "wrong": [
-        "an extra line: मूंग दाल - heard \"मूंग दाल\" [NO warning]",
-        "an extra line: चना दाल - heard \"चना दाल\" [NO warning]"
-      ]
+      "wrong": []
     },
     {
       "candidate": "C",
@@ -9743,21 +9740,19 @@
         }
       ],
       "exact": false,
-      "wrongLines": 3,
-      "silentWrong": 2,
-      "wrongNumbers": 3,
+      "wrongLines": 1,
+      "silentWrong": 0,
+      "wrongNumbers": 1,
       "wrongProducts": 0,
       "dropped": 0,
-      "silentDuplicated": 2,
+      "silentDuplicated": 0,
       "warnedDuplicated": 0,
       "invented": 0,
       "numbersRightNameWrong": 0,
       "checks": 1,
       "warnedLines": 1,
       "wrong": [
-        "लाल मिर्च: wrong unit packet (expected kg) - heard \"लाल मिर्ची\" [a Theek hai warned]",
-        "an extra line: मूंग दाल - heard \"मूंग दाल\" [NO warning]",
-        "an extra line: चना दाल - heard \"चना दाल\" [NO warning]"
+        "लाल मिर्च: wrong unit packet (expected kg) - heard \"लाल मिर्ची\" [a Theek hai warned]"
       ]
     },
     {
@@ -9844,21 +9839,19 @@
       "unresolved": 0,
       "rerun": true,
       "exact": false,
-      "wrongLines": 3,
-      "silentWrong": 2,
-      "wrongNumbers": 3,
+      "wrongLines": 1,
+      "silentWrong": 0,
+      "wrongNumbers": 1,
       "wrongProducts": 0,
       "dropped": 0,
-      "silentDuplicated": 2,
+      "silentDuplicated": 0,
       "warnedDuplicated": 0,
       "invented": 0,
       "numbersRightNameWrong": 0,
       "checks": 1,
       "warnedLines": 1,
       "wrong": [
-        "लाल मिर्च: wrong unit packet (expected kg) - heard \"लाल मिर्ची\" [a Theek hai warned]",
-        "an extra line: मूंग दाल - heard \"मूंग दाल\" [NO warning]",
-        "an extra line: चना दाल - heard \"चना दाल\" [NO warning]"
+        "लाल मिर्च: wrong unit packet (expected kg) - heard \"लाल मिर्ची\" [a Theek hai warned]"
       ]
     },
     {

@@ -29,7 +29,7 @@ export interface SarvamTranscriptionProvider {
 async function failed(what: string, r: Response): Promise<ProviderError> {
   const body = await r.text();
   const kind = r.status === 429 ? "busy" : r.status === 401 || r.status === 403 ? "setup" : "failed";
-  return new ProviderError(kind, `Sarvam ${what} failed: ${r.status} ${body.slice(0, 300)}`, r.status);
+  return new ProviderError(kind, `Sarvam ${what} failed: ${r.status} ${body}`, r.status); // the full body: a 400 names the field it refused
 }
 
 export function createSarvamTranscriptionProvider(apiKey: string, options: { pollMs?: number; maxWaitMs?: number } = {}): SarvamTranscriptionProvider {
@@ -47,7 +47,8 @@ export function createSarvamTranscriptionProvider(apiKey: string, options: { pol
     name: SARVAM_MODEL,
     async transcribe(audio, opts) {
       const language = opts.language === "hi" ? "hi-IN" : (opts.language ?? "unknown");
-      const keyterms = (opts.vocabulary ?? []).slice(0, KEYTERMS_MAX);
+      // Sarvam refuses a list with any duplicate ("Keyterms must not contain duplicates.", 5 Nov 2026)
+      const keyterms = [...new Set((opts.vocabulary ?? []).map((t) => t.trim()).filter(Boolean))].slice(0, KEYTERMS_MAX);
       const mime = (audio.type.split(";")[0] ?? "").trim() || "audio/webm";
       const file = `audio.${mime.split("/")[1] ?? "webm"}`;
       const start = performance.now();

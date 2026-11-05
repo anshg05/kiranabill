@@ -42,6 +42,13 @@ function table(rows: RunResult[]): string {
   return [head, ...lines].join("\n");
 }
 
+/** gemini-3.8-flash doubles both rates on 1 Jan 2027 (ai.google.dev/gemini-api/docs/pricing, 30 Oct 2026): E-flash's bill at that price. */
+function flash2027(rows: RunResult[]): string {
+  const e = rows.filter((r) => r.candidate === "E-flash");
+  if (!e.length) return "";
+  const s = summarize(e, meta.inrPerUsd);
+  return `\n**E-flash at the price from 1 Jan 2027** (both gemini-3.8-flash rates double): ${rs(s.inrPerBill * 2)} per bill, ${rs(s.inrPerMonth * 2)} a month at 100 bills a day (today: ${rs(s.inrPerBill)} / ${rs(s.inrPerMonth)}).\n`;
+}
 const short = results.filter((r) => r.set === "short");
 const long = results.filter((r) => r.set === "long");
 const setAside = short.filter((r) => meta.setAside.includes(r.id));
@@ -69,12 +76,13 @@ Seconds = the providers' own call times added up on the PC (end of recording -> 
 
 ## Short orders (A01-A50, once each)
 ${table(short)}
+${flash2027(short)}
 
 ### The ${meta.setAside.length} orders Whisper mis-heard on 30 Oct (set aside from the gate): ${meta.setAside.join(", ")}
 ${table(setAside)}
 
 ## Long orders (A51-A62, ${meta.longRuns} runs each)
-${long.length ? table(long) : "_No long order recorded yet._"}
+${long.length ? `${table(long)}\n${flash2027(long)}` : "_No long order recorded yet._"}
 
 ### Long orders per recording (over the runs)
 ${perRec.length ? `| Recording | Length | Candidate | Exact runs | Best (fewest wrong lines) | Worst | Average | Avg seconds |\n|---|---|---|---|---|---|---|---|\n${perRec.join("\n")}` : "_None yet._"}

@@ -38,7 +38,7 @@ interface GeminiAnswer {
  * KB-370's first run read "" from it.
  * Output tokens = total - prompt: thinking tokens are billed as output (docs/thinking) but are not in candidatesTokenCount.
  */
-export async function answerOf(response: Response): Promise<{ text: string; usage: TokenUsage; thoughts: number }> {
+export async function answerOf(response: Response): Promise<{ text: string; usage: TokenUsage; thoughts: number | null }> {
   const data = (await response.json()) as GeminiAnswer;
   const parts = data.candidates[0]?.content.parts ?? [];
   const text = parts.filter((p) => typeof p.text === "string" && !p.thought).map((p) => p.text).join("");
@@ -47,5 +47,5 @@ export async function answerOf(response: Response): Promise<{ text: string; usag
   const u = data.usageMetadata;
   const prompt = u?.promptTokenCount ?? 0;
   const total = u?.totalTokenCount ?? 0;
-  return { text: text || words, usage: { promptTokens: prompt, completionTokens: Math.max(0, total - prompt), totalTokens: total }, thoughts: u?.thoughtsTokenCount ?? 0 };
+  return { text: text || words, usage: { promptTokens: prompt, completionTokens: Math.max(0, total - prompt), totalTokens: total }, thoughts: typeof u?.thoughtsTokenCount === "number" ? u.thoughtsTokenCount : null }; // null = the field was absent, not 0
 }

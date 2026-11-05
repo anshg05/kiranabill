@@ -135,6 +135,9 @@ checks: 0
 ## A19 long-priceless
 said: � 2 kg उड़त मोगर, एक kg मोंग मोगर, एक kg बरबटी दाल, एक kg चना दाल, एक kg लाल मिर्ची पैकेट �
 # SKIP: Whisper added two items the owner did not say (the first transcription of the same audio was right) - re-record to bring it back
+# OWNER, 5 Nov 2026 (listened to the recording): he DID say "2 kg मूंग दाल" and "2 kg चना दाल" (चना दाल twice: 2 kg first, 1 kg later - two lines, not a duplicate); both were missing from this bill and are added (no price said: shop price).
+- 2 kg मूंग दाल
+- 2 kg चना दाल
 - 2 kg उड़द मोगर
 - 1 kg मूंग मोगर
 - 1 kg बरबटी दाल

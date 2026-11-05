@@ -60,6 +60,11 @@ describe("geminiAudioParseProvider (KB-370 candidate C)", () => {
     expect(r.usage.completionTokens).toBe(60); // thinking billed as output
   });
 
+  it("KB-370 round 2: thinking tokens ABSENT from the answer are null - never mistaken for a real 0", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(answer({ transcript: "x", items: [] }))); // usageMetadata without thoughtsTokenCount
+    expect((await createGeminiAudioParseProvider("k").parseAudio(audio(), { catalog: [chini] })).thoughts).toBeNull();
+  });
+
   it("refuses a '-latest' alias, and a 429 is busy", async () => {
     expect(() => createGeminiAudioParseProvider("k", { model: "gemini-flash-latest" })).toThrow(/pinned/);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => "{}" }));

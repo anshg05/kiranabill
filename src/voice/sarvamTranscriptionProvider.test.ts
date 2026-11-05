@@ -24,6 +24,13 @@ describe("sarvamTranscriptionProvider", () => {
     expect(r.waits).toBeUndefined();
   });
 
+  it("key terms are sent without duplicates - Sarvam refuses a list with any (the canary's 400, 5 Nov 2026)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ transcript: "x" }));
+    vi.stubGlobal("fetch", fetchMock);
+    await createSarvamTranscriptionProvider("k").transcribe(audio(), { audioSeconds: 5, vocabulary: ["Chini", "चीनी", "Chini", " चीनी "] });
+    expect(((fetchMock.mock.calls[0]! as [string, RequestInit])[1].body as FormData).get("keyterms")).toBe(JSON.stringify(["Chini", "चीनी"]));
+  });
+
   it("> 30 s: the batch job - init, upload URL, PUT to storage, start, poll, download - and every wait is timed", async () => {
     const calls: string[] = [];
     let polls = 0;
