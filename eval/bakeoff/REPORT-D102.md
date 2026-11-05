@@ -17,6 +17,11 @@ _Written by hand after the run: which candidate, why, and what it costs - in pla
 - **C** - audio -> gemini-3.5-flash-lite: transcript + items in one call -> the same checks on its transcript
 - **C2** - C with gemini-3.8-flash
 - **D** - hybrid: C's items, a number counts only if B's transcript has it (no extra calls)
+- **B-smart** - round 2: B with gemini-3.5-transcribe's SMART mode (resolves spoken corrections) -> Layer 1 + Layer 2 + checks
+- **E-lite** - round 2, Ezy-style: audio -> gemini-3.5-flash-lite with the D102 prompt (names as said, corrections edit the line) -> checks; every number must also be in B's transcript
+- **E-flash** - round 2, Ezy-style: the same with gemini-3.8-flash at thinking level low - TWO ears: every number must also be in B's saved transcript
+- **E-flash-1ear** - the SAME E-flash answers checked only against E-flash's own transcript - one call per bill, as Ezy probably works (no extra calls)
+- **S** - round 2: Sarvam saaras:v4 (verbatim) as the ear -> Layer 1 + Layer 2 + checks; batch API over 30 s
 
 Models (exact names): groq `whisper-large-v3`, transcribe `gemini-3.5-transcribe`, layer2 `gemini-3.5-flash-lite`, c `gemini-3.5-flash-lite`, c2 `gemini-3.8-flash`. Vocabulary (A+vocab, B): 40 terms from `eval/real-transcripts.json` - Chini, चीनी, Parle-G 10, पारले जी, Chawal, चावल, Sabun, फेना, Chakki Aata, पिसा आटा, Besan, बेसन, Jeera, साबुत जीरा, बरबटी दाल, बरबटी दाल, Surf Excel, सर्फ, Toor Daal, दाल, Moong Daal, मूंग दाल, Kala Chana, काला चना, गेहूं, गेहूं, Moong Mogar, धुली मूंग दाल, Chai Patti, चाय, Maggi, मैगी, Tel (1L), तेल, Masoor Daal, मसूर दाल, Futana, फ़ुटाना, हरा बटाना, हरा बटाना.
 Prices: Gemini: ai.google.dev/gemini-api/docs/pricing (last updated 2026-10-30); Groq: console.groq.com/docs/speech-to-text (read 31 Oct 2026). Rupees at **Rs 95.17 per $** (the last RBI reference rate found when the run was set up; re-run `npm run bakeoff -- --inr-per-usd <today's>` to change it).
@@ -25,22 +30,23 @@ Seconds = the providers' own call times added up on the PC (end of recording -> 
 ## Short orders (A01-A50, once each)
 | Candidate | Orders x runs | Exact | Wrong lines (silent) | Wrong numbers | Wrong products | Dropped | Duplicated silent / warned | Invented | Numbers right, name wrong | Lines with a Theek hai | Errors | Seconds median / p90 / max | Rs per bill | Rs per month (100 bills a day) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **A** | 48 x 1 | 27/48 (56%) | **11** (5) | 10 | 1 | 4 | 0 / 0 | 0 | 11 | 27 | 0 | 2.5 / 4.5 / 5.2 | Rs 0.15 | Rs 439 |
+| **A** | 48 x 1 | 27/48 (56%) | **11** (5) | 10 | 1 | 6 | 0 / 0 | 0 | 11 | 27 | 0 | 2.5 / 4.5 / 5.2 | Rs 0.15 | Rs 439 |
 | **A+vocab (run 1, old scoring - reference only)** | 48 x 1 | 24/48 (50%) | **27** (21) | 16 | 11 | 16 | 2 / 0 | 9 | 3 | 28 | 0 | 2.5 / 4.7 / 6.6 | Rs 0.15 | Rs 464 |
-| **B** | 48 x 1 | 34/48 (71%) | **13** (11) | 11 | 2 | 0 | 2 / 0 | 1 | 1 | 17 | 0 | 2.8 / 4.3 / 5.7 | Rs 0.16 | Rs 492 |
-| **C** | 48 x 1 | 30/48 (63%) | **17** (9) | 15 | 2 | 0 | 2 / 0 | 1 | 1 | 27 | 0 | 3.1 / 4.2 / 4.8 | Rs 0.55 | Rs 1644 |
+| **B** | 48 x 1 | 35/48 (73%) | **11** (9) | 9 | 2 | 0 | 0 / 0 | 1 | 1 | 17 | 0 | 2.8 / 4.3 / 5.7 | Rs 0.16 | Rs 492 |
+| **C** | 48 x 1 | 30/48 (63%) | **15** (7) | 13 | 2 | 0 | 0 / 0 | 1 | 1 | 27 | 0 | 3.1 / 4.2 / 4.8 | Rs 0.55 | Rs 1644 |
 | **C2 (run 1, old scoring - reference only)** | 48 x 1 | 25/48 (52%) | **18** (15) | 4 | 14 | 34 | 1 / 0 | 2 | 0 | 7 | 6 | 13.1 / 27.6 / 42.8 | Rs 1 | Rs 3364 |
-| **D** | 48 x 1 | 31/48 (65%) | **16** (9) | 14 | 2 | 0 | 2 / 0 | 1 | 1 | 30 | 0 | 3.1 / 4.2 / 4.8 | Rs 0.65 | Rs 1935 |
+| **D** | 48 x 1 | 31/48 (65%) | **14** (7) | 12 | 2 | 0 | 0 / 0 | 1 | 1 | 30 | 0 | 3.1 / 4.2 / 4.8 | Rs 0.65 | Rs 1935 |
+
 
 ### The 7 orders Whisper mis-heard on 30 Oct (set aside from the gate): A19, A27, A32, A33, A34, A35, A39
 | Candidate | Orders x runs | Exact | Wrong lines (silent) | Wrong numbers | Wrong products | Dropped | Duplicated silent / warned | Invented | Numbers right, name wrong | Lines with a Theek hai | Errors | Seconds median / p90 / max | Rs per bill | Rs per month (100 bills a day) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **A** | 7 x 1 | 1/7 (14%) | **6** (2) | 5 | 1 | 4 | 0 / 0 | 0 | 3 | 17 | 0 | 4.6 / 5.2 / 5.2 | Rs 0.25 | Rs 736 |
+| **A** | 7 x 1 | 1/7 (14%) | **6** (2) | 5 | 1 | 6 | 0 / 0 | 0 | 3 | 17 | 0 | 4.6 / 5.2 / 5.2 | Rs 0.25 | Rs 736 |
 | **A+vocab (run 1, old scoring - reference only)** | 7 x 1 | 0/7 (0%) | **7** (4) | 3 | 4 | 9 | 1 / 0 | 3 | 1 | 13 | 0 | 4.4 / 5.6 / 5.6 | Rs 0.24 | Rs 729 |
-| **B** | 7 x 1 | 2/7 (29%) | **5** (4) | 5 | 0 | 0 | 2 / 0 | 1 | 0 | 11 | 0 | 4.0 / 5.7 / 5.7 | Rs 0.27 | Rs 815 |
-| **C** | 7 x 1 | 2/7 (29%) | **8** (5) | 8 | 0 | 0 | 2 / 0 | 1 | 0 | 10 | 0 | 3.9 / 4.4 / 4.4 | Rs 0.60 | Rs 1792 |
+| **B** | 7 x 1 | 3/7 (43%) | **3** (2) | 3 | 0 | 0 | 0 / 0 | 1 | 0 | 11 | 0 | 4.0 / 5.7 / 5.7 | Rs 0.27 | Rs 815 |
+| **C** | 7 x 1 | 2/7 (29%) | **6** (3) | 6 | 0 | 0 | 0 / 0 | 1 | 0 | 10 | 0 | 3.9 / 4.4 / 4.4 | Rs 0.60 | Rs 1792 |
 | **C2 (run 1, old scoring - reference only)** | 7 x 1 | 1/7 (14%) | **7** (7) | 3 | 4 | 17 | 1 / 0 | 2 | 0 | 0 | 2 | 24.7 / 42.8 / 42.8 | Rs 0.96 | Rs 2868 |
-| **D** | 7 x 1 | 2/7 (29%) | **8** (5) | 8 | 0 | 0 | 2 / 0 | 1 | 0 | 11 | 0 | 3.9 / 4.4 / 4.4 | Rs 0.75 | Rs 2248 |
+| **D** | 7 x 1 | 2/7 (29%) | **6** (3) | 6 | 0 | 0 | 0 / 0 | 1 | 0 | 11 | 0 | 3.9 / 4.4 / 4.4 | Rs 0.75 | Rs 2248 |
 
 ## Long orders (A51-A62, 3 runs each)
 | Candidate | Orders x runs | Exact | Wrong lines (silent) | Wrong numbers | Wrong products | Dropped | Duplicated silent / warned | Invented | Numbers right, name wrong | Lines with a Theek hai | Errors | Seconds median / p90 / max | Rs per bill | Rs per month (100 bills a day) |
@@ -52,6 +58,7 @@ Seconds = the providers' own call times added up on the PC (end of recording -> 
 | **C** | 12 x 3 | 17/36 (47%) | **12** (3) | 12 | 0 | 0 | 1 / 4 | 0 | 17 | 90 | 0 | 3.8 / 5.4 / 6.5 | Rs 0.66 | Rs 1978 |
 | **C2 (run 1, old scoring - reference only)** | 12 x 3 | 12/36 (33%) | **8** (6) | 2 | 6 | 68 | 0 / 0 | 0 | 0 | 79 | 7 | 20.2 / 35.9 / 43.9 | Rs 1 | Rs 3482 |
 | **D** | 12 x 3 | 18/36 (50%) | **9** (8) | 9 | 0 | 0 | 1 / 4 | 0 | 18 | 62 | 0 | 3.8 / 5.4 / 6.5 | Rs 0.93 | Rs 2800 |
+
 
 ### Long orders per recording (over the runs)
 | Recording | Length | Candidate | Exact runs | Best (fewest wrong lines) | Worst | Average | Avg seconds |
@@ -302,14 +309,8 @@ Seconds = the providers' own call times added up on the PC (end of recording -> 
 | A15 | 15.1 s | C | 1 | फली दाने: a price from another product (Moongfali) - heard "फल्ली दाने" [a Theek hai warned] | दो किलो चीनी दो किलो गुड़ एक किलो [फल्ली] दाने एक किलो चना एक किलो मैदा |
 | A15 | 15.1 s | D | 1 | फली दाने: a price from another product (Moongfali) - heard "फल्ली दाने" [a Theek hai warned] | 2 किलो चीनी, 2 किलो गुड़, 1 किलो [फल्ली] दाने, 1 किलो चना, 1 किलो मैदा। |
 | A17 | 14.9 s | B | 1 | डेटॉल सेट: wrong total 18500 (expected 12500) - heard "एक डेटॉल सेट" [NO warning] | [एक] डेटॉल सेट ₹185 एक संतूर सेट ₹40 एक … |
-| A19 | 16.4 s | B | 1 | an extra line: मूंग दाल - heard "मूंग दाल" [NO warning] | 2 किलो [मूंग] दाल, 2 किलो चना दाल, 2 किलो उड़द … |
-| A19 | 16.4 s | B | 1 | an extra line: चना दाल - heard "चना दाल" [NO warning] | 2 किलो मूंग दाल, 2 किलो [चना] दाल, 2 किलो उड़द मोगर, 1 किलो मूंग … |
 | A19 | 16.4 s | C | 1 | लाल मिर्च: wrong unit packet (expected kg) - heard "लाल मिर्ची" [a Theek hai warned] | … बरबटी दाल एक किलो चना दाल एक किलो [लाल] मिर्ची पैकेट |
-| A19 | 16.4 s | C | 1 | an extra line: मूंग दाल - heard "मूंग दाल" [NO warning] | दो किलो [मूंग] दाल दो किलो चना दाल दो किलो उड़द … |
-| A19 | 16.4 s | C | 1 | an extra line: चना दाल - heard "चना दाल" [NO warning] | दो किलो मूंग दाल दो किलो [चना] दाल दो किलो उड़द मुगर एक किलो मूंग … |
 | A19 | 16.4 s | D | 1 | लाल मिर्च: wrong unit packet (expected kg) - heard "लाल मिर्ची" [a Theek hai warned] | … बरबटी दाल, 1 किलो चना दाल, 1 किलो [लाल] मिर्ची पैकेट। |
-| A19 | 16.4 s | D | 1 | an extra line: मूंग दाल - heard "मूंग दाल" [NO warning] | 2 किलो [मूंग] दाल, 2 किलो चना दाल, 2 किलो उड़द … |
-| A19 | 16.4 s | D | 1 | an extra line: चना दाल - heard "चना दाल" [NO warning] | 2 किलो मूंग दाल, 2 किलो [चना] दाल, 2 किलो उड़द मोगर, 1 किलो मूंग … |
 | A20 | 20.8 s | A | 1 | गरम मसाला: wrong unit packet (expected kg) - heard "गर्म मसाला" [NO warning] | 1 किलो [गर्म] मसाला पैकेट, 1 किलो धनिया मसाला पैकेट, 1 … |
 | A20 | 20.8 s | A | 1 | खड़ी हल्दी: a price from another product (हल्दी गाठ) - heard "खड़ी हल्दी" [a Theek hai warned] | … मसाला पैकेट, 1 किलो हल्दी पैकेट, 1 किलो [खड़ी] हल्दी, 1 किलो दाने, 1 किलो चावल, 1 … |
 | A20 | 20.8 s | B | 1 | गरम मसाला: a price from another product (Dhaniya Powder) - heard "धनिया मसाला" [NO warning] | 1 किलो गरम मसाला पैकेट, 1 किलो [धनिया] मसाला पैकेट, 1 किलो हल्दी पैकेट, 1 किलो … |

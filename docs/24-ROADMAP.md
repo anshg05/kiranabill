@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 5 Nov 2026 (rev 11) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 5 Nov 2026 (rev 12) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -21,7 +21,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **done** 4 Nov 2026 - `eval/bakeoff/REPORT.md`: B best (exact 73% short, 58% long; A 56% / 11%), no candidate at 0 wrong lines; B in production is capped by 100 transcribe requests a day on Tier 1 **Note (4 Nov 2026): on short orders B still had 7 wrong numbers - B is the best ear tested, not a solved one.** |
+| V1 | `KB-370` | **Bake-off (a report only; no app change)** - see below. Folds in `KB-369`. | yes | **done** 4 Nov 2026 - `eval/bakeoff/REPORT.md`: B best (exact 73% short, 58% long; A 56% / 11%), no candidate at 0 wrong lines; B in production is capped by 100 transcribe requests a day on Tier 1 **Note (4 Nov 2026): on short orders B still had 7 wrong numbers - B is the best ear tested, not a solved one.** **Round 2 done 5 Nov 2026** (`eval/bakeoff/REPORT-ROUND2.md`, D102 scoring): E-flash (audio -> gemini-3.8-flash, D102 prompt) the only one that applies spoken corrections, 6 wrong lines on long orders (all A61's "set" unit) but about 3 Theek hai per long order; Sarvam cheapest, fewest wrong on short orders, batch wait about 5 s; B still best exact rate (73% / 64%). No candidate at 0 wrong lines. |
 | V2 | `KB-371` | **Owner picks** from the report. | Owner | **OPEN** - the owner is doing his own outside research before choosing (started 4 Nov 2026); see the open questions below |
 | V3 | `KB-372` | **Build the winner behind a setting, Whisper kept as the fallback.** Long orders (30-90 s) must work: no restart, no duplicated lines. **Built TOGETHER with `KB-378`** (the new recording flow, D101). | yes | todo |
 | V3a | `KB-378` | **Record-review-generate flow** (owner, Nov 2026, D101 - the Ezy Parchi style): tap to record -> a timer -> Pause / Resume (paused time is NOT recorded) -> Stop -> optional playback -> Re-record or Generate bill -> a processing screen -> the full bill with the usual checks; "add more by voice" inside a bill uses the same flow and APPENDS lines; maximum length 5 min (owner to confirm). Why: today's push-to-talk has no pause (side conversations get billed) and no review step (a bad take goes straight into the bill); the owner's head-to-head with Ezy Parchi. **Safety rules unchanged** (only spoken numbers, one warning per line, Price needed, never a question mid-bill). Built with `KB-372`. | yes (the voice path and the draft) | todo |
