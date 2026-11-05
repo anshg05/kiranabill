@@ -117,9 +117,10 @@ checks: 0
 ## A17 long-priced
 said: एक डेटॉल सेट 125 सी रुपए, एक संतूर सेट 40 रुपए, एक संतूर हैंडवर्स सेट 105 रुपए, एक हार पिक 100 रुपए, एक लाइजॉल 110 रुपए,
 # OWNER, 5 Nov 2026 (listened to the recording): he said 185, not 125 (every ear heard 185).
-- 1 piece डेटॉल सेट =185
-- 1 piece संतूर सेट =40
-- 1 piece संतूर हैंडवॉश सेट =105
+# D103 / D104 (owner, 6 Nov 2026): "एक डेटॉल सेट" = 1 set - "सेट" alone is the unit (the same for the other two "सेट" lines).
+- 1 set डेटॉल सेट =185
+- 1 set संतूर सेट =40
+- 1 set संतूर हैंडवॉश सेट =105
 - 1 piece हार्पिक =100
 - 1 piece लाइज़ॉल =110
 checks: 0

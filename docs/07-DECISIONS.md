@@ -2299,6 +2299,24 @@ order by suspect nulls last, b.finalized_at desc;
 4. **Why:** the round-2 offline analysis (`REPORT-ROUND2.md`). Under the unit rule, E-flash has 0 wrong lines on long orders. E-flash merged A39's and A40's repeats, losing lines. Every line total is our arithmetic, but a mis-labelled rate unit still makes our arithmetic 1,000x wrong.
 5. **Not approved (recorded): "ear + brain"** (a saved B or Sarvam transcript sent as text to gemini-3.8-flash with the D102 prompt). It costs more than E-flash, it is slower, and B keeps its 100-a-day cap.
 
+### D104 — V2 decided: production voice = "nocat-D103", Sarvam as the backup; the bake-off is over (owner, 6 Nov 2026) 🟢
+
+1. **The production voice approach is "nocat-D103"** (`KB-371`):
+   - The audio goes to `gemini-3.8-flash` (thinking level low) with the D102 / D103 prompt and **no catalog in the prompt**. One call per bill.
+   - **Our code** fills a price that was not said: one clear catalog match, else Price needed (D102).
+   - **Our code** computes every line total and the grand total. The AI's arithmetic is never billed.
+2. **The backup, when Gemini fails or is rate-limited:** Sarvam `saaras:v4` -> our reader (Layer 1) + the checks.
+3. **Whisper (Groq) and B (`gemini-3.5-transcribe`) are not the production ear.**
+4. **Why** (`eval/bakeoff/REPORT-ROUND2.md`, `REPORT-NOCAT.md`):
+   - spoken corrections are handled;
+   - names and units are billed as said;
+   - it costs about Rs 0.18 - 0.34 a bill with GST (this doubles on 1 Jan 2027);
+   - there is no 100-a-day cap;
+   - it never took a price from a wrong product.
+5. **No more bake-off rounds.** The 60 recordings (A01 - A62 with a written bill) become V3's **permanent regression set**.
+6. **The sheet's A17:** "एक डेटॉल सेट" = 1 set (D103). Its other two "सेट" lines were changed the same way.
+7. **Next is V3** (`KB-372` + `KB-378` + `KB-367`). Its design is `docs/25-V3-VOICE-DESIGN.md`: PLAN first, docs only.
+
 ---
 
 ## Superseded
