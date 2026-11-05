@@ -75,7 +75,8 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
   - `layer2_disagrees` / `number_unconsumed` when Layer 1 cuts the pieces differently from the AI (A57);
   - `unusual_rate` against the price of a catalog product the as-said name happens to claim (A34);
   - `duplicate_line` when two different as-said names claim one catalog product (A40).
-- **Suspected:** `KB-359`'s quantity drop strips a correct quantity when Layer 1 puts the number in the next piece (A57 "रिन साबुन 10 वाली 5 पीस", A42 "दंतकांति 60 वाला"). This was shown by simulation only; E-flash's raw answer was not saved.
+- **PROVEN (6 Nov 2026, raw answers saved - `REPORT-NOCAT.md`):** `KB-359`'s quantity drop strips a quantity the AI DID say when Layer 1 puts the number in the next piece (A57 "रिन साबुन 10 वाली 5 पीस": the AI said 5 in all 9 runs, the bill kept it only when the transcript had a comma; A42 "दंतकांति 60 वाला": E-flash said 1). On an AI answer it must not trust Layer 1's cut.
+- **A no-catalog prompt must keep units to the listed ones** (A60: "1 बड़ा हार्पिक", "1 बोतल फिनाइल" - size words used as units; the money right).
 - **The E-flash D102 prompt's rule 3 ("1 किलो पैकेट" = 1 packet) contradicts D103** (the unit next to the number wins: 1 kg). Whatever prompt V3 ships must follow D103.
 - **A line with a packet unit for a product priced per kg** shows a Theek hai (`missing_total`) where it should show Price needed (A19).
 
