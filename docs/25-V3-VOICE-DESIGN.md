@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 3) · **Status:** Design - approved by the owner (7 Nov 2026, with his review fixes); nothing in it is built yet.
+**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 4) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. `KB-379` is being built.
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -10,6 +10,9 @@
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
 - rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
+- rev 4 (7 Nov 2026, owner: the V3 plan approved):
+  - §12: the owner's voice only (a known risk);
+  - §5 and `KB-384`: real orders are 3-4 minutes at most.
 **Source of truth for:** HOW V3 (`KB-372` + `KB-378` + `KB-367`) is built, and the finish line of each V3 ticket (`KB-379` - `KB-387`).
 - The decisions behind it: `07` D101 - D105.
 - The measurements: `eval/bakeoff/REPORT-ROUND2.md` and `REPORT-NOCAT.md`.
@@ -108,7 +111,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 4. A processing screen -> the full bill, with the usual checks.
 
 - **"Add more by voice"** inside a bill uses the same flow and APPENDS lines.
-- **Maximum length: 5 minutes** (D105 item 6). The timer shows it, and the recording stops itself at 5:00.
+- **Maximum length: 5 minutes** (D105 item 6). The timer shows it, and the recording stops itself at 5:00. **Real orders are at most 3-4 minutes** (owner, 7 Nov 2026). The 5-minute cap stays as the stop limit, and `KB-384` tests a 3-4 minute recording.
 - **Never a question mid-bill.** Typing (Add by hand, the type-ahead) stays available on every screen.
 
 ## 6. Reliability: the recording, Retry, offline, one recording = one bill (`KB-384`, `KB-385`)
@@ -192,6 +195,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 
 - **The set:** the 60 recordings with a written bill (A01 - A62 less A13 and A41), plus **A41** once `KB-383` handles "हटा दो" = 61. Short orders run once and long orders 3 times: 85 runs.
 - **Scored by** D102 + D103 against `eval/acceptance/sheet.txt`.
+- **Whose voice** (owner, 7 Nov 2026): **the owner's voice only.** He does the live tests on request. **The pilot is the first test of other voices** - a known risk, accepted by the owner.
 - **Two ways to run it:**
   - **Offline replay (free, `KB-379`):** the saved raw answers (`items` and `transcript` in the results files) go through the CURRENT code - fill, checks, totals - and are scored. Every code ticket is measured this way.
   - **Live run:** about Rs 18 at list price (Rs 21 with GST) for 85 calls. Only when the prompt changes (`KB-383`), and before the release (`KB-387`). The canary first: A01, A61, A62 (`23` §8).
@@ -204,7 +208,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 | `KB-381` | §3.2 (the quantity check on an AI answer), §2 item 5's implied-1 rules in our code, the "पौने 2" reader bug | A57 keeps both 5s in every run, comma or not; A42 = 1 piece; A49 has no quantity; A56 run 3 is exact; `bench:numbers` 0 wrong | yes |
 | `KB-382` | Both A38 fixes (§3.3, §4 fix b) | A38 is exact; a 100x line cannot reach Bill Banao even after a Theek hai (tested in `canFinalize` and `buildFinalBill`) | yes |
 | `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; **no line shows Price needed only because of the script** (§11); no new wrong line | yes |
-| `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A 5-minute recording works end to end; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders; **`public/privacy.html` (English and Hindi) is updated in the SAME release, before any recording is stored (§15)** | yes |
+| `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A **3-4 minute** recording (the longest real order, owner 7 Nov 2026) works end to end and the function's time is measured on it; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders; **`public/privacy.html` (English and Hindi) is updated in the SAME release, before any recording is stored (§15)** | yes |
 | `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, **recording at 24 kbps (§9)**, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
 | `KB-386` | VERIFY 24 kbps on fresh recordings (§9; the setting itself is built in `KB-385`) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
 | `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines; at least 90% exact on short orders AND at least 90% on long orders, each separately**, live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |

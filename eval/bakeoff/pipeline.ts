@@ -72,6 +72,14 @@ export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalo
 }
 
 /**
+ * KB-379 (D104, doc 25 §12): the Gemini path's bill from the model's raw answer - our price fill, then the checks and the totals. ONE function
+ * for the live run (run.ts) and the offline replay (replay.ts), so a code change is measured exactly as the live run would bill it.
+ */
+export function nocatBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): ActualBill {
+  return checkAudioAnswer(transcript, fillFromCatalog(items, shop), shop);
+}
+
+/**
  * KB-370 round 2: two independent ears must agree. A line whose quantity, rate or total B's transcript of the SAME recording does not have
  * (the 1 of a per-kilo price excepted, as in hybridItems) gets a Theek hai - the line is kept, never changed (hard rule 7).
  */

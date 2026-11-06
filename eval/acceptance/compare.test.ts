@@ -14,6 +14,19 @@ const exp = (lines: ExpectedLine[], over: Partial<ExpectedBill> = {}): ExpectedB
 const line = (name: string, qty: number | null, unit: string, price: ExpectedLine["price"]): ExpectedLine => ({ name, qty, unit, price });
 const run = (e: ExpectedBill, a: ActualBill) => compareOrder("A01", e, a, SEED_PARSER_CATALOG);
 
+describe("KB-379 / KB-373: the gate's product hole (found by the KB-370 canary, 1 Nov 2026)", () => {
+  it("the owner's WORDS on a line that claims ANOTHER catalog product are a wrong product, not a right line (रिन साबुन on Lifebuoy's id)", () => {
+    const rin = { spokenName: "रिन साबुन", catalogId: "162", isCustom: false, matchStatus: "matched", qty: 1, unit: "piece", rate: null, rateUnit: null, total: 10500, priceType: "total" } as const;
+    const v = compareOrder("A61", exp([line("रिन साबुन", 1, "piece", { kind: "total", paise: 10500 })]), { lines: [{ item: rin, displayName: SEED_PARSER_CATALOG.byId.get("162")!.displayName }], unresolved: 0, checks: 0 }, SEED_PARSER_CATALOG);
+    expect(v.exact).toBe(false);
+    expect(v.wrong.join(" ")).toContain("wrong product");
+  });
+
+  it("a line claiming the product the owner's name resolves to stays right (शक्कर on Chini's id)", () => {
+    expect(run(exp([line("शक्कर", 2, "kg", { kind: "default" })]), bill([chini({ spokenName: "शक्कर" })])).exact).toBe(true);
+  });
+});
+
 describe("a line that is exactly what was expected", () => {
   it("default price: the shop's own price", () => {
     expect(run(exp([line("चीनी", 2, "kg", { kind: "default" })]), bill([chini()])).exact).toBe(true);

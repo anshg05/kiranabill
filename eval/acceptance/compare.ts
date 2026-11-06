@@ -3,6 +3,11 @@ import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
 import { matchProductName, type ParsedItem } from "../../src/domain/grammar.js";
 import { lineTotalPaise } from "../../src/domain/money.js";
 import type { ReviewFlag } from "../../src/domain/reviewFlags.js";
+import { flagWeakProducts } from "../../src/domain/weakProduct.js";
+import { scoringCatalog } from "./spellings.js";
+
+const spellingsCache = new WeakMap<ParserCatalog, ParserCatalog>();
+const spellingsOf = (shop: ParserCatalog) => spellingsCache.get(shop) ?? (spellingsCache.set(shop, scoringCatalog(shop)), spellingsCache.get(shop)!);
 import type { ExpectedBill, ExpectedLine } from "./types.js";
 
 // KB-364: the owner's expected bill against what the app produced (docs/23-ACCEPTANCE.md).
@@ -82,9 +87,14 @@ export type Verdict = { wrong: string } | { inexact: string } | "ok";
 /** Is this heard line the product the owner wrote? ok = yes; inexact = cannot tell (his spelling is not in the catalog); wrong = it is another product. */
 function productOf(exp: ExpectedLine, line: { item: ParsedItem; displayName: string }, shop: ParserCatalog): Verdict {
   const act = line.item;
-  const m = matchProductName(exp.name, shop);
+  // the owner's name is resolved with his reviewed spellings (spellings.ts), so "रिन साबुन" is Rin, not unknown
+  const m = matchProductName(exp.name, spellingsOf(shop));
   if (m.catalogId && act.catalogId === m.catalogId) return "ok";
-  if (sameName(exp.name, act.spokenName) || sameName(exp.name, line.displayName)) return "ok";
+  // KB-379 / KB-373 (the KB-370 canary's hole, 1 Nov 2026): his name resolves to product X, the line claims ANOTHER product Y with his
+  // WORDS (रिन साबुन on Lifebuoy's id) - the bill shows Y, so it is a wrong product. Y is not "another" when its own names explain his
+  // name (KB-368's rule: a generic "तेल" on a specific oil). A name nothing resolves stays lenient (KB-364).
+  const claimsOther = m.catalogId !== null && act.catalogId !== null && flagWeakProducts([{ ...act, spokenName: exp.name }], spellingsOf(shop).entries).length > 0;
+  if (!claimsOther && (sameName(exp.name, act.spokenName) || sameName(exp.name, line.displayName))) return "ok";
   // the owner's name is not in the catalog and the app shows the heard words on a custom line: it claims no product - if the heard words still
   // resemble what he said (at least half of them close) that is the same item, spelled the way Whisper heard it
   if (!m.catalogId && act.catalogId === null && mostlySame(exp.name, act.spokenName)) return "ok";

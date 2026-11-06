@@ -34,7 +34,7 @@ import { runOrder } from "../acceptance/run.js";
 import { parseSheet } from "../acceptance/sheet.js";
 import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
-import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems } from "./pipeline.js";
+import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems, nocatBill } from "./pipeline.js";
 import { scoreRunD102 } from "./d102.js";
 import { EZY_D102_NOCAT_PROMPT, EZY_D102_PROMPT, EZY_D103_NOCAT_PROMPT } from "./ezyPrompt.js";
 import { createSarvamTranscriptionProvider } from "../../src/voice/sarvamTranscriptionProvider.js";
@@ -344,7 +344,7 @@ outer: for (const rec of recordings) {
           thoughts = r.thoughts;
           rawItems = r.items;
           usage = r.usage;
-          actual = checkAudioAnswer(transcript, fillFromCatalog(r.items, shop), shop);
+          actual = nocatBill(transcript, r.items, shop);
         } else if (candidate === "S") {
           const r = await paced(() => sarvam.transcribe(blob(), { language: "hi", vocabulary, audioSeconds: rec.seconds }));
           transcript = r.text;
