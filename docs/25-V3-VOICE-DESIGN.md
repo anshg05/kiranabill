@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 2) · **Status:** Design - approved by the owner (7 Nov 2026, with his review fixes); nothing in it is built yet.
+**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 3) · **Status:** Design - approved by the owner (7 Nov 2026, with his review fixes); nothing in it is built yet.
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -9,6 +9,7 @@
   - the finish line is at least 90% exact on short AND on long orders, each separately;
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
+- rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
 **Source of truth for:** HOW V3 (`KB-372` + `KB-378` + `KB-367`) is built, and the finish line of each V3 ticket (`KB-379` - `KB-387`).
 - The decisions behind it: `07` D101 - D105.
 - The measurements: `eval/bakeoff/REPORT-ROUND2.md` and `REPORT-NOCAT.md`.
@@ -175,6 +176,13 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **Every bill line's name is shown in Devanagari, as said.** Brands are written as they sound (रिन, लाइज़ॉल, फेयर एंड लवली).
 - **On the Gemini path the prompt does it** (§2 item 4). The regression set checks it: 0 Latin-script names.
 - **On the Sarvam path:** Sarvam writes Devanagari for Hindi. A Latin word it returns is kept as said and counted in `KB-384`.
+- **The price fill across scripts - an OPEN design item** (owner, 7 Nov 2026):
+  - **The problem:** with every name in Devanagari, `fillFromCatalog` (§3.1) must match a Devanagari brand name to the catalog's Latin name, or the shop's price never fills. For example, लाइज़ॉल must match "Lizol". Today `matchProductName` finds "Lizol" and "लाइजोल" (an alias) but not "लाइज़ॉल" (checked 7 Nov 2026).
+  - **Two parts, to be designed in `KB-383`'s PLAN:**
+    - (a) transliteration-aware matching in `fillFromCatalog`;
+    - (b) Devanagari aliases for the brands in the seed catalog and the shop's catalog.
+  - **The D102 rule stays:** one clear match fills the price, and several or none = Price needed.
+  - **The finish line (`KB-383`):** on the regression set, no line shows Price needed only because of the script.
 - **D102's affected parts** (D102 item 6), designed here:
   - **`KB-368`'s weak-match badge** only applies where our code filled a price from the catalog. A weak name match that fills a price still gets the badge.
   - **The learning engine** keeps learning an alias when the shopkeeper picks a product for a Price-needed line - from finalised bills only (hard rule 8), per shop (rule 12).
@@ -195,7 +203,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 | `KB-380` | §4's six check adaptations | Theek hai lines on long orders fall from 103 with no real warning lost: A38, A39, A40, A54 and A19 (Price needed) still flag | yes |
 | `KB-381` | §3.2 (the quantity check on an AI answer), §2 item 5's implied-1 rules in our code, the "पौने 2" reader bug | A57 keeps both 5s in every run, comma or not; A42 = 1 piece; A49 has no quantity; A56 run 3 is exact; `bench:numbers` 0 wrong | yes |
 | `KB-382` | Both A38 fixes (§3.3, §4 fix b) | A38 is exact; a 100x line cannot reach Bill Banao even after a Theek hai (tested in `canFinalize` and `buildFinalBill`) | yes |
-| `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; no new wrong line | yes |
+| `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; **no line shows Price needed only because of the script** (§11); no new wrong line | yes |
 | `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A 5-minute recording works end to end; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders; **`public/privacy.html` (English and Hindi) is updated in the SAME release, before any recording is stored (§15)** | yes |
 | `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, **recording at 24 kbps (§9)**, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
 | `KB-386` | VERIFY 24 kbps on fresh recordings (§9; the setting itself is built in `KB-385`) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
@@ -217,6 +225,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 
 - **The Gemini time limit inside `/voice`, and the Netlify function's own limit:** measured in `KB-384` (D105 item 5). nocat-D103 measured a 5.8 s median and 7.9 s p90 on long orders, but no 5-minute order was measured.
 - **How the Sarvam path warns when it cannot apply a spoken correction:** designed in `KB-384`'s PLAN, measured by its finish line.
+- **The price fill across scripts** (transliteration-aware matching and Devanagari brand aliases): designed in `KB-383`'s PLAN (§11).
 
 ## 15. Privacy (owner, 7 Nov 2026; D91)
 
