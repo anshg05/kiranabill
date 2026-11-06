@@ -1,6 +1,14 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Status:** Design - approved as a PLAN by the owner (7 Nov 2026); nothing in it is built yet.
+**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 2) · **Status:** Design - approved by the owner (7 Nov 2026, with his review fixes); nothing in it is built yet.
+
+**Changes:**
+- rev 1 (7 Nov 2026): first version (D105).
+- rev 2 (7 Nov 2026, the owner's review):
+  - §15 privacy;
+  - the finish line is at least 90% exact on short AND on long orders, each separately;
+  - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
+  - the storage note.
 **Source of truth for:** HOW V3 (`KB-372` + `KB-378` + `KB-367`) is built, and the finish line of each V3 ticket (`KB-379` - `KB-387`).
 - The decisions behind it: `07` D101 - D105.
 - The measurements: `eval/bakeoff/REPORT-ROUND2.md` and `REPORT-NOCAT.md`.
@@ -140,9 +148,11 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 | Gemini and Sarvam both failed, or a timeout | "Couldn't read the order" | Retry (same recording) / Add by hand |
 | Nothing understood (0 lines) | The transcript, "No items found" | Re-record / Add by hand |
 
-## 9. The recording bitrate (`KB-386`)
+## 9. The recording bitrate (built in `KB-385`, verified in `KB-386`)
 
 - **Target:** about 24 kbps Opus (`MediaRecorder` `audioBitsPerSecond: 24000`). A 5-minute order is then about 0.9 MB.
+- **Built into the recorder in `KB-385`.** `KB-386` only VERIFIES the accuracy on fresh recordings; it does not set the bitrate.
+- **Why it matters for storage** (owner, 7 Nov 2026): Supabase's free tier holds 1 GB. Seven days of recordings at 100 bills a day is about 0.5 GB at 126 kbps and about 0.1 GB at 24 kbps. Both figures assume about 45 s per recording on average; the acceptance set averages 12 s short and 36 s long.
 - **Today:** about 126 kbps (A61: 1,198 KB for 76 s).
 - **Verified on FRESH recordings from the owner's phone:**
   - the real bytes per second (a browser may ignore the hint - iOS records mp4);
@@ -157,6 +167,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
   - A long bill uses about 2,500 - 3,600 tokens (A61: 3,542).
   - The daily 10,000 is shared with eval runs. A live regression run takes 84.
 - **The per-shop limit stays:** 300 `/voice` requests an hour.
+- **Storage:** Supabase's free tier holds 1 GB. Recordings take about 0.1 GB at 24 kbps and 100 bills a day for 7 days (§9). The measured size is reported in `KB-384` and `KB-386`.
 - **A Google billing budget alarm** is a manual step for the owner (§13).
 
 ## 11. Names: one script (D102, D105 item 3)
@@ -176,7 +187,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **Two ways to run it:**
   - **Offline replay (free, `KB-379`):** the saved raw answers (`items` and `transcript` in the results files) go through the CURRENT code - fill, checks, totals - and are scored. Every code ticket is measured this way.
   - **Live run:** about Rs 18 at list price (Rs 21 with GST) for 85 calls. Only when the prompt changes (`KB-383`), and before the release (`KB-387`). The canary first: A01, A61, A62 (`23` §8).
-- **The V3 finish line:** **0 silent wrong lines and at least 90% of the runs exact**, short and long reported separately. It is measured after the false-alarm checks are fixed.
+- **The V3 finish line:** **0 silent wrong lines, at least 90% exact on SHORT orders AND at least 90% exact on LONG orders, each separately** (owner, 7 Nov 2026). A combined figure could hide the long orders, which are where we failed. It is measured after the false-alarm checks are fixed.
 
 | Ticket | What | Finish line (on the regression set) | D33 |
 |---|---|---|---|
@@ -185,10 +196,10 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 | `KB-381` | §3.2 (the quantity check on an AI answer), §2 item 5's implied-1 rules in our code, the "पौने 2" reader bug | A57 keeps both 5s in every run, comma or not; A42 = 1 piece; A49 has no quantity; A56 run 3 is exact; `bench:numbers` 0 wrong | yes |
 | `KB-382` | Both A38 fixes (§3.3, §4 fix b) | A38 is exact; a 100x line cannot reach Bill Banao even after a Theek hai (tested in `canFinalize` and `buildFinalBill`) | yes |
 | `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; no new wrong line | yes |
-| `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A 5-minute recording works end to end; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders | yes |
-| `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
-| `KB-386` | 24 kbps (§9) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
-| `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines, at least 90% exact** live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |
+| `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A 5-minute recording works end to end; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders; **`public/privacy.html` (English and Hindi) is updated in the SAME release, before any recording is stored (§15)** | yes |
+| `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, **recording at 24 kbps (§9)**, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
+| `KB-386` | VERIFY 24 kbps on fresh recordings (§9; the setting itself is built in `KB-385`) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
+| `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines; at least 90% exact on short orders AND at least 90% on long orders, each separately**, live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |
 
 **The order:** `KB-379` -> `KB-380`, `KB-381`, `KB-382` (offline, each measured by the replay) -> `KB-383` (live) -> `KB-384` -> `KB-385` -> `KB-386` -> `KB-387`.
 
@@ -206,3 +217,23 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 
 - **The Gemini time limit inside `/voice`, and the Netlify function's own limit:** measured in `KB-384` (D105 item 5). nocat-D103 measured a 5.8 s median and 7.9 s p90 on long orders, but no 5-minute order was measured.
 - **How the Sarvam path warns when it cannot apply a spoken correction:** designed in `KB-384`'s PLAN, measured by its finish line.
+
+## 15. Privacy (owner, 7 Nov 2026; D91)
+
+`public/privacy.html` is the page Google's consent screen links to (D91). Today it says:
+- "KiranaBill does not keep the recordings";
+- Groq turns the recording into text;
+- Google Gemini only reads an order's TEXT.
+
+**V3 makes all three untrue.** The recording is kept in Supabase Storage for 7 days, the AUDIO goes to Google Gemini, and on the backup it goes to Sarvam.
+
+**The rule:** `privacy.html`, **in English AND Hindi**, is updated **in the same release as `KB-384`, before any recording is stored**. It must say:
+- **what is kept:** the voice recording of an order, on our storage (Supabase), and on the phone until its bill is made;
+- **for how long:** deleted 7 days after its bill is made (D105 item 1);
+- **which companies receive the audio:**
+  - Google (Gemini) reads the recording to make the bill;
+  - Sarvam AI only when Gemini is unavailable (the backup);
+  - **Groq stays listed until Whisper is deleted** (D105 item 4);
+- **how to ask for deletion:** the page's existing email and steps, covering recordings too.
+
+`KB-384` is not finished until this page is updated. Its draft is checked against the release's real behaviour before `KB-387`.

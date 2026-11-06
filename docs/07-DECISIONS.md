@@ -2338,6 +2338,12 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
    Only an invented 1 is wrong.
 3. **gemini-3.8-flash limits on this project** (owner's AI Studio, Tier 1): 1,000 requests a minute, 2M tokens a minute, 10,000 requests a day.
 
+**The owner's review of doc 25** (7 Nov 2026, rev 2):
+1. **Privacy:** `public/privacy.html` (English and Hindi) is updated in the SAME release as `KB-384`, before any recording is stored (doc 25 §15). It must say what is kept, for how long, which companies receive the audio, and how to ask for deletion. Groq stays listed until Whisper is deleted.
+2. **The finish line is at least 90% exact on short orders AND at least 90% on long orders, each separately** - not one combined figure, which could hide the long orders.
+3. **24 kbps is built into the recorder in `KB-385`.** `KB-386` only verifies the accuracy on fresh recordings. Supabase's free tier is 1 GB: 7 days at 100 bills a day is about 0.5 GB at 126 kbps and about 0.1 GB at 24 kbps.
+4. Doc 25's other points are accepted as written.
+
 **The sheet's A17** (owner, 7 Nov 2026): write what was said. "संतूर सेट" stays संतूर सेट, and "संतूर हैंडवॉश सेट" is only the line where हैंडवॉश was said. The sheet already has these two lines, and all four ears heard हैंडवॉश in the second item only.
 
 ---
