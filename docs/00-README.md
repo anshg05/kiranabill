@@ -71,6 +71,7 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 22 | `22-BACKUP-AND-RESTORE.md` | Backups to Google Drive, key custody, restore rehearsal |
 | 23 | `23-ACCEPTANCE.md` | The owner's recorded orders, the release gate, the two-phone session |
 | 24 | `24-ROADMAP.md` | **What is next and in what order** - voice accuracy, the pilot, bill features, the Android app; status per item (D100) |
+| 25 | `25-V3-VOICE-DESIGN.md` | **How V3's voice is built** (D104, D105): the pipeline, the prompt, the checks on an AI answer, the recording flow, the Sarvam backup, the tickets `KB-379` - `KB-387` and their finish lines |
 
 ### Documents that don't exist yet, on purpose
 

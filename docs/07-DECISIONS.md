@@ -2317,6 +2317,29 @@ order by suspect nulls last, b.finalized_at desc;
 6. **The sheet's A17:** "एक डेटॉल सेट" = 1 set (D103). Its other two "सेट" lines were changed the same way.
 7. **Next is V3** (`KB-372` + `KB-378` + `KB-367`). Its design is `docs/25-V3-VOICE-DESIGN.md`: PLAN first, docs only.
 
+### D105 — V3 design approved: the owner's answers and additions (owner, 7 Nov 2026) 🟢
+
+The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33), with tickets `KB-379` - `KB-387`.
+
+**The owner's answers:**
+1. **Recordings in Supabase Storage are deleted 7 days after their bill is made.** The phone's copy goes as soon as the bill exists.
+2. **The flag a Theek hai cannot clear** fires when a line's total is **more than 100x** the total its spoken rate and quantity, or the shop's price, would give. A38: Rs 28,000 against Rs 28. A spoken total is never compared.
+3. **Every name is shown in Devanagari**, brands as they sound (रिन, लाइज़ॉल, फेयर एंड लवली).
+4. **Whisper and B are kept** until the V3 release is proven on the owner's phone, then deleted.
+5. **The function time limit for long orders** is measured in `KB-384`.
+6. **The maximum recording length is 5 minutes.**
+
+**The owner's additions:**
+1. **The Sarvam backup follows D102 and D103 too.** The same order gives the same bill whichever ear answered; this is in `KB-384`'s finish line.
+2. **"No invented quantity 1" (A49) keeps the existing rules:**
+   - a per-kg price with no quantity = 1 kg (D47's owner ruling);
+   - "55 वाला" with no quantity = 1 piece.
+
+   Only an invented 1 is wrong.
+3. **gemini-3.8-flash limits on this project** (owner's AI Studio, Tier 1): 1,000 requests a minute, 2M tokens a minute, 10,000 requests a day.
+
+**The sheet's A17** (owner, 7 Nov 2026): write what was said. "संतूर सेट" stays संतूर सेट, and "संतूर हैंडवॉश सेट" is only the line where हैंडवॉश was said. The sheet already has these two lines, and all four ears heard हैंडवॉश in the second item only.
+
 ---
 
 ## Superseded

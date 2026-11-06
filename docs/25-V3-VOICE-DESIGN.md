@@ -1,0 +1,208 @@
+# 25 — V3 Voice Design
+
+**Created:** 7 Nov 2026 · **Status:** Design - approved as a PLAN by the owner (7 Nov 2026); nothing in it is built yet.
+**Source of truth for:** HOW V3 (`KB-372` + `KB-378` + `KB-367`) is built, and the finish line of each V3 ticket (`KB-379` - `KB-387`).
+- The decisions behind it: `07` D101 - D105.
+- The measurements: `eval/bakeoff/REPORT-ROUND2.md` and `REPORT-NOCAT.md`.
+- The order and status of the work: `24` Phase V.
+- Each ticket's row: `06`.
+- **Written on the strongest model (D33):** it defines money-safety rules.
+
+**The rules that never change** (`CLAUDE.md`, `04` §7):
+- Money is integer paise.
+- A rate or total on a line is a number that was spoken (`KB-359`).
+- The app never invents a number.
+- Never a question mid-bill.
+- A line with no price is priced before Bill Banao.
+- One warning per line.
+- Never auto-change a price or unit.
+
+---
+
+## 1. The pipeline (D104)
+
+```
+phone: record (D101 flow) -> the audio kept on the phone (Dexie) until its bill exists
+   -> upload straight to Supabase Storage  (shops/<shop_id>/<recording_id>.webm, the user's own session)
+   -> POST /voice { recording_id, path }    (a few hundred bytes - never the audio through Netlify)
+/voice: auth + the per-shop limit (unchanged) -> the result cache (same recording_id = the same answer, §6)
+   -> reads the audio from Storage -> gemini-3.8-flash, thinking level "low", the V3 prompt (§2), NO catalog
+   -> on a Gemini failure: the Sarvam backup (§7)
+phone: our code after the model (§3) -> the checks (§4) -> the bill
+```
+
+- **One Gemini call per bill.** The model name is pinned (`gemini-3.8-flash`, never an alias).
+- **The keys stay server-side:** Gemini and `SARVAM_API_KEY` live in Netlify's environment.
+- **The model returns** the transcript and the items as JSON. `catalogId` is always null.
+- **The AI's numbers are only claims.** Every rate and total is checked against the transcript. Every line total and the grand total are computed by our code (`settleLayer2Items`, `buildFinalBill` / `sumPaise`). REPORT-ROUND2 §3 proved this holds today: 0 of 483 lines unexplained.
+- **The transcript is shown the moment it lands** (`04` §2).
+
+## 2. The V3 prompt (from `EZY_D103_NOCAT_PROMPT`, `eval/bakeoff/ezyPrompt.ts`)
+
+The rules from the run stay: names as said; a spoken correction edits the earlier line; prices only from spoken numbers; rule 3 is D103.
+
+**Added in V3** (`KB-383`):
+1. **Units come only from the list:** kg, gm, liter, ml, piece, packet, dozen, box, bottle, pouch, bag, can, tin (the app's `RECOGNISED_UNITS`), plus set (D103). A size or kind word stays in the NAME ("हार्पिक बड़ा", "फिनाइल बोतल" -> unit bottle). Why: A60 billed "1 बड़ा", "1 छोटा", "1 बोतल" as units.
+2. **A repeated identical item stays TWO lines** (D103 item 2). It is never merged; A39 and A40 were merged by E-flash.
+3. **"हटा दो" / "निकाल दो" removes the line it names**, or the last line when none is named (`KB-367`, A41). A41 joins the regression set (§12).
+4. **Every spokenName is written in Devanagari** - brands as they sound (रिन, लाइज़ॉल, फेयर एंड लवली; D105 item 3). The transcript stays as spoken.
+5. **The quantity rule as the owner set it** (D105 addition 2):
+   - a per-kilo / per-litre price with no quantity = 1 of that unit (D47's owner ruling, A58);
+   - "X वाला" / "X वाली" with no quantity = 1 piece (A42 "दंतकांति 60 वाला" = 1 piece);
+   - only a total said = qty null (D47);
+   - **any other quantity 1 that nobody said is wrong** (A49).
+
+## 3. Our code after the model (deterministic; `KB-381`, `KB-382`)
+
+1. **The price fill** (`fillFromCatalog`, D102): a line with no price said gets the shop price only when its as-said name clearly matches ONE catalog item. Several or none = Price needed. A spoken price is never touched.
+2. **The quantity check on an AI answer (replaces `KB-359`'s piece rule there; proven necessary).** Today `checkLayer2AgainstSpoken` drops a quantity it cannot find in Layer 1's PIECE for that line. On A57 the AI said 5 in all 9 runs, but Layer 1 cut "रिन साबुन 10 वाली | 5 पीस ..." whenever the transcript had no comma, so the bill depended on punctuation. **V3 rule:**
+   - an AI quantity stands when that number is spoken in the transcript, in order (the walk `checkLayer2NumberOrder` already does);
+   - or when it is the implied 1 of §2 item 5;
+   - otherwise it is dropped, and the line warns.
+
+   Layer 1's cut is never used to judge an AI answer.
+3. **A38 fix (a) - the price unit is read from the spoken words** (D103 item 3a). For a line with a gm / ml quantity and a rate, our code finds that rate's number in the transcript (the same in-order walk). If the next word is "किलो" / "kilo" / "लीटर" ("56 रुपए किलो", "₹56 किलो", "56 का किलो"), then:
+   - the rate is per kg / liter;
+   - the total is `lineTotalPaiseScaled(qty, rate, -3)`, whatever unit the AI gave.
+
+   A38: 500 gm at "56 रुपए किलो" = Rs 28.
+4. **The "पौने 2" reader bug** (`extractSpokenNumbers`): "पौने 2" is read as 0.75 and 2; "पौने दो" is read as 1.75.
+   - V3: "पौने <number>" = the number - 0.25 whether the number is a digit or a word.
+   - The same check goes on सवा / साढ़े / डेढ़ / ढाई with a digit after them.
+   - Measured on `bench:numbers` (0 wrong) as well as the regression set.
+5. **The totals:** line total = qty x rate (scaled across gm/kg, ml/liter) or the spoken total or qty x shop price. The grand total = `sumPaise` of the line totals. **No AI arithmetic is ever billed.**
+
+## 4. The checks on an AI-read bill (`KB-380`, `KB-382`)
+
+Every existing check stays for the Sarvam path (§7). On the Gemini path, six of them are adapted. They caused 77 of E-flash's 112 long-order Theek hai with nothing wrong on the bill (REPORT-ROUND2).
+
+| Check | False alarm today | V3 on an AI answer |
+|---|---|---|
+| `number_dropped` / `qty_dropped` | The numbers a spoken correction replaced (A59 "2 किलो ... नहीं नहीं 3 किलो"); a pack size ("बंसल तेल 1 लीटर एक पैकेट", A55) | A number inside a correction the AI applied, and a number that is a pack size next to another quantity of the same line, are not "dropped" |
+| `number_misaligned` | Its qty-1 rule excuses an unspoken 1 only when no "1" is said anywhere in the order (A58) | The implied 1 of §2 item 5 is excused per line |
+| `layer2_disagrees` / `number_unconsumed` | They compare the AI's lines with Layer 1's pieces; Layer 1 cuts differently (A57) | Not run on an AI answer: §3.2's in-order walk replaces them |
+| `unusual_rate` / `unusual_total` | A spoken rate judged against a catalog product the as-said name happened to claim (A34) | Only on lines our code priced from the catalog (§3.1) - a spoken price is the shopkeeper's statement |
+| `duplicate_line` | Two different as-said names on one catalog product (A40: बंसल and मदर डिलाइट, both "Tel (1L)") | Compares the SPOKEN names (and numbers), not the catalog id. A real repeat still warns (D103 item 2) |
+| `missing_total` on a unit the catalog cannot price (A19: "लाल मिर्ची पैकेट" against a per-kg product) | It shows a Theek hai | It shows **Price needed** |
+
+**A38 fix (b) - the flag a Theek hai cannot clear** (D103 item 3b; the threshold is the owner's, D105 item 2):
+- **When it fires:** a line's total is **more than 100x** what its spoken rate and quantity (read per §3.3) would give, or more than 100x qty x the shop's price for the product it names.
+- **What it does:** the line must be edited before Bill Banao. `canFinalize` refuses it even when acknowledged, and `buildFinalBill` refuses it as a second guarantee.
+- **A spoken total ("=X") is never compared:** it is the shopkeeper's statement (`reviewFlags.ts`, KB-208).
+- **A38:** Rs 28,000 against Rs 28 is blocked. After fix (a), the line is Rs 28 and nothing fires.
+
+## 5. The recording flow (D101, `KB-385`)
+
+1. Tap to record -> a timer.
+2. **Pause / Resume** (paused time is not recorded) -> **Stop**.
+3. Optional playback -> **Re-record** or **Generate bill**.
+4. A processing screen -> the full bill, with the usual checks.
+
+- **"Add more by voice"** inside a bill uses the same flow and APPENDS lines.
+- **Maximum length: 5 minutes** (D105 item 6). The timer shows it, and the recording stops itself at 5:00.
+- **Never a question mid-bill.** Typing (Add by hand, the type-ahead) stays available on every screen.
+
+## 6. Reliability: the recording, Retry, offline, one recording = one bill (`KB-384`, `KB-385`)
+
+- **The recording is kept on the phone** (Dexie) until its bill exists, then deleted from the phone. **In Storage it is deleted 7 days after its bill is made** (D105 item 1) by a scheduled clean-up.
+- **Retry resends the SAME recording** (the same `recording_id`). The shopkeeper never re-speaks because of a network or provider failure.
+- **Offline:** Generate keeps the recording in a local queue with a one-line note, and it is sent when the phone is back online. Typing works meanwhile. Nothing is silently lost (`04` §2: never a silent failure).
+- **One recording = one bill:**
+  - The phone gives each recording a `recording_id` (UUID) when Stop is tapped.
+  - `/voice` keeps the answer per `recording_id` (Netlify Blobs, as the rate limit does, for 7 days). A retry returns that answer, so there is no second Gemini call.
+  - The bill records which `recording_id` its lines came from and never appends the same one twice.
+
+## 7. The Sarvam backup (D104 item 2; `KB-384`)
+
+- **When:** Gemini answers 429 or 5xx, does not answer within the time limit `KB-384` measures, or its answer is not valid JSON.
+- **What runs:**
+  1. Sarvam `saaras:v4` (verbatim; REST up to 30 s, the batch job over 30 s).
+  2. Then our reader (Layer 1).
+  3. Then the checks - all of them; §4's adaptations are for the Gemini path only.
+  4. A piece Layer 1 cannot read goes to Layer 2 if Gemini answers by then; otherwise it is "Not added", with Retry and Add by hand.
+- **The same order must give the same bill whichever ear answered** (D105 addition 1). The Sarvam path follows **D102** (names as said) and **D103** (units as said: "सेट" = set in the grammar, the unit next to the number wins). That means Layer 1 changes in V3:
+  - the line keeps the spoken name;
+  - the catalog only fills an unspoken price.
+- **What the shopkeeper sees:** the same screens. Sarvam is not named on them.
+- **Known gap** (to be measured, not assumed): Layer 1 does not apply spoken corrections (A59) or "हटा दो". On the Sarvam path a correction must at least WARN - never a silent extra line. `KB-384`'s finish line measures it.
+
+## 8. Error states - each ends in Retry or Add by hand (`KB-385`)
+
+| State | Shown | Ends in |
+|---|---|---|
+| No microphone permission | One line: how to allow it | Add by hand |
+| Recording empty or under 1 s | "Nothing recorded" | Re-record / Add by hand |
+| Offline at Generate | Queued, one line | Sent when online; Add by hand meanwhile |
+| Upload to Storage failed | "Couldn't send" | Retry (same recording) / Add by hand |
+| Session expired (401 / 403) | Sign-in prompt, the recording kept | Retry after sign-in |
+| The shop's hourly limit (429 from `/voice`) | "Too many orders this hour" | Retry later / Add by hand |
+| Gemini failed | - (the Sarvam backup runs) | - |
+| Gemini and Sarvam both failed, or a timeout | "Couldn't read the order" | Retry (same recording) / Add by hand |
+| Nothing understood (0 lines) | The transcript, "No items found" | Re-record / Add by hand |
+
+## 9. The recording bitrate (`KB-386`)
+
+- **Target:** about 24 kbps Opus (`MediaRecorder` `audioBitsPerSecond: 24000`). A 5-minute order is then about 0.9 MB.
+- **Today:** about 126 kbps (A61: 1,198 KB for 76 s).
+- **Verified on FRESH recordings from the owner's phone:**
+  - the real bytes per second (a browser may ignore the hint - iOS records mp4);
+  - the same exact rate and 0 silent wrong lines as the 126 kbps set, on the same orders re-recorded.
+
+## 10. Cost and quota (D104, D105 addition 3)
+
+- **Cost per bill**, measured, with GST: Rs 0.18 (short) - Rs 0.34 (long). **gemini-3.8-flash doubles on 1 Jan 2027.**
+- **A month at 100 bills a day:** Rs 548 - 1,027 today; Rs 1,095 - 2,055 from 2027.
+- **The Sarvam backup:** Rs 0.49 a minute + GST, only when it runs.
+- **gemini-3.8-flash limits on this project** (owner's AI Studio, Tier 1, 7 Nov 2026): **1,000 requests a minute, 2M tokens a minute, 10,000 requests a day.**
+  - A long bill uses about 2,500 - 3,600 tokens (A61: 3,542).
+  - The daily 10,000 is shared with eval runs. A live regression run takes 84.
+- **The per-shop limit stays:** 300 `/voice` requests an hour.
+- **A Google billing budget alarm** is a manual step for the owner (§13).
+
+## 11. Names: one script (D102, D105 item 3)
+
+- **Every bill line's name is shown in Devanagari, as said.** Brands are written as they sound (रिन, लाइज़ॉल, फेयर एंड लवली).
+- **On the Gemini path the prompt does it** (§2 item 4). The regression set checks it: 0 Latin-script names.
+- **On the Sarvam path:** Sarvam writes Devanagari for Hindi. A Latin word it returns is kept as said and counted in `KB-384`.
+- **D102's affected parts** (D102 item 6), designed here:
+  - **`KB-368`'s weak-match badge** only applies where our code filled a price from the catalog. A weak name match that fills a price still gets the badge.
+  - **The learning engine** keeps learning an alias when the shopkeeper picks a product for a Price-needed line - from finalised bills only (hard rule 8), per shop (rule 12).
+  - **The Catalog screen** stays the shop's price list; it no longer names the lines.
+
+## 12. The regression set and the finish lines
+
+- **The set:** the 60 recordings with a written bill (A01 - A62 less A13 and A41), plus **A41** once `KB-383` handles "हटा दो" = 61. Short orders run once and long orders 3 times: 85 runs.
+- **Scored by** D102 + D103 against `eval/acceptance/sheet.txt`.
+- **Two ways to run it:**
+  - **Offline replay (free, `KB-379`):** the saved raw answers (`items` and `transcript` in the results files) go through the CURRENT code - fill, checks, totals - and are scored. Every code ticket is measured this way.
+  - **Live run:** about Rs 18 at list price (Rs 21 with GST) for 85 calls. Only when the prompt changes (`KB-383`), and before the release (`KB-387`). The canary first: A01, A61, A62 (`23` §8).
+- **The V3 finish line:** **0 silent wrong lines and at least 90% of the runs exact**, short and long reported separately. It is measured after the false-alarm checks are fixed.
+
+| Ticket | What | Finish line (on the regression set) | D33 |
+|---|---|---|---|
+| `KB-379` | The regression harness (offline replay) + the scorer fixes: the gate's product hole (`KB-373`); the script artifacts (A27 "Lizol" / लाइज़ॉल, A50 "टूथब्रश" / "टूथ ब्रश", A49 "groundnut oil" / ग्राउंडनट ऑयल - one product, other spelling or script) | The replay reproduces `REPORT-NOCAT.md`'s nocat-D103 numbers exactly before the scorer fixes; after them, no artifact wrong line is left | yes |
+| `KB-380` | §4's six check adaptations | Theek hai lines on long orders fall from 103 with no real warning lost: A38, A39, A40, A54 and A19 (Price needed) still flag | yes |
+| `KB-381` | §3.2 (the quantity check on an AI answer), §2 item 5's implied-1 rules in our code, the "पौने 2" reader bug | A57 keeps both 5s in every run, comma or not; A42 = 1 piece; A49 has no quantity; A56 run 3 is exact; `bench:numbers` 0 wrong | yes |
+| `KB-382` | Both A38 fixes (§3.3, §4 fix b) | A38 is exact; a 100x line cannot reach Bill Banao even after a Theek hai (tested in `canFinalize` and `buildFinalBill`) | yes |
+| `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; no new wrong line | yes |
+| `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A 5-minute recording works end to end; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders | yes |
+| `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
+| `KB-386` | 24 kbps (§9) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
+| `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines, at least 90% exact** live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |
+
+**The order:** `KB-379` -> `KB-380`, `KB-381`, `KB-382` (offline, each measured by the replay) -> `KB-383` (live) -> `KB-384` -> `KB-385` -> `KB-386` -> `KB-387`.
+
+**Whisper and B are kept** until the V3 release is proven on the owner's phone, then deleted (D105 item 4).
+
+## 13. Manual steps for the owner (`18` §5)
+
+1. The Storage bucket and its RLS policy - a migration, additive, compatible with the deployed app (D55 §5). `KB-384`.
+2. `SARVAM_API_KEY` in Netlify's environment. `KB-384`.
+3. A Google billing budget alarm for the project. Before `KB-387`.
+4. Fresh recordings on his phone at 24 kbps. `KB-386`.
+5. The phone check and the head-to-head. `KB-387`.
+
+## 14. Not decided here
+
+- **The Gemini time limit inside `/voice`, and the Netlify function's own limit:** measured in `KB-384` (D105 item 5). nocat-D103 measured a 5.8 s median and 7.9 s p90 on long orders, but no 5-minute order was measured.
+- **How the Sarvam path warns when it cannot apply a spoken correction:** designed in `KB-384`'s PLAN, measured by its finish line.

@@ -46,6 +46,7 @@ on this project.
 | Any screen | `05-FRONTEND-SPEC.md`, `13-DESIGN.md`, `16-APP-FLOW.md` |
 | Manual setup | `17-MANUAL-TASKS.md` |
 | Backups, restore, key custody | `22-BACKUP-AND-RESTORE.md` |
+| V3 voice (the new pipeline, `KB-379` - `KB-387`) | `25-V3-VOICE-DESIGN.md` |
 
 **Never read `legacy/` in depth.** It is reference only, never imported, never edited, never linted.
 Its useful content is already extracted into `14-LEGACY-REFERENCE.md`. Read that instead.
