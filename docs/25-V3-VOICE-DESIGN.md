@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 7 Nov 2026 (rev 4) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. `KB-379` is being built.
+**Created:** 7 Nov 2026 · **Last updated:** 8 Nov 2026 (rev 5) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380` (8 Nov).
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -10,6 +10,11 @@
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
 - rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
+- rev 5 (8 Nov 2026, `KB-380`, owner):
+  - §2: the correction words are one extendable list, and an unknown form warns;
+  - §4: `layer2_disagrees` on an AI answer only when the money differs;
+  - §12: 0 silent DROPPED lines joins the finish line;
+  - `KB-383`: A39 / A40 keep both repeated lines, or it stops and reports.
 - rev 4 (7 Nov 2026, owner: the V3 plan approved):
   - §12: the owner's voice only (a known risk);
   - §5 and `KB-384`: real orders are 3-4 minutes at most.
@@ -56,6 +61,10 @@ The rules from the run stay: names as said; a spoken correction edits the earlie
 **Added in V3** (`KB-383`):
 1. **Units come only from the list:** kg, gm, liter, ml, piece, packet, dozen, box, bottle, pouch, bag, can, tin (the app's `RECOGNISED_UNITS`), plus set (D103). A size or kind word stays in the NAME ("हार्पिक बड़ा", "फिनाइल बोतल" -> unit bottle). Why: A60 billed "1 बड़ा", "1 छोटा", "1 बोतल" as units.
 2. **A repeated identical item stays TWO lines** (D103 item 2). It is never merged; A39 and A40 were merged by E-flash.
+**The correction words are ONE list** (`CORRECTION_MARKERS` in `src/domain/aiAnswerNumbers.ts`: नहीं नहीं, nahi nahi, sorry, करो उसको - `KB-380`).
+- **The list is extendable:** a new form is added there, with a test.
+- **A correction said in a form NOT on the list is never exempted** (owner, 7 Nov 2026): the numbers it replaced count as dropped, so the bill warns.
+
 3. **"हटा दो" / "निकाल दो" removes the line it names**, or the last line when none is named (`KB-367`, A41). A41 joins the regression set (§12).
 4. **Every spokenName is written in Devanagari** - brands as they sound (रिन, लाइज़ॉल, फेयर एंड लवली; D105 item 3). The transcript stays as spoken.
 5. **The quantity rule as the owner set it** (D105 addition 2):
@@ -92,7 +101,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 |---|---|---|
 | `number_dropped` / `qty_dropped` | The numbers a spoken correction replaced (A59 "2 किलो ... नहीं नहीं 3 किलो"); a pack size ("बंसल तेल 1 लीटर एक पैकेट", A55) | A number inside a correction the AI applied, and a number that is a pack size next to another quantity of the same line, are not "dropped" |
 | `number_misaligned` | Its qty-1 rule excuses an unspoken 1 only when no "1" is said anywhere in the order (A58) | The implied 1 of §2 item 5 is excused per line |
-| `layer2_disagrees` / `number_unconsumed` | They compare the AI's lines with Layer 1's pieces; Layer 1 cuts differently (A57) | Not run on an AI answer: §3.2's in-order walk replaces them |
+| `layer2_disagrees` / `number_unconsumed` | They compare the AI's lines with Layer 1's pieces; Layer 1 cuts differently (A57) | `layer2_disagrees`: on an AI answer **only when the MONEY differs** (owner, 7 Nov 2026 - it is A38's only warning until `KB-382`'s 100x flag; a unit- or quantity-only difference from Layer 1's cut is not raised). `number_unconsumed`: not run on an AI answer. Before this change: §3.2's in-order walk replaces them |
 | `unusual_rate` / `unusual_total` | A spoken rate judged against a catalog product the as-said name happened to claim (A34) | Only on lines our code priced from the catalog (§3.1) - a spoken price is the shopkeeper's statement |
 | `duplicate_line` | Two different as-said names on one catalog product (A40: बंसल and मदर डिलाइट, both "Tel (1L)") | Compares the SPOKEN names (and numbers), not the catalog id. A real repeat still warns (D103 item 2) |
 | `missing_total` on a unit the catalog cannot price (A19: "लाल मिर्ची पैकेट" against a per-kg product) | It shows a Theek hai | It shows **Price needed** |
@@ -199,7 +208,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **Two ways to run it:**
   - **Offline replay (free, `KB-379`):** the saved raw answers (`items` and `transcript` in the results files) go through the CURRENT code - fill, checks, totals - and are scored. Every code ticket is measured this way.
   - **Live run:** about Rs 18 at list price (Rs 21 with GST) for 85 calls. Only when the prompt changes (`KB-383`), and before the release (`KB-387`). The canary first: A01, A61, A62 (`23` §8).
-- **The V3 finish line:** **0 silent wrong lines, at least 90% exact on SHORT orders AND at least 90% exact on LONG orders, each separately** (owner, 7 Nov 2026). A combined figure could hide the long orders, which are where we failed. It is measured after the false-alarm checks are fixed.
+- **The V3 finish line:** **0 silent wrong lines AND 0 silent DROPPED lines** (owner, 7 Nov 2026: an item said but missing from the bill with no warning is a silent undercharge; the replay reports "dropped lines (silent / warned)"; warned = a whole-bill Theek hai or a "Not added" piece), **at least 90% exact on SHORT orders AND at least 90% exact on LONG orders, each separately** (owner, 7 Nov 2026). A combined figure could hide the long orders, which are where we failed. It is measured after the false-alarm checks are fixed.
 
 | Ticket | What | Finish line (on the regression set) | D33 |
 |---|---|---|---|
@@ -207,11 +216,11 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 | `KB-380` | §4's six check adaptations | Theek hai lines on long orders fall from 103 with no real warning lost: A38, A39, A40, A54 and A19 (Price needed) still flag | yes |
 | `KB-381` | §3.2 (the quantity check on an AI answer), §2 item 5's implied-1 rules in our code, the "पौने 2" reader bug | A57 keeps both 5s in every run, comma or not; A42 = 1 piece; A49 has no quantity; A56 run 3 is exact; `bench:numbers` 0 wrong | yes |
 | `KB-382` | Both A38 fixes (§3.3, §4 fix b) | A38 is exact; a 100x line cannot reach Bill Banao even after a Theek hai (tested in `canFinalize` and `buildFinalBill`) | yes |
-| `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; 0 Latin names; **no line shows Price needed only because of the script** (§11); no new wrong line | yes |
+| `KB-383` | The V3 prompt (§2): listed units, repeats as two lines, "हटा दो" (`KB-367`), Devanagari names, the quantity rule | Live run: A60 has no size word as a unit; A39 / A40 keep both lines; A41 is exact; **A39 and A40 keep both repeated lines - if the prompt alone cannot stop the model dropping a repeat from its own transcript, `KB-383` stops and reports it, and the owner decides the fallback** (7 Nov 2026); 0 Latin names; **no line shows Price needed only because of the script** (§11); no new wrong line | yes |
 | `KB-384` | The server path: Storage upload and its RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup with Layer 1 under D102 / D103, the time limit measured | A **3-4 minute** recording (the longest real order, owner 7 Nov 2026) works end to end and the function's time is measured on it; a retry makes no second Gemini call; with Gemini forced to fail, every one of the 61 recordings gives a Sarvam bill with 0 silent wrong lines and the same names and units as the Gemini bill on every line Layer 1 reads (each difference listed); the function's time limit is measured on the longest orders; **`public/privacy.html` (English and Hindi) is updated in the SAME release, before any recording is stored (§15)** | yes |
 | `KB-385` | The phone: the D101 flow, Pause / Resume, the 5-minute cap, playback, **recording at 24 kbps (§9)**, the local queue, Retry, one recording = one bill, §8's error states, Devanagari names on the bill | Each state of §8 is tested and ends in Retry or Add by hand; a retry and a double tap never add lines twice; checked in the preview browser, then on the owner's phone | yes |
 | `KB-386` | VERIFY 24 kbps on fresh recordings (§9; the setting itself is built in `KB-385`) | Fresh recordings from the owner's phone: the measured kbps, and the same exact rate and 0 silent wrong lines as their 126 kbps originals | no |
-| `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines; at least 90% exact on short orders AND at least 90% on long orders, each separately**, live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |
+| `KB-387` | The final live regression run, then V4 / V5 (`KB-373`, `KB-374`) | **0 silent wrong lines and 0 silent dropped lines; at least 90% exact on short orders AND at least 90% on long orders, each separately**, live; then the draft, the owner's phone check and his head-to-head against Ezy Parchi (V3b) | yes |
 
 **The order:** `KB-379` -> `KB-380`, `KB-381`, `KB-382` (offline, each measured by the replay) -> `KB-383` (live) -> `KB-384` -> `KB-385` -> `KB-386` -> `KB-387`.
 

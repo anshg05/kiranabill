@@ -5,10 +5,11 @@ import { lineTotalPaise } from "../../src/domain/money.js";
 import type { ReviewFlag } from "../../src/domain/reviewFlags.js";
 import { flagWeakProducts } from "../../src/domain/weakProduct.js";
 import { scoringCatalog } from "./spellings.js";
+import type { ExpectedBill, ExpectedLine } from "./types.js";
 
+/** The owner's names are resolved with his reviewed spellings (KB-379) - one scoring catalog per shop catalog. */
 const spellingsCache = new WeakMap<ParserCatalog, ParserCatalog>();
 const spellingsOf = (shop: ParserCatalog) => spellingsCache.get(shop) ?? (spellingsCache.set(shop, scoringCatalog(shop)), spellingsCache.get(shop)!);
-import type { ExpectedBill, ExpectedLine } from "./types.js";
 
 // KB-364: the owner's expected bill against what the app produced (docs/23-ACCEPTANCE.md).
 //   WRONG   = a confident number or product that is not what was said (the hard stop - 0 allowed).

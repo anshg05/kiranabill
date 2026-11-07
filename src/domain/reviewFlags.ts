@@ -33,6 +33,11 @@ import { extractSpokenNumbers, extractSpokenNumberEntries, splitItemSegments, un
 import type { CatalogEntry } from "./catalog.js";
 import { formatRupees, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
 import { getEffectivePrice, type LearningState } from "./learning.js";
+import { aiAnswerExemptNumbers } from "./aiAnswerNumbers.js";
+
+/** KB-380 (doc 25 §4): who produced the lines. "spoken" = our reader (Layer 1, the Sarvam path) - every check as it always was;
+ * "ai-answer" = an AI read the whole order (the Gemini path) - six checks are adapted, so they stop raising false alarms. */
+export type CheckSource = "spoken" | "ai-answer";
 
 export type ReviewCode =
   | "missing_name"
@@ -116,6 +121,7 @@ export function evaluateReviewFlags(
   items: readonly ParsedItem[],
   catalog: readonly CatalogEntry[],
   opts?: EvaluateReviewFlagsOptions,
+  source: CheckSource = "spoken",
 ): readonly ReviewFlag[] {
   const flags: ReviewFlag[] = [];
   const catalogById = new Map(catalog.map((entry) => [entry.id, entry]));
@@ -222,8 +228,8 @@ export function evaluateReviewFlags(
     }
   });
 
-  evaluateNumberSafety(transcript, items, flags);
-  flagDuplicateLines(items, catalogById, flags);
+  evaluateNumberSafety(transcript, items, flags, source);
+  flagDuplicateLines(items, catalogById, flags, source);
 
   return flags;
 }
@@ -236,10 +242,10 @@ export function evaluateReviewFlags(
  * name), qty, unit, rate and total - is FLAGGED on the repeat, never deduped:
  * the same item twice can be real (Rule 4), so the shopkeeper decides.
  */
-function flagDuplicateLines(items: readonly ParsedItem[], catalogById: ReadonlyMap<string, CatalogEntry>, flags: ReviewFlag[]): void {
+function flagDuplicateLines(items: readonly ParsedItem[], catalogById: ReadonlyMap<string, CatalogEntry>, flags: ReviewFlag[], source: CheckSource): void {
   const seen = new Set<string>();
   items.forEach((item, index) => {
-    const key = lineIdentity(item);
+    const key = lineIdentity(item, source);
     if (!seen.has(key)) {
       seen.add(key);
       return;
@@ -278,7 +284,7 @@ function isOutsideBand(actual: Paise, expected: Paise): boolean {
  * each in 04-VOICE-PIPELINE.md section 5 / 14-LEGACY-REFERENCE.md
  * section 7.
  */
-function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], flags: ReviewFlag[]): void {
+function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], flags: ReviewFlag[], source: CheckSource): void {
   // Whole-bill pools: every number consumed by any item, in rupee terms.
   const allConsumed: number[] = [];
   const allConsumedQtyOnly: number[] = [];
@@ -289,9 +295,12 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
 
   const spokenEntries = extractSpokenNumberEntries(transcript);
 
+  // KB-380: on an AI answer, a number a spoken correction replaced and a pack size beside a count are not "dropped" (aiAnswerNumbers.ts)
+  const exempt = source === "ai-answer" ? aiAnswerExemptNumbers(transcript, items) : [];
+
   // number_dropped: every spoken number, matched against every consumed
   // number across the whole bill.
-  const dropPool = [...allConsumed];
+  const dropPool = [...allConsumed, ...exempt];
   for (const entry of spokenEntries) {
     if (!consumeOne(dropPool, entry.value)) {
       push(
@@ -308,7 +317,7 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
   // qty_dropped: spoken numbers that looked like a quantity (attached to a
   // unit word), matched only against items' actual qty values - a
   // stricter subset of number_dropped with a more specific message.
-  const qtyPool = [...allConsumedQtyOnly];
+  const qtyPool = [...allConsumedQtyOnly, ...exempt];
   for (const entry of spokenEntries) {
     if (entry.attachedUnit === null) continue;
     if (!consumeOne(qtyPool, entry.value)) {
@@ -350,7 +359,8 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
   // lined up and the check silently didn't run.
   const segments = splitItemSegments(transcript);
 
-  if (segments.length === items.length) {
+  // KB-380: Layer 1's segments say nothing about an AI answer's lines - not run there (number_dropped above is the net)
+  if (source === "spoken" && segments.length === items.length) {
     segments.forEach((segment, index) => {
       const segmentNumbers = extractSpokenNumbers(segment);
       if (segmentNumbers.length < 2) return;
@@ -373,8 +383,9 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
 
 /** Two lines are "the same line" when they are the same product (or, unmatched,
  * the same spoken name) at the same qty, unit, rate and total. */
-function lineIdentity(item: ParsedItem): string {
-  const who = item.catalogId !== null ? `id:${item.catalogId}` : `name:${item.spokenName.trim().toLowerCase()}`;
+function lineIdentity(item: ParsedItem, source: CheckSource = "spoken"): string {
+  // KB-380: on an AI answer the lines keep the SAID names (D102) - two different names our fill priced from one product are not a repeat
+  const who = item.catalogId !== null && source === "spoken" ? `id:${item.catalogId}` : `name:${item.spokenName.trim().toLowerCase()}`;
   return JSON.stringify([who, item.qty, item.unit, item.rate, item.rateUnit, item.total]);
 }
 
@@ -426,14 +437,16 @@ export function canFinalize(flags: readonly ReviewFlag[], acknowledgedIds: Reado
  * transcript is treated as implied ("sabun 180 rupay" -> 1 piece), not as a
  * number that must be found.
  */
-export function checkLayer2NumberOrder(transcript: string, items: readonly ParsedItem[]): ReviewFlag | null {
+export function checkLayer2NumberOrder(transcript: string, items: readonly ParsedItem[], source: CheckSource = "spoken"): ReviewFlag | null {
   const spoken = extractSpokenNumberEntries(transcript).map((e) => e.value);
   const used = new Array<boolean>(spoken.length).fill(false);
   let floor = -1; // positions must be > floor
 
   for (const item of items) {
     const needed: number[] = [];
-    if (item.qty !== null && !(item.qty === 1 && !spoken.some((v) => Math.abs(v - 1) < NUMBER_MATCH_EPSILON))) {
+    // KB-380: on an AI answer a qty of 1 on a spoken-RATE line is the implied 1 of that line (a per-kilo price, "X वाला"), excused per line
+    const impliedOne = source === "ai-answer" && item.qty === 1 && item.priceType === "rate";
+    if (item.qty !== null && !impliedOne && !(item.qty === 1 && !spoken.some((v) => Math.abs(v - 1) < NUMBER_MATCH_EPSILON))) {
       needed.push(item.qty);
     }
     if (item.priceType === "rate" && item.rate !== null) needed.push(paiseToRupeeNumber(item.rate));

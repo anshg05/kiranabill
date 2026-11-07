@@ -49,6 +49,13 @@ describe("scoreRunD102", () => {
     for (const heard of ["groundnut oil", "ग्राउंडनट ऑइल"]) expect(scoreRunD102("A49", one("ग्राउंडनट ऑयल", null, "", { kind: "total", paise: 20000 }), bill([oil(heard)]), shop)).toMatchObject({ exact: true, wrongLines: 0 });
   });
 
+  it("KB-380 (owner, 7 Nov 2026): a DROPPED line is silent unless the bill warns about it - a whole-bill Theek hai (every line warned) or a 'Not added' piece", () => {
+    const two: ExpectedBill = { lines: [{ name: "चीनी", qty: 2, unit: "kg", price: { kind: "rate", paise: 4500 } }, { name: "चावल", qty: 5, unit: "kg", price: { kind: "default" } }], notAdded: 0, checks: 0 };
+    expect(scoreRunD102("A01", two, bill([it_({})]), shop)).toMatchObject({ dropped: 1, silentDropped: 1 });
+    expect(scoreRunD102("A01", two, bill([it_({})], { warnedLines: [0], checks: 1 }), shop)).toMatchObject({ dropped: 1, silentDropped: 0 });
+    expect(scoreRunD102("A01", two, bill([it_({})], { unresolved: 1 }), shop)).toMatchObject({ dropped: 1, silentDropped: 0 });
+  });
+
   it("a DIFFERENT product's name is wrong, even with the right numbers", () => {
     const e = one("चीनी", 2, "kg", { kind: "rate", paise: 4500 });
     expect(scoreRunD102("A01", e, bill([it_({ spokenName: "चावल", catalogId: "11" })]), shop)).toMatchObject({ wrongProducts: 1, wrongLines: 1, exact: false });

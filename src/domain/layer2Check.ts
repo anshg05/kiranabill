@@ -21,7 +21,7 @@ import type { ParsedItem, UtterancePart } from "./grammar.js";
 import { extractSpokenNumbers, pieceHasPerUnitPrice, pieceHasUnreadPrice } from "./grammar.js";
 import type { SettledLine } from "./layer2.js";
 import { formatRupees } from "./money.js";
-import type { ReviewFlag } from "./reviewFlags.js";
+import type { CheckSource, ReviewFlag } from "./reviewFlags.js";
 
 export interface CheckedLayer2 {
   readonly lines: readonly SettledLine[];
@@ -57,7 +57,7 @@ export function dropUnspokenPrices(asked: string, lines: readonly SettledLine[])
   });
 }
 
-export function checkLayer2AgainstSpoken(pieces: readonly UtterancePart[], lines: readonly SettledLine[]): CheckedLayer2 {
+export function checkLayer2AgainstSpoken(pieces: readonly UtterancePart[], lines: readonly SettledLine[], source: CheckSource = "spoken"): CheckedLayer2 {
   if (pieces.length !== lines.length) return { lines, flags: [] };
   const flags: ReviewFlag[] = [];
   const checked = lines.map((line, i): SettledLine => {
@@ -76,7 +76,9 @@ export function checkLayer2AgainstSpoken(pieces: readonly UtterancePart[], lines
     const heard = piece.item;
     if (!heard || heard.qty === null || heard.total === null || (heard.priceType !== "rate" && heard.priceType !== "total")) return settled;
     // An AI line with no price (or no quantity) invented nothing - only a different number is a disagreement.
-    const differs = (ai.qty !== null && ai.qty !== heard.qty) || (ai.unit !== "" && ai.unit !== heard.unit) || (ai.total !== null && ai.total !== heard.total);
+    // KB-380: on an AI answer Layer 1's cut may differ from the AI's (A57) - only a different AMOUNT of money is a disagreement there (A38)
+    const moneyDiffers = ai.total !== null && ai.total !== heard.total;
+    const differs = source === "ai-answer" ? moneyDiffers : (ai.qty !== null && ai.qty !== heard.qty) || (ai.unit !== "" && ai.unit !== heard.unit) || moneyDiffers;
     if (differs) {
       flags.push({
         id: `item-${i}-layer2_disagrees`,

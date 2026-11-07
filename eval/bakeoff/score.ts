@@ -75,6 +75,9 @@ export interface RunScore {
   readonly wrongNumbers: number;
   readonly wrongProducts: number;
   readonly dropped: number;
+  /** KB-380 (owner, 7 Nov 2026): dropped lines the bill does NOT warn about - a silent undercharge. Warned = a whole-bill Theek hai (every
+   * line warned) or a "Not added" piece. Scored by D102 only (older rows: undefined). */
+  readonly silentDropped?: number;
   /** A product said once, billed twice, with NO Theek hai on the extra line - a wrong line (the dal-order failure). */
   readonly silentDuplicated: number;
   /** The same, but the extra line carries a Theek hai (owner, 1 Nov 2026: listed, not a silent wrong; the order is not exact). */
@@ -293,6 +296,7 @@ export function summarize(results: readonly RunResult[], inrPerUsd: number) {
     wrongNumbers: sum((r) => r.wrongNumbers),
     wrongProducts: sum((r) => r.wrongProducts),
     dropped: sum((r) => r.dropped),
+    silentDropped: sum((r) => r.silentDropped ?? 0),
     silentDuplicated: sum((r) => r.silentDuplicated),
     warnedDuplicated: sum((r) => r.warnedDuplicated),
     numbersRightNameWrong: sum((r) => r.numbersRightNameWrong),

@@ -3,7 +3,7 @@ import { resolveUtterance } from "../../src/data/voiceBilling.js";
 import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { checksOf } from "../acceptance/compare.js";
-import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems } from "./pipeline.js";
+import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems, nocatBill } from "./pipeline.js";
 
 // KB-370: candidates C (one audio call: transcript + items) and D (C's items, numbers only if B's ear heard them) get the SAME checks
 // a Layer 2 answer gets today.
@@ -72,6 +72,21 @@ describe("KB-370 nocat (owner, 6 Nov 2026): the model never sees the catalog; OU
 
   it("a name that matches nothing is Price needed - never a guess", () => {
     expect(fillFromCatalog([unpriced("पोपट दाल")], shop)[0]).toMatchObject({ spokenName: "पोपट दाल", catalogId: null, priceType: "unknown", rate: null, total: null });
+  });
+
+  it("KB-380 (A19, A20): a unit the catalog's price cannot be scaled to is Price needed - no shop price, so no missing_total Theek hai", () => {
+    // Lal Mirch is priced per kg (a packet is not a kg); Garam Masala per piece (a kg is not a piece)
+    for (const [name, unit, t] of [["लाल मिर्ची", "packet", "एक किलो लाल मिर्ची पैकेट"], ["गरम मसाला पैकेट", "kg", "1 किलो गरम मसाला पैकेट"]] as const) {
+      const it0 = item({ spokenName: name, catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit, rate: null, rateUnit: null, total: null, priceType: "default" });
+      expect(fillFromCatalog([it0], shop)[0]).toMatchObject({ spokenName: name, catalogId: null, priceType: "unknown", rate: null, total: null });
+      const bill = nocatBill(t, [it0], shop);
+      expect(bill.warnedLines ?? []).toEqual([]);
+    }
+  });
+
+  it("KB-380 (A42, a real case): a spoken rate with NO quantity still warns (missing_total) - nothing can be billed", () => {
+    const bill = nocatBill("दंतकांति 60 वाला", [item({ spokenName: "दंतकांति", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "piece", rate: 6000, rateUnit: "piece", total: null, priceType: "rate" })], shop);
+    expect(bill.warnedLines).toEqual([0]);
   });
 
   it("a line with a SPOKEN price is never touched (the catalog only fills a price that was not said)", () => {

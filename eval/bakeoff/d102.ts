@@ -90,6 +90,8 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
     wrong.push(`an extra line: ${l.item.spokenName} - heard "${l.item.spokenName}"${mark(j)}`);
   });
 
+  // a missing line is warned only by a whole-bill Theek hai (every line warned: "heard X, it is on no line") or a "Not added" piece
+  const billWarned = actual.unresolved > 0 || (actual.lines.length > 0 && warned.size === actual.lines.length);
   const exact = actual.unresolved === expected.notAdded && actual.checks <= expected.checks && wrong.length === 0 && inexact.length === 0 && dropped === 0 && numbersRightNameWrong === 0 && warnedDuplicated === 0;
   return {
     exact,
@@ -98,6 +100,7 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
     wrongNumbers: wrong.length - wrongProducts,
     wrongProducts,
     dropped,
+    silentDropped: billWarned ? 0 : dropped,
     silentDuplicated,
     warnedDuplicated,
     invented,

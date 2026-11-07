@@ -1,8 +1,8 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
-import { extractSpokenNumbers, matchProductName, parseUtteranceParts, pieceHasPerUnitPrice, type ParsedItem } from "../../src/domain/grammar.js";
+import { extractSpokenNumbers, matchProductName, parseUtteranceParts, pieceHasPerUnitPrice, unitScale, type ParsedItem } from "../../src/domain/grammar.js";
 import { settleLayer2Items } from "../../src/domain/layer2.js";
 import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "../../src/domain/layer2Check.js";
-import { checkLayer2NumberOrder, evaluateReviewFlags } from "../../src/domain/reviewFlags.js";
+import { checkLayer2NumberOrder, evaluateReviewFlags, type CheckSource } from "../../src/domain/reviewFlags.js";
 import { flagWeakProducts } from "../../src/domain/weakProduct.js";
 import { checksOf, warnedLinesOf, type ActualBill } from "../acceptance/compare.js";
 
@@ -11,10 +11,10 @@ import { checksOf, warnedLinesOf, type ActualBill } from "../acceptance/compare.
 // the empty-line rule, Layer 3 flags, KB-368, the number order). pipeline.test.ts proves it gives the shipped resolver's lines and checks.
 // shortcut: a copy of ~20 lines, not a shared function - V3 extracts one from resolveUtterance if C or D wins.
 
-export function checkAudioAnswer(spoken: string, items: readonly ParsedItem[], shop: ParserCatalog): ActualBill {
+export function checkAudioAnswer(spoken: string, items: readonly ParsedItem[], shop: ParserCatalog, source: CheckSource = "spoken"): ActualBill {
   const parts = parseUtteranceParts(spoken, shop);
   const settledRaw = settleLayer2Items(items, shop);
-  const checked = checkLayer2AgainstSpoken(parts, settledRaw.lines);
+  const checked = checkLayer2AgainstSpoken(parts, settledRaw.lines, source);
   const grounded = dropUnspokenPrices(spoken, checked.lines);
   const priceDropped = grounded.map((l, i) => l !== checked.lines[i]);
   const allFlags = [...settledRaw.flags, ...checked.flags];
@@ -24,8 +24,8 @@ export function checkAudioAnswer(spoken: string, items: readonly ParsedItem[], s
   const newIndex = kept.reduce<number[]>((acc, k, i) => (acc.push(k ? (acc[i - 1] ?? -1) + 1 : (acc[i - 1] ?? -1)), acc), []);
   const settledFlags = allFlags.filter((f) => f.itemIndex === null || kept[f.itemIndex]).map((f) => (f.itemIndex === null ? f : { ...f, itemIndex: newIndex[f.itemIndex]! }));
   const lineItems = lines.map((l) => l.item);
-  const misaligned = checkLayer2NumberOrder(spoken, lineItems);
-  const flags = [...evaluateReviewFlags(spoken, lineItems, shop.entries), ...flagWeakProducts(lineItems, shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])];
+  const misaligned = checkLayer2NumberOrder(spoken, lineItems, source);
+  const flags = [...evaluateReviewFlags(spoken, lineItems, shop.entries, undefined, source), ...flagWeakProducts(lineItems, shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])];
   return { lines, unresolved: 0, checks: checksOf(flags, lines.length), warnedLines: warnedLinesOf(flags, lines.length) };
 }
 
@@ -66,7 +66,9 @@ export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalo
   return items.map((it) => {
     if (it.priceType !== "default") return it;
     const match = matchProductName(it.spokenName, shop);
-    if (match.matchStatus === "matched" && match.catalogId !== null) return { ...it, catalogId: match.catalogId, isCustom: false, matchStatus: "matched" };
+    const entry = match.matchStatus === "matched" && match.catalogId !== null ? shop.byId.get(match.catalogId) : undefined;
+    // KB-380 (A19): a unit the shop's price cannot be scaled to (a packet of a per-kg product) has no shop price - Price needed
+    if (entry && unitScale(it.unit || entry.unit, entry.unit) !== null) return { ...it, catalogId: entry.id, isCustom: false, matchStatus: "matched" };
     return { ...it, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "unknown" };
   });
 }
@@ -76,7 +78,7 @@ export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalo
  * for the live run (run.ts) and the offline replay (replay.ts), so a code change is measured exactly as the live run would bill it.
  */
 export function nocatBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): ActualBill {
-  return checkAudioAnswer(transcript, fillFromCatalog(items, shop), shop);
+  return checkAudioAnswer(transcript, fillFromCatalog(items, shop), shop, "ai-answer");
 }
 
 /**
