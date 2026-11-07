@@ -26,6 +26,8 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
   // a spelling variant (compare.ts's rules), or the same word in the other script: both names resolve to ONE catalog product ("toor daal" / तुअर दाल)
   const alike = (e: ExpectedLine, l: Line) => {
     if (sameName(e.name, l.item.spokenName) || mostlySame(e.name, l.item.spokenName)) return true;
+    // owner, 8 Nov 2026: spaces inside a name do not matter (दंतकांति = दंत कांति) - scoring only
+    if (sameName(e.name.replace(/\s+/g, ""), l.item.spokenName.replace(/\s+/g, ""))) return true;
     const mine = own(e.name);
     return mine !== null && own(l.item.spokenName) === mine;
   };

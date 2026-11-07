@@ -406,7 +406,8 @@ checks: 0
 ## A49 unreadable-price
 said: रिफाइंड सोयाबिन ओयल 170 रुपए ग्राउंड नट ओयल 200 रुपए
 - रिफाइंड सोयाबीन ऑयल =170
-- ग्राउंडनट ऑयल =200
+# OWNER, 8 Nov 2026 (listened): he said "ग्राउंडनट ऑइल एक" - one oil, Rs 200.
+- 1 piece ग्राउंडनट ऑयल =200
 checks: 0
 
 ## A50 unreadable-price

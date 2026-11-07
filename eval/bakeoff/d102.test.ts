@@ -65,6 +65,12 @@ describe("scoreRunD102", () => {
     expect(scoreRunD102("A19", one("लाल मिर्च", 1, "kg", { kind: "total", paise: 20000 }), bill([priced]), shop)).toMatchObject({ wrongLines: 1, silentWrong: 1, priceNeededLines: 0 });
   });
 
+  it("owner (8 Nov 2026): spaces inside a name do not matter to the scorer (दंतकांति = दंत कांति, टूथब्रश = टूथ ब्रश) - the app is unchanged", () => {
+    const custom = (spokenName: string) => it_({ spokenName, catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: 6000, rateUnit: "piece", total: 6000, priceType: "rate" });
+    expect(scoreRunD102("A42", one("दंत कांति", 1, "piece", { kind: "rate", paise: 6000 }), bill([custom("दंतकांति")]), shop)).toMatchObject({ exact: true, numbersRightNameWrong: 0 });
+    expect(scoreRunD102("A42", one("दंत कांति", 1, "piece", { kind: "rate", paise: 6000 }), bill([custom("कोलगेट पेस्ट")]), shop).exact).toBe(false);
+  });
+
   it("a DIFFERENT product's name is wrong, even with the right numbers", () => {
     const e = one("चीनी", 2, "kg", { kind: "rate", paise: 4500 });
     expect(scoreRunD102("A01", e, bill([it_({ spokenName: "चावल", catalogId: "11" })]), shop)).toMatchObject({ wrongProducts: 1, wrongLines: 1, exact: false });
