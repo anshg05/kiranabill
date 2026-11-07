@@ -7,7 +7,7 @@
  * Anything else stays "dropped" and warns. An unknown correction form is NEVER exempted (owner, 7 Nov 2026): add it to the list.
  * Pure (domain rule 3); the Layer 1 / Sarvam path never calls this.
  */
-import { canonicalUnit, extractSpokenNumbers, type ParsedItem } from "./grammar.js";
+import { canonicalUnit, extractSpokenNumberEntries, extractSpokenNumbers, type ParsedItem } from "./grammar.js";
 import { paiseToRupeeNumber } from "./money.js";
 
 /** The ONE list of spoken correction words (doc 25 §2 - extendable: a new form is added here, with a test). */
@@ -19,6 +19,51 @@ const NAME_AFTER_WORDS = 6;
 
 const norm = (s: string) => s.normalize("NFD").replace(/़/g, "").normalize("NFC").toLowerCase();
 const alike = (a: string, b: string) => a === b || (a.length > 1 && b.length > 1 && (a.startsWith(b) || b.startsWith(a)));
+
+const PER_KILO = new Map([["किलो", "kg"], ["kilo", "kg"], ["kg", "kg"], ["लीटर", "liter"], ["लिटर", "liter"], ["liter", "liter"], ["litre", "liter"]]);
+const PER_PIECE = new Set(["वाला", "वाली", "वाले"]);
+
+/**
+ * KB-381 (doc 25 §3.2, D105 addition 2): the owner's implied 1 for a SPOKEN RATE, read from the words straight after that price - a
+ * per-kilo / per-litre price ("88 रुपए किलो", "₹56 किलो", "56 का किलो") = 1 kg / 1 liter; "X वाला" = 1 piece. "वाला" after a NAME
+ * ("बड़ा वाला ₹110") is no price (owner, 8 Nov 2026). null = nothing in the speech justifies a 1.
+ */
+function impliedOneUnit(words: readonly string[], rateRupees: number): string | null {
+  for (let i = 0; i < words.length; i++) {
+    const v = extractSpokenNumbers(words[i]!);
+    if (v.length !== 1 || Math.abs(v[0]! - rateRupees) > 1e-9) continue;
+    const next = ["रुपए", "रुपये", "रुपया", "का", "की", "rupaye"].includes(words[i + 1] ?? "") ? words[i + 2] : words[i + 1];
+    if (next !== undefined && PER_KILO.has(next)) return PER_KILO.get(next)!;
+    if (words[i + 1] !== undefined && PER_PIECE.has(words[i + 1]!)) return "piece";
+  }
+  return null;
+}
+
+/**
+ * KB-381 (doc 25 §3.2): the AI's QUANTITIES checked against the whole transcript, in the order said - not against Layer 1's cut (on A57
+ * that cut put "5 पीस" in the next piece whenever the transcript had no comma, and KB-359 dropped a 5 the AI had right). For each line:
+ *   - a quantity 1 on a spoken-rate line that the words call per-kilo / "X वाला" stands (the owner's implied 1) - and takes no spoken "1";
+ *   - otherwise the quantity must be a number spoken after the previous line's quantity; else it is dropped (D47: the spoken total stays);
+ *   - a spoken-rate line with NO quantity gets the implied 1 when the words justify it (A42 "दंतकांति 60 वाला" = 1 piece).
+ * Our code computes the totals afterwards. AI path only; Layer 1 keeps KB-359's rule.
+ */
+export function aiAnswerQuantities(transcript: string, items: readonly ParsedItem[]): ParsedItem[] {
+  const words = transcript.split(/[\s,।]+/).filter(Boolean).map(norm);
+  const spoken = extractSpokenNumberEntries(transcript).map((e) => e.value);
+  let floor = -1;
+  return items.map((it) => {
+    const implied = it.priceType === "rate" && it.rate !== null ? impliedOneUnit(words, paiseToRupeeNumber(it.rate)) : null;
+    // a per-kilo price is 1 kg / 1 liter whatever unit the AI wrote; "X वाला" keeps the line's own count unit (piece by default)
+    if (it.qty === null) return implied ? { ...it, qty: 1, unit: implied === "piece" ? it.unit || "piece" : implied } : it;
+    if (it.qty === 1 && implied) return it;
+    const at = spoken.findIndex((v, k) => k > floor && Math.abs(v - it.qty!) < 1e-9);
+    if (at >= 0) {
+      floor = at;
+      return it;
+    }
+    return { ...it, qty: null, unit: "", total: it.priceType === "total" ? it.total : null };
+  });
+}
 
 /** The spoken numbers an AI answer rightly left off the bill (a multiset of values, in rupee / quantity terms). */
 export function aiAnswerExemptNumbers(transcript: string, items: readonly ParsedItem[]): number[] {

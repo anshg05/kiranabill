@@ -18,12 +18,18 @@ describe("the regression set's offline replay", () => {
     for (const c of ["nocat-old", "nocat-D103"]) expect(rows.filter((r) => r.candidate === c && r.items && r.transcript !== null && !r.error)).toHaveLength(84);
   });
 
-  it("replays every saved raw answer to the NUMBERS the live run saved (168 runs) - only KB-380's intended changes differ", () => {
-    // KB-379 proved an exact replay before any code change. Since KB-380 the Theek hai may differ (the adapted checks), and ONE number change
-    // is intended: a shop price the catalog cannot scale to the line's unit (A19, A20: a "default" line with no total) is now Price needed.
-    const numbers = (l: NonNullable<RunResult["lines"]>[number]) => JSON.stringify({ ...l, warned: undefined });
-    const intended = (was: NonNullable<RunResult["lines"]>[number], now: NonNullable<RunResult["lines"]>[number]) =>
-      was.priceType === "default" && was.total === null && now.priceType === "unknown" && now.catalogId === null && now.qty === was.qty && now.unit === was.unit && now.name === was.name;
+  it("replays every saved raw answer to the NUMBERS the live run saved (168 runs) - only KB-380's and KB-381's intended changes differ", () => {
+    // KB-379 proved an exact replay before any code change. Since then the Theek hai may differ (KB-380's adapted checks), and these number
+    // changes are intended - nothing else may move:
+    //   KB-380: a shop price the catalog cannot scale to the line's unit (A19, A20: a "default" line with no total) is now Price needed;
+    //   KB-381: a QUANTITY now follows the whole transcript in order - the AI's own quantity restored where Layer 1's cut had dropped it
+    //           (A57), the owner's implied 1 on a spoken rate (A42), an unspoken 1 dropped on a total-only line (A49). The total follows
+    //           the quantity (our arithmetic); the name, the price type and the rate never change.
+    type Line = NonNullable<RunResult["lines"]>[number];
+    const numbers = (l: Line) => JSON.stringify({ ...l, warned: undefined });
+    const quantityOnly = (was: Line, now: Line) => now.name === was.name && now.priceType === was.priceType && now.rate === was.rate && now.qty !== was.qty && (now.qty === null ? was.qty === 1 && now.priceType === "total" && now.total === was.total : now.total === (now.rate === null ? was.total : Math.round(now.qty * now.rate)));
+    const intended = (was: Line, now: Line) =>
+      (was.priceType === "default" && was.total === null && now.priceType === "unknown" && now.catalogId === null && now.qty === was.qty && now.unit === was.unit && now.name === was.name) || quantityOnly(was, now);
     const changed = rows.flatMap((r) => {
       const now = toSaved(nocatBill(r.transcript!, r.items!, SEED_PARSER_CATALOG)).lines;
       if (now.length !== r.lines!.length) return [`${r.candidate} ${r.id} run ${r.run}: ${r.lines!.length} -> ${now.length} lines`];

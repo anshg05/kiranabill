@@ -65,7 +65,8 @@ export function checkLayer2AgainstSpoken(pieces: readonly UtterancePart[], lines
     const piece = pieces[i]!;
     let ai = settled.item;
     // (when Layer 1 read a quantity for the piece, a DIFFERENT AI quantity is Check A's loud HIGH flag, not a silent drop)
-    if (ai.qty !== null && piece.item?.qty == null && !quantitySaid(piece.text, ai.qty)) {
+    // KB-381: on an AI answer the quantity is checked against the WHOLE transcript in order (aiAnswerQuantities), never Layer 1's cut
+    if (source === "spoken" && ai.qty !== null && piece.item?.qty == null && !quantitySaid(piece.text, ai.qty)) {
       ai = { ...ai, qty: null, unit: "", total: ai.priceType === "total" ? ai.total : null };
       settled = { ...settled, item: ai };
     }

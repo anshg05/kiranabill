@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORRECTION_MARKERS, aiAnswerExemptNumbers } from "./aiAnswerNumbers";
+import { CORRECTION_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities } from "./aiAnswerNumbers";
 import type { ParsedItem } from "./grammar";
 import type { SettledLine } from "./layer2";
 import { checkLayer2AgainstSpoken } from "./layer2Check";
@@ -94,6 +94,45 @@ describe("4. number_unconsumed - not run on an AI answer (number_dropped is the 
   it("A36: not raised on an AI answer; still raised on the spoken path", () => {
     expect(codes(A36, A36_LINES, "ai-answer")).not.toContain("number_unconsumed");
     expect(codes(A36, A36_LINES, "spoken")).toContain("number_unconsumed");
+  });
+});
+
+describe("KB-381: the quantity check on an AI answer (doc 25 §3.2) - in the transcript in order, or the owner's implied 1", () => {
+  const A57_NO_COMMA = "रिन साबुन 10 वाली 5 पीस पारले जी बिस्किट 30 वाला 5 पैकेट बंसल तेल पाउच 1 पैकेट ₹140 फेना साबुन 10 वाली 5 पीस";
+  const A57_COMMA = "रिन साबुन 10 वाली 5 पीस, पारले जी बिस्किट 30 वाला 5 पैकेट, बंसल तेल पाउच 1 पैकेट ₹140, फेना साबुन 10 वाली 5 पीस";
+  const A57_ITEMS = [ai("रिन साबुन", 5, "piece", "rate", 1000, null), ai("पारले जी बिस्किट", 5, "packet", "rate", 3000, null), ai("बंसल तेल पाउच", 1, "packet", "total", null, 14000), ai("फेना साबुन", 5, "piece", "rate", 1000, null)];
+
+  it("A57: Rin and Fena keep their 5 pieces whether or not the transcript has a comma", () => {
+    for (const t of [A57_NO_COMMA, A57_COMMA]) expect(aiAnswerQuantities(t, A57_ITEMS).map((i) => i.qty)).toEqual([5, 5, 1, 5]);
+  });
+
+  it("a quantity spoken nowhere is dropped (a rate line then needs its quantity - never a number nobody said)", () => {
+    expect(aiAnswerQuantities("चावल 60 रुपए किलो", [ai("चावल", 3, "kg", "rate", 6000, 18000)])[0]).toMatchObject({ qty: null, total: null });
+  });
+
+  it("A49 (owner): an invented 1 on a total-only line is dropped - qty null, the spoken Rs 200 kept (D47), no warning", () => {
+    const t = "रिफाइंड सोयाबीन ऑयल ₹170 ग्राउंडनट ऑइल ₹200";
+    const items = [ai("रिफाइंड सोयाबीन ऑयल", null, "", "total", null, 17000), ai("ग्राउंडनट ऑइल", 1, "", "total", null, 20000)];
+    const fixed = aiAnswerQuantities(t, items);
+    expect(fixed[1]).toMatchObject({ qty: null, unit: "", priceType: "total", total: 20000 });
+    expect(codes(t, fixed, "ai-answer")).toEqual([]);
+  });
+
+  it("D105: a per-kilo price with no quantity = 1 kg; 'X वाला' with no quantity = 1 piece (A42 'दंतकांति 60 वाला')", () => {
+    expect(aiAnswerQuantities("बरबटी दाल 88 रुपए किलो", [ai("बरबटी दाल", null, "kg", "rate", 8800, null)])[0]).toMatchObject({ qty: 1, unit: "kg" });
+    expect(aiAnswerQuantities("दंतकांति 60 वाला", [ai("दंतकांति", null, "piece", "rate", 6000, null)])[0]).toMatchObject({ qty: 1, unit: "piece" });
+  });
+
+  it("owner (8 Nov 2026): 'वाला' that belongs to a NAME is no price - 'पतंजलि पेस्ट बड़ा वाला ₹110' stays a total with no quantity", () => {
+    expect(aiAnswerQuantities("पतंजलि पेस्ट बड़ा वाला ₹110", [ai("पतंजलि पेस्ट बड़ा वाला", null, "piece", "total", null, 11000)])[0]).toMatchObject({ qty: null, total: 11000 });
+    // and a rate the words do not call per-kilo or "वाला" gets no 1
+    expect(aiAnswerQuantities("पतंजलि पेस्ट बड़ा वाला ₹110", [ai("पतंजलि पेस्ट बड़ा वाला", null, "piece", "rate", 11000, null)])[0]!.qty).toBeNull();
+  });
+
+  it("an implied 1 does not take another line's spoken 1 (A54: 'फटका ₹150 किलो' must leave मूंग दाल its '1 किलो')", () => {
+    const t = "तुवर दाल 1 किलो फटका ₹150 किलो मूंग दाल 1 किलो ₹96 किलो";
+    const items = [ai("तुवर दाल", 1, "kg", "rate", 15000, 15000), ai("फटका", 1, "kg", "rate", 15000, 15000), ai("मूंग दाल", 1, "kg", "rate", 9600, 9600)];
+    expect(aiAnswerQuantities(t, items).map((i) => i.qty)).toEqual([1, 1, 1]);
   });
 });
 

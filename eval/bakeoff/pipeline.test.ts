@@ -84,9 +84,23 @@ describe("KB-370 nocat (owner, 6 Nov 2026): the model never sees the catalog; OU
     }
   });
 
-  it("KB-380 (A42, a real case): a spoken rate with NO quantity still warns (missing_total) - nothing can be billed", () => {
+  it("KB-381 (A42, owner): 'दंतकांति 60 वाला' with no quantity = 1 piece at Rs 60 - our code computes the total, no warning", () => {
     const bill = nocatBill("दंतकांति 60 वाला", [item({ spokenName: "दंतकांति", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "piece", rate: 6000, rateUnit: "piece", total: null, priceType: "rate" })], shop);
+    expect(bill.lines[0]!.item).toMatchObject({ qty: 1, unit: "piece", rate: 6000, total: 6000 });
+    expect(bill.warnedLines).toEqual([]);
+  });
+
+  it("a spoken rate with NO quantity and nothing that implies one still warns (missing_total) - nothing can be billed", () => {
+    const bill = nocatBill("दंतकांति ₹60", [item({ spokenName: "दंतकांति", catalogId: null, isCustom: true, matchStatus: "none", qty: null, unit: "piece", rate: 6000, rateUnit: "piece", total: null, priceType: "rate" })], shop);
     expect(bill.warnedLines).toEqual([0]);
+  });
+
+  it("KB-381 (A57, end to end): Rin keeps its 5 pieces with NO comma in the transcript - Layer 1's cut no longer strips it", () => {
+    const t = "रिन साबुन 10 वाली 5 पीस पारले जी बिस्किट 30 वाला 5 पैकेट";
+    const rin = item({ spokenName: "रिन साबुन", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "piece", rate: 1000, rateUnit: "piece", total: null, priceType: "rate" });
+    const parle = item({ spokenName: "पारले जी बिस्किट", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "packet", rate: 3000, rateUnit: "packet", total: null, priceType: "rate" });
+    const bill = nocatBill(t, [rin, parle], shop);
+    expect(bill.lines.map((l) => [l.item.qty, l.item.total])).toEqual([[5, 5000], [5, 15000]]);
   });
 
   it("a line with a SPOKEN price is never touched (the catalog only fills a price that was not said)", () => {

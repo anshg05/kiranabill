@@ -110,6 +110,21 @@ const COMPOSITIONAL_FRACTIONS: Record<string, number> = {
   paune: -0.25, पौने: -0.25, पोने: -0.25,
 };
 
+// KB-381 (owner, 8 Nov 2026 - money): a fraction word before DIGITS reads as before the word. A round hundred / thousand scales its
+// leading count - "पौने 200" = पौने दो सौ = 175, "सवा 100" = सवा सौ = 125, "डेढ़ 1000" = डेढ़ हज़ार = 1500; a small number is changed
+// itself - "पौने 2" = 1.75, "साढ़े 2" = 2.5. Before KB-381 "पौने 2" read as 0.75 and 2 and "साढ़े 300" as 300.5. null = not a pair
+// (डेढ़ / ढाई only go with one hundred or one thousand: "डेढ़ 200" is not Hindi for anything - two numbers, never a guess).
+function fractionBeforeDigits(digits: number, add: number | null, fixed: number | null): number | null {
+  if (digits >= 100 && digits % 100 === 0) {
+    const scale = digits % 1000 === 0 ? 1000 : 100;
+    const count = Number(String(digits).slice(0, scale === 1000 ? -3 : -2)); // the leading count, read off the digits (no division: KB-005f)
+    if (fixed !== null) return count === 1 ? fixed * scale : null;
+    return (count + add!) * scale;
+  }
+  return fixed !== null ? null : digits + add!;
+}
+const digitsOf = (word: string | undefined) => (word !== undefined && /^\d+$/.test(word) ? Number(word) : undefined);
+
 // chataak is a traditional small-weight UNIT (~50g), not a fraction
 // multiplier - the old Gemini prompt's chataak=0.05 was 0.05kg read wrong.
 // D13. Owner's note: some regional usage is closer to 58g - a pilot
@@ -290,8 +305,12 @@ function classifySegment(words: readonly string[]): Classified[] {
     if (compositionalSign !== undefined) {
       const nextWord = words[i + 1];
       const nextValue = nextWord !== undefined ? HINDI_NUMBERS[nextWord] : undefined;
+      const digits = digitsOf(nextWord);
       if (nextValue !== undefined) {
         out.push({ type: "num", value: nextValue + compositionalSign });
+        i += 2;
+      } else if (digits !== undefined) {
+        out.push({ type: "num", value: fractionBeforeDigits(digits, compositionalSign, null)! });
         i += 2;
       } else {
         out.push({ type: "num", value: 1 + compositionalSign }); // bare "...ek" form
@@ -302,10 +321,11 @@ function classifySegment(words: readonly string[]): Classified[] {
 
     if (SAADHE_WORDS.has(word)) {
       const nextWord = words[i + 1];
-      const nextValue =
-        nextWord === undefined ? undefined : HINDI_NUMBERS[nextWord] ?? (/^\d+$/.test(nextWord) ? Number(nextWord) : undefined);
+      const wordValue = nextWord === undefined ? undefined : HINDI_NUMBERS[nextWord];
+      const digits = digitsOf(nextWord);
+      const nextValue = wordValue !== undefined ? wordValue + 0.5 : digits !== undefined ? fractionBeforeDigits(digits, 0.5, null)! : undefined;
       if (nextValue !== undefined) {
-        out.push({ type: "num", value: nextValue + 0.5 });
+        out.push({ type: "num", value: nextValue });
         i += 2;
         continue;
       }
@@ -328,6 +348,14 @@ function classifySegment(words: readonly string[]): Classified[] {
     }
 
     if (FIXED_FRACTIONS[word] !== undefined) {
+      // KB-381: डेढ़ / ढाई before one hundred or one thousand in digits ("डेढ़ 100" = डेढ़ सौ = 150)
+      const fixed = FIXED_FRACTIONS[word]!;
+      const scaled = (fixed === 1.5 || fixed === 2.5) && digitsOf(words[i + 1]) !== undefined ? fractionBeforeDigits(digitsOf(words[i + 1])!, null, fixed) : null;
+      if (scaled !== null) {
+        out.push({ type: "num", value: scaled });
+        i += 2;
+        continue;
+      }
       out.push({ type: "num", value: FIXED_FRACTIONS[word] });
       i += 1;
       continue;

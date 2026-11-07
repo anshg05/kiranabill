@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 8 Nov 2026 (rev 5) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380` (8 Nov).
+**Created:** 7 Nov 2026 · **Last updated:** 8 Nov 2026 (rev 6) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380`, `KB-381` (8 Nov).
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -10,6 +10,7 @@
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
 - rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
+- rev 6 (8 Nov 2026, `KB-381`, owner): §3.4 corrected - a fraction word before a ROUND hundred / thousand scales its count ("पौने 200" = 175), not adds 0.25; "X वाला" after a NAME is no price.
 - rev 5 (8 Nov 2026, `KB-380`, owner):
   - §2: the correction words are one extendable list, and an unknown form warns;
   - §4: `layer2_disagrees` on an AI answer only when the money differs;
@@ -87,10 +88,13 @@ The rules from the run stay: names as said; a spoken correction edits the earlie
    - the total is `lineTotalPaiseScaled(qty, rate, -3)`, whatever unit the AI gave.
 
    A38: 500 gm at "56 रुपए किलो" = Rs 28.
-4. **The "पौने 2" reader bug** (`extractSpokenNumbers`): "पौने 2" is read as 0.75 and 2; "पौने दो" is read as 1.75.
-   - V3: "पौने <number>" = the number - 0.25 whether the number is a digit or a word.
-   - The same check goes on सवा / साढ़े / डेढ़ / ढाई with a digit after them.
-   - Measured on `bench:numbers` (0 wrong) as well as the regression set.
+4. **The fraction words before DIGITS** (`extractSpokenNumbers`, shared by Layer 1 and the AI path - fixed in `KB-381`; owner's rule, 8 Nov 2026):
+   - **Before KB-381:** "पौने 2" read as 0.75 and 2 (Layer 1 billed qty 2), "सवा 2" as 2, and **"साढ़े 300" as 300.5** (Layer 1 billed Rs 300.50). The word forms were always right.
+   - **The rule:** a digit reads the same as the word.
+     - With a ROUND hundred or thousand, the word scales its leading count: "पौने 100" = पौने सौ = 75, "सवा 200" = 225, "साढ़े 300" = 350, "डेढ़ 100" = 150, "ढाई 1000" = 2,500.
+     - With a small number, it changes that number: "पौने 2" = 1.75, "सवा 2" = 2.25, "साढ़े 2" = 2.5.
+     - डेढ़ / ढाई go only with one hundred or one thousand. "डेढ़ 200" stays two numbers - never a guess.
+   - **Proven** on both the number reader and Layer 1's bill (`src/domain/fractionNumbers.test.ts`). `bench:numbers` is 0 wrong.
 5. **The totals:** line total = qty x rate (scaled across gm/kg, ml/liter) or the spoken total or qty x shop price. The grand total = `sumPaise` of the line totals. **No AI arithmetic is ever billed.**
 
 ## 4. The checks on an AI-read bill (`KB-380`, `KB-382`)
