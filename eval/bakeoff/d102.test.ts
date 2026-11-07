@@ -56,6 +56,15 @@ describe("scoreRunD102", () => {
     expect(scoreRunD102("A01", two, bill([it_({})], { unresolved: 1 }), shop)).toMatchObject({ dropped: 1, silentDropped: 0 });
   });
 
+  it("owner (8 Nov 2026): a wrong line that shows PRICE NEEDED is warned, not silent - and Price needed lines are counted in their own column", () => {
+    // A19: "लाल मिर्ची" as 1 packet (D103 says kg), no price - the shopkeeper must type one before Bill Banao
+    const e = one("लाल मिर्च", 1, "kg", { kind: "default" });
+    const needed = it_({ spokenName: "लाल मिर्ची", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "packet", rate: null, rateUnit: null, total: null, priceType: "unknown" });
+    expect(scoreRunD102("A19", e, bill([needed]), shop)).toMatchObject({ wrongLines: 1, silentWrong: 0, warnedLines: 0, priceNeededLines: 1 });
+    const priced = it_({ spokenName: "लाल मिर्ची", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "packet", rate: null, rateUnit: null, total: 20000, priceType: "total" });
+    expect(scoreRunD102("A19", one("लाल मिर्च", 1, "kg", { kind: "total", paise: 20000 }), bill([priced]), shop)).toMatchObject({ wrongLines: 1, silentWrong: 1, priceNeededLines: 0 });
+  });
+
   it("a DIFFERENT product's name is wrong, even with the right numbers", () => {
     const e = one("चीनी", 2, "kg", { kind: "rate", paise: 4500 });
     expect(scoreRunD102("A01", e, bill([it_({ spokenName: "चावल", catalogId: "11" })]), shop)).toMatchObject({ wrongProducts: 1, wrongLines: 1, exact: false });

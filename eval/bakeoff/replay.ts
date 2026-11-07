@@ -46,10 +46,10 @@ const replayed = saved.map((r): RunResult => {
 });
 
 console.log(`KB-379 replay - ${candidate} from ${path.basename(file)} (${replayed.length} runs), scored D102 + D103 against ${path.relative(process.cwd(), sheetFile)}; no call\n`);
-console.log("| Set | Runs | Exact | Wrong lines (silent / warned) | Dropped lines (silent / warned) | Lines with a Theek hai |\n|---|---|---|---|---|---|");
+console.log("| Set | Runs | Exact | Wrong lines (silent / warned) | Dropped lines (silent / warned) | Lines with a Theek hai | Price needed lines |\n|---|---|---|---|---|---|---|");
 for (const set of ["short", "long"] as const) {
   const s = summarize(replayed.filter((r) => r.set === set), 95.17);
-  console.log(`| ${set} | ${s.runs} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | ${s.wrongLines} (${s.silentWrong} / ${s.wrongLines - s.silentWrong}) | ${s.dropped} (${s.silentDropped} / ${s.dropped - s.silentDropped}) | ${s.warnedLines} |`);
+  console.log(`| ${set} | ${s.runs} | ${s.exact}/${s.runs} (${Math.round((100 * s.exact) / Math.max(1, s.runs))}%) | ${s.wrongLines} (${s.silentWrong} / ${s.wrongLines - s.silentWrong}) | ${s.dropped} (${s.silentDropped} / ${s.dropped - s.silentDropped}) | ${s.warnedLines} | ${s.priceNeededLines} |`);
 }
 console.log(`\nRuns whose bill differs from the saved one (${changed.length}):${changed.length ? `\n  ${changed.join("\n  ")}` : " none"}`);
 console.log("\nEvery dropped line (silent = nothing on the bill warns about it):");

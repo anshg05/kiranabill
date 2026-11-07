@@ -1,4 +1,5 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
+import { amountNeeded } from "../../src/domain/finalBill.js";
 import { canonicalUnit, matchProductName } from "../../src/domain/grammar.js";
 import { mostlySame, numbersOf, sameName, type ActualBill, type Verdict } from "../acceptance/compare.js";
 import type { ExpectedBill, ExpectedLine } from "../acceptance/types.js";
@@ -11,6 +12,8 @@ import { scoringCatalog, type RunScore } from "./score.js";
 
 const NO_WARNING = " [NO warning]";
 const WARNED = " [a Theek hai warned]";
+/** Owner, 8 Nov 2026: a line that asks for a price cannot reach Bill Banao unpriced - it is warned, not silent (counted on its own). */
+const PRICE_NEEDED = " [Price needed]";
 const cache = new WeakMap<ParserCatalog, ParserCatalog>();
 
 type Line = ActualBill["lines"][number];
@@ -27,7 +30,7 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
     return mine !== null && own(l.item.spokenName) === mine;
   };
   const warned = new Set(actual.warnedLines ?? []);
-  const mark = (j: number) => (warned.has(j) ? WARNED : NO_WARNING);
+  const mark = (j: number) => (warned.has(j) ? WARNED : amountNeeded(actual.lines[j]!.item) === "price" ? PRICE_NEEDED : NO_WARNING);
 
   /** The numbers, under D102: numbersOf, plus WHERE a "shop price" came from (it must be the said product's, or Price needed if none). */
   const numbers = (e: ExpectedLine, l: Line): Verdict => {
@@ -107,6 +110,7 @@ export function scoreRunD102(id: string, expected: ExpectedBill, actual: ActualB
     numbersRightNameWrong,
     checks: actual.checks,
     warnedLines: warned.size,
+    priceNeededLines: actual.lines.filter((l) => amountNeeded(l.item) === "price").length,
     wrong,
   };
 }
