@@ -59,3 +59,19 @@ describe("KB-383 Devanagari aliases - one list, no drift, no tie (owner, 9 Nov 2
     }
   });
 });
+
+describe("KB-383 follow-up: 'फुटाने' -> Futana (owner, 9 Nov 2026) - one list, its own additive migration", () => {
+  it("the committed migration is exactly what the list generates, and the alias lands on Futana only", async () => {
+    const { KB383_SPELLING_ALIASES } = await import("./catalogAliasFixes");
+    const { SEED_PARSER_CATALOG } = await import("../src/domain/seedCatalog");
+    const { matchProductName } = await import("../src/domain/grammar");
+    const dir = path.resolve(__dirname, "..", "supabase", "migrations");
+    const files = readdirSync(dir).filter((f) => f.endsWith("_kb383_futane_alias.sql"));
+    expect(files).toHaveLength(1);
+    expect(readFileSync(path.join(dir, files[0]!), "utf8")).toBe(buildAliasMigrationSql(KB383_SPELLING_ALIASES, "-- KB-383 follow-up (owner, 9 Nov 2026): the spelling फुटाने for Futana - an additive alias add."));
+    for (const fix of KB383_SPELLING_ALIASES) for (const alias of fix.add ?? []) {
+      expect(products.filter((p) => p.isActive && [p.displayName, ...p.aliases].includes(alias)).map((p) => p.displayName), alias).toEqual([fix.displayName]);
+      expect(SEED_PARSER_CATALOG.byId.get(matchProductName(alias, SEED_PARSER_CATALOG).catalogId ?? "")?.displayName, alias).toBe(fix.displayName);
+    }
+  });
+});

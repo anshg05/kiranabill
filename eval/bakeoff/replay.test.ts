@@ -30,13 +30,17 @@ describe("the regression set's offline replay", () => {
     const quantityOnly = (was: Line, now: Line) => now.name === was.name && now.priceType === was.priceType && now.rate === was.rate && now.qty !== was.qty && (now.qty === null ? was.qty === 1 && now.priceType === "total" && now.total === was.total : now.total === (now.rate === null ? was.total : Math.round(now.qty * now.rate)));
     //   KB-382: a gram / ml line whose spoken rate the words call per kilo (A38) - the total is now qty x rate per kilo, nothing else moves.
     const perKilo = (was: Line, now: Line) => now.name === was.name && now.qty === was.qty && now.rate === was.rate && (now.unit === "gm" || now.unit === "ml") && now.rate !== null && now.qty !== null && was.total === Math.round(now.qty * now.rate) && now.total === Math.round((now.qty * now.rate) / 1000);
-    const intended = (was: Line, now: Line) =>
+    //   KB-383 follow-up: "फुटाने" is a catalog alias now (its shop price fills); a repeated item takes the price said for the same name earlier.
+    const aliasFill = (was: Line, now: Line) => was.priceType === "unknown" && now.priceType === "default" && now.catalogId !== null && now.name === was.name && now.qty === was.qty;
+    const intended = (was: Line, now: Line, earlier: readonly Line[]) =>
+      aliasFill(was, now) ||
+      (was.total === null && (now.priceType === "rate" || now.priceType === "total") && earlier.some((e) => e.name.replace(/\s+/g, "") === now.name.replace(/\s+/g, "") && e.priceType === now.priceType && e.rate === now.rate)) ||
       perKilo(was, now) ||
       (was.priceType === "default" && was.total === null && now.priceType === "unknown" && now.catalogId === null && now.qty === was.qty && now.unit === was.unit && now.name === was.name) || quantityOnly(was, now);
     const changed = rows.flatMap((r) => {
       const now = toSaved(nocatBill(r.transcript!, r.items!, SEED_PARSER_CATALOG)).lines;
       if (now.length !== r.lines!.length) return [`${r.candidate} ${r.id} run ${r.run}: ${r.lines!.length} -> ${now.length} lines`];
-      return now.flatMap((l, k) => (numbers(l) === numbers(r.lines![k]!) || intended(r.lines![k]!, l) ? [] : [`${r.candidate} ${r.id} run ${r.run} line ${k + 1}`]));
+      return now.flatMap((l, k) => (numbers(l) === numbers(r.lines![k]!) || intended(r.lines![k]!, l, now.slice(0, k)) ? [] : [`${r.candidate} ${r.id} run ${r.run} line ${k + 1}`]));
     });
     expect(changed).toEqual([]);
   });

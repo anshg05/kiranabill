@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORRECTION_MARKERS, REMOVAL_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities, aiAnswerRateUnits } from "./aiAnswerNumbers";
+import { CORRECTION_MARKERS, REMOVAL_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities, aiAnswerRateUnits, aiAnswerRepeatPrices } from "./aiAnswerNumbers";
 import type { ParsedItem } from "./grammar";
 import type { SettledLine } from "./layer2";
 import { checkLayer2AgainstSpoken } from "./layer2Check";
@@ -173,6 +173,46 @@ describe("KB-383 (KB-367; owner 9 Nov 2026): 'हटा दो' WITH an item nam
 
   it("the removal words are ONE extendable list", () => {
     expect(REMOVAL_MARKERS).toEqual(["हटा दो", "निकाल दो", "cancel"]);
+  });
+});
+
+describe("KB-383 follow-up (owner, 9 Nov 2026): a number the line billed as its RATE is not a dropped quantity on an AI answer", () => {
+  const A04 = "2 किलो चावल 90 किलो 1 किलो मूंग दाल 96 किलो"; // the price said without "₹" / "रुपए"
+  const A04_LINES = [ai("चावल", 2, "kg", "rate", 9000, 18000), ai("मूंग दाल", 1, "kg", "rate", 9600, 9600)];
+  it("A04: '90 किलो' billed as Rs 90 a kilo is no dropped quantity (it still is on the spoken path)", () => {
+    expect(codes(A04, A04_LINES, "ai-answer")).not.toContain("qty_dropped");
+    expect(codes(A04, A04_LINES, "spoken")).toContain("qty_dropped");
+  });
+
+  it("a real case: a quantity said and billed nowhere still warns", () => {
+    expect(codes("5 किलो चावल 90 किलो", [ai("चावल", null, "kg", "rate", 9000, null)], "ai-answer")).toContain("qty_dropped");
+  });
+});
+
+describe("KB-383 follow-up (owner, 9 Nov 2026): a repeated item with no price said takes the price said for the SAME name earlier in the bill", () => {
+  const A39 = "1 बंसल तेल पैकेट 1 लीटर ₹150 1 बंसल तेल पैकेट 1 लीटर";
+  const first = ai("बंसल तेल पैकेट", 1, "liter", "total", null, 15000);
+  const repeat = ai("बंसल तेल पैकेट", 1, "liter", "unknown", null, null);
+
+  it("A39: the second 'बंसल तेल पैकेट 1 लीटर' takes Rs 150 from the first - and the 'said twice or heard twice?' warning still shows", () => {
+    const filled = aiAnswerRepeatPrices([first, repeat]);
+    expect(filled[1]).toMatchObject({ priceType: "total", total: 15000, qty: 1, unit: "liter" });
+    const f = evaluateReviewFlags(A39, filled, entries, undefined, "ai-answer");
+    expect(f.find((x) => x.code === "duplicate_line")?.itemIndex).toBe(1);
+    expect(checkLayer2NumberOrder(A39, filled, "ai-answer")).toBeNull(); // Rs 150 said once is not a misaligned number for the repeat
+  });
+
+  it("only the SAME name, only an EARLIER spoken price; a shop price (nothing said) is never copied; a later line never lends", () => {
+    expect(aiAnswerRepeatPrices([first, ai("बंसल तेल", 1, "liter", "unknown", null, null)])[1]!.total).toBeNull();
+    expect(aiAnswerRepeatPrices([repeat, first])[0]!.total).toBeNull();
+    expect(aiAnswerRepeatPrices([ai("शक्कर", 2, "kg", "default", null, null), ai("शक्कर", 2, "kg", "default", null, null)])[1]).toMatchObject({ priceType: "default", total: null });
+  });
+
+  it("a TOTAL is copied only to the same quantity and unit; a RATE is copied and our code multiplies it by the repeat's own quantity", () => {
+    const total = ai("चीनी", 2, "kg", "total", null, 9000);
+    expect(aiAnswerRepeatPrices([total, ai("चीनी", 5, "kg", "unknown", null, null)])[1]!.total).toBeNull(); // never Rs 90 for 5 kg
+    const rate = ai("चीनी", 2, "kg", "rate", 4500, 9000);
+    expect(aiAnswerRepeatPrices([rate, ai("चीनी", 5, "kg", "unknown", null, null)])[1]).toMatchObject({ priceType: "rate", rate: 4500 });
   });
 });
 

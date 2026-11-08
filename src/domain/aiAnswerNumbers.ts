@@ -215,3 +215,22 @@ export function aiAnswerExemptNumbers(transcript: string, items: readonly Parsed
   }
   return exempt;
 }
+
+/**
+ * KB-383 follow-up (owner, 9 Nov 2026; A39): a REPEATED item with no price said takes the price said for the SAME name earlier in the SAME
+ * bill ("1 बंसल तेल पैकेट 1 लीटर ₹150 ... 1 बंसल तेल पैकेट 1 लीटर"). A spoken RATE is copied (our code multiplies it by the repeat's own
+ * quantity); a spoken TOTAL only to the same quantity and unit (never Rs 90 of 2 kg onto 5 kg). A shop price (nothing said) is never copied,
+ * and a later line never lends. The two lines stay two, and duplicate_line still asks "said twice or heard twice?". AI path only.
+ */
+export function aiAnswerRepeatPrices(items: readonly ParsedItem[]): ParsedItem[] {
+  const key = (it: ParsedItem) => norm(it.spokenName).replace(/\s+/g, "");
+  const out: ParsedItem[] = [];
+  for (const it of items) {
+    const unpriced = it.rate === null && it.total === null && (it.priceType === "default" || it.priceType === "unknown");
+    const earlier = unpriced ? [...out].reverse().find((e) => key(e) === key(it) && (e.priceType === "rate" || e.priceType === "total")) : undefined;
+    if (earlier?.priceType === "rate") out.push({ ...it, priceType: "rate", rate: earlier.rate, rateUnit: earlier.rateUnit, total: null });
+    else if (earlier?.priceType === "total" && earlier.qty === it.qty && earlier.unit === it.unit) out.push({ ...it, priceType: "total", rate: null, rateUnit: null, total: earlier.total });
+    else out.push(it);
+  }
+  return out;
+}

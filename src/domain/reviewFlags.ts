@@ -385,7 +385,9 @@ function evaluateNumberSafety(transcript: string, items: readonly ParsedItem[], 
   // qty_dropped: spoken numbers that looked like a quantity (attached to a
   // unit word), matched only against items' actual qty values - a
   // stricter subset of number_dropped with a more specific message.
-  const qtyPool = [...allConsumedQtyOnly, ...exempt];
+  // KB-383 follow-up: on an AI answer a number the line billed as its RATE ("2 किलो चावल 90 किलो", said without "₹") is no dropped quantity
+  const billedRates = source === "ai-answer" ? items.flatMap((it) => (it.priceType === "rate" && it.rate !== null ? [paiseToRupeeNumber(it.rate)] : [])) : [];
+  const qtyPool = [...allConsumedQtyOnly, ...exempt, ...billedRates];
   for (const entry of spokenEntries) {
     if (entry.attachedUnit === null) continue;
     if (!consumeOne(qtyPool, entry.value)) {
@@ -511,15 +513,20 @@ export function checkLayer2NumberOrder(transcript: string, items: readonly Parse
   const used = new Array<boolean>(spoken.length).fill(false);
   let floor = -1; // positions must be > floor
 
+  const pricedBefore = new Set<string>();
   for (const item of items) {
     const needed: number[] = [];
+    // KB-383 follow-up: a repeat that took its price from the same name earlier (aiAnswerRepeatPrices) needs that price only once
+    const priceKey = `${item.spokenName.replace(/\s+/g, "")}|${item.priceType}|${item.rate}|${item.priceType === "total" ? item.total : ""}`;
+    const copiedPrice = source === "ai-answer" && pricedBefore.has(priceKey);
+    if (item.priceType === "rate" || item.priceType === "total") pricedBefore.add(priceKey);
     // KB-380: on an AI answer a qty of 1 on a spoken-RATE line is the implied 1 of that line (a per-kilo price, "X वाला"), excused per line
     const impliedOne = source === "ai-answer" && item.qty === 1 && item.priceType === "rate";
     if (item.qty !== null && !impliedOne && !(item.qty === 1 && !spoken.some((v) => Math.abs(v - 1) < NUMBER_MATCH_EPSILON))) {
       needed.push(item.qty);
     }
-    if (item.priceType === "rate" && item.rate !== null) needed.push(paiseToRupeeNumber(item.rate));
-    if (item.priceType === "total" && item.total !== null) needed.push(paiseToRupeeNumber(item.total));
+    if (!copiedPrice && item.priceType === "rate" && item.rate !== null) needed.push(paiseToRupeeNumber(item.rate));
+    if (!copiedPrice && item.priceType === "total" && item.total !== null) needed.push(paiseToRupeeNumber(item.total));
 
     let itemMax = floor;
     for (const value of needed) {

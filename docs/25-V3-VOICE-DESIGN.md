@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 9 Nov 2026 (rev 8) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380`, `KB-381` (8 Nov), `KB-382` (9 Nov).
+**Created:** 7 Nov 2026 · **Last updated:** 9 Nov 2026 (rev 9) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380`, `KB-381` (8 Nov), `KB-382` (9 Nov).
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -10,6 +10,7 @@
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
 - rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
+- rev 9 (9 Nov 2026, D106): the finish line counts our code's silent wrong lines strictly and ear mis-hearings apart (at most 1 per run); a repeated item takes its earlier spoken price.
 - rev 8 (9 Nov 2026, owner): an edited / hand-typed line keeps (b) against the shop price and (c).
 - rev 7 (9 Nov 2026, `KB-382`, owner): §4 gets (c) a per-gram / per-ml price with no "ग्राम" said = BLOCK, and (d) a line with no reference over Rs 10,000 = a clearable HIGH; a typed line is the shopkeeper's statement (none of these fire on it).
 - rev 6 (8 Nov 2026, `KB-381`, owner): §3.4 corrected - a fraction word before a ROUND hundred / thousand scales its count ("पौने 200" = 175), not adds 0.25; "X वाला" after a NAME is no price.
@@ -223,6 +224,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **Two ways to run it:**
   - **Offline replay (free, `KB-379`):** the saved raw answers (`items` and `transcript` in the results files) go through the CURRENT code - fill, checks, totals - and are scored. Every code ticket is measured this way.
   - **Live run:** about Rs 18 at list price (Rs 21 with GST) for 85 calls. Only when the prompt changes (`KB-383`), and before the release (`KB-387`). The canary first: A01, A61, A62 (`23` §8).
+- **Our code vs the ear (D106, owner 9 Nov 2026):** "silent wrong lines" below means those caused by OUR CODE (the prompt, the fill, the checks, the totals) - strict, 0. An EAR mis-hearing (the billed number is exactly what the model's own transcript says) is counted and reported apart by the replay, accepted at most 1 per full run, and watched in the pilot.
 - **The V3 finish line:** **0 silent wrong lines AND 0 silent DROPPED lines** (owner, 7 Nov 2026: an item said but missing from the bill with no warning is a silent undercharge; the replay reports "dropped lines (silent / warned)"; warned = a whole-bill Theek hai or a "Not added" piece; **a wrong line that shows Price needed counts as warned** - it cannot reach Bill Banao unpriced - and Price needed lines are reported in their OWN column, never merged with the Theek hai, owner 8 Nov 2026), **at least 90% exact on SHORT orders AND at least 90% exact on LONG orders, each separately** (owner, 7 Nov 2026). A combined figure could hide the long orders, which are where we failed. It is measured after the false-alarm checks are fixed.
 
 | Ticket | What | Finish line (on the regression set) | D33 |

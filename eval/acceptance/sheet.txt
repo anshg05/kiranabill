@@ -361,7 +361,8 @@ said: दन्त कान 30 60 वाला पतंजली पेस्�
 # OWNER, 8 Nov 2026: "पतंजलि पेस्ट बड़ा वाला ₹110" = Rs 110 total, no quantity - "वाला" belongs to बड़ा, it is not a price (D47).
 - पतंजलि पेस्ट बड़ा =110
 - 1 piece कोलगेट पेस्ट =70
-- 0.5 kg सयादरी चाय =185
+# OWNER, 9 Nov 2026: the brand said is सह्याद्री (the sheet had Whisper's spelling सयादरी).
+- 0.5 kg सह्याद्री चाय =185
 checks: 0
 
 ## A43 unclear-words

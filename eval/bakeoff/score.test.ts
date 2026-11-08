@@ -63,7 +63,8 @@ describe("rule 1 - shop price for a product the eval catalog does not have", () 
   it("the reviewed spellings resolve only in the scoring catalog, to the product the owner meant", () => {
     const sc = scoringCatalog(shop);
     for (const [name, id] of Object.entries(SCORING_SPELLINGS)) expect(matchProductName(name, sc).catalogId, name).toBe(id);
-    expect(matchProductName("फुटाने", shop).catalogId).toBeNull(); // the app's own catalog is untouched
+    expect(matchProductName("रिन साबुन", shop).catalogId).not.toBe("192"); // a scoring-only spelling: the app's own catalog does not resolve it
+    expect(matchProductName("फुटाने", shop).catalogId).toBe("609"); // KB-383 follow-up (9 Nov 2026): a real catalog alias now, out of the scoring list
   });
 });
 

@@ -9,6 +9,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { extractSpokenNumbers } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { parseSheet } from "../acceptance/sheet.js";
 import { SHEET } from "../acceptance/store.js";
@@ -54,5 +55,19 @@ for (const set of ["short", "long"] as const) {
 console.log(`\nRuns whose bill differs from the saved one (${changed.length}):${changed.length ? `\n  ${changed.join("\n  ")}` : " none"}`);
 console.log("\nEvery dropped line (silent = nothing on the bill warns about it):");
 for (const r of replayed) if (r.dropped) console.log(`  ${r.id} run ${r.run}: ${r.dropped} dropped, ${r.silentDropped ?? 0} silent`);
+// D106 (owner, 9 Nov 2026): the finish line counts silent wrong lines caused by OUR CODE strictly (0); an EAR mis-hearing is counted apart
+// (at most 1 per full run). A silent wrong NUMBER is the ear's when the billed number is exactly what the model's own transcript says.
+const earOrCode = replayed.flatMap((r) =>
+  r.wrong
+    .filter((w) => w.endsWith("[NO warning]"))
+    .map((w) => {
+      const billed = /wrong (?:price|total|quantity) (\d+(?:\.\d+)?)/.exec(w)?.[1];
+      const value = billed === undefined ? null : w.includes("wrong quantity") ? Number(billed) : Number(billed) / 100;
+      const said = value !== null && extractSpokenNumbers(r.transcript ?? "").some((n) => Math.abs(n - value) < 1e-9);
+      return `${said ? "EAR " : "CODE"} ${r.id} run ${r.run}: ${w}`;
+    }),
+);
+console.log(`\nSilent wrong lines: ${earOrCode.filter((x) => x.startsWith("CODE")).length} caused by our code (the finish line: 0), ${earOrCode.filter((x) => x.startsWith("EAR")).length} ear mis-hearing(s) (accepted: at most 1 per full run, D106)`);
+for (const x of earOrCode) console.log(`  ${x}`);
 console.log("\nEvery wrong line:");
 for (const r of replayed) for (const w of r.wrong) console.log(`  ${r.id} run ${r.run}: ${w}`);

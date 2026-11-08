@@ -2346,6 +2346,21 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 
 **The sheet's A17** (owner, 7 Nov 2026): write what was said. "संतूर सेट" stays संतूर सेट, and "संतूर हैंडवॉश सेट" is only the line where हैंडवॉश was said. The sheet already has these two lines, and all four ears heard हैंडवॉश in the second item only.
 
+### D106 — Ear mis-hearings are counted apart from our code's errors; a repeated item takes its earlier spoken price (owner, 9 Nov 2026) 🟢
+
+1. **No second ear now.** On the KB-383 live run, the single ear heard "फुटाने ₹102 किलो" once (A47), where every other ear in every run heard ₹110. No check can see it, because the transcript itself says 102.
+2. **The V3 finish line is split** (doc 25 §12, `KB-387`):
+   - **0 silent wrong lines caused by OUR CODE** - strict. That covers the prompt, the fill, the checks and the totals.
+   - **Ear mis-hearings are counted and reported separately**, accepted at most **1 per full regression run**, and watched in the pilot. If real use shows more, a second ear is revisited.
+   - **How the replay tells them apart:** a silent wrong NUMBER is an ear mis-hearing when the billed number is exactly what the model's own transcript says. Anything else is our code's.
+3. **A repeated item with no price said takes the price said for the SAME name earlier in the SAME bill** (A39: "1 बंसल तेल पैकेट 1 लीटर ₹150 ... 1 बंसल तेल पैकेट 1 लीटर").
+   - The "said twice or heard twice?" warning still shows.
+   - The line is to be shown as FILLED, not spoken - the bill screen's part is `KB-385`.
+   - A spoken RATE is copied, and our code multiplies it by the repeat's own quantity. A spoken TOTAL is copied only to the same quantity and unit, never a total for 2 kg onto 5 kg. A shop price (nothing said) is never copied.
+4. **The sheet's A42:** "सयादरी चाय" -> "सह्याद्री चाय", the brand said.
+5. **"फुटाने" is a catalog alias of Futana**, through the alias list and its own generated additive migration (`20261109100000_kb383_futane_alias.sql`, a `db push` at the release).
+6. **Recorded:** the owner applied `20261109090000_kb383_devanagari_aliases.sql` to production on 9 Nov 2026. It is additive and already done - no longer a release step.
+
 ---
 
 ## Superseded

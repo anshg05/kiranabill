@@ -62,3 +62,11 @@ export const KB383_DEVANAGARI_ALIASES: readonly CatalogAliasFix[] = [
   { displayName: "Veeba Sauce", add: ["वीबा सॉस"], why: "KB-383: a Devanagari name, as it sounds - the AI path writes every name in Devanagari (D105)" },
   { displayName: "Bartan bar", add: ["बर्तन बार"], why: "KB-383: a Devanagari name, as it sounds - the AI path writes every name in Devanagari (D105)" },
 ];
+
+/**
+ * KB-383 follow-up (owner, 9 Nov 2026): "फुटाने" is Futana (it was in the reviewed SCORING spellings only - the app could not fill its price,
+ * A24 / A55). Its own additive migration: the KB-383 Devanagari migration is already applied in production and stays as it is.
+ */
+export const KB383_SPELLING_ALIASES: readonly CatalogAliasFix[] = [
+  { displayName: "Futana", add: ["फुटाने"], why: "KB-383 follow-up: the spelling the owner says (A24, A55) - in the reviewed scoring spellings since 1 Nov 2026" },
+];

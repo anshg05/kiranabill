@@ -6,7 +6,7 @@ import { prepareParserCatalog } from "../../src/domain/catalogIndex.js";
  * SCORE (scoringCatalog); the app under test keeps the plain catalog. सैगी मूंग and काटा चना are left out: which product they are is not certain.
  */
 export const SCORING_SPELLINGS: Readonly<Record<string, string>> = {
-  "फुटाने": "609", // Futana
+  // "फुटाने" (Futana) left this list on 9 Nov 2026: it is a real catalog alias now (KB-383 follow-up)
   "रिन साबुन": "192", // Rin
   "पार्ले जी बिस्किट": "53", // Parle-G 30 (A57: "30 वाला")
   "फेना साबुन": "614", // Sabun (alias फेना, Rs 10)

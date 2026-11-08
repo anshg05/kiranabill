@@ -32,4 +32,18 @@
   - A39: the second "बंसल तेल पैकेट 1 लीटर" had no price said - Price needed (the sheet says =150 for both);
   - A42: the sheet's "सयादरी चाय" (Whisper's spelling) against "सह्याद्री चाय";
   - A49: this run did not hear "एक" (the sheet has 1 piece, owner-confirmed).
+
+**After the owner's decisions (D106) and the follow-up fixes (9 Nov 2026), the same 85 answers replayed - no new call:**
+
+| Set | Runs | Exact | Wrong lines (silent / warned) | Dropped lines (silent / warned) | Lines with a Theek hai | Price needed lines |
+|---|---|---|---|---|---|---|
+| short | 49 | **44/49 (90%)** | 1 (1 / 0) | 0 | 3 | 10 |
+| long | 36 | **36/36 (100%)** | 0 | 0 | 0 | 3 |
+
+- **Silent wrong lines: 0 caused by our code; 1 ear mis-hearing (A47, ₹102) - accepted under D106 (at most 1 per run).**
+- The fixes:
+  - "90 किलो" said without ₹ is no dropped quantity when the line billed 90 as its rate (A04, A16, A34, A59 r1 now exact);
+  - A39's repeat takes ₹150 from the same name earlier (still warned: "said twice or heard twice?");
+  - फुटाने fills Futana's price (A24, A55);
+  - A42's sheet name is सह्याद्री चाय.
 <!-- /summary -->

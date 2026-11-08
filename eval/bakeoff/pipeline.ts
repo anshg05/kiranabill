@@ -4,7 +4,7 @@ import { settleLayer2Items } from "../../src/domain/layer2.js";
 import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "../../src/domain/layer2Check.js";
 import { checkLayer2NumberOrder, evaluateReviewFlags, type CheckSource } from "../../src/domain/reviewFlags.js";
 import { flagWeakProducts } from "../../src/domain/weakProduct.js";
-import { aiAnswerQuantities, aiAnswerRateUnits } from "../../src/domain/aiAnswerNumbers.js";
+import { aiAnswerQuantities, aiAnswerRateUnits, aiAnswerRepeatPrices } from "../../src/domain/aiAnswerNumbers.js";
 import { checksOf, warnedLinesOf, type ActualBill } from "../acceptance/compare.js";
 
 // KB-370 (V1 bake-off). Candidate C answers the WHOLE order from the audio (transcript + items), so its items are checked as a Layer 2
@@ -95,7 +95,7 @@ export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalo
  * for the live run (run.ts) and the offline replay (replay.ts), so a code change is measured exactly as the live run would bill it.
  */
 export function nocatBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): ActualBill {
-  return checkAudioAnswer(transcript, aiAnswerRateUnits(transcript, aiAnswerQuantities(transcript, fillFromCatalog(items, shop))), shop, "ai-answer");
+  return checkAudioAnswer(transcript, aiAnswerRateUnits(transcript, aiAnswerQuantities(transcript, fillFromCatalog(aiAnswerRepeatPrices(items), shop))), shop, "ai-answer");
 }
 
 /**
