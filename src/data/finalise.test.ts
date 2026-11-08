@@ -130,3 +130,14 @@ describe("finaliseBill - one atomic local write", () => {
     expect(SAVE_FAILED).toBe("Couldn't save the bill — try again");
   });
 });
+
+describe("KB-382: a line wildly out of proportion can never be finalised (D103 item 3b)", () => {
+  it("a 1,000x line (500 g at '₹56 किलो' billed Rs 28,000) with its BLOCK flag ACKNOWLEDGED: finaliseBill refuses, nothing is written", async () => {
+    const item = { spokenName: "शक्कर", catalogId: null, isCustom: true, matchStatus: "none" as const, qty: 500, unit: "gm", rate: 5600, rateUnit: "gm", total: 2_800_000, priceType: "rate" as const };
+    const line: FinalLine = { id: "l1", utteranceId: 1, item, original: item, displayName: "शक्कर", source: "voice" };
+    const flag = { lineId: "l1", anchorLineId: "l1", code: "total_out_of_proportion" as const, severity: "BLOCK" as const, acknowledged: true };
+    await expect(finaliseBill(db, input({ lines: [line], flags: [flag] }))).rejects.toThrow();
+    expect(await db.bills.count()).toBe(0);
+    expect(await db.billItems.count()).toBe(0);
+  });
+});

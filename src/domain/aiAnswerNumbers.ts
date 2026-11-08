@@ -8,7 +8,7 @@
  * Pure (domain rule 3); the Layer 1 / Sarvam path never calls this.
  */
 import { canonicalUnit, extractSpokenNumberEntries, extractSpokenNumbers, type ParsedItem } from "./grammar.js";
-import { paiseToRupeeNumber } from "./money.js";
+import { lineTotalPaiseScaled, paiseToRupeeNumber } from "./money.js";
 
 /** The ONE list of spoken correction words (doc 25 §2 - extendable: a new form is added here, with a test). */
 export const CORRECTION_MARKERS: readonly string[] = ["नहीं नहीं", "nahi nahi", "sorry", "करो उसको"];
@@ -22,21 +22,45 @@ const alike = (a: string, b: string) => a === b || (a.length > 1 && b.length > 1
 
 const PER_KILO = new Map([["किलो", "kg"], ["kilo", "kg"], ["kg", "kg"], ["लीटर", "liter"], ["लिटर", "liter"], ["liter", "liter"], ["litre", "liter"]]);
 const PER_PIECE = new Set(["वाला", "वाली", "वाले"]);
+const PER_GRAM = new Map([["ग्राम", "gm"], ["gram", "gm"], ["grams", "gm"], ["gm", "gm"], ["ml", "ml"], ["मिली", "ml"], ["एमएल", "ml"]]);
+const wordsOf = (transcript: string) => transcript.split(/[\s,।]+/).filter(Boolean).map(norm);
 
 /**
- * KB-381 (doc 25 §3.2, D105 addition 2): the owner's implied 1 for a SPOKEN RATE, read from the words straight after that price - a
- * per-kilo / per-litre price ("88 रुपए किलो", "₹56 किलो", "56 का किलो") = 1 kg / 1 liter; "X वाला" = 1 piece. "वाला" after a NAME
- * ("बड़ा वाला ₹110") is no price (owner, 8 Nov 2026). null = nothing in the speech justifies a 1.
+ * The unit a SPOKEN price is per, read from the words straight after its number (KB-381 / KB-382): "88 रुपए किलो", "₹56 किलो",
+ * "56 का किलो" = per kg (or liter); "10 रुपये ग्राम" = per gram (or ml); "X वाला" = per piece. "वाला" after a NAME ("बड़ा वाला ₹110") is no
+ * price (owner, 8 Nov 2026). null = the words say nothing about it.
  */
-function impliedOneUnit(words: readonly string[], rateRupees: number): string | null {
-  for (let i = 0; i < words.length; i++) {
-    const v = extractSpokenNumbers(words[i]!);
+export function unitAfterSpokenPrice(transcript: string, rateRupees: number): "kg" | "liter" | "gm" | "ml" | "piece" | null {
+  const w = wordsOf(transcript);
+  for (let i = 0; i < w.length; i++) {
+    const v = extractSpokenNumbers(w[i]!);
     if (v.length !== 1 || Math.abs(v[0]! - rateRupees) > 1e-9) continue;
-    const next = ["रुपए", "रुपये", "रुपया", "का", "की", "rupaye"].includes(words[i + 1] ?? "") ? words[i + 2] : words[i + 1];
-    if (next !== undefined && PER_KILO.has(next)) return PER_KILO.get(next)!;
-    if (words[i + 1] !== undefined && PER_PIECE.has(words[i + 1]!)) return "piece";
+    if (w[i + 1] !== undefined && PER_PIECE.has(w[i + 1]!)) return "piece";
+    const next = ["रुपए", "रुपये", "रुपया", "का", "की", "rupaye"].includes(w[i + 1] ?? "") ? w[i + 2] : w[i + 1];
+    if (next !== undefined && PER_KILO.has(next)) return PER_KILO.get(next) as "kg" | "liter";
+    if (next !== undefined && PER_GRAM.has(next)) return PER_GRAM.get(next) as "gm" | "ml";
   }
   return null;
+}
+
+/** KB-381 (D105 addition 2): the owner's implied 1 - only a per-kilo / per-litre price or "X वाला" justifies it. */
+function impliedOneUnit(transcript: string, rateRupees: number): string | null {
+  const u = unitAfterSpokenPrice(transcript, rateRupees);
+  return u === "kg" || u === "liter" || u === "piece" ? u : null;
+}
+
+/**
+ * KB-382 (a) (doc 25 §3.3, D103 item 3a): the price UNIT is read from the spoken words, whatever unit the AI labelled. A gram / ml line
+ * whose spoken rate the words call per kilo / per litre ("500 ग्राम शक्कर ₹56 किलो") is a per-kilo rate: its total is OUR arithmetic,
+ * qty x rate scaled across g / kg (A38: Rs 28, never Rs 28,000). settleLayer2Items takes a total only when it is exactly that per-kilo
+ * reading (KB-366), so setting it here is how the rate becomes per kilo - the AI's own sum is never used.
+ */
+export function aiAnswerRateUnits(transcript: string, items: readonly ParsedItem[]): ParsedItem[] {
+  return items.map((it) => {
+    if (it.priceType !== "rate" || it.rate === null || it.qty === null || (it.unit !== "gm" && it.unit !== "ml")) return it;
+    const per = unitAfterSpokenPrice(transcript, paiseToRupeeNumber(it.rate));
+    return (it.unit === "gm" && per === "kg") || (it.unit === "ml" && per === "liter") ? { ...it, total: lineTotalPaiseScaled(it.qty, it.rate, -3) } : it;
+  });
 }
 
 /**
@@ -48,11 +72,10 @@ function impliedOneUnit(words: readonly string[], rateRupees: number): string | 
  * Our code computes the totals afterwards. AI path only; Layer 1 keeps KB-359's rule.
  */
 export function aiAnswerQuantities(transcript: string, items: readonly ParsedItem[]): ParsedItem[] {
-  const words = transcript.split(/[\s,।]+/).filter(Boolean).map(norm);
   const spoken = extractSpokenNumberEntries(transcript).map((e) => e.value);
   let floor = -1;
   return items.map((it) => {
-    const implied = it.priceType === "rate" && it.rate !== null ? impliedOneUnit(words, paiseToRupeeNumber(it.rate)) : null;
+    const implied = it.priceType === "rate" && it.rate !== null ? impliedOneUnit(transcript, paiseToRupeeNumber(it.rate)) : null;
     // a per-kilo price is 1 kg / 1 liter whatever unit the AI wrote; "X वाला" keeps the line's own count unit (piece by default)
     if (it.qty === null) return implied ? { ...it, qty: 1, unit: implied === "piece" ? it.unit || "piece" : implied } : it;
     if (it.qty === 1 && implied) return it;

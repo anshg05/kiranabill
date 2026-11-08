@@ -95,6 +95,14 @@ describe("KB-370 nocat (owner, 6 Nov 2026): the model never sees the catalog; OU
     expect(bill.warnedLines).toEqual([0]);
   });
 
+  it("KB-382 (A38, end to end): 500 g at '₹56 किलो' is billed Rs 28 / 48 / 44 - per kilo, our arithmetic - and nothing is blocked", () => {
+    const t = "500 ग्राम शक्कर ₹56 किलो 500 ग्राम मूंग दाल ₹96 किलो 500 ग्राम बरबटी दाल ₹88 किलो";
+    const raw = (spokenName: string, rate: number) => item({ spokenName, catalogId: null, isCustom: true, matchStatus: "none", qty: 500, unit: "gm", rate, rateUnit: "gm", total: null, priceType: "rate" });
+    const bill = nocatBill(t, [raw("शक्कर", 5600), raw("मूंग दाल", 9600), raw("बरबटी दाल", 8800)], shop);
+    expect(bill.lines.map((l) => l.item.total)).toEqual([2800, 4800, 4400]);
+    expect(bill.warnedLines).toEqual([]);
+  });
+
   it("KB-381 (A57, end to end): Rin keeps its 5 pieces with NO comma in the transcript - Layer 1's cut no longer strips it", () => {
     const t = "रिन साबुन 10 वाली 5 पीस पारले जी बिस्किट 30 वाला 5 पैकेट";
     const rin = item({ spokenName: "रिन साबुन", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "piece", rate: 1000, rateUnit: "piece", total: null, priceType: "rate" });

@@ -28,12 +28,13 @@
  * ParsedItem.
  */
 
-import type { ParsedItem } from "./grammar.js";
+import { matchProductName, type ParsedItem } from "./grammar.js";
 import { extractSpokenNumbers, extractSpokenNumberEntries, splitItemSegments, unitsAreCompatible, unitScale } from "./grammar.js";
 import type { CatalogEntry } from "./catalog.js";
-import { formatRupees, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
+import { formatRupees, lineTotalPaise, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
 import { getEffectivePrice, type LearningState } from "./learning.js";
-import { aiAnswerExemptNumbers } from "./aiAnswerNumbers.js";
+import { aiAnswerExemptNumbers, unitAfterSpokenPrice } from "./aiAnswerNumbers.js";
+import { prepareParserCatalog, type ParserCatalog } from "./catalogIndex.js";
 
 /** KB-380 (doc 25 §4): who produced the lines. "spoken" = our reader (Layer 1, the Sarvam path) - every check as it always was;
  * "ai-answer" = an AI read the whole order (the Gemini path) - six checks are adapted, so they stop raising false alarms. */
@@ -58,9 +59,12 @@ export type ReviewCode =
   | "layer2_disagrees"
   | "weak_product"
   | "duplicate_line"
-  | "already_on_bill";
+  | "already_on_bill"
+  | "total_out_of_proportion"
+  | "large_total_no_reference";
 
-export type ReviewSeverity = "HIGH" | "MEDIUM" | "LOW";
+/** KB-382 (D103 item 3b): BLOCK = a line wildly out of proportion - a "Theek hai" can never clear it; only an edit to the line does. */
+export type ReviewSeverity = "BLOCK" | "HIGH" | "MEDIUM" | "LOW";
 
 export interface ReviewFlag {
   readonly id: string;
@@ -228,6 +232,12 @@ export function evaluateReviewFlags(
     }
   });
 
+  items.forEach((item, index) => {
+    const entry = item.catalogId ? catalogById.get(item.catalogId) : source === "ai-answer" ? productNamed(item.spokenName, catalog) : undefined;
+    const flag = proportionFlag(transcript, item, entry, index, opts);
+    if (flag) flags.push(flag);
+  });
+
   evaluateNumberSafety(transcript, items, flags, source);
   flagDuplicateLines(items, catalogById, flags, source);
 
@@ -270,6 +280,55 @@ function shopPriceInCatalogUnit(entry: CatalogEntry, opts: EvaluateReviewFlagsOp
   return opts
     ? getEffectivePrice(opts.learningState, entry.id, entry.suggestedPricePaise, opts.nowMs)
     : entry.suggestedPricePaise;
+}
+
+// KB-382 (D105, owner 8-9 Nov 2026): the proportion checks. Measured before they were built on every saved bill (4,833 lines, the sheet,
+// the gate): they fire on A38's 1,000x lines only, and the highest ratio on a right line is 5.6x.
+const BLOCK_MULTIPLE = 100;
+const NO_REFERENCE_LIMIT_PAISE = 1_000_000; // Rs 10,000
+
+/** On an AI answer a line keeps the SAID name and claims no product: the product its name clearly matches is its shop reference (D102). */
+const parserCatalogs = new WeakMap<readonly CatalogEntry[], ParserCatalog>();
+function productNamed(name: string, catalog: readonly CatalogEntry[]): CatalogEntry | undefined {
+  let pc = parserCatalogs.get(catalog);
+  if (!pc) parserCatalogs.set(catalog, (pc = prepareParserCatalog(catalog)));
+  const m = matchProductName(name, pc);
+  return m.matchStatus === "matched" && m.catalogId ? pc.byId.get(m.catalogId) : undefined;
+}
+
+/**
+ * KB-382 - only on a line READ FROM SPEECH (a typed line has no transcript: it is the shopkeeper's own statement), and never on a spoken
+ * total (it IS the statement) or a line with no total:
+ *   (c) BLOCK: priced per gram / per ml (total = grams x rate) and "ग्राम" / "ml" was not said right after the price - kirana rates are per
+ *       kg, litre, piece or packet ("250 ग्राम जीरा 400 रुपये" must never be Rs 1,00,000);
+ *   (b) BLOCK: the total is more than 100x what the spoken rate gives (the rate's unit read from the words) or 100x quantity x the shop price;
+ *   (d) HIGH (clearable): no reference at all (no unit word after the price, no shop price) and over Rs 10,000.
+ */
+function proportionFlag(transcript: string, item: ParsedItem, entry: CatalogEntry | undefined, index: number, opts: EvaluateReviewFlagsOptions | undefined): ReviewFlag | null {
+  if (transcript === "" || item.total === null || item.qty === null || (item.priceType !== "rate" && item.priceType !== "default")) return null;
+  const { qty, total } = item;
+  const block = (message: string): ReviewFlag => ({ id: `item-${index}-total_out_of_proportion`, code: "total_out_of_proportion", severity: "BLOCK", message, itemIndex: index });
+  const perUnit = item.priceType === "rate" && item.rate !== null ? unitAfterSpokenPrice(transcript, paiseToRupeeNumber(item.rate)) : null;
+  const perGram = item.priceType === "rate" && item.rate !== null && (item.unit === "gm" || item.unit === "ml") && total === lineTotalPaise(qty, item.rate);
+  if (perGram && perUnit !== "gm" && perUnit !== "ml") {
+    return block(`Rate ${formatRupees(item.rate!)} per ${item.unit} — kirana rates are per kilo, litre, piece or packet. Edit the line before Bill Banao.`);
+  }
+  const references: Paise[] = [];
+  if (perUnit && item.rate !== null) {
+    const scale = perUnit === "piece" ? 0 : unitScale(item.unit || perUnit, perUnit);
+    if (scale !== null) references.push(lineTotalPaiseScaled(qty, item.rate, scale));
+  }
+  const shopScale = entry ? unitScale(item.unit || entry.unit, entry.unit) : null;
+  if (entry && shopScale !== null) references.push(lineTotalPaiseScaled(qty, shopPriceInCatalogUnit(entry, opts), shopScale));
+  const usual = references.filter((r) => r > 0);
+  const smallest = usual.length ? Math.min(...usual) : null;
+  if (smallest !== null && total > smallest * BLOCK_MULTIPLE) {
+    return block(`Total ${formatRupees(total)} — far more than this line should cost (about ${formatRupees(smallest)}). Edit the line before Bill Banao.`);
+  }
+  if (usual.length === 0 && total > NO_REFERENCE_LIMIT_PAISE) {
+    return { id: `item-${index}-large_total_no_reference`, code: "large_total_no_reference", severity: "HIGH", message: `Total ${formatRupees(total)} with nothing to check it against. Check?`, itemIndex: index };
+  }
+  return null;
 }
 
 function isOutsideBand(actual: Paise, expected: Paise): boolean {
@@ -418,7 +477,8 @@ export function flagAcrossUtterances(
 }
 
 export function canFinalize(flags: readonly ReviewFlag[], acknowledgedIds: ReadonlySet<string>): boolean {
-  return flags.every((flag) => flag.severity !== "HIGH" || acknowledgedIds.has(flag.id));
+  // KB-382: a BLOCK flag is never cleared by an acknowledgement - only an edit to its line removes it
+  return flags.every((flag) => flag.severity !== "BLOCK" && (flag.severity !== "HIGH" || acknowledgedIds.has(flag.id)));
 }
 
 /**

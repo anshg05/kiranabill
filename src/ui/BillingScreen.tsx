@@ -536,6 +536,21 @@ function AmountNeeded({ need }: { need: "price" | "quantity" }) {
 }
 
 /**
+ * KB-382 (D103 item 3b): a line wildly out of proportion. Shown like "Price needed" - red, an icon, the reason - with NO "Theek hai":
+ * only an edit to the line clears it (billFlags re-checks an edited line). One warning per line: it replaces the line's HIGH check.
+ */
+function BlockCheck({ flags }: { flags: readonly ShownFlag[] }) {
+  const { t, tx } = useT();
+  return (
+    <div data-severity="BLOCK" className="flex flex-wrap items-center gap-x-2 py-1 text-[13px] text-danger">
+      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+      <span className="sr-only">{t("flag.mustCheck")} </span>
+      <span>{tx(flags[0]!.message)}</span>
+    </div>
+  );
+}
+
+/**
  * KB-304 + KB-363b (owner, 29 Oct 2026): ONE HIGH check per line (or per what was said) - 05 §2: a red inline sentence, the most
  * important reason, short, and ONE "Theek hai" acknowledge button (13-DESIGN §6b: 1px DANGER border, transparent). Never colour
  * alone (05 §9): a triangle icon and, for screen readers, "Must check". Acknowledged, the warning AND the "Heard: ..." text collapse
@@ -631,10 +646,12 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
 function FlagList({ flags, name, transcript = null, onAcknowledge }: { flags: readonly ShownFlag[]; name: string | null; transcript?: string | null; onAcknowledge: (flags: readonly ShownFlag[]) => void }) {
   const medium = flags.filter((f) => f.severity === "MEDIUM").map((f) => f.message);
   const low = flags.filter((f) => f.severity === "LOW").map((f) => f.message);
+  const block = flags.filter((f) => f.severity === "BLOCK");
   const high = flags.filter((f) => f.severity === "HIGH");
   return (
     <div className="flex flex-col gap-1 py-1">
-      {high.length > 0 && <HighCheck flags={high} name={name} transcript={transcript} onAcknowledge={onAcknowledge} />}
+      {block.length > 0 && <BlockCheck flags={block} />}
+      {block.length === 0 && high.length > 0 && <HighCheck flags={high} name={name} transcript={transcript} onAcknowledge={onAcknowledge} />}
       {(medium.length > 0 || low.length > 0) && (
         <div className="flex flex-wrap items-start gap-2">
           {medium.length > 0 && <FlagNote severity="MEDIUM" name={name ?? "this order"} messages={medium} />}
@@ -833,14 +850,14 @@ export function BillView({
   // KB-363b: a line's own reasons and the reasons about what was said (anchored under the utterance's last line) are ONE check
   const lineFlags = (id: string) => [...flags.filter((f) => f.lineId === id), ...billLevelAfter(id)];
   const nameOfLine = new Map(lines.map((l) => [l.id, l.displayName]));
-  const hasHigh = (id: string) => lineFlags(id).filter((f) => f.severity === "HIGH");
+  const hasHigh = (id: string) => lineFlags(id).filter((f) => f.severity === "HIGH" || f.severity === "BLOCK");
 
   // Screen readers (05 §9): a new HIGH flag is announced once, with the count;
   // "Theek hai" announces the new count.
   const [announcement, setAnnouncement] = useState("");
   const announced = useRef(new Set<string>());
   useEffect(() => {
-    const fresh = flags.filter((f) => f.severity === "HIGH" && !f.acknowledged && !announced.current.has(f.key));
+    const fresh = flags.filter((f) => (f.severity === "BLOCK" || (f.severity === "HIGH" && !f.acknowledged)) && !announced.current.has(f.key));
     for (const f of flags) announced.current.add(f.key);
     if (fresh.length) {
       // one sentence per check (KB-363b), not one per reason
@@ -913,7 +930,7 @@ export function BillView({
     if (needOf(id)) return "border-l-[3px] border-l-danger";
     const high = hasHigh(id);
     if (high.length === 0) return "";
-    return high.some((f) => !f.acknowledged) ? "border-l-[3px] border-l-danger" : ""; // KB-363b: once checked, the line looks normal
+    return high.some((f) => !f.acknowledged || f.severity === "BLOCK") ? "border-l-[3px] border-l-danger" : ""; // KB-363b: once checked, the line looks normal; KB-382: a BLOCK line never does
   };
 
   // KB-303: the editable pieces of a line. `view` keeps field ids unique -

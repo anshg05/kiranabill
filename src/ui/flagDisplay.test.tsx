@@ -240,3 +240,16 @@ describe("KB-304 - the hook", () => {
     expect(result.current.flags.find((f) => f.code === "duplicate_line")!.acknowledged).toBe(true);
   });
 });
+
+describe("KB-382: a BLOCK line (wildly out of proportion) - no Theek hai, only an edit clears it", () => {
+  const A38 = "500 ग्राम शक्कर ₹56 किलो";
+  const u = () => layer2(A38, [gemini({ spokenName: "शक्कर", catalogId: "27", qty: 500, unit: "gm", rate: 5600, priceType: "rate" })]);
+  it("the sentence and the icon show, with NO Theek hai button; Bill Banao waits (1 check pending)", () => {
+    render(<Harness utterances={[u()]} />);
+    const flag = table().getByText(/Edit the line before Bill Banao/).closest("[data-severity]") as HTMLElement;
+    expect(flag.dataset.severity).toBe("BLOCK");
+    expect(flag.querySelector("svg")).not.toBeNull();
+    expect(within(flag).queryByRole("button", { name: /Theek hai/ })).toBeNull();
+    expect(pending()).toBe("1 check pending");
+  });
+});

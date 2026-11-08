@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORRECTION_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities } from "./aiAnswerNumbers";
+import { CORRECTION_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities, aiAnswerRateUnits } from "./aiAnswerNumbers";
 import type { ParsedItem } from "./grammar";
 import type { SettledLine } from "./layer2";
 import { checkLayer2AgainstSpoken } from "./layer2Check";
@@ -133,6 +133,20 @@ describe("KB-381: the quantity check on an AI answer (doc 25 §3.2) - in the tra
     const t = "तुवर दाल 1 किलो फटका ₹150 किलो मूंग दाल 1 किलो ₹96 किलो";
     const items = [ai("तुवर दाल", 1, "kg", "rate", 15000, 15000), ai("फटका", 1, "kg", "rate", 15000, 15000), ai("मूंग दाल", 1, "kg", "rate", 9600, 9600)];
     expect(aiAnswerQuantities(t, items).map((i) => i.qty)).toEqual([1, 1, 1]);
+  });
+});
+
+describe("KB-382 (a): the price unit is read from the spoken words, whatever the AI labelled (doc 25 §3.3)", () => {
+  it("A38: 500 g at '₹56 किलो' labelled per gram becomes a per-kilo rate - the total our code computes is Rs 28", () => {
+    const fixed = aiAnswerRateUnits("500 ग्राम शक्कर ₹56 किलो", [ai("शक्कर", 500, "gm", "rate", 5600, null)]);
+    expect(fixed[0]).toMatchObject({ qty: 500, unit: "gm", rate: 5600, total: 2800 });
+  });
+
+  it("'56 रुपए किलो' and '56 का किलो' too; a kg line and a gram line with no 'किलो' after the price are left alone", () => {
+    expect(aiAnswerRateUnits("500 ग्राम शक्कर 56 रुपए किलो", [ai("शक्कर", 500, "gm", "rate", 5600, null)])[0]!.total).toBe(2800);
+    expect(aiAnswerRateUnits("500 ग्राम शक्कर 56 का किलो", [ai("शक्कर", 500, "gm", "rate", 5600, null)])[0]!.total).toBe(2800);
+    expect(aiAnswerRateUnits("2 किलो शक्कर ₹56 किलो", [ai("शक्कर", 2, "kg", "rate", 5600, null)])[0]!.total).toBeNull();
+    expect(aiAnswerRateUnits("500 ग्राम शक्कर ₹56", [ai("शक्कर", 500, "gm", "rate", 5600, null)])[0]!.total).toBeNull();
   });
 });
 

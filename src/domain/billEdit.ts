@@ -380,7 +380,8 @@ export function checkHeadline(highs: readonly (Pick<ReviewFlag, "code" | "messag
 /** KB-304 / KB-363b: the "N checks pending" count - LINES (and order blocks) with a HIGH flag not yet acknowledged (the same rule
  * as reviewFlags.canFinalize: a check is cleared when all its flags are). */
 export function pendingChecks(flags: readonly PlacedFlag[], acknowledged: ReadonlySet<string>): number {
-  return new Set(flags.filter((f) => f.severity === "HIGH" && !acknowledged.has(f.key)).map(checkGroupKey)).size;
+  // KB-382: a BLOCK flag counts acknowledged or not - Bill Banao waits until the line is edited
+  return new Set(flags.filter((f) => f.severity === "BLOCK" || (f.severity === "HIGH" && !acknowledged.has(f.key))).map(checkGroupKey)).size;
 }
 
 /**

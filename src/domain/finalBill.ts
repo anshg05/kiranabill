@@ -78,6 +78,8 @@ export type BuildResult = { readonly ok: true; readonly items: readonly FinalIte
  */
 export function buildFinalBill(lines: readonly FinalLine[], flags: readonly FinalFlag[]): BuildResult {
   if (lines.length === 0) return { ok: false, error: "The bill has no items" };
+  // KB-382 (D103 item 3b): a line wildly out of proportion never becomes a receipt, whatever was acknowledged - the second guarantee
+  if (flags.some((f) => f.severity === "BLOCK")) return { ok: false, error: "A line is far out of proportion - edit it before Bill Banao" };
   const missing = lines.find((l) => amountNeeded(l.item) !== null);
   if (missing) return { ok: false, error: `${missing.displayName} needs a ${amountNeeded(missing.item)}` };
   const items = lines.map((line, i): FinalItem => {

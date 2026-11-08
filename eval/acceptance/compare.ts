@@ -42,12 +42,12 @@ export interface OrderVerdict {
 
 /** The Theek hai checks the screen shows: one per line with a HIGH flag; a reason about what was said joins the last line's check. */
 export function checksOf(flags: readonly ReviewFlag[], lineCount: number): number {
-  return new Set(flags.filter((f) => f.severity === "HIGH").map((f) => f.itemIndex ?? Math.max(0, lineCount - 1))).size;
+  return new Set(flags.filter((f) => (f.severity === "HIGH" || f.severity === "BLOCK")).map((f) => f.itemIndex ?? Math.max(0, lineCount - 1))).size;
 }
 
 /** The lines the screen WARNS about: a line's own HIGH flag warns that line; a HIGH flag about what was said (the numbers do not fit the lines) warns every line of the order. */
 export function warnedLinesOf(flags: readonly ReviewFlag[], lineCount: number): number[] {
-  const high = flags.filter((f) => f.severity === "HIGH");
+  const high = flags.filter((f) => (f.severity === "HIGH" || f.severity === "BLOCK"));
   if (high.some((f) => f.itemIndex === null)) return Array.from({ length: lineCount }, (_, i) => i);
   return [...new Set(high.map((f) => f.itemIndex!))];
 }

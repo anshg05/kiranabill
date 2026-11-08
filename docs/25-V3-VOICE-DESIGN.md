@@ -1,6 +1,6 @@
 # 25 — V3 Voice Design
 
-**Created:** 7 Nov 2026 · **Last updated:** 8 Nov 2026 (rev 6) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380`, `KB-381` (8 Nov).
+**Created:** 7 Nov 2026 · **Last updated:** 9 Nov 2026 (rev 7) · **Status:** Design - **the whole V3 plan approved by the owner (7 Nov 2026)**. Built: `KB-379` (7 Nov), `KB-380`, `KB-381` (8 Nov), `KB-382` (9 Nov).
 
 **Changes:**
 - rev 1 (7 Nov 2026): first version (D105).
@@ -10,6 +10,7 @@
   - 24 kbps is built into the recorder in `KB-385`, and `KB-386` only verifies it;
   - the storage note.
 - rev 3 (7 Nov 2026, owner): §11 the price fill across scripts (an open design item); added to `KB-383`'s finish line.
+- rev 7 (9 Nov 2026, `KB-382`, owner): §4 gets (c) a per-gram / per-ml price with no "ग्राम" said = BLOCK, and (d) a line with no reference over Rs 10,000 = a clearable HIGH; a typed line is the shopkeeper's statement (none of these fire on it).
 - rev 6 (8 Nov 2026, `KB-381`, owner): §3.4 corrected - a fraction word before a ROUND hundred / thousand scales its count ("पौने 200" = 175), not adds 0.25; "X वाला" after a NAME is no price.
 - rev 5 (8 Nov 2026, `KB-380`, owner):
   - §2: the correction words are one extendable list, and an unknown form warns;
@@ -115,6 +116,15 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **What it does:** the line must be edited before Bill Banao. `canFinalize` refuses it even when acknowledged, and `buildFinalBill` refuses it as a second guarantee.
 - **A spoken total ("=X") is never compared:** it is the shopkeeper's statement (`reviewFlags.ts`, KB-208).
 - **A38:** Rs 28,000 against Rs 28 is blocked. After fix (a), the line is Rs 28 and nothing fires.
+- **How "what it should give" is computed (built 9 Nov 2026):** in integer paise, with our arithmetic.
+  - **R_words:** quantity x the spoken rate, the rate's unit read from the words right after the price (`unitAfterSpokenPrice`: किलो / लीटर / ग्राम / ml / वाला), scaled across g / kg and ml / litre.
+  - **R_shop:** quantity x the shop price of the line's product, or, on an AI answer, of the one product its name clearly matches. Only when the units convert.
+  - **Blocked when** the total is more than 100x the smaller of the two.
+- **(c) owner, 8 Nov 2026 - also BLOCK:** a line priced PER GRAM / PER ML (total = grams x rate) unless "ग्राम" / "gram" / "ml" was said right after the price ("10 रुपये ग्राम"). Kirana rates are per kg, litre, piece or packet; "250 ग्राम जीरा 400 रुपये" can never become Rs 1,00,000, even with no catalog product and no "किलो" said.
+- **(d) owner, 8 Nov 2026 - a clearable HIGH, not a block:** a line with no reference at all (no unit word after the price, no shop price) and a total over Rs 10,000.
+- **Only on lines read from speech.** A line the shopkeeper typed (no transcript) is his own statement: none of (b), (c), (d) fires on it, so editing a blocked line always clears it.
+- **Measured before it was built** (4,833 lines: every saved bill, the sheet, the gate's frozen Whisper bills): (b) and (c) fire on A38's 1,000x lines only; (d) on none; the highest ratio on a right line is 5.6x.
+- **Enforced three times:** `pendingChecks` counts a BLOCK acknowledged or not; `canFinalize` never passes it; `buildFinalBill` refuses a bill carrying it (`finaliseBill` throws, nothing is written). The screen shows it like "Price needed" - no Theek hai (checked in the preview browser, 9 Nov 2026).
 
 ## 5. The recording flow (D101, `KB-385`)
 

@@ -18,7 +18,7 @@ describe("the regression set's offline replay", () => {
     for (const c of ["nocat-old", "nocat-D103"]) expect(rows.filter((r) => r.candidate === c && r.items && r.transcript !== null && !r.error)).toHaveLength(84);
   });
 
-  it("replays every saved raw answer to the NUMBERS the live run saved (168 runs) - only KB-380's and KB-381's intended changes differ", () => {
+  it("replays every saved raw answer to the NUMBERS the live run saved (168 runs) - only KB-380's, KB-381's and KB-382's intended changes differ", () => {
     // KB-379 proved an exact replay before any code change. Since then the Theek hai may differ (KB-380's adapted checks), and these number
     // changes are intended - nothing else may move:
     //   KB-380: a shop price the catalog cannot scale to the line's unit (A19, A20: a "default" line with no total) is now Price needed;
@@ -28,7 +28,10 @@ describe("the regression set's offline replay", () => {
     type Line = NonNullable<RunResult["lines"]>[number];
     const numbers = (l: Line) => JSON.stringify({ ...l, warned: undefined });
     const quantityOnly = (was: Line, now: Line) => now.name === was.name && now.priceType === was.priceType && now.rate === was.rate && now.qty !== was.qty && (now.qty === null ? was.qty === 1 && now.priceType === "total" && now.total === was.total : now.total === (now.rate === null ? was.total : Math.round(now.qty * now.rate)));
+    //   KB-382: a gram / ml line whose spoken rate the words call per kilo (A38) - the total is now qty x rate per kilo, nothing else moves.
+    const perKilo = (was: Line, now: Line) => now.name === was.name && now.qty === was.qty && now.rate === was.rate && (now.unit === "gm" || now.unit === "ml") && now.rate !== null && now.qty !== null && was.total === Math.round(now.qty * now.rate) && now.total === Math.round((now.qty * now.rate) / 1000);
     const intended = (was: Line, now: Line) =>
+      perKilo(was, now) ||
       (was.priceType === "default" && was.total === null && now.priceType === "unknown" && now.catalogId === null && now.qty === was.qty && now.unit === was.unit && now.name === was.name) || quantityOnly(was, now);
     const changed = rows.flatMap((r) => {
       const now = toSaved(nocatBill(r.transcript!, r.items!, SEED_PARSER_CATALOG)).lines;
