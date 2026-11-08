@@ -31,3 +31,33 @@ export const EZY_D103_NOCAT_PROMPT = EZY_D102_NOCAT_PROMPT.replace(
   RULE_3,
   `3. qty and unit only as spoken. The unit is the unit word next to the NUMBER: "1 किलो पैकेट" = 1 kg, "आधा किलो रवा पैकेट" = 0.5 kg. "पैकेट" / "packet" alone = "packet", "सेट" / "set" alone = "set", "पीस" = "piece". kilo = "kg", gram = "gm", litre = "liter". सवा 1.25, डेढ़ 1.5, पौने दो 1.75, ढाई 2.5, आधा 0.5. The unit never changes a price.`,
 );
+
+// KB-383 (doc 25 §2; owner, 9 Nov 2026): the V3 prompt - nocat-D103's rules, plus: units only from the list (size words stay in the name,
+// A60), repeats written twice and kept as two lines (A39, A40), removal only when the item is named (KB-367, A41), the quantity rule as
+// D105 has it, Devanagari names AND transcript, A19's example in rule 3.
+const D103_RULE_3 = EZY_D103_NOCAT_PROMPT.split("\n").find((l) => l.startsWith("3. "))!;
+const D103_RULE_4 = EZY_D103_NOCAT_PROMPT.split("\n").find((l) => l.startsWith("4. "))!;
+const TRANSCRIPT_RULE = EZY_D103_NOCAT_PROMPT.split("\n").find((l) => l.startsWith("transcript: "))!;
+const RULE_1 = EZY_D103_NOCAT_PROMPT.split("\n").find((l) => l.startsWith("1. spokenName"))!;
+const RULE_2 = EZY_D103_NOCAT_PROMPT.split("\n").find((l) => l.startsWith("2. A spoken correction"))!;
+
+export const EZY_V3_PROMPT = EZY_D103_NOCAT_PROMPT.replace(
+  TRANSCRIPT_RULE,
+  `transcript: exactly the words that were spoken, written in Devanagari - English words and brands as they sound ("लाइज़ॉल", "फेयर एंड लवली"), numbers as digits. Nothing added, nothing corrected, nothing left out - keep corrections such as "नहीं नहीं", and an item said twice is written twice.`,
+)
+  .replace(RULE_1, `${RULE_1.replace(/\.$/, "")}, written in Devanagari - brands as they sound ("लाइज़ॉल", never "Lizol").`)
+  .replace(
+    RULE_2,
+    `${RULE_2}
+2a. An item said twice ("2 किलो शक्कर, 2 किलो शक्कर") is TWO lines - never merge repeated items.
+2b. "हटा दो" / "निकाल दो" / "cancel" WITH an item named ("लास्ट वाला चना दाल हटा दो") removes that item's line. If no item is named ("हटा दो", "सब हटा दो", "लास्ट वाला हटा दो"), remove NOTHING - keep every line.`,
+  )
+  .replace(
+    D103_RULE_3,
+    `${D103_RULE_3} The number's unit wins even when the name is between them: "एक किलो लाल मिर्ची पैकेट" = 1 kg.
+3a. unit is EXACTLY one of: kg, gm, liter, ml, piece, packet, dozen, box, bottle, pouch, bag, can, tin, set - in English ("बोतल" = "bottle", "पीस" = "piece", "डिब्बा" = "box"). A size or kind word is part of the NAME, never a unit: "हार्पिक बड़ा", "हार्पिक छोटा".`,
+  )
+  .replace(
+    D103_RULE_4,
+    `4. qty only as spoken, with two exceptions: a per-kilo / per-litre price with no quantity = qty 1 of that unit; "X वाला" with no quantity, where X is a price = qty 1 piece ("बड़ा वाला" is part of a name, not a price). Only a total said = qty null - and never any other 1.`,
+  );

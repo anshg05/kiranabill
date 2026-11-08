@@ -4443,7 +4443,8 @@
     "aliases": [
       "Fortune Rice",
       "fortune rice",
-      "fortune chawal"
+      "fortune chawal",
+      "फॉर्च्यून राइस"
     ],
     "isActive": true
   },
@@ -4472,7 +4473,8 @@
     "aliases": [
       "Fortune Dal",
       "mdh dal",
-      "fortune dal"
+      "fortune dal",
+      "फॉर्च्यून दाल"
     ],
     "isActive": true
   },
@@ -4487,7 +4489,8 @@
       "Chana Sattu",
       "chana sattu",
       "sattu powder",
-      "black sattu"
+      "black sattu",
+      "चना सत्तू"
     ],
     "isActive": true
   },
@@ -4628,7 +4631,8 @@
       "oil packet",
       "1 liter packet",
       "tel 1 liter",
-      "oil 1l"
+      "oil 1l",
+      "तेल पैकेट"
     ],
     "isActive": true
   },
@@ -4643,7 +4647,8 @@
       "Tel 5L",
       "oil 5 liter",
       "5 litre oil",
-      "5 liter tel"
+      "5 liter tel",
+      "तेल 5 लीटर"
     ],
     "isActive": true
   },
@@ -5049,7 +5054,8 @@
     "aliases": [
       "Britannia Treat",
       "britannia treat",
-      "treat biscuit"
+      "treat biscuit",
+      "ब्रिटानिया ट्रीट"
     ],
     "isActive": true
   },
@@ -5198,7 +5204,8 @@
     "aliases": [
       "Maggi Masala Mix",
       "maggi masala mix",
-      "maggi masale"
+      "maggi masale",
+      "मैगी मसाला मिक्स"
     ],
     "isActive": true
   },
@@ -5353,7 +5360,8 @@
       "Dr Oetker Sauce",
       "dr oetker",
       "fun foods",
-      "dr. oetker"
+      "dr. oetker",
+      "डॉ ओटकर सॉस"
     ],
     "isActive": true
   },
@@ -5382,7 +5390,8 @@
     "aliases": [
       "Veeba Sauce",
       "veeba sauce",
-      "veeba"
+      "veeba",
+      "वीबा सॉस"
     ],
     "isActive": true
   },
@@ -7637,7 +7646,8 @@
       "bartanbar",
       "bartan sabun",
       "vim bar",
-      "nip bar"
+      "nip bar",
+      "बर्तन बार"
     ],
     "isActive": true
   },

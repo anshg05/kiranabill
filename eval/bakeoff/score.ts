@@ -9,7 +9,7 @@ import type { ExpectedBill } from "../acceptance/types.js";
 
 // KB-370 (V1 bake-off): scoring, cost and the call declaration. Pure - no network, no files (score.test.ts).
 
-export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "E-flash-1ear", "S", "nocat-old", "nocat-D103"] as const;
+export const CANDIDATES = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D", "B-smart", "E-lite", "E-flash", "E-flash-1ear", "S", "nocat-old", "nocat-D103", "nocat-v2"] as const;
 /** Round 1's set - what a run without --candidates measures (round-2 candidates run only when chosen). */
 export const ROUND1_CANDIDATES: readonly CandidateId[] = ["A", "A+vocab", "A-30s", "B", "B-novocab", "C", "C2", "D"];
 export type CandidateId = (typeof CANDIDATES)[number];
@@ -31,6 +31,7 @@ export const CANDIDATE_LABEL: Record<CandidateId, string> = {
   "E-flash-1ear": "the SAME E-flash answers checked only against E-flash's own transcript - one call per bill, as Ezy probably works (no extra calls)",
   S: "round 2: Sarvam saaras:v4 (verbatim) as the ear -> Layer 1 + Layer 2 + checks; batch API over 30 s",
   "nocat-old": "nocat (6 Nov 2026): E-flash's call (gemini-3.8-flash, thinking low, the D102 prompt) WITHOUT the catalog; our code fills an unspoken price on one clear match; one ear",
+  "nocat-v2": "KB-383: the V3 prompt (doc 25 §2) - nocat-D103 plus listed units, repeats as two lines, removal only when the item is named, the D105 quantity rule, Devanagari names and transcript",
   "nocat-D103": "nocat-old with the prompt's rule 3 rewritten to D103 (the unit next to the number wins: '1 किलो पैकेट' = 1 kg) - the version that would ship",
 };
 
@@ -381,7 +382,7 @@ export function declare(recordings: readonly Recording[], longRuns: number, chos
         if (c === "S") (calls.layer2Max++, (usd += t("gemini-3.5-flash-lite", est.layer2In, withThinking(OUT.layer2))), (seconds += pace.otherS + s.layer2));
         if (c === "C" || c === "E-lite") (calls.audioLite++, (usd += t("gemini-3.5-flash-lite", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c));
         if (c === "C2" || c === "E-flash") (calls.audioFlash++, (usd += t("gemini-3.8-flash", est.cIn + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
-        if (c === "nocat-old" || c === "nocat-D103") (calls.audioFlash++, (usd += t("gemini-3.8-flash", (est.nocatIn ?? 1_000) + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
+        if (c === "nocat-old" || c === "nocat-D103" || c === "nocat-v2") (calls.audioFlash++, (usd += t("gemini-3.8-flash", (est.nocatIn ?? 1_000) + audio, withThinking(OUT.c))), (seconds += pace.otherS + s.c2));
       }
     }
   }

@@ -13,6 +13,37 @@ import { lineTotalPaiseScaled, paiseToRupeeNumber } from "./money.js";
 /** The ONE list of spoken correction words (doc 25 §2 - extendable: a new form is added here, with a test). */
 export const CORRECTION_MARKERS: readonly string[] = ["नहीं नहीं", "nahi nahi", "sorry", "करो उसको"];
 
+/** KB-383 (KB-367; owner, 9 Nov 2026): the ONE list of spoken removal words (doc 25 §2 - extendable, with a test). They remove a line only
+ * WITH the item named ("लास्ट वाला चना दाल हटा दो"); with no item named NOTHING is removed and the last line asks (removal_unclear). */
+export const REMOVAL_MARKERS: readonly string[] = ["हटा दो", "निकाल दो", "cancel"];
+/** Words that point at a line without naming its item - "सब हटा दो" or "लास्ट वाला हटा दो" never removes anything silently. */
+const POINTERS = new Set(["लास्ट", "last", "वाला", "वाली", "वाले", "वो", "वह", "यह", "ये", "उसको", "इसको", "उसे", "इसे", "सब", "सारा", "पूरा", "भी", "the", "आखिरी", "पिछला", "पिछली", "बस", "अभी", "और"]);
+const removalAt = (w: readonly string[], i: number) => REMOVAL_MARKERS.map((m) => m.split(" ").map(norm)).find((mk) => mk.every((x, k) => w[i + k] === x));
+
+/**
+ * The item a removal word names: the name words DIRECTLY before it ("लास्ट वाला चना दाल हटा दो" -> चना दाल), back to a pointer ("लास्ट वाला",
+ * "सब"), a number, a unit or a comma. A pointer or a comma straight before the removal word names nothing ("सब हटा दो", "लास्ट वाला हटा
+ * दो", "1 किलो चावल, हटा दो"). `start` = where the name begins.
+ */
+function namedBefore(raw: readonly string[], m: number): { named: string[]; start: number } {
+  const named: string[] = [];
+  let k = m - 1;
+  for (; k >= 0; k--) {
+    const w = norm(raw[k]!.replace(/[,।]+$/, ""));
+    if (/[,।]$/.test(raw[k]!) || POINTERS.has(w) || extractSpokenNumbers(w).length > 0 || canonicalUnit(w) !== null) break;
+    named.unshift(w);
+  }
+  return { named, start: k + 1 };
+}
+const rawWordsOf = (transcript: string) => transcript.split(/\s+/).filter(Boolean);
+
+/** KB-383: a removal word said with NO item named - the line stays, and the last line asks the shopkeeper. */
+export function unnamedRemoval(transcript: string): boolean {
+  const raw = rawWordsOf(transcript);
+  const w = raw.map((x) => norm(x.replace(/[,।]+$/, "")));
+  return w.some((_, i) => removalAt(w, i) !== undefined && namedBefore(raw, i).named.length === 0);
+}
+
 const PRICE_AFTER = new Set(["रुपए", "रुपये", "रुपया", "रूपए", "रूपये", "rupaye", "rupees", "rs", "वाला", "वाली", "वाले", "का", "की", "के"]);
 /** How far after a correction word the corrected product's name may come ("नहीं नहीं 3 किलो करो उसको चना दाल"). */
 const NAME_AFTER_WORDS = 6;
@@ -131,6 +162,30 @@ export function aiAnswerExemptNumbers(transcript: string, items: readonly Parsed
     }
     previousEnd = after;
     m = after - 1;
+  }
+
+  // 1b. removals (KB-383): "लास्ट वाला चना दाल हटा दो" - the numbers of that item's last mention BEFORE the naming words were removed with
+  // its line. Only when the item is named; an unnamed "हटा दो" exempts nothing, so a line the AI dropped for it still warns.
+  const raw = rawWordsOf(transcript);
+  const rw = raw.map((x) => norm(x.replace(/[,।]+$/, "")));
+  const rnum = (i: number) => (rw[i] === undefined ? null : (extractSpokenNumbers(rw[i]!).length === 1 ? extractSpokenNumbers(rw[i]!)[0]! : null));
+  for (let m = 0; m < rw.length; m++) {
+    const marker = removalAt(rw, m);
+    if (!marker) continue;
+    // the removal words' own number word ("हटा दो" - दो reads as 2) is never a quantity, named or not
+    for (let i = m; i < m + marker.length; i++) if (rnum(i) !== null) exempt.push(rnum(i)!);
+    const { named, start } = namedBefore(raw, m);
+    if (named.length === 0) continue;
+    // the item's last mention before the naming words ("लास्ट वाला" belongs to the naming, not to the item)
+    let from = start;
+    while (from > 0 && POINTERS.has(rw[from - 1]!)) from--;
+    let j = -1;
+    for (let i = from - 1; i >= 0 && j < 0; i--) if (alike(rw[i]!, named[0]!)) j = i;
+    if (j < 0) continue;
+    for (let i = Math.max(0, j - 2); i < from; i++) {
+      const v = rnum(i);
+      if (v !== null) exempt.push(v);
+    }
   }
 
   // 2. pack sizes: a count and a size in ONE item, with only units and that item's name between them, the line billing one of them

@@ -36,3 +36,26 @@ describe("KB-317 alias fixes - one list, no drift", () => {
     }
   });
 });
+
+describe("KB-383 Devanagari aliases - one list, no drift, no tie (owner, 9 Nov 2026)", () => {
+  it("the committed migration is exactly what the list generates", async () => {
+    const { KB383_DEVANAGARI_ALIASES } = await import("./catalogAliasFixes");
+    const dir = path.resolve(__dirname, "..", "supabase", "migrations");
+    const files = readdirSync(dir).filter((f) => f.endsWith("_kb383_devanagari_aliases.sql"));
+    expect(files).toHaveLength(1);
+    expect(readFileSync(path.join(dir, files[0]!), "utf8")).toBe(buildAliasMigrationSql(KB383_DEVANAGARI_ALIASES, "-- KB-383 (owner, 9 Nov 2026): Devanagari names for the 10 seed products with none - additive alias adds only."));
+  });
+
+  it("catalog-seed.json carries every alias, each on ONE active product, and the matcher finds that product by it", async () => {
+    const { KB383_DEVANAGARI_ALIASES } = await import("./catalogAliasFixes");
+    const { SEED_PARSER_CATALOG } = await import("../src/domain/seedCatalog");
+    const { matchProductName } = await import("../src/domain/grammar");
+    expect(KB383_DEVANAGARI_ALIASES).toHaveLength(10);
+    for (const fix of KB383_DEVANAGARI_ALIASES) for (const alias of fix.add ?? []) {
+      const holders = products.filter((p) => p.isActive && [p.displayName, ...p.aliases].some((a) => a.toLowerCase() === alias.toLowerCase()));
+      expect(holders.map((p) => p.displayName), alias).toEqual([fix.displayName]);
+      const m = matchProductName(alias, SEED_PARSER_CATALOG);
+      expect(m.catalogId ? SEED_PARSER_CATALOG.byId.get(m.catalogId)?.displayName : null, alias).toBe(fix.displayName);
+    }
+  });
+});

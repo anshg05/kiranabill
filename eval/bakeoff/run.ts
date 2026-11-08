@@ -36,7 +36,7 @@ import { AUDIO_DIR, SHEET } from "../acceptance/store.js";
 import type { ExpectedBill } from "../acceptance/types.js";
 import { checkAudioAnswer, d102Fill, flagNotHeardByB, hybridItems, nocatBill } from "./pipeline.js";
 import { scoreRunD102 } from "./d102.js";
-import { EZY_D102_NOCAT_PROMPT, EZY_D102_PROMPT, EZY_D103_NOCAT_PROMPT } from "./ezyPrompt.js";
+import { EZY_D102_NOCAT_PROMPT, EZY_D102_PROMPT, EZY_D103_NOCAT_PROMPT, EZY_V3_PROMPT } from "./ezyPrompt.js";
 import { createSarvamTranscriptionProvider } from "../../src/voice/sarvamTranscriptionProvider.js";
 import { candidatesFor, declare, GST, groqUsd, ROUND1_CANDIDATES, SARVAM_INR_PER_MINUTE, scoreRun, toSaved, tokensUsd, webmSeconds, type CandidateId, type Recording, type RunResult } from "./score.js";
 import { geminiUrl, inlineAudio } from "../../src/voice/geminiAudio.js";
@@ -68,7 +68,7 @@ const ROUND2: CandidateId[] = ["E-flash", "E-flash-1ear", "S"];
 /** KB-370 nocat (owner, 6 Nov 2026): E-flash's call without the catalog, the D102 prompt as it was and rewritten to D103 - scored D102 + D103. */
 const round3 = process.argv.includes("--round3");
 const ROUND3: CandidateId[] = ["nocat-old", "nocat-D103"];
-const NOCAT_PROMPT: Partial<Record<CandidateId, string>> = { "nocat-old": EZY_D102_NOCAT_PROMPT, "nocat-D103": EZY_D103_NOCAT_PROMPT };
+const NOCAT_PROMPT: Partial<Record<CandidateId, string>> = { "nocat-old": EZY_D102_NOCAT_PROMPT, "nocat-D103": EZY_D103_NOCAT_PROMPT, "nocat-v2": EZY_V3_PROMPT };
 const d102Scoring = round2 || round3;
 const chosen = (arg("candidates")?.split(",") ?? (round3 ? ROUND3 : round2 ? ROUND2 : [...ROUND1_CANDIDATES])) as CandidateId[];
 /** B-smart (owner): the correction orders A39, A40, A59, all 12 long orders, and 10 short ones - once each. The 10 short: one or two from
@@ -82,7 +82,8 @@ const inrPerUsd = Number(arg("inr-per-usd") ?? 95.17);
 const C2_MODEL = "gemini-3.8-flash";
 const A30_TIMEOUT_MS = 30_000;
 /** The owner dropped A41 (30 Oct: a spoken "remove the last one" is not needed now); A13 has no written bill. */
-const OWNER_DROPPED = new Set(["A41"]);
+// KB-383 (owner, 9 Nov 2026): A41 ("लास्ट वाला चना दाल हटा दो") is back in V3's regression set - its sheet line stays SKIP for the Whisper gate only
+const OWNER_DROPPED = new Set<string>([]);
 const LONG_SLOTS = 12;
 const shop = SEED_PARSER_CATALOG;
 
@@ -119,7 +120,7 @@ const vocabulary = [...freq.entries()]
 // Prompt tokens estimated from the characters actually sent (about 3 characters a token for this mix of English, JSON and Devanagari).
 const sliceChars = JSON.stringify(shop.entries.slice(0, 30).map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
 const catalogChars = JSON.stringify(shop.entries.map((e) => ({ id: e.id, displayName: e.displayName, unit: e.unit, suggestedPricePaise: e.suggestedPricePaise }))).length;
-const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3), nocatIn: Math.ceil((EZY_D103_NOCAT_PROMPT.length + 30) / 3) };
+const est = { layer2In: Math.ceil((PRICING_GRAMMAR_PROMPT.length + sliceChars + 300) / 3), cIn: Math.ceil((PRICING_GRAMMAR_PROMPT.length + AUDIO_PARSE_ADDENDUM.length + catalogChars) / 3), nocatIn: Math.ceil((EZY_V3_PROMPT.length + 30) / 3) };
 // round 2: B-smart only on its recordings, once; the others on every recording, long ones `longRuns` times
 const sum = (a: ReturnType<typeof declare>, b: ReturnType<typeof declare>): ReturnType<typeof declare> => ({
   calls: Object.fromEntries(Object.entries(a.calls).map(([k, v]) => [k, v + b.calls[k as keyof typeof a.calls]])) as typeof a.calls,
@@ -142,7 +143,7 @@ console.log(`KB-370 bake-off${canary ? " - CANARY (docs/23 section 8: A01, A61, 
 console.log(`Recordings with a written bill: ${recordings.filter((r) => r.set === "short").length} short (A01-A50, ${[...expectedOf.values()].filter((o) => o.setAside).length} of them the set-aside Whisper-misheard orders), ${longHave} of ${LONG_SLOTS} long (A51-A62); ${audioMin.toFixed(1)} min of audio in all`);
 console.log(`Runs: short orders once, long orders ${longRuns} times. Vocabulary: ${vocabulary.length} terms from eval/real-transcripts.json.`);
 console.log(`NOW:          ${fmt(now)}`);
-for (const c of (["E-flash", "nocat-old", "nocat-D103"] as const).filter((x) => chosen.includes(x))) {
+for (const c of (["E-flash", "nocat-old", "nocat-D103", "nocat-v2"] as const).filter((x) => chosen.includes(x))) {
   // per bill: gemini-3.8-flash doubles BOTH rates on 1 Jan 2027 (the pricing page, 30 Oct 2026), so the bill doubles
   const e = declare(recordings, longRuns, [c], pace, est, inrPerUsd);
   const bills = recordings.reduce((a, r) => a + (r.set === "long" ? longRuns : 1), 0);
@@ -335,7 +336,7 @@ outer: for (const rec of recordings) {
           actual = checkAudioAnswer(e.transcript, d102Fill(e.items!, shop), shop);
           cost.usd = e.usd;
           cost.ms = e.seconds * 1000;
-        } else if (candidate === "nocat-old" || candidate === "nocat-D103") {
+        } else if (candidate === "nocat-old" || candidate === "nocat-D103" || candidate === "nocat-v2") {
           // E-flash's call with an EMPTY catalog: the model never sees a product; our code fills an unspoken price (D102); our checks; one ear
           const r = await paced(() => createGeminiAudioParseProvider(geminiKey, { model: C2_MODEL, systemPrompt: NOCAT_PROMPT[candidate]!, thinkingConfig: E_FLASH_THINKING }).parseAudio(blob(), { catalog: [] }));
           transcript = r.transcript;

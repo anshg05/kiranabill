@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveUtterance } from "../../src/data/voiceBilling.js";
 import type { ParsedItem } from "../../src/domain/grammar.js";
+import { prepareParserCatalog } from "../../src/domain/catalogIndex.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { checksOf } from "../acceptance/compare.js";
 import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems, nocatBill } from "./pipeline.js";
@@ -109,6 +110,33 @@ describe("KB-370 nocat (owner, 6 Nov 2026): the model never sees the catalog; OU
     const parle = item({ spokenName: "पारले जी बिस्किट", catalogId: null, isCustom: true, matchStatus: "none", qty: 5, unit: "packet", rate: 3000, rateUnit: "packet", total: null, priceType: "rate" });
     const bill = nocatBill(t, [rin, parle], shop);
     expect(bill.lines.map((l) => [l.item.qty, l.item.total])).toEqual([[5, 5000], [5, 15000]]);
+  });
+
+  it("KB-383: a Devanagari brand spelling the catalog lacks ('लाइज़ॉल' - the catalog has 'लाइजोल', ॉ vs ो) still fills the shop price", () => {
+    const filled = fillFromCatalog([item({ spokenName: "लाइज़ॉल", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: null, rateUnit: null, total: null, priceType: "default" })], shop)[0]!;
+    expect(filled).toMatchObject({ spokenName: "लाइज़ॉल", catalogId: "200", priceType: "default" });
+  });
+
+  it("KB-383 census: the ॉ/ो fold never lands a catalog name on ANOTHER product (every Devanagari name and alias, both ways)", () => {
+    const wrong: string[] = [];
+    for (const e of shop.entries) for (const name of [e.displayName, ...e.aliases].filter((n) => /[ॉोऑओ]/.test(n))) {
+      for (const variant of [name.replace(/ॉ/g, "ो").replace(/ऑ/g, "ओ"), name.replace(/ो/g, "ॉ").replace(/ओ/g, "ऑ")]) {
+        const got = fillFromCatalog([item({ spokenName: variant, catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: e.unit, rate: null, rateUnit: null, total: null, priceType: "default" })], shop)[0]!;
+        if (got.catalogId !== null && got.catalogId !== e.id && !e.aliases.some((a) => shop.byId.get(got.catalogId!)?.aliases.includes(a))) wrong.push(`${variant} -> ${shop.byId.get(got.catalogId)?.displayName} (should be ${e.displayName})`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it("KB-383: when the two spelling folds land on TWO different products, the line is Price needed - never a guess (D102)", () => {
+    const base = { sourceCategory: "x", guardCategory: "grain" as const, unit: "kg", suggestedPricePaise: 1000, isActive: true };
+    const two = prepareParserCatalog([
+      { ...base, id: "a", displayName: "कोटो", aliases: [] },
+      { ...base, id: "b", displayName: "कॉटॉ", aliases: [] },
+    ]);
+    // "कॉटो" matches neither as said; folded one way it is कोटो, the other way कॉटॉ - two products
+    const got = fillFromCatalog([item({ spokenName: "कॉटो", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "default" })], two)[0]!;
+    expect(got).toMatchObject({ catalogId: null, priceType: "unknown" });
   });
 
   it("a line with a SPOKEN price is never touched (the catalog only fills a price that was not said)", () => {

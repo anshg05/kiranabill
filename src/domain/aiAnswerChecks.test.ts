@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CORRECTION_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities, aiAnswerRateUnits } from "./aiAnswerNumbers";
+import { CORRECTION_MARKERS, REMOVAL_MARKERS, aiAnswerExemptNumbers, aiAnswerQuantities, aiAnswerRateUnits } from "./aiAnswerNumbers";
 import type { ParsedItem } from "./grammar";
 import type { SettledLine } from "./layer2";
 import { checkLayer2AgainstSpoken } from "./layer2Check";
@@ -147,6 +147,32 @@ describe("KB-382 (a): the price unit is read from the spoken words, whatever the
     expect(aiAnswerRateUnits("500 ग्राम शक्कर 56 का किलो", [ai("शक्कर", 500, "gm", "rate", 5600, null)])[0]!.total).toBe(2800);
     expect(aiAnswerRateUnits("2 किलो शक्कर ₹56 किलो", [ai("शक्कर", 2, "kg", "rate", 5600, null)])[0]!.total).toBeNull();
     expect(aiAnswerRateUnits("500 ग्राम शक्कर ₹56", [ai("शक्कर", 500, "gm", "rate", 5600, null)])[0]!.total).toBeNull();
+  });
+});
+
+describe("KB-383 (KB-367; owner 9 Nov 2026): 'हटा दो' WITH an item named removes it; WITHOUT one, nothing is removed and the last line asks", () => {
+  const A41 = "2 किलो चना दाल, 2 किलो चना दाल, लास्ट वाला चना दाल हटा दो, 1 किलो बेसन, 1 किलो आटा, 1 लीटर बंसल तेल 150 रुपए";
+  const A41_LINES = [ai("चना दाल", 2, "kg", "default", null, null), ai("बेसन", 1, "kg", "default", null, null), ai("आटा", 1, "kg", "default", null, null), ai("बंसल तेल", 1, "liter", "total", null, 15000)];
+
+  it("A41: the removed second '2 किलो चना दाल' is not a dropped number (the item was named)", () => {
+    expect(codes(A41, A41_LINES, "ai-answer")).not.toContain("number_dropped");
+    expect(codes(A41, A41_LINES, "ai-answer")).not.toContain("removal_unclear");
+  });
+
+  it("a 'हटा दो' with NO item named never exempts anything - a line the AI dropped still warns - and the last line asks 'हटाना है?'", () => {
+    const t = "2 किलो चीनी, 1 किलो चावल, हटा दो";
+    const removedByAi = codes(t, [ai("चीनी", 2, "kg", "default", null, null)], "ai-answer");
+    expect(removedByAi).toContain("number_dropped");
+    const kept = evaluateReviewFlags(t, [ai("चीनी", 2, "kg", "default", null, null), ai("चावल", 1, "kg", "default", null, null)], entries, undefined, "ai-answer");
+    expect(kept.find((f) => f.code === "removal_unclear")).toMatchObject({ severity: "HIGH", itemIndex: 1 });
+  });
+
+  it("'सब हटा दो' / 'लास्ट वाला हटा दो' name no item - they ask, never remove", () => {
+    for (const t of ["2 किलो चीनी सब हटा दो", "2 किलो चीनी लास्ट वाला हटा दो"]) expect(codes(t, [ai("चीनी", 2, "kg", "default", null, null)], "ai-answer")).toContain("removal_unclear");
+  });
+
+  it("the removal words are ONE extendable list", () => {
+    expect(REMOVAL_MARKERS).toEqual(["हटा दो", "निकाल दो", "cancel"]);
   });
 });
 

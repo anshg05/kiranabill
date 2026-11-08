@@ -50,7 +50,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { rupeesToPaise } from "../src/domain/money.js";
 import type { GuardCategory } from "../src/domain/catalog.js";
-import { KB317_ALIAS_FIXES, type CatalogAliasFix } from "./catalogAliasFixes.js";
+import { KB317_ALIAS_FIXES, KB383_DEVANAGARI_ALIASES, type CatalogAliasFix } from "./catalogAliasFixes.js";
 
 const EXPECTED_PRODUCT_COUNT = 482; // docs/14-LEGACY-REFERENCE.md section 9
 
@@ -718,6 +718,7 @@ function main(): void {
 
   const { seed, report } = buildSeed(rawProducts);
   applyAliasFixes(seed, KB317_ALIAS_FIXES);
+  applyAliasFixes(seed, KB383_DEVANAGARI_ALIASES); // KB-383: Devanagari names for the 10 Latin-only products
   writeFileSync(outPath, JSON.stringify(seed, null, 2) + "\n", "utf8");
   printReport(report);
 }

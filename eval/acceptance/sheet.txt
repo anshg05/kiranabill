@@ -348,7 +348,7 @@ checks: 1
 
 ## A41 repeated
 said: 2 किलो चनादाल, 2 किलो चनादाल, लास्ट वाला चनादाल हटा दो, 1 किलो बेसन, 1 किलो आटा, 1 लिटर बंसल 150 रुपए
-# SKIP: owner, 30 Oct 2026: a spoken 'remove the last one' is not needed now
+# SKIP: owner, 30 Oct 2026: a spoken 'remove the last one' is not needed now (the Whisper gate only - KB-383, 9 Nov 2026: A41 is in V3's regression set)
 - 2 kg चना दाल
 - 1 kg बेसन
 - 1 kg आटा

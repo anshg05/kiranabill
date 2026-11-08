@@ -63,11 +63,27 @@ export function d102Fill(items: readonly ParsedItem[], shop: ParserCatalog): Par
  * name clearly matches ONE catalog item (D102); several or none = Price needed. A line with a spoken price is never touched; the name
  * stays as said; settleLayer2Items then computes the total from the shop price.
  */
+/**
+ * KB-383 (doc 25 §11): the ONE product a said name clearly matches. If the name matches nothing, the Devanagari spellings the matcher does not
+ * fold yet are tried - ॉ / ो and ऑ / ओ ("लाइज़ॉल" -> the catalog's "लाइजोल") - both ways; two different products = none (D102: one clear match
+ * or Price needed). AI path only: Layer 1's matcher is unchanged. A census test proves no catalog name lands on another product.
+ */
+function productOf(name: string, shop: ParserCatalog) {
+  const one = (n: string) => {
+    const m = matchProductName(n, shop);
+    return m.matchStatus === "matched" && m.catalogId !== null ? m.catalogId : null;
+  };
+  const direct = one(name);
+  if (direct) return shop.byId.get(direct);
+  // ॉ (U+0949) <-> ो (U+094B), ऑ (U+0911) <-> ओ (U+0913)
+  const tries = [name.replace(/ॉ/g, "ो").replace(/ऑ/g, "ओ"), name.replace(/ो/g, "ॉ").replace(/ओ/g, "ऑ")].filter((n) => n !== name).map(one).filter((id): id is string => id !== null);
+  return new Set(tries).size === 1 ? shop.byId.get(tries[0]!) : undefined;
+}
+
 export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalog): ParsedItem[] {
   return items.map((it) => {
     if (it.priceType !== "default") return it;
-    const match = matchProductName(it.spokenName, shop);
-    const entry = match.matchStatus === "matched" && match.catalogId !== null ? shop.byId.get(match.catalogId) : undefined;
+    const entry = productOf(it.spokenName, shop);
     // KB-380 (A19): a unit the shop's price cannot be scaled to (a packet of a per-kg product) has no shop price - Price needed
     if (entry && unitScale(it.unit || entry.unit, entry.unit) !== null) return { ...it, catalogId: entry.id, isCustom: false, matchStatus: "matched" };
     return { ...it, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "unknown" };

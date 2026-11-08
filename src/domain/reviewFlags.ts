@@ -33,7 +33,7 @@ import { extractSpokenNumbers, extractSpokenNumberEntries, splitItemSegments, un
 import type { CatalogEntry } from "./catalog.js";
 import { formatRupees, lineTotalPaise, lineTotalPaiseScaled, paiseToRupeeNumber, type Paise } from "./money.js";
 import { getEffectivePrice, type LearningState } from "./learning.js";
-import { aiAnswerExemptNumbers, unitAfterSpokenPrice } from "./aiAnswerNumbers.js";
+import { aiAnswerExemptNumbers, unitAfterSpokenPrice, unnamedRemoval } from "./aiAnswerNumbers.js";
 import { prepareParserCatalog, type ParserCatalog } from "./catalogIndex.js";
 
 /** KB-380 (doc 25 §4): who produced the lines. "spoken" = our reader (Layer 1, the Sarvam path) - every check as it always was;
@@ -61,7 +61,8 @@ export type ReviewCode =
   | "duplicate_line"
   | "already_on_bill"
   | "total_out_of_proportion"
-  | "large_total_no_reference";
+  | "large_total_no_reference"
+  | "removal_unclear";
 
 /** KB-382 (D103 item 3b): BLOCK = a line wildly out of proportion - a "Theek hai" can never clear it; only an edit to the line does. */
 export type ReviewSeverity = "BLOCK" | "HIGH" | "MEDIUM" | "LOW";
@@ -237,6 +238,11 @@ export function evaluateReviewFlags(
     const flag = proportionFlag(transcript, item, entry, index, opts);
     if (flag) flags.push(flag);
   });
+
+  // KB-383 (owner, 9 Nov 2026): "हटा दो" with no item named removes NOTHING - the last line asks, and the shopkeeper decides
+  if (source === "ai-answer" && items.length > 0 && unnamedRemoval(transcript)) {
+    push(flags, `item-${items.length - 1}-removal_unclear`, "removal_unclear", "HIGH", `Heard "remove" without the item - should a line be removed? Check.`, items.length - 1);
+  }
 
   evaluateNumberSafety(transcript, items, flags, source);
   flagDuplicateLines(items, catalogById, flags, source);
