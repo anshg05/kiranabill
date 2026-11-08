@@ -297,18 +297,21 @@ function productNamed(name: string, catalog: readonly CatalogEntry[]): CatalogEn
 }
 
 /**
- * KB-382 - only on a line READ FROM SPEECH (a typed line has no transcript: it is the shopkeeper's own statement), and never on a spoken
- * total (it IS the statement) or a line with no total:
+ * KB-382 - never on a spoken or typed TOTAL (it IS the statement) or a line with no total. On an edited or hand-typed line (no transcript)
+ * only the spoken-words reference and (d) are unavailable; (b) against the shop price and (c) still apply (owner, 9 Nov 2026):
  *   (c) BLOCK: priced per gram / per ml (total = grams x rate) and "ग्राम" / "ml" was not said right after the price - kirana rates are per
  *       kg, litre, piece or packet ("250 ग्राम जीरा 400 रुपये" must never be Rs 1,00,000);
  *   (b) BLOCK: the total is more than 100x what the spoken rate gives (the rate's unit read from the words) or 100x quantity x the shop price;
  *   (d) HIGH (clearable): no reference at all (no unit word after the price, no shop price) and over Rs 10,000.
  */
 function proportionFlag(transcript: string, item: ParsedItem, entry: CatalogEntry | undefined, index: number, opts: EvaluateReviewFlagsOptions | undefined): ReviewFlag | null {
-  if (transcript === "" || item.total === null || item.qty === null || (item.priceType !== "rate" && item.priceType !== "default")) return null;
+  if (item.total === null || item.qty === null || (item.priceType !== "rate" && item.priceType !== "default")) return null;
+  // owner, 9 Nov 2026: an EDITED or hand-typed line has no transcript - it keeps (b) against the shop price and (c); only the spoken-words
+  // reference and (d) need the words (an edit to Rs 9,001 a kilo of चीनी must stay blocked, Rs 45 clears it)
+  const spoken = transcript !== "";
   const { qty, total } = item;
   const block = (message: string): ReviewFlag => ({ id: `item-${index}-total_out_of_proportion`, code: "total_out_of_proportion", severity: "BLOCK", message, itemIndex: index });
-  const perUnit = item.priceType === "rate" && item.rate !== null ? unitAfterSpokenPrice(transcript, paiseToRupeeNumber(item.rate)) : null;
+  const perUnit = spoken && item.priceType === "rate" && item.rate !== null ? unitAfterSpokenPrice(transcript, paiseToRupeeNumber(item.rate)) : null;
   const perGram = item.priceType === "rate" && item.rate !== null && (item.unit === "gm" || item.unit === "ml") && total === lineTotalPaise(qty, item.rate);
   if (perGram && perUnit !== "gm" && perUnit !== "ml") {
     return block(`Rate ${formatRupees(item.rate!)} per ${item.unit} — kirana rates are per kilo, litre, piece or packet. Edit the line before Bill Banao.`);
@@ -325,7 +328,7 @@ function proportionFlag(transcript: string, item: ParsedItem, entry: CatalogEntr
   if (smallest !== null && total > smallest * BLOCK_MULTIPLE) {
     return block(`Total ${formatRupees(total)} — far more than this line should cost (about ${formatRupees(smallest)}). Edit the line before Bill Banao.`);
   }
-  if (usual.length === 0 && total > NO_REFERENCE_LIMIT_PAISE) {
+  if (spoken && usual.length === 0 && total > NO_REFERENCE_LIMIT_PAISE) {
     return { id: `item-${index}-large_total_no_reference`, code: "large_total_no_reference", severity: "HIGH", message: `Total ${formatRupees(total)} with nothing to check it against. Check?`, itemIndex: index };
   }
   return null;
