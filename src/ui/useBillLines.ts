@@ -34,6 +34,8 @@ import { DRAFT_SAVE_DELAY_MS, clearDraft, loadDraft, saveDraft } from "./billDra
 export interface BillRow extends BillEntry {
   readonly displayName: string;
   readonly source: BillLine["source"];
+  /** KB-385 (D106 item 3): a price our code filled - shown "filled, not spoken"; gone once the shopkeeper types the rate or amount. */
+  readonly filled?: BillLine["filled"];
 }
 
 export type EditField = "qty" | "rate" | "amount" | "unit";
@@ -149,6 +151,7 @@ function reduce(state: BillState, action: Action): BillState {
         original: line.item,
         displayName: line.displayName,
         source: line.source,
+        ...(line.filled ? { filled: line.filled } : {}),
       }));
       return {
         ...state,
@@ -376,7 +379,9 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
               ? editAmount(item, value)
               : editUnit(item, value);
       if (!result.ok) return result.error;
-      dispatch({ type: "replace", id, row: { ...row, item: result.item } });
+      // KB-385: a typed rate or amount is the shopkeeper's own price - the "filled, not spoken" mark goes
+      const { filled: _filled, ...unmarked } = row;
+      dispatch({ type: "replace", id, row: field === "rate" || field === "amount" ? { ...unmarked, item: result.item } : { ...row, item: result.item } });
       return null;
     },
     [catalog, state.rows],

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Check, Loader2, Mic, Pencil, Plus, Square, TriangleAlert, X } from "lucide-react";
 import type { CatalogEntry } from "@/domain/catalog";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
@@ -55,6 +55,9 @@ import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from ".
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
+import { submitRecording } from "@/data/voiceJob";
+import { useVoiceOrders } from "./useVoiceOrders";
+import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
 import { runBillCommand } from "./voiceCommands";
 import { useShopName } from "./useShopName";
 import type { Customer } from "./useBillLines";
@@ -170,6 +173,27 @@ export function BillingScreen() {
     onVoiceTiming: (t) => void (localDb && recordVoiceTiming(localDb, t)),
     onMicStart: () => warmVoice(), // KB-353: wake /voice while the person starts speaking
     notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
+  });
+  // KB-385 (D101, D107): the V3 voice path - one path for every order. The recording is kept on the phone (voiceQueue) until its bill
+  // exists, sent through Supabase Storage + /voice-run, and its answer becomes lines on the phone (aiAnswerBill), added once. It works
+  // offline (queued, sent when back online); with no live session the send ends as "session" (sign in, then Retry).
+  const submitVoice = useCallback(
+    (recordingId: string, audio: Blob) =>
+      accessToken && shop
+        ? submitRecording({ client: supabase, shopId: shop.id, recordingId, audio, accessToken })
+        : Promise.resolve({ kind: "failed" as const, recordingId, reason: "session" }),
+    [accessToken, shop],
+  );
+  const orders = useVoiceOrders({
+    db: localDb ?? null,
+    shopId: shop?.id ?? null,
+    billLocalId: bill.ready ? bill.localId : null,
+    parser,
+    submit: submitVoice,
+    onAppend: (order) => {
+      wiringRef.current?.touch();
+      if (order.lines.length > 0) addToBill(order.lines, order.flags, order.transcript);
+    },
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, start a sync (D38's loop would anyway). Neither is
   // awaited: the bill is already saved, and neither can fail it.
@@ -294,15 +318,21 @@ export function BillingScreen() {
       shopName={shopName}
       lines={bill.rows}
       onSignOut={onSignOut}
-      voice={voice.view}
-      onMicTap={() => (wiring.touch(), voice.onMicTap())}
-      onMicPointerDown={voice.onMicPointerDown}
+      orderBar={(openAdd) => (
+        <OrderRecorder
+          hasLines={bill.rows.length > 0}
+          disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
+          onGenerate={(audio, ms) => (wiring.touch(), void orders.generate(audio, ms))}
+          onAddByHand={openAdd}
+        />
+      )}
+      orderEntries={(openAdd) => <OrderEntries orders={orders} onAddByHand={openAdd} />}
       onEdit={(id, field, value) => (wiring.touch(), bill.edit(id, field, value))}
       onRemove={(id) => (wiring.touch(), bill.remove(id))}
       removed={bill.removed}
       onUndo={bill.undo}
       flags={bill.flags}
-      pending={bill.pending}
+      pending={bill.pending + orders.blocking.length}
       onAcknowledge={(key) => (wiring.touch(), bill.acknowledge(key))}
       notAdded={bill.notAdded}
       onRetry={retry}
@@ -375,6 +405,10 @@ interface BillViewProps {
   /** KB-303: the bill is always editable - every line has a stable id. */
   lines: readonly (BillLine & { readonly id: string })[];
   onSignOut: () => void;
+  /** KB-385 (D101): the V3 order recorder in the bottom bar - when given, it replaces the old mic (voice / onMicTap). */
+  orderBar?: (openAdd: () => void) => ReactNode;
+  /** KB-385: the bill's recordings (processing, failed, "Heard: …") under the lines. */
+  orderEntries?: (openAdd: (query: string) => void) => ReactNode;
   voice?: VoiceView;
   onMicTap?: () => void;
   onMicPointerDown?: () => void;
@@ -677,6 +711,13 @@ function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: 
   );
 }
 
+/** KB-385 (D106 item 3): a price OUR CODE filled - never spoken for this line. */
+function FilledMark({ filled }: { filled?: BillLine["filled"] }) {
+  const { t } = useT();
+  if (!filled) return null;
+  return <span className="ml-1 rounded-[4px] bg-line px-1 text-[12px] normal-case text-ink-soft">{t(filled === "repeat" ? "filled.repeat" : "filled.shop")}</span>;
+}
+
 function mmss(ms: number): string {
   const s = Math.floor(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -789,6 +830,8 @@ export function BillView({
   shopName,
   lines,
   onSignOut,
+  orderBar,
+  orderEntries,
   voice = IDLE_VOICE,
   onMicTap,
   onMicPointerDown,
@@ -1103,7 +1146,7 @@ export function BillView({
           <>
           {/* Mobile first: one card per line (05 §2). */}
           <ul aria-label={t("bill.items")} className="md:hidden">
-            {lines.map(({ item: line, displayName, id }) => (
+            {lines.map(({ item: line, displayName, id, filled }) => (
               <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="capitalize">{nameOf(id, displayName)}</span>
@@ -1115,6 +1158,7 @@ export function BillView({
                   {unitOf("card", id, line, displayName)}
                   <span aria-hidden>×</span>
                   {rateOf("card", id, line, displayName)}
+                  <FilledMark filled={filled} />
                 </div>
                 {flagsBlock(id, displayName)}
               </li>
@@ -1136,9 +1180,12 @@ export function BillView({
               </tr>
             </thead>
             <tbody>
-              {lines.map(({ item: line, displayName, id }) => [
+              {lines.map(({ item: line, displayName, id, filled }) => [
                 <tr key={id} className="h-12 border-b border-line bg-surface">
-                  <td className={`px-4 capitalize ${edge(id)}`}>{nameOf(id, displayName)}</td>
+                  <td className={`px-4 capitalize ${edge(id)}`}>
+                    {nameOf(id, displayName)}
+                    <FilledMark filled={filled} />
+                  </td>
                   <td className="px-2 text-right tabular-nums">{qtyOf("table", id, line, displayName)}</td>
                   <td className="px-2">{unitOf("table", id, line, displayName)}</td>
                   <td className="px-2 text-right tabular-nums">{rateOf("table", id, line, displayName)}</td>
@@ -1158,6 +1205,7 @@ export function BillView({
           </>
           )}
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
+          {orderEntries?.((query) => openAdd?.(query))}
           <div ref={endRef} />
         </div>
         {changing && catalog && onChangeProduct && lines.some((l) => l.id === changing) && (
@@ -1222,9 +1270,11 @@ export function BillView({
           </div>
         )}
 
-        <div className="border-t border-line">
-          <VoiceStatus voice={voice} onAddByHand={openAdd} />
-        </div>
+        {!orderBar && (
+          <div className="border-t border-line">
+            <VoiceStatus voice={voice} onAddByHand={openAdd} />
+          </div>
+        )}
         <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
           {announcement}
         </div>
@@ -1234,8 +1284,12 @@ export function BillView({
               Banao until KB-307. The reason is a tooltip only (owner, 27 Sep
               2026) - a disabled button fires no hover events, so the title sits
               on a wrapper. */}
-          <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
-          <span title={canAdd ? undefined : t("voice.loadingCatalog")}>
+          {orderBar ? (
+            !readOnly && <div className="col-span-2">{orderBar(() => openAdd?.(""))}</div>
+          ) : (
+            <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
+          )}
+          <span title={canAdd ? undefined : t("voice.loadingCatalog")} className={orderBar ? "col-span-2" : undefined}>
             <button
               type="button"
               disabled={!canAdd}
