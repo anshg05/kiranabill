@@ -21,6 +21,8 @@ export interface AppendedOrder {
   readonly lines: readonly BillLine[];
   /** itemIndex relative to `lines`, as bill.add expects. */
   readonly flags: readonly ReviewFlag[];
+  /** KB-385 step 6: Generate -> the answer on the phone (the pilot numbers' stop -> transcript; offline time included). */
+  readonly waitedMs: number;
 }
 
 export interface UseVoiceOrdersOptions {
@@ -77,6 +79,7 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
         transcript,
         lines: answer.lines.map((l, i) => ({ item: l.item, displayName: l.displayName, source: "voice" as const, ...(filled.has(i) ? { filled: filled.get(i) } : {}) })),
         flags: answer.flags,
+        waitedMs: Math.max(0, Date.now() - Date.parse(row.createdAt)),
       });
     },
     [db],

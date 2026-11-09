@@ -55,7 +55,8 @@ import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from ".
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
-import { submitRecording } from "@/data/voiceJob";
+import { markRecordingBilled, submitRecording } from "@/data/voiceJob";
+import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
 import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
 import { runBillCommand } from "./voiceCommands";
@@ -191,8 +192,11 @@ export function BillingScreen() {
     parser,
     submit: submitVoice,
     onAppend: (order) => {
-      wiringRef.current?.touch();
+      const w = wiringRef.current;
+      w?.onTranscribed(order.waitedMs); // KB-404: Generate -> the answer (stop -> transcript)
       if (order.lines.length > 0) addToBill(order.lines, order.flags, order.transcript);
+      const lines = order.lines.map((l) => ({ name: l.displayName, qty: l.item.qty, unit: l.item.unit, rate: l.item.rate, total: l.item.total }));
+      w?.onUtterance({ path: lines.length > 0 ? "voice" : "failed", transcript: order.transcript, transcriptToItemsMs: lines.length > 0 ? 0 : null, lines });
     },
   });
   // KB-307: Bill Banao - one atomic local write; after it commits, start a sync (D38's loop would anyway). Neither is
@@ -212,6 +216,8 @@ export function BillingScreen() {
     (_result: unknown, billLocalId: string) => {
       protectStorage();
       void discardDraft().catch((err: unknown) => console.warn("[billDraft] discard failed:", err));
+      // KB-385: the bill exists - its recordings leave the phone and are marked billed (best effort; the 7-day clock, D105)
+      if (localDb) void settleBilledRecordings(localDb, billLocalId, accessToken ? (id) => markRecordingBilled(supabase, id) : undefined).catch((err: unknown) => console.warn("[voice] settling recordings failed:", err));
       if (!localDb || !shop || !deviceId) return;
       return runAfterSave(
         {
@@ -222,7 +228,7 @@ export function BillingScreen() {
         (phases) => void recordPhases(localDb, billLocalId, phases),
       );
     },
-    [deviceId, discardDraft, localDb, protectStorage, shop],
+    [accessToken, deviceId, discardDraft, localDb, protectStorage, shop],
   );
   // Recovery (owner): a final bill whose learning was interrupted is learned on start.
   useEffect(() => {
@@ -322,7 +328,7 @@ export function BillingScreen() {
         <OrderRecorder
           hasLines={bill.rows.length > 0}
           disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
-          onGenerate={(audio, ms) => (wiring.touch(), void orders.generate(audio, ms))}
+          onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms))}
           onAddByHand={openAdd}
         />
       )}
@@ -360,7 +366,11 @@ export function BillingScreen() {
       syncChip={sync.chip}
       syncDetail={sync.detail}
       unsynced={sync.unsynced}
-      onClearBill={() => void bill.clearBill()}
+      onClearBill={() => {
+        // KB-385: a cleared bill takes its recordings off the phone too (not billed - the server deletes them 7 days after upload)
+        if (localDb && bill.ready) void settleBilledRecordings(localDb, bill.localId).catch(() => {});
+        void bill.clearBill();
+      }}
       covered={historyOpen || catalogOpen || settingsOpen}
     />
     {historyOpen && localDb && shop && (

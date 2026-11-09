@@ -68,3 +68,13 @@ export async function clearBilled(db: KiranaBillDB, billLocalId: string): Promis
     return ids;
   });
 }
+
+/**
+ * KB-385 step 6: Bill Banao (with `markBilled`) or Clear bill (without). The bill's recordings are deleted from the phone; at Bill Banao each
+ * is marked billed on the server - the 7-day clock (D105). Best effort: a failure never fails the bill (the server's 7-days-after-upload
+ * rule deletes an unmarked recording anyway - normal bills are made within minutes).
+ */
+export async function settleBilledRecordings(db: KiranaBillDB, billLocalId: string, markBilled?: (recordingId: string) => Promise<boolean>): Promise<void> {
+  const ids = await clearBilled(db, billLocalId);
+  if (markBilled) await Promise.all(ids.map((id) => markBilled(id).catch(() => false)));
+}

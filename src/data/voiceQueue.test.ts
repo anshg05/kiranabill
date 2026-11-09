@@ -91,3 +91,33 @@ describe("the phone's voice queue", () => {
     expect(await recordingsForBill(db, "bill-2")).toHaveLength(1);
   });
 });
+
+describe("KB-385 step 6: Bill Banao and Clear bill", () => {
+  it("Bill Banao: the bill's recordings are deleted from the phone and each is marked billed on the server (the 7-day clock)", async () => {
+    const { settleBilledRecordings } = await import("./voiceQueue");
+    const db = open();
+    const [a, b, other] = [rec(), rec(), rec("bill-2")];
+    for (const r of [a, b, other]) await enqueueRecording(db, r);
+    const marked: string[] = [];
+    await settleBilledRecordings(db, "bill-1", async (id) => (marked.push(id), true));
+    expect(marked.sort()).toEqual([a.recordingId, b.recordingId].sort());
+    expect(await recordingsForBill(db, "bill-1")).toEqual([]);
+    expect(await recordingsForBill(db, "bill-2")).toHaveLength(1);
+  });
+
+  it("marking billed is best effort: a failure (offline) never fails the bill - the server's 7-days-after-upload rule deletes it anyway", async () => {
+    const { settleBilledRecordings } = await import("./voiceQueue");
+    const db = open();
+    await enqueueRecording(db, rec());
+    await expect(settleBilledRecordings(db, "bill-1", async () => Promise.reject(new Error("offline")))).resolves.toBeUndefined();
+    expect(await recordingsForBill(db, "bill-1")).toEqual([]);
+  });
+
+  it("Clear bill: the recordings go from the phone, nothing is marked billed", async () => {
+    const { settleBilledRecordings } = await import("./voiceQueue");
+    const db = open();
+    await enqueueRecording(db, rec());
+    await settleBilledRecordings(db, "bill-1");
+    expect(await recordingsForBill(db, "bill-1")).toEqual([]);
+  });
+});
