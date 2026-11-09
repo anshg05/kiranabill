@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // draft URL: without KB384_SPIKE_KEY set, or with the wrong key, it does not exist (404) - and it never runs in production code paths.
 
 const parseAudio = vi.fn(async () => ({ transcript: "2 किलो चीनी", items: [], usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 }, latencyMs: 1234, thoughts: null }));
-vi.mock("../../src/voice/geminiAudioParseProvider", () => ({ createGeminiAudioParseProvider: vi.fn(() => ({ parseAudio })) }));
+vi.mock("../../../src/voice/geminiAudioParseProvider", () => ({ createGeminiAudioParseProvider: vi.fn(() => ({ parseAudio })) }));
 
-import spike from "./voice-spike.mts";
+import spike from "../voice-spike.mts";
 
 afterEach(() => {
   delete process.env.KB384_SPIKE_KEY;

@@ -4,7 +4,7 @@
 //     npm run check:spike
 import { existsSync } from "node:fs";
 
-const SPIKE_FILES = ["netlify/functions/voice-spike.mts", "netlify/functions/voiceSpike.test.ts"] as const;
+const SPIKE_FILES = ["netlify/functions/voice-spike.mts", "netlify/functions/_shared/voiceSpike.test.ts"] as const;
 
 export function spikeLeftovers(exists: (file: string) => boolean, env: Record<string, string | undefined>): string[] {
   return [

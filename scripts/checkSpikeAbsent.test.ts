@@ -11,7 +11,7 @@ describe("check:spike - the release build fails while the KB-384 spike remains",
 
   it("the function file, its test, or the key each fail the check", () => {
     expect(spikeLeftovers((f) => f === "netlify/functions/voice-spike.mts", {})).toEqual(["netlify/functions/voice-spike.mts still exists"]);
-    expect(spikeLeftovers((f) => f === "netlify/functions/voiceSpike.test.ts", {})).toEqual(["netlify/functions/voiceSpike.test.ts still exists"]);
+    expect(spikeLeftovers((f) => f === "netlify/functions/_shared/voiceSpike.test.ts", {})).toEqual(["netlify/functions/_shared/voiceSpike.test.ts still exists"]);
     expect(spikeLeftovers(() => false, { KB384_SPIKE_KEY: "x" })).toEqual(["KB384_SPIKE_KEY is still set in this build's environment"]);
   });
 });
