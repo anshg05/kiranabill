@@ -13,6 +13,14 @@ import { aiAnswerQuantities, aiAnswerRateUnits, aiAnswerRepeatPrices } from "./a
 export interface AnswerBill {
   readonly lines: readonly SettledLine[];
   readonly flags: readonly ReviewFlag[];
+  /** For each line, the index of the answer item it came from (empty items are dropped, so the two can differ). */
+  readonly sourceIndex: readonly number[];
+}
+
+/** KB-385 (D106 item 3): a price OUR CODE filled on that line - never spoken for it. The bill marks it "filled, not spoken". */
+export interface FilledPrice {
+  readonly index: number;
+  readonly kind: "shop_price" | "repeat";
 }
 
 /**
@@ -28,12 +36,13 @@ export function checkedAnswer(spoken: string, items: readonly ParsedItem[], shop
   const allFlags = [...settledRaw.flags, ...checked.flags];
   const kept = grounded.map((l, i) => !isEmptyLine(l.item) || priceDropped[i]!);
   const lines = grounded.filter((_, i) => kept[i]);
-  if (lines.length === 0) return { lines: [], flags: [] };
+  if (lines.length === 0) return { lines: [], flags: [], sourceIndex: [] };
+  const sourceIndex = kept.flatMap((k, i) => (k ? [i] : []));
   const newIndex = kept.reduce<number[]>((acc, k, i) => (acc.push(k ? (acc[i - 1] ?? -1) + 1 : (acc[i - 1] ?? -1)), acc), []);
   const settledFlags = allFlags.filter((f) => f.itemIndex === null || kept[f.itemIndex]).map((f) => (f.itemIndex === null ? f : { ...f, itemIndex: newIndex[f.itemIndex]! }));
   const lineItems = lines.map((l) => l.item);
   const misaligned = checkLayer2NumberOrder(spoken, lineItems, source);
-  return { lines, flags: [...evaluateReviewFlags(spoken, lineItems, shop.entries, undefined, source), ...flagWeakProducts(lineItems, shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])] };
+  return { lines, sourceIndex, flags: [...evaluateReviewFlags(spoken, lineItems, shop.entries, undefined, source), ...flagWeakProducts(lineItems, shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])] };
 }
 
 function isEmptyLine(item: ParsedItem): boolean {
@@ -73,6 +82,14 @@ export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalo
 }
 
 /** KB-379 (D104, doc 25 §12): the Gemini path's bill from the model's raw answer - repeats, our price fill, quantities, rate units, checks. */
-export function aiAnswerBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): AnswerBill {
-  return checkedAnswer(transcript, aiAnswerRateUnits(transcript, aiAnswerQuantities(transcript, fillFromCatalog(aiAnswerRepeatPrices(items), shop))), shop, "ai-answer");
+export function aiAnswerBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): AnswerBill & { readonly filled: readonly FilledPrice[] } {
+  const repeated = aiAnswerRepeatPrices(items);
+  const bill = checkedAnswer(transcript, aiAnswerRateUnits(transcript, aiAnswerQuantities(transcript, fillFromCatalog(repeated, shop))), shop, "ai-answer");
+  const filled = bill.lines.flatMap(({ item }, index): FilledPrice[] => {
+    if (item.priceType === "default") return [{ index, kind: "shop_price" }]; // the catalog's price: fillFromCatalog only keeps "default" when the shop price applies
+    const from = bill.sourceIndex[index]!;
+    if (repeated[from] !== items[from]) return [{ index, kind: "repeat" }]; // a copied price was spoken (earlier), so the checks keep it
+    return [];
+  });
+  return { ...bill, filled };
 }
