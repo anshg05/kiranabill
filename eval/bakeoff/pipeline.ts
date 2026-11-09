@@ -1,37 +1,21 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
-import { extractSpokenNumbers, matchProductName, parseUtteranceParts, pieceHasPerUnitPrice, unitScale, type ParsedItem } from "../../src/domain/grammar.js";
-import { settleLayer2Items } from "../../src/domain/layer2.js";
-import { checkLayer2AgainstSpoken, dropUnspokenPrices } from "../../src/domain/layer2Check.js";
-import { checkLayer2NumberOrder, evaluateReviewFlags, type CheckSource } from "../../src/domain/reviewFlags.js";
-import { flagWeakProducts } from "../../src/domain/weakProduct.js";
-import { aiAnswerQuantities, aiAnswerRateUnits, aiAnswerRepeatPrices } from "../../src/domain/aiAnswerNumbers.js";
+import { extractSpokenNumbers, matchProductName, pieceHasPerUnitPrice, type ParsedItem } from "../../src/domain/grammar.js";
+import type { CheckSource } from "../../src/domain/reviewFlags.js";
+import { aiAnswerBill, checkedAnswer, fillFromCatalog, type AnswerBill } from "../../src/domain/aiAnswerBill.js";
 import { checksOf, warnedLinesOf, type ActualBill } from "../acceptance/compare.js";
 
 // KB-370 (V1 bake-off). Candidate C answers the WHOLE order from the audio (transcript + items), so its items are checked as a Layer 2
-// answer for every piece: this mirrors the Layer 2 half of data/voiceBilling.ts resolveUtterance step by step (settle, KB-359, KB-366,
-// the empty-line rule, Layer 3 flags, KB-368, the number order). pipeline.test.ts proves it gives the shipped resolver's lines and checks.
-// shortcut: a copy of ~20 lines, not a shared function - V3 extracts one from resolveUtterance if C or D wins.
+// answer for every piece. KB-384a: the check chain and the price fill now live in src/domain/aiAnswerBill.ts (the phone uses them);
+// these are the eval's thin wrappers - same names, so run.ts, replay.ts and the tests did not change.
 
 export function checkAudioAnswer(spoken: string, items: readonly ParsedItem[], shop: ParserCatalog, source: CheckSource = "spoken"): ActualBill {
-  const parts = parseUtteranceParts(spoken, shop);
-  const settledRaw = settleLayer2Items(items, shop);
-  const checked = checkLayer2AgainstSpoken(parts, settledRaw.lines, source);
-  const grounded = dropUnspokenPrices(spoken, checked.lines);
-  const priceDropped = grounded.map((l, i) => l !== checked.lines[i]);
-  const allFlags = [...settledRaw.flags, ...checked.flags];
-  const kept = grounded.map((l, i) => !isEmptyLine(l.item) || priceDropped[i]!);
-  const lines = grounded.filter((_, i) => kept[i]);
-  if (lines.length === 0) return { lines: [], unresolved: 0, checks: 0 };
-  const newIndex = kept.reduce<number[]>((acc, k, i) => (acc.push(k ? (acc[i - 1] ?? -1) + 1 : (acc[i - 1] ?? -1)), acc), []);
-  const settledFlags = allFlags.filter((f) => f.itemIndex === null || kept[f.itemIndex]).map((f) => (f.itemIndex === null ? f : { ...f, itemIndex: newIndex[f.itemIndex]! }));
-  const lineItems = lines.map((l) => l.item);
-  const misaligned = checkLayer2NumberOrder(spoken, lineItems, source);
-  const flags = [...evaluateReviewFlags(spoken, lineItems, shop.entries, undefined, source), ...flagWeakProducts(lineItems, shop.entries), ...settledFlags, ...(misaligned ? [misaligned] : [])];
-  return { lines, unresolved: 0, checks: checksOf(flags, lines.length), warnedLines: warnedLinesOf(flags, lines.length) };
+  return toActual(checkedAnswer(spoken, items, shop, source));
 }
 
-function isEmptyLine(item: ParsedItem): boolean {
-  return item.catalogId === null && item.qty === null && item.rate === null && item.total === null;
+/** The eval's summary of a bill: the lines, and the Theek hai checks / warned lines the screen would show. */
+function toActual({ lines, flags }: AnswerBill): ActualBill {
+  if (lines.length === 0) return { lines: [], unresolved: 0, checks: 0 };
+  return { lines, unresolved: 0, checks: checksOf(flags, lines.length), warnedLines: warnedLinesOf(flags, lines.length) };
 }
 
 /**
@@ -58,44 +42,11 @@ export function d102Fill(items: readonly ParsedItem[], shop: ParserCatalog): Par
   });
 }
 
-/**
- * KB-370 nocat (owner, 6 Nov 2026): the model never saw the catalog, so OUR code fills a price that was NOT said - only when the spoken
- * name clearly matches ONE catalog item (D102); several or none = Price needed. A line with a spoken price is never touched; the name
- * stays as said; settleLayer2Items then computes the total from the shop price.
- */
-/**
- * KB-383 (doc 25 §11): the ONE product a said name clearly matches. If the name matches nothing, the Devanagari spellings the matcher does not
- * fold yet are tried - ॉ / ो and ऑ / ओ ("लाइज़ॉल" -> the catalog's "लाइजोल") - both ways; two different products = none (D102: one clear match
- * or Price needed). AI path only: Layer 1's matcher is unchanged. A census test proves no catalog name lands on another product.
- */
-function productOf(name: string, shop: ParserCatalog) {
-  const one = (n: string) => {
-    const m = matchProductName(n, shop);
-    return m.matchStatus === "matched" && m.catalogId !== null ? m.catalogId : null;
-  };
-  const direct = one(name);
-  if (direct) return shop.byId.get(direct);
-  // ॉ (U+0949) <-> ो (U+094B), ऑ (U+0911) <-> ओ (U+0913)
-  const tries = [name.replace(/ॉ/g, "ो").replace(/ऑ/g, "ओ"), name.replace(/ो/g, "ॉ").replace(/ओ/g, "ऑ")].filter((n) => n !== name).map(one).filter((id): id is string => id !== null);
-  return new Set(tries).size === 1 ? shop.byId.get(tries[0]!) : undefined;
-}
+export { fillFromCatalog };
 
-export function fillFromCatalog(items: readonly ParsedItem[], shop: ParserCatalog): ParsedItem[] {
-  return items.map((it) => {
-    if (it.priceType !== "default") return it;
-    const entry = productOf(it.spokenName, shop);
-    // KB-380 (A19): a unit the shop's price cannot be scaled to (a packet of a per-kg product) has no shop price - Price needed
-    if (entry && unitScale(it.unit || entry.unit, entry.unit) !== null) return { ...it, catalogId: entry.id, isCustom: false, matchStatus: "matched" };
-    return { ...it, catalogId: null, isCustom: true, matchStatus: "none", rate: null, rateUnit: null, total: null, priceType: "unknown" };
-  });
-}
-
-/**
- * KB-379 (D104, doc 25 §12): the Gemini path's bill from the model's raw answer - our price fill, then the checks and the totals. ONE function
- * for the live run (run.ts) and the offline replay (replay.ts), so a code change is measured exactly as the live run would bill it.
- */
+/** KB-379 (D104): the Gemini path's bill - src/domain/aiAnswerBill.ts (KB-384a: the phone runs the same function), summarised for the eval. */
 export function nocatBill(transcript: string, items: readonly ParsedItem[], shop: ParserCatalog): ActualBill {
-  return checkAudioAnswer(transcript, aiAnswerRateUnits(transcript, aiAnswerQuantities(transcript, fillFromCatalog(aiAnswerRepeatPrices(items), shop))), shop, "ai-answer");
+  return toActual(aiAnswerBill(transcript, items, shop));
 }
 
 /**

@@ -2415,7 +2415,7 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 10. **Retention (owner, 9 Nov 2026):**
     - "The recording stays until its bill is made (Retry always resends the same audio)."
     - **After the bill it stays as D105:** deleted 7 days after the bill, which is useful for checking disputed bills during the pilot. To be reconsidered after the pilot.
-    - **Still to confirm at step 5:** how this sits with the earlier "unbilled recordings: delete 7 days after upload".
+    - **Confirmed (owner, 9 Nov 2026): an UNBILLED recording is deleted 7 days after upload.** It's a safety net for abandoned orders and for shops that stop using the app. Normal bills are made within minutes, so Retry always has its recording.
 11. **KB-384a step 3 - the worker** `netlify/functions/voice-run.mts`: a background function (`config.background`), and the phone gets 202 at once.
     - **Input:** it takes `{recordingId}` with the caller's login token and checks that token itself.
     - **The job** (`_shared/voiceRun.ts`):
