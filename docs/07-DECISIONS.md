@@ -2428,6 +2428,18 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
     - **It never throws.** Netlify retries a throwing background function, and that would be a second Gemini call.
     - **The not-wired guard** now allows exactly the Gemini audio provider in `/voice-run`; Sarvam stays out until KB-384b.
     - **Tests:** 15 unit (job + handler); 5 e2e on the real local stack (real token, claim, upload, download, finish; Gemini faked), proving one call per recording, no second call on a retry or double tap, shop B runs nothing, Gemini failure -> failed -> Retry -> done (attempt 2). 4 plants caught.
+12. **KB-384a step 4 - the phone's data side** (`src/data/voiceJob.ts`).
+    - **`submitRecording`**, in order:
+      1. upload to `{shop}/{recording}` as the bare audio type, never overwriting;
+      2. add the row;
+      3. read it once - already done = answered at once, with no `/voice-run` call;
+      4. start `/voice-run`;
+      5. read the row every **1.5 s** until done or failed, or **give up after 75 s**.
+    - **Outcomes:** done (the raw answer), failed (`upload`, `start` or the server's kind) and gave up. **`nextSteps`** maps failed and gave up to Retry (the SAME recording) or Add by hand - never a dead end.
+    - **Retry** reuses the recording ID: an existing file or row is fine, and only a failure from a NEWER attempt counts. The e2e found this bug: the old attempt's "failed" was read before the worker claimed again.
+    - **`markRecordingBilled`** stamps `billed_at`, which starts the 7-day clock.
+    - **The bill:** `src/domain/aiAnswerBill.ts` (the chain moved from eval, step 4a) builds it from the answer. All 85 saved answers' bills are identical, and the replay is byte-identical: short 45/49, long 36/36, 0 silent wrong from our code.
+    - **Tests:** 13 unit, including a test that the three time limits stay in order (Gemini 60 s < reclaim 70 s in SQL < phone 75 s), and 4 e2e on the real local stack with the real worker running in the background. 4 plants caught. The screen wiring is KB-385.
 
 ---
 
