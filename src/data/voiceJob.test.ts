@@ -74,6 +74,14 @@ describe("submitRecording (KB-384a step 4)", () => {
     expect(f.fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it("KB-385: the upload is REFUSED for the login (expired session, 401 / 403): failed 'session' - the screen asks to sign in, the recording is kept", async () => {
+    for (const upload of [{ message: "Unauthorized", statusCode: "401" }, { message: "new row violates row-level security policy", statusCode: "403" }, { message: "jwt expired", statusCode: "400" }]) {
+      const f = fake({ upload });
+      expect(await f.run()).toEqual({ kind: "failed", recordingId: REC, reason: "session" });
+      expect(f.insert).not.toHaveBeenCalled();
+    }
+  });
+
   it("the upload fails (offline, too big): failed 'upload' - nothing started, Retry or Add by hand", async () => {
     const f = fake({ upload: { message: "Failed to fetch" } });
     const out = await f.run();

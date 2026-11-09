@@ -17,6 +17,8 @@ export interface BillLine {
   readonly displayName: string;
   /** LocalBillItem.source: "fastpath" = Layer 1, "voice" = Layer 2, "manual" = added by hand (KB-305). */
   readonly source: "fastpath" | "voice" | "manual";
+  /** KB-385 (D106 item 3): the price was filled by OUR CODE, never spoken for this line - the bill marks it. */
+  readonly filled?: "shop_price" | "repeat";
 }
 
 export interface ResolvedUtterance {

@@ -17,7 +17,7 @@ export const GIVE_UP_MS = 75_000;
 
 export type VoiceJobOutcome =
   | { kind: "done"; recordingId: string; transcript: string; items: ParsedItem[] }
-  /** reason: "upload" | "start" | the server's kind (rate_limited, download, timeout, busy, failed) */
+  /** reason: "upload" | "session" (sign in, then Retry) | "start" | the server's kind (rate_limited, download, timeout, busy, failed) */
   | { kind: "failed"; recordingId: string; reason: string }
   | { kind: "gave_up"; recordingId: string };
 
@@ -50,7 +50,7 @@ export async function submitRecording(opts: SubmitRecordingOptions): Promise<Voi
   const mime = audio.type.split(";")[0]!.trim() || "audio/webm";
 
   const up = await client.storage.from("recordings").upload(`${shopId}/${recordingId}`, audio, { contentType: mime, upsert: false });
-  if (up.error && !isAlreadyThere(up.error)) return failed("upload");
+  if (up.error && !isAlreadyThere(up.error)) return failed(isLoginRefused(up.error) ? "session" : "upload");
   const row = await client.from("voice_recordings").insert({ recording_id: recordingId, shop_id: shopId, mime });
   if (row.error && row.error.code !== "23505") return failed("start");
   // Retry: a recording already done is answered at once (no /voice-run, no Gemini); an earlier FAILED attempt is not this run's
@@ -106,6 +106,11 @@ async function readRow(client: SupabaseClient, recordingId: string): Promise<Row
 export async function markRecordingBilled(client: SupabaseClient, recordingId: string): Promise<boolean> {
   const { error } = await client.from("voice_recordings").update({ billed_at: new Date().toISOString() }).eq("recording_id", recordingId).is("billed_at", null);
   return !error;
+}
+
+/** KB-385: the upload was refused for the LOGIN (expired or invalid session; Storage answers 401 / 403, or names the JWT) - sign in, then Retry. */
+function isLoginRefused(error: { message?: string; statusCode?: string | number }): boolean {
+  return ["401", "403"].includes(String(error.statusCode)) || /jwt|unauthori[sz]ed/i.test(error.message ?? "");
 }
 
 /** Storage answers 409 / "already exists" for a second upload of the same recording (Retry): it is there, which is what we need. */
