@@ -29,9 +29,24 @@ describe("public/privacy.html", () => {
     expect(page).toContain('<section id="english" lang="en">');
     expect(page).toContain('<section id="hindi" lang="hi">');
     expect(page.indexOf('id="english"')).toBeLessThan(page.indexOf('id="hindi"'));
-    expect(page).toMatch(/Last updated \d{1,2} October 2026/);
     expect((hindi.match(/[ऀ-ॿ]/g) ?? []).length).toBeGreaterThan(400); // a real translation, not a stub
-    expect(hindi).toContain("21 अक्टूबर 2026");
+    // KB-384a: "Last updated" becomes the real release date when V3 ships (docs/23 §8) - both languages always show the SAME date
+    const [, day, month, year] = /Last updated (\d{1,2}) (\w+) (\d{4})/.exec(english)!;
+    const HINDI_MONTH: Record<string, string> = { January: "जनवरी", February: "फ़रवरी", March: "मार्च", April: "अप्रैल", May: "मई", June: "जून", July: "जुलाई", August: "अगस्त", September: "सितंबर", October: "अक्टूबर", November: "नवंबर", December: "दिसंबर" };
+    expect(hindi).toContain(`आखिरी बार बदला गया: ${day} ${HINDI_MONTH[month!]} ${year}`);
+  });
+
+  it("KB-384a (owner, 9 Nov 2026): voice recordings - kept 7 days after the bill (unbilled: 7 days after upload), never in backups, Gemini's paid terms - in BOTH languages", () => {
+    for (const phrase of ["7 days after its bill is made", "7 days after it was recorded", "never copied into our backups", "deleted automatically", "your voice recordings", "within 7 days"]) expect(english, phrase).toContain(phrase);
+    for (const phrase of ["बिल बनने के 7 दिन बाद", "रिकॉर्ड होने के 7 दिन बाद", "बैकअप में कभी नहीं", "अपने आप हट", "आवाज़ की रिकॉर्डिंग समेत", "7 दिन के अंदर"]) expect(hindi, phrase).toContain(phrase);
+    // Gemini API Additional Terms (effective 23 Mar 2026), Paid Services: prompts and responses are not used to improve Google's products;
+    // logged for a limited time only to detect misuse
+    expect(english).toContain("under its paid API terms: it does not use it to improve its products, and keeps it only for a limited time to detect misuse");
+    expect(hindi).toContain("अपनी पेड API शर्तों के तहत प्रोसेस करता है: वह इसका इस्तेमाल अपने प्रोडक्ट सुधारने में नहीं करता");
+    // the old promise is gone (recordings ARE kept now), and Sarvam is not listed before KB-384b ships it
+    expect(english).not.toContain("does not keep the recordings");
+    expect(hindi).not.toContain("रिकॉर्डिंग अपने पास नहीं रखता");
+    expect(page).not.toContain("Sarvam");
   });
 
   it("says what the owner listed - in BOTH languages: what is collected, why, the processors, retention, deletion, the contact", () => {

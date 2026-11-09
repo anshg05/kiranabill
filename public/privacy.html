@@ -26,7 +26,7 @@
 
       <section id="english" lang="en">
         <h1>KiranaBill — Privacy policy</h1>
-        <p class="meta">Last updated 21 October 2026</p>
+        <p class="meta">Last updated 9 November 2026</p>
         <p>KiranaBill is a billing app for small shops. You speak or type an order, and it makes a bill. This page says what the app keeps, why, and who helps us run it.</p>
 
         <h2>What we collect</h2>
@@ -34,7 +34,15 @@
           <li><strong>Your shop:</strong> its name and phone number, the products and prices you add, and the bills you make.</li>
           <li><strong>Your Google account:</strong> when you sign in with Google we receive your email address and name. We use them only to know who you are and to open your shop.</li>
           <li><strong>Your customers:</strong> a customer's name and mobile number, only if you type them on a bill. They are used to print or send that bill.</li>
-          <li><strong>Voice:</strong> when you tap the microphone, the recording is sent for transcription. KiranaBill does not keep the recordings. The words that were heard are turned into bill items.</li>
+          <li><strong>Voice:</strong> when you tap the microphone and speak an order, the recording is stored for a short time (see "Voice recordings" below) and sent to Google Gemini, which writes down the words that were said (the transcript) and turns them into bill items. The transcript is stored with the recording.</li>
+        </ul>
+
+        <h2>Voice recordings</h2>
+        <ul>
+          <li>A recording and its transcript are kept for <strong>7 days after its bill is made</strong>, so that a disputed bill can be checked. Then both are deleted automatically.</li>
+          <li>A recording that never became a bill is deleted automatically <strong>7 days after it was recorded</strong>.</li>
+          <li>Only your shop can open its recordings. Recordings and transcripts are <strong>never copied into our backups</strong>.</li>
+          <li>To have your recordings deleted sooner, email us (see the last section). We delete them as soon as we can, and in any case within 7 days.</li>
         </ul>
 
         <h2>Why</h2>
@@ -43,25 +51,25 @@
         <h2>Who helps us run it</h2>
         <ul>
           <li><strong>Google</strong> — sign-in (your email and name), and encrypted backups kept on Google Drive.</li>
-          <li><strong>Supabase</strong> — stores your shop, bills and catalog in its database.</li>
+          <li><strong>Supabase</strong> — stores your shop, bills and catalog in its database, and your voice recordings and their transcripts for up to 7 days (see above).</li>
           <li><strong>Netlify</strong> — hosts the app and the voice service.</li>
-          <li><strong>Groq</strong> — turns your voice recording into text.</li>
-          <li><strong>Google Gemini</strong> — helps read an order's text when the app cannot read it by itself. The text may contain the words you spoke.</li>
+          <li><strong>Google Gemini</strong> — writes down an order from its voice recording and turns it into bill items. It also helps read an order's text when the app cannot read it by itself. Google processes what we send it under its paid API terms: it does not use it to improve its products, and keeps it only for a limited time to detect misuse.</li>
+          <li><strong>Groq</strong> — turns a voice recording into text in our older voice service, until that service is switched off.</li>
         </ul>
         <p>We share your data with them only so that the app works, and with no one else.</p>
 
         <h2>How long we keep it</h2>
-        <p>While your shop is active. If your shop is deleted, its data is removed from the live database, and the encrypted backups age out in about 3 months.</p>
+        <p>Voice recordings and transcripts: 7 days, as above. Everything else: while your shop is active. If your shop is deleted, its data is removed from the live database, and the encrypted backups age out in about 3 months.</p>
 
         <h2>Deleting or correcting your data</h2>
-        <p>To see, correct or delete your data, or to delete your shop, email <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> from the Google email you sign in with. You can also write to the same address with any question or complaint about your data.</p>
+        <p>To see, correct or delete your data (including your voice recordings), or to delete your shop, email <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> from the Google email you sign in with. You can also write to the same address with any question or complaint about your data.</p>
       </section>
 
       <hr />
 
       <section id="hindi" lang="hi">
         <h1>किराना बिल — गोपनीयता नीति</h1>
-        <p class="meta">आखिरी बार बदला गया: 21 अक्टूबर 2026</p>
+        <p class="meta">आखिरी बार बदला गया: 9 नवंबर 2026</p>
         <p>KiranaBill छोटी दुकानों के लिए बिल बनाने का ऐप है। आप बोलकर या लिखकर ऑर्डर बताते हैं और ऐप बिल बना देता है। इस पन्ने में बताया गया है कि ऐप क्या रखता है, क्यों रखता है, और इसे चलाने में कौन मदद करता है।</p>
 
         <h2>हम क्या जमा करते हैं</h2>
@@ -69,7 +77,15 @@
           <li><strong>आपकी दुकान:</strong> दुकान का नाम और फ़ोन नंबर, आपके जोड़े हुए सामान और भाव, और आपके बनाए बिल।</li>
           <li><strong>आपका Google खाता:</strong> Google से साइन इन करने पर हमें आपका ईमेल पता और नाम मिलता है। हम इन्हें सिर्फ़ आपको पहचानने और आपकी दुकान खोलने के लिए इस्तेमाल करते हैं।</li>
           <li><strong>आपके ग्राहक:</strong> किसी ग्राहक का नाम और मोबाइल नंबर तभी, जब आप उसे बिल पर लिखें। इनसे सिर्फ़ वही बिल छपता या भेजा जाता है।</li>
-          <li><strong>आवाज़:</strong> माइक दबाने पर आपकी रिकॉर्डिंग लिखने (ट्रांसक्रिप्शन) के लिए भेजी जाती है। KiranaBill रिकॉर्डिंग अपने पास नहीं रखता। जो शब्द सुने गए, वे बिल के सामान बन जाते हैं।</li>
+          <li><strong>आवाज़:</strong> माइक दबाकर ऑर्डर बोलने पर आपकी रिकॉर्डिंग थोड़े समय के लिए रखी जाती है (नीचे "आवाज़ की रिकॉर्डिंग" देखें) और Google Gemini को भेजी जाती है। Gemini बोले गए शब्द लिखता है (ट्रांसक्रिप्ट) और उन्हें बिल के सामान में बदलता है। ट्रांसक्रिप्ट रिकॉर्डिंग के साथ रखा जाता है।</li>
+        </ul>
+
+        <h2>आवाज़ की रिकॉर्डिंग</h2>
+        <ul>
+          <li>रिकॉर्डिंग और उसका ट्रांसक्रिप्ट <strong>बिल बनने के 7 दिन बाद तक</strong> रखे जाते हैं, ताकि किसी बिल पर सवाल उठे तो उसे जाँचा जा सके। उसके बाद दोनों अपने आप हट जाते हैं।</li>
+          <li>जिस रिकॉर्डिंग से कभी बिल नहीं बना, वह <strong>रिकॉर्ड होने के 7 दिन बाद</strong> अपने आप हट जाती है।</li>
+          <li>आपकी दुकान की रिकॉर्डिंग सिर्फ़ आपकी दुकान खोल सकती है। रिकॉर्डिंग और ट्रांसक्रिप्ट <strong>हमारे बैकअप में कभी नहीं जाते</strong>।</li>
+          <li>अपनी रिकॉर्डिंग जल्दी हटवाने के लिए हमें ईमेल करें (आखिरी हिस्सा देखें)। हम उन्हें जितनी जल्दी हो सके हटा देते हैं, और हर हाल में 7 दिन के अंदर।</li>
         </ul>
 
         <h2>क्यों</h2>
@@ -78,18 +94,18 @@
         <h2>इसे चलाने में कौन मदद करता है</h2>
         <ul>
           <li><strong>Google</strong> — साइन इन (आपका ईमेल और नाम), और Google Drive पर रखे गए कूट-बंद (एन्क्रिप्टेड) बैकअप।</li>
-          <li><strong>Supabase</strong> — आपकी दुकान, बिल और सामान की सूची अपने डेटाबेस में रखता है।</li>
+          <li><strong>Supabase</strong> — आपकी दुकान, बिल और सामान की सूची अपने डेटाबेस में रखता है, और आपकी आवाज़ की रिकॉर्डिंग और उनके ट्रांसक्रिप्ट ज़्यादा से ज़्यादा 7 दिन तक (ऊपर देखें)।</li>
           <li><strong>Netlify</strong> — ऐप और आवाज़ वाली सेवा चलाता है।</li>
-          <li><strong>Groq</strong> — आपकी आवाज़ की रिकॉर्डिंग को लिखे हुए शब्दों में बदलता है।</li>
-          <li><strong>Google Gemini</strong> — जब ऐप किसी ऑर्डर को खुद नहीं पढ़ पाता, तब उसका लिखा हुआ रूप पढ़ने में मदद करता है। उसमें वे शब्द हो सकते हैं जो आपने बोले।</li>
+          <li><strong>Google Gemini</strong> — आवाज़ की रिकॉर्डिंग से ऑर्डर लिखता है और उसे बिल के सामान में बदलता है। जब ऐप किसी ऑर्डर का लिखा हुआ रूप खुद नहीं पढ़ पाता, तब उसे पढ़ने में भी मदद करता है। हम जो भेजते हैं, Google उसे अपनी पेड API शर्तों के तहत प्रोसेस करता है: वह इसका इस्तेमाल अपने प्रोडक्ट सुधारने में नहीं करता, और इसे सिर्फ़ गलत इस्तेमाल पकड़ने के लिए थोड़े समय तक रखता है।</li>
+          <li><strong>Groq</strong> — हमारी पुरानी आवाज़ वाली सेवा में रिकॉर्डिंग को लिखे हुए शब्दों में बदलता है, जब तक वह सेवा बंद नहीं होती।</li>
         </ul>
         <p>आपका डेटा हम इनके साथ सिर्फ़ इसलिए साझा करते हैं कि ऐप चले — और किसी के साथ नहीं।</p>
 
         <h2>कितने समय तक रखते हैं</h2>
-        <p>जब तक आपकी दुकान चालू है। दुकान हटाने पर उसका डेटा चालू डेटाबेस से हट जाता है, और कूट-बंद बैकअप लगभग 3 महीने में अपने आप पुराने होकर हट जाते हैं।</p>
+        <p>आवाज़ की रिकॉर्डिंग और ट्रांसक्रिप्ट: ऊपर बताए अनुसार 7 दिन। बाकी सब: जब तक आपकी दुकान चालू है। दुकान हटाने पर उसका डेटा चालू डेटाबेस से हट जाता है, और कूट-बंद बैकअप लगभग 3 महीने में अपने आप पुराने होकर हट जाते हैं।</p>
 
         <h2>अपना डेटा देखना, सुधारना या हटवाना</h2>
-        <p>अपना डेटा देखने, सुधारने या हटवाने के लिए, या अपनी दुकान हटवाने के लिए, उसी Google ईमेल से जिससे आप साइन इन करते हैं, <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> पर ईमेल करें। अपने डेटा के बारे में कोई भी सवाल या शिकायत इसी पते पर लिख सकते हैं।</p>
+        <p>अपना डेटा (आवाज़ की रिकॉर्डिंग समेत) देखने, सुधारने या हटवाने के लिए, या अपनी दुकान हटवाने के लिए, उसी Google ईमेल से जिससे आप साइन इन करते हैं, <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> पर ईमेल करें। अपने डेटा के बारे में कोई भी सवाल या शिकायत इसी पते पर लिख सकते हैं।</p>
       </section>
 
       <p class="meta"><a href="/">← KiranaBill</a></p>
