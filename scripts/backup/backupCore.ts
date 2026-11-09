@@ -51,7 +51,7 @@ export const PENDING_PUBLIC_TABLES: string[] = []; // empty since 22 Oct 2026 (s
  * only to make the bill now, and the bill itself is what is backed up - a month-long backup would break the 7-day promise (D105).
  * Excluded from the dump; a dump that holds one anyway is a fault.
  */
-export const PUBLIC_EXCLUDE = ["public.voice_recordings"];
+export const PUBLIC_EXCLUDE = ["public.voice_recordings"]; // in production since the owner's db push of 10 Nov 2026 - and still never backed up
 
 /** KB-384a: Storage buckets whose files are deliberately NOT backed up (the same reason) - they do not fail the Storage check. */
 export const UNBACKED_BUCKETS = ["recordings"];

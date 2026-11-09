@@ -2396,7 +2396,7 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
    - **A middle form** keeps the long key names and only drops `catalogId` and the nulls: A63 2,716 tokens (-20%), keeping 667 of the 809 tokens saved. The owner decides which to test; every call is asked first (item 5).
    - **Owner's decision (9 Nov 2026): V3 keeps the LONG answer form** - accuracy first, and the async path already removes the time limit. The compact and middle forms are **PARKED as a later cost optimisation**, revisited after the V3 release with real usage numbers. Any adoption needs the full 85-recording run first (asked for with its cost). The `compact` option stays in the code, unwired, for that revisit.
 7. **Full `npm test` before every commit** from now on.
-8. **KB-384a step 2 - the storage** (migration `20261109110000_kb384a_voice_recordings.sql`, additive; the owner's `db push` before the step 6 draft test).
+8. **KB-384a step 2 - the storage** (migration `20261109110000_kb384a_voice_recordings.sql`, additive; **pushed to production by the owner on 10 Nov 2026**, with `20261109100000_kb383_futane_alias` and `20261110090000_kb384a_voice_cleanup`).
    - **`voice_recordings`:** one row per `recording_id`, with RLS on `shop_id`.
      - Clients may only ADD a row (`recording_id`, `shop_id`, `mime`) and set `billed_at`, which the server stamps once.
      - No client writes `status` or a result, and none deletes.
