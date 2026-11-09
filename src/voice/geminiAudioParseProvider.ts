@@ -23,13 +23,45 @@ export const AUDIO_PARSE_BAKEOFF_TIMEOUT_MS = 45_000;
 
 const SCHEMA = { type: "object", properties: { transcript: { type: "string" }, items: RESPONSE_SCHEMA }, required: ["transcript", "items"] };
 
+// KB-384a step 1 (owner, 9 Nov 2026; D107 item 6): the compact answer - short keys, no catalogId (V3 sends no catalog), priceType as one
+// letter. "d" and "u" stay apart: "d" lets our code fill the shop price, "u" (a price said but not understood) never does.
+const PRICE_TYPE = { r: "rate", t: "total", d: "default", u: "unknown" } as const;
+type PriceLetter = keyof typeof PRICE_TYPE;
+// A null quantity / rate / total is LEFT OUT of the answer (A63: 312 fewer tokens); left out = null.
+export interface CompactItem { n: string; q?: number | null; u: string; r?: number | null; t?: number | null; p: PriceLetter }
+export const COMPACT_SCHEMA = {
+  type: "object",
+  properties: {
+    transcript: { type: "string" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { n: { type: "string" }, q: { type: "number", nullable: true }, u: { type: "string" }, r: { type: "integer", nullable: true }, t: { type: "integer", nullable: true }, p: { type: "string", enum: Object.keys(PRICE_TYPE) } },
+        required: ["n", "u", "p"],
+      },
+    },
+  },
+  required: ["transcript", "items"],
+};
+export const expandCompactItem = (c: CompactItem): GeminiRawItem => ({ spokenName: c.n, catalogId: null, qty: c.q ?? null, unit: c.u, rate: c.r ?? null, total: c.t ?? null, priceType: PRICE_TYPE[c.p] });
+export const toCompactItem = (raw: GeminiRawItem): CompactItem => ({
+  n: raw.spokenName,
+  ...(raw.qty === null ? {} : { q: raw.qty }),
+  u: raw.unit,
+  ...(raw.rate === null ? {} : { r: raw.rate }),
+  ...(raw.total === null ? {} : { t: raw.total }),
+  p: raw.priceType[0] as PriceLetter,
+});
+
 export interface GeminiAudioParseProvider {
   readonly name: string;
   parseAudio(audio: Blob, opts: { catalog: readonly CatalogEntry[] }): Promise<{ transcript: string; items: ParsedItem[]; usage: TokenUsage; latencyMs: number; thoughts: number | null }>;
 }
 
-/** KB-370 round 2: `systemPrompt` replaces the shipped prompt + addendum (the Ezy-style D102 prompt); `thinkingConfig` is sent as it is. */
-export function createGeminiAudioParseProvider(apiKey: string, options: { model?: string; timeoutMs?: number; systemPrompt?: string; thinkingConfig?: Readonly<Record<string, unknown>> } = {}): GeminiAudioParseProvider {
+/** KB-370 round 2: `systemPrompt` replaces the shipped prompt + addendum (the Ezy-style D102 prompt); `thinkingConfig` is sent as it is.
+ * KB-384a: `compact` asks for the compact answer (COMPACT_SCHEMA) and expands it - the items returned are the same type either way. */
+export function createGeminiAudioParseProvider(apiKey: string, options: { model?: string; timeoutMs?: number; systemPrompt?: string; thinkingConfig?: Readonly<Record<string, unknown>>; compact?: boolean } = {}): GeminiAudioParseProvider {
   const model = pinnedModel(options.model ?? DEFAULT_GEMINI_MODEL);
   const timeoutMs = options.timeoutMs ?? AUDIO_PARSE_BAKEOFF_TIMEOUT_MS;
   return {
@@ -40,7 +72,7 @@ export function createGeminiAudioParseProvider(apiKey: string, options: { model?
       const body = {
         systemInstruction: { parts: [{ text: options.systemPrompt ?? `${PRICING_GRAMMAR_PROMPT}\n\n${AUDIO_PARSE_ADDENDUM}` }] },
         contents: [{ role: "user", parts: [{ text: `Candidate products:\n${JSON.stringify(catalog)}` }, { inlineData: await inlineAudio(audio) }] }],
-        generationConfig: { temperature: 0.1, responseMimeType: "application/json", responseSchema: SCHEMA, ...(options.thinkingConfig ? { thinkingConfig: options.thinkingConfig } : {}) },
+        generationConfig: { temperature: 0.1, responseMimeType: "application/json", responseSchema: options.compact ? COMPACT_SCHEMA : SCHEMA, ...(options.thinkingConfig ? { thinkingConfig: options.thinkingConfig } : {}) },
       };
       const start = performance.now();
       return withDeadline(
@@ -50,8 +82,9 @@ export function createGeminiAudioParseProvider(apiKey: string, options: { model?
           const response = await fetch(geminiUrl(model), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, body: JSON.stringify(body), signal });
           if (!response.ok) throw await failedAnswer("Gemini audio parse", response);
           const { text, usage, thoughts } = await answerOf(response);
-          const parsed = JSON.parse(text) as { transcript: string; items: GeminiRawItem[] };
-          return { transcript: parsed.transcript.trim(), items: parsed.items.map((raw) => mapToParsedItem(raw, catalog)), usage, latencyMs: performance.now() - start, thoughts };
+          const parsed = JSON.parse(text) as { transcript: string; items: (GeminiRawItem | CompactItem)[] };
+          const raws = options.compact ? (parsed.items as CompactItem[]).map(expandCompactItem) : (parsed.items as GeminiRawItem[]);
+          return { transcript: parsed.transcript.trim(), items: raws.map((raw) => mapToParsedItem(raw, catalog)), usage, latencyMs: performance.now() - start, thoughts };
         },
         () => new ProviderError("timeout", `Gemini audio parse timed out after ${timeoutMs} ms`),
       );

@@ -2361,6 +2361,41 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 5. **"फुटाने" is a catalog alias of Futana**, through the alias list and its own generated additive migration (`20261109100000_kb383_futane_alias.sql`, a `db push` at the release).
 6. **Recorded:** the owner applied `20261109090000_kb383_devanagari_aliases.sql` to production on 9 Nov 2026. It is additive and already done - no longer a release step.
 
+
+### D107 — KB-384a: async voice on a Netlify background function; the switch trigger; every spend asked first (owner, 9 Nov 2026) 🟢
+
+1. **The measured limit.** On draft-v16 Netlify cut a request at about **30 s** (504 "Inactivity Timeout"; 26 s passed). A63 (3 min 22 s) took 26.8 s in the function on all 3 runs - about 3 s to spare. A synchronous `/voice` is not safe for 3-4 minute orders.
+2. **One async path for ALL orders, short and long.**
+   - The phone uploads the recording to Supabase Storage and adds a `voice_recordings` row keyed by `recording_id`. It then calls `/voice-run`, a Netlify **background** function: the phone gets 202, and the function may run up to 15 min.
+   - The worker claims the row once, calls Gemini and stores the raw answer.
+   - The phone checks the row about every 1.5 s. When there is no result after a clear limit, it shows Retry (the same recording) or Add by hand - never a dead end.
+   - One recording = one bill: a retry or a double tap never starts a second Gemini call.
+   - The worker acts as the user (their login token, RLS). There is no service-role key in Netlify.
+   - The old synchronous `/voice` stays only while today's production app uses it.
+3. **Background functions are available on our plan.** Netlify docs: "Credit-based plans, including Free". Our account: `credit-free`, `background_functions` included.
+4. **The switch trigger.** If Netlify credit use passes **about 200 in a month**, or **before scaling past about 300 bills/day**, the worker moves to a Supabase Edge Function. The owner decides, and nothing paid starts without his OK.
+   - **Why:** background runs are billed for running time, 10 credits per GB-hour at 1 GB. A63 costs about 0.075 credits, a short order about 0.02. Supabase Edge Functions have no running-time charge on Free.
+   - **The cost is measured, not assumed:** the draft tests report the Netlify credits before and after.
+5. **Money gate.** Every spend is asked for first, with its amount - every time. That covers Gemini, Netlify, Supabase and Sarvam. Approved now: the 2 live calls of KB-384a step 1 (about Rs 1). The 85-recording regression run (about Rs 19) is asked for separately.
+6. **A smaller Gemini answer** (KB-384a step 1): compact item fields, no repeated text, and a complete transcript. It is measured on A63 and A61.
+   - **Built** (`compact: true` in `geminiAudioParseProvider`, `EZY_V3_COMPACT_PROMPT`; not wired):
+     - short keys `n q u r t p` and no `catalogId`;
+     - a null quantity / rate / total is left out;
+     - `p` keeps "default" apart from "unknown", because only "default" may take the shop price.
+   - **Offline proof:** all 491 items of the 85 saved V3 answers come back identical (`eval/bakeoff/compactAnswer.test.ts`).
+   - **Answer tokens** (Gemini countTokens, free): A63 3,383 -> 2,574 (-24%), all 85 answers -15% from the keys alone.
+   - **Live, 1 call each** (owner-approved, about Rs 1), against the long form:
+
+     | Order | Gemini time | Output tokens |
+     |---|---|---|
+     | A63 | 26.0-26.4 s (3 draft runs) -> **20.7 s** | 4,330-4,348 -> 2,482 |
+     | A61 | 7.2-7.9 s -> **7.7 s** (no gain on a short order) | - |
+
+     A61 is exact. The A63 transcript is complete: 324 words, 134 numbers, 71 items.
+   - **NOT adopted yet - a possible unit regression:** the A63 compact run billed 8 lines with the unit "packet"; each of the 3 long runs billed 4. "बेसन पैकेट आधा किलो" became 0.5 packet and "मिर्ची पैकेट 100 ग्राम" became 100 packet. All 3 long runs had kg / gm, so this breaks D103's "the unit next to the number wins". This is one sample.
+   - **A middle form** keeps the long key names and only drops `catalogId` and the nulls: A63 2,716 tokens (-20%), keeping 667 of the 809 tokens saved. The owner decides which to test; every call is asked first (item 5).
+7. **Full `npm test` before every commit** from now on.
+
 ---
 
 ## Superseded

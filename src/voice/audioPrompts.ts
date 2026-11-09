@@ -62,3 +62,14 @@ export const EZY_V3_PROMPT = EZY_D103_NOCAT_PROMPT.replace(
     D103_RULE_4,
     `4. qty only as spoken, with two exceptions: a per-kilo / per-litre price with no quantity = qty 1 of that unit; "X वाला" with no quantity, where X is a price = qty 1 piece ("बड़ा वाला" is part of a name, not a price). Only a total said = qty null - and never any other 1.`,
   );
+
+// KB-384a step 1 (owner, 9 Nov 2026; D107 item 6): the SAME V3 rules, word for word, answered with short keys - Gemini's time is its
+// output. Only the key legend is added and rule 7 dropped (catalogId is not in the compact answer: V3 sends no catalog).
+export const EZY_V3_COMPACT_PROMPT = EZY_V3_PROMPT.split("\n")
+  .filter((l) => !l.startsWith("7. catalogId"))
+  .flatMap((l, i) =>
+    i === 0
+      ? [l, "", 'Each item is written with SHORT keys: n = spokenName, q = qty, u = unit, r = rate, t = total, p = priceType ("r" = "rate", "t" = "total", "d" = "default", "u" = "unknown"). Leave out q, r or t when it is null. The rules below use the long names.']
+      : [l],
+  )
+  .join("\n");

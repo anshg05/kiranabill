@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AUDIO_PARSE_ADDENDUM, createGeminiAudioParseProvider } from "./geminiAudioParseProvider";
+import { AUDIO_PARSE_ADDENDUM, COMPACT_SCHEMA, createGeminiAudioParseProvider, expandCompactItem, toCompactItem } from "./geminiAudioParseProvider";
+import { EZY_V3_COMPACT_PROMPT, EZY_V3_PROMPT } from "./audioPrompts";
 import { PRICING_GRAMMAR_PROMPT } from "./pricingGrammarPrompt";
 import type { CatalogEntry } from "@/domain/catalog";
 
@@ -71,3 +72,44 @@ describe("geminiAudioParseProvider (KB-370 candidate C)", () => {
     await expect(createGeminiAudioParseProvider("k").parseAudio(audio(), { catalog: [chini] })).rejects.toMatchObject({ kind: "busy" });
   });
 });
+
+// KB-384a step 1 (owner, 9 Nov 2026; D107 item 6): a SMALLER answer - Gemini's time is its output. Short keys, no catalogId (V3 sends no
+// catalog: it was always null), priceType as one letter. "d" (nothing said: our code may fill the shop price) and "u" (a price WAS said
+// but not understood: never filled) stay apart - deriving them from rate / total would let a shop price replace a spoken one.
+describe("the compact answer (KB-384a step 1)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("each short item expands to the long raw item; every price type letter maps", () => {
+    expect(expandCompactItem({ n: "चीनी", q: 2, u: "kg", r: 4500, t: null, p: "r" })).toEqual({ spokenName: "चीनी", catalogId: null, qty: 2, unit: "kg", rate: 4500, total: null, priceType: "rate" });
+    expect(["r", "t", "d", "u"].map((p) => expandCompactItem({ n: "x", q: null, u: "", r: null, t: null, p: p as "r" }).priceType)).toEqual(["rate", "total", "default", "unknown"]);
+  });
+
+  it("long -> short -> long is the identity, and the schema has no catalogId", () => {
+    const raw = { spokenName: "रिन", catalogId: null, qty: null, unit: "piece", rate: null, total: 1000, priceType: "total" as const };
+    expect(expandCompactItem(toCompactItem(raw))).toEqual(raw);
+    expect(COMPACT_SCHEMA.properties.items.items.required).toEqual(["n", "u", "p"]);
+    expect(toCompactItem(raw)).toEqual({ n: "रिन", u: "piece", t: 1000, p: "t" }); // a null is LEFT OUT (A63: -312 tokens)
+    expect(expandCompactItem({ n: "रिन", u: "piece", p: "d" })).toMatchObject({ qty: null, rate: null, total: null }); // left out = null
+    expect(JSON.stringify(COMPACT_SCHEMA)).not.toContain("catalogId");
+  });
+
+  it("the compact prompt keeps EVERY V3 rule line word for word and adds only the key legend (no new rule, no catalogId)", () => {
+    for (const line of EZY_V3_PROMPT.split("\n").filter((l) => l.trim() && !l.startsWith("7. catalogId"))) expect(EZY_V3_COMPACT_PROMPT).toContain(line);
+    expect(EZY_V3_COMPACT_PROMPT).toContain('n = spokenName, q = qty, u = unit, r = rate, t = total, p = priceType ("r" = "rate", "t" = "total", "d" = "default", "u" = "unknown")');
+    expect(EZY_V3_COMPACT_PROMPT).toContain("Leave out q, r or t when it is null.");
+    expect(EZY_V3_COMPACT_PROMPT).not.toContain("7. catalogId");
+  });
+
+  it("compact: true sends the compact schema and returns the SAME items as the long answer would", async () => {
+    const long = { transcript: "दो किलो चीनी 45 रुपए किलो, साबुन", items: [{ spokenName: "चीनी", catalogId: null, qty: 2, unit: "kg", rate: 4500, total: null, priceType: "rate" }, { spokenName: "साबुन", catalogId: null, qty: null, unit: "", rate: null, total: null, priceType: "unknown" }] };
+    const short = { transcript: long.transcript, items: [{ n: "चीनी", q: 2, u: "kg", r: 4500, t: null, p: "r" }, { n: "साबुन", q: null, u: "", r: null, t: null, p: "u" }] };
+    const fetchMock = vi.fn().mockResolvedValueOnce(answer(short)).mockResolvedValueOnce(answer(long));
+    vi.stubGlobal("fetch", fetchMock);
+    const a = await createGeminiAudioParseProvider("k", { compact: true }).parseAudio(audio(), { catalog: [] });
+    const b = await createGeminiAudioParseProvider("k").parseAudio(audio(), { catalog: [] });
+    expect(JSON.parse((fetchMock.mock.calls[0]! as [string, RequestInit])[1].body as string).generationConfig.responseSchema).toEqual(COMPACT_SCHEMA);
+    expect(a.items).toEqual(b.items);
+    expect(a.transcript).toBe(long.transcript);
+  });
+});
+
