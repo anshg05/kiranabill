@@ -1453,6 +1453,16 @@ async function main(): Promise<void> {
       if (r.rowCount !== 0) throw new Error(`saw ${r.rowCount}`);
       return "0 rows";
     });
+
+    // KB-384a step 5: the list of recordings due for deletion lists EVERY shop's paths - only the service role (inside Supabase) may call it
+    await checkRejects(client, "KB-384a cleanup: a signed-in user cannot call voice_cleanup_due (every shop's recordings)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`select * from voice_cleanup_due()`);
+    });
+    await checkRejects(client, "KB-384a cleanup: the anon role cannot call voice_cleanup_due", "42501", async () => {
+      await asAnon(client);
+      await client.query(`select * from voice_cleanup_due()`);
+    });
   } finally {
     await client.query("rollback");
     await client.end();

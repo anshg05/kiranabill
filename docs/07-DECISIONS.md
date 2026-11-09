@@ -2440,6 +2440,27 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
     - **`markRecordingBilled`** stamps `billed_at`, which starts the 7-day clock.
     - **The bill:** `src/domain/aiAnswerBill.ts` (the chain moved from eval, step 4a) builds it from the answer. All 85 saved answers' bills are identical, and the replay is byte-identical: short 45/49, long 36/36, 0 silent wrong from our code.
     - **Tests:** 13 unit, including a test that the three time limits stay in order (Gemini 60 s < reclaim 70 s in SQL < phone 75 s), and 4 e2e on the real local stack with the real worker running in the background. 4 plants caught. The screen wiring is KB-385.
+13. **KB-384a step 5 - the 7-day deletion, inside Supabase.**
+    - **What's due** (`voice_cleanup_due()`, migration `20261110090000_kb384a_voice_cleanup.sql`, service role only):
+      - billed 7+ days ago (`billed_at`);
+      - unbilled 7+ days after upload;
+      - a file with no row, 7+ days old;
+      - at most 1000 per run.
+    - **The Edge Function `supabase/functions/voice-cleanup`** (logic in `cleanup.ts`, tested): it deletes the FILES through the Storage API, in batches of 100, and only then their rows. A batch Storage refuses keeps its rows for the next day.
+    - **The gate** is the shared secret `VOICE_CLEANUP_SECRET` (`x-cleanup-secret`; no secret = 404). It is deployed with `--no-verify-jwt`, and the service-role key never leaves Supabase.
+    - **The daily call:** `scripts/voice-cleanup-schedule.sql` - `pg_cron` at 21:30 UTC (03:00 IST) + `pg_net`, with the URL and the secret read from Vault. It is run once by the owner, NOT a migration: the backup's restore rehearsal replays migrations into a scratch database, where `pg_cron` cannot be created.
+    - **Proven on the local Docker stack:**
+      - e2e with real uploads, aged in the database: billed 6 days ago stays, 8 days goes; unbilled 8 days goes, 6 days stays; a file with no row goes after 7 days. The file is gone from Storage, not just its row.
+      - The real Deno function on the local runtime: no / wrong secret and GET = 404; right secret = 200, and an aged recording's file and row were deleted.
+      - The schedule's own command through `pg_cron` -> `pg_net` -> the function: 200.
+      - A plant (the bill clock read from the upload date) was caught.
+    - **The owner's manual steps, done only when asked:**
+      1. `db push` (both KB-384a migrations + `20261109100000_kb383_futane_alias.sql`);
+      2. `npx supabase functions deploy voice-cleanup --project-ref <ref> --no-verify-jwt`;
+      3. `npx supabase secrets set VOICE_CLEANUP_SECRET=<new random value> --project-ref <ref>`;
+      4. in the SQL editor, `vault.create_secret` for `voice_cleanup_url` (`https://<ref>.supabase.co/functions/v1/voice-cleanup`) and `voice_cleanup_secret` (the same value);
+      5. run `scripts/voice-cleanup-schedule.sql` once.
+    - **`public/privacy.html`:** the new wording is drafted and waits for the owner's review before it is committed (D105, doc 25 §15).
 
 ---
 
