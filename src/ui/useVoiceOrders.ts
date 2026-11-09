@@ -144,12 +144,13 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
       for (const r of await unsentRecordings(db, shopId)) if (r.billLocalId === billLocalId) await send(r.recordingId);
     };
     const goneOffline = () => setOffline(true);
+    const onOnline = () => void drain();
     void drain();
-    window.addEventListener("online", drain);
+    window.addEventListener("online", onOnline);
     window.addEventListener("offline", goneOffline);
     return () => {
       alive = false;
-      window.removeEventListener("online", drain);
+      window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", goneOffline);
     };
   }, [db, shopId, billLocalId, appendIfFirst, refresh, send]);
