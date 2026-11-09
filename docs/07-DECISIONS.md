@@ -2487,6 +2487,16 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
     - **The two test recordings are not billed**, so the daily job deletes them 7 days after upload.
     - **KB-384a is done, except:** the time-limit spike is deleted before the V3 release (`npm run check:spike`), and the screen is KB-385.
 
+
+### D108 — KB-384b (the Sarvam backup) moves to AFTER the V3 release (owner, 10 Nov 2026) 🟢
+
+1. **The Sarvam backup ships after the V3 release, not before it.** That is `KB-384b`: Sarvam `saaras:v4` + Layer 1 under D102 / D103, doc 25 §7.
+2. **Why: speed to launch.** Without it, a Gemini failure still never dead-ends. The phone shows Retry (the SAME recording - the server's claim makes no second call for a done one) or Add by hand (D107 items 2 and 12).
+3. **When it comes back:** revisited right after launch, or earlier if the pilot shows Gemini failures.
+4. **The privacy page keeps Sarvam UNLISTED until it ships.** `privacyPage.test.tsx` fails if "Sarvam" appears; the sentence to add is in D107 item 13's report.
+5. **`SARVAM_API_KEY` is not needed for the V3 release.**
+6. **`KB-384`'s finish line** ("with Gemini forced to fail, every recording gives a Sarvam bill") moves with it to `KB-384b`. For V3, Gemini forced to fail must end in Retry or Add by hand (`KB-385`).
+
 ---
 
 ## Superseded

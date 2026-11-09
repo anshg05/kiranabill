@@ -149,7 +149,10 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
   - `/voice` keeps the answer per `recording_id` (Netlify Blobs, as the rate limit does, for 7 days). A retry returns that answer, so there is no second Gemini call.
   - The bill records which `recording_id` its lines came from and never appends the same one twice.
 
-## 7. The Sarvam backup (D104 item 2; `KB-384`)
+## 7. The Sarvam backup (D104 item 2; `KB-384b` - AFTER the V3 release, D108)
+
+**Owner, 10 Nov 2026 (D108): this section ships AFTER the V3 release** - speed to launch. Until then a Gemini failure ends in Retry (the same recording) or Add by hand (§8, `KB-385`); the privacy page does not list Sarvam. Revisited right after launch, or if the pilot shows Gemini failures.
+
 
 - **When:** Gemini answers 429 or 5xx, does not answer within the time limit `KB-384` measures, or its answer is not valid JSON.
 - **What runs:**
@@ -246,7 +249,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 ## 13. Manual steps for the owner (`18` §5)
 
 1. The Storage bucket and its RLS policy - a migration, additive, compatible with the deployed app (D55 §5). `KB-384`.
-2. `SARVAM_API_KEY` in Netlify's environment. `KB-384`.
+2. `SARVAM_API_KEY` in Netlify's environment. `KB-384b` - after the V3 release (D108); not needed for V3.
 3. A Google billing budget alarm for the project. Before `KB-387`.
 4. Fresh recordings on his phone at 24 kbps. `KB-386`.
 5. The phone check and the head-to-head. `KB-387`.
@@ -254,7 +257,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 ## 14. Not decided here
 
 - **The Gemini time limit inside `/voice`, and the Netlify function's own limit:** measured in `KB-384` (D105 item 5). nocat-D103 measured a 5.8 s median and 7.9 s p90 on long orders, but no 5-minute order was measured.
-- **How the Sarvam path warns when it cannot apply a spoken correction:** designed in `KB-384`'s PLAN, measured by its finish line.
+- **How the Sarvam path warns when it cannot apply a spoken correction:** designed in `KB-384b`'s PLAN (after the V3 release, D108), measured by its finish line.
 - **The price fill across scripts** (transliteration-aware matching and Devanagari brand aliases): designed in `KB-383`'s PLAN (§11).
 
 ## 15. Privacy (owner, 7 Nov 2026; D91)
