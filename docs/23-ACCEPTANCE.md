@@ -118,6 +118,7 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 2. `npm run smoke:voice` (Layer-2 wiring, 11 calls - the count in `scripts/smoke-voice.ts`).
 3. The acceptance gate: **0 wrong lines** (`npm test` enforces it; `npm run accept:report` for the plain-words replay, `npm run accept:live` when the audio or the prompt changed). **Release rule (owner, 30 Oct 2026): 0 wrong lines.** The exact rate (>= 90%, 71% on 30 Oct) and "no unexpected Theek hai check" are TARGETS to raise (catalog aliases, re-recording the Whisper-misheard orders), reported on every run but not a stop - the 12 orders that are not exact are the app declining to guess.
 4. `npm run check:recorder` on the production build.
+   - **Until the V3 release (`KB-384`, owner 9 Nov 2026): `npm run check:spike`** must print "no KB-384 spike left - releasable": `netlify/functions/voice-spike.mts` and `voiceSpike.test.ts` DELETED and `KB384_SPIKE_KEY` removed from Netlify (all contexts) BEFORE any `[deploy]` commit. Production's build command runs the same check first (`netlify.toml`), so a release that still has the spike fails its build.
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
 

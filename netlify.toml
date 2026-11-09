@@ -9,6 +9,12 @@
   # message contains "[deploy]" - the owner approves every release.
   ignore = "bash scripts/netlify-ignore.sh"
 
+# KB-384 (owner, 9 Nov 2026): a release FAILS its build while the temporary time-limit spike (its function, its test, or
+# KB384_SPIKE_KEY) is still there. CLI drafts use --no-build, so this runs only on a real production build. Remove this
+# line together with scripts/check-spike-absent.ts only after the V3 release has shipped without the spike.
+[context.production]
+  command = "npm run check:spike && npm run build"
+
 # KB-401 (D67): the browser must re-check the worker script and the manifest on every launch - a fix (or the kill
 # switch) can only reach phones if /sw.js is never served stale. (src/pwa/register.ts also passes updateViaCache: "none".)
 # D91 (owner, 21 Oct 2026): the public privacy-policy page Google's consent screen needs. /privacy is the static file, as its
