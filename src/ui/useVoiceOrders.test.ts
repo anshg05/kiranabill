@@ -51,6 +51,8 @@ describe("useVoiceOrders (KB-385)", () => {
     expect(o.transcript).toBe("2 किलो चीनी, 1 किलो चावल 60 रुपए किलो");
     expect(o.lines.map((l) => [l.item.spokenName, l.source])).toEqual([["चीनी", "voice"], ["चावल", "voice"]]);
     expect(o.lines.map((l) => l.filled ?? null)).toEqual(["shop_price", null]);
+    // D102: the line shows the name AS SAID (Devanagari) - even when the catalog filled its price (it would otherwise read "Chini")
+    expect(o.lines.map((l) => l.displayName)).toEqual(["चीनी", "चावल"]);
     expect(o.waitedMs).toBeGreaterThanOrEqual(0);
     expect(o.waitedMs).toBeLessThan(10_000);
     await waitFor(() => expect(t.result.current.blocking).toEqual([]));

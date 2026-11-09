@@ -77,7 +77,8 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
       append({
         recordingId,
         transcript,
-        lines: answer.lines.map((l, i) => ({ item: l.item, displayName: l.displayName, source: "voice" as const, ...(filled.has(i) ? { filled: filled.get(i) } : {}) })),
+        // D102: the line keeps the name AS SAID (Devanagari) - settle would show the catalog's name on a line whose price it filled
+        lines: answer.lines.map((l, i) => ({ item: l.item, displayName: l.item.spokenName || l.displayName, source: "voice" as const, ...(filled.has(i) ? { filled: filled.get(i) } : {}) })),
         flags: answer.flags,
         waitedMs: Math.max(0, Date.now() - Date.parse(row.createdAt)),
       });

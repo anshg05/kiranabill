@@ -55,7 +55,7 @@ import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from ".
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
-import { markRecordingBilled, submitRecording } from "@/data/voiceJob";
+import { markRecordingBilled, submitRecording, type VoiceJobOutcome } from "@/data/voiceJob";
 import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
 import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
@@ -110,6 +110,43 @@ function devFailParseFetch(): typeof fetch | undefined {
     if (mode === "timeout") return new Promise<Response>(() => {});
     if (mode === "network") throw new TypeError("Failed to fetch (dev ?failparse=network)");
     return new Response(JSON.stringify({ error: `dev ?failparse=${mode}` }), { status: mode === "429" ? 429 : 502 });
+  };
+}
+
+/** DEV ONLY (KB-385): `?voicefake=done|empty|failed|session|limit|gaveup` - the order recorder records from a SILENT microphone (the
+ * preview browser has none) and every send answers that way after ~2.5 s, so each screen state is seen with NO Gemini call. "done" bills
+ * a filled shop price, a repeated item's earlier price and an A47-style ear mistake (₹102) to catch in "Heard". Offline is the browser's
+ * own offline mode. Removed from `npm run build` (VERIFY greps dist/ for "voicefake"). */
+function devVoiceFake(): ((recordingId: string, audio: Blob) => Promise<VoiceJobOutcome>) | undefined {
+  if (!import.meta.env.DEV) return undefined;
+  const mode = new URLSearchParams(window.location.search).get("voicefake");
+  if (!mode) return undefined;
+  const silentMic = async () => {
+    const ctx = new AudioContext();
+    const out = ctx.createMediaStreamDestination();
+    const mute = ctx.createGain();
+    mute.gain.value = 0;
+    const tone = ctx.createOscillator();
+    tone.connect(mute).connect(out);
+    tone.start();
+    return out.stream;
+  };
+  Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: silentMic } });
+  const it = (spokenName: string, qty: number, unit: string, priceType: "rate" | "total" | "default", rate: number | null, total: number | null) =>
+    ({ spokenName, catalogId: null, isCustom: true, matchStatus: "none" as const, qty, unit, rate, rateUnit: rate === null ? null : unit, total, priceType });
+  return async (recordingId) => {
+    console.info(`[voice] dev ?voicefake=${mode}`);
+    await new Promise((r) => setTimeout(r, 2500));
+    if (mode === "done") {
+      return {
+        kind: "done", recordingId,
+        transcript: "2 किलो चीनी, 1 बंसल तेल 1 लीटर 150 रुपए, फुटाने 102 रुपए किलो 1 किलो, 1 बंसल तेल 1 लीटर",
+        items: [it("चीनी", 2, "kg", "default", null, null), it("बंसल तेल", 1, "liter", "total", null, 15000), it("फुटाने", 1, "kg", "rate", 10200, null), it("बंसल तेल", 1, "liter", "default", null, null)],
+      };
+    }
+    if (mode === "empty") return { kind: "done", recordingId, transcript: "हाँ जी बोलिए", items: [] };
+    if (mode === "gaveup") return { kind: "gave_up", recordingId };
+    return { kind: "failed", recordingId, reason: mode === "session" ? "session" : mode === "limit" ? "rate_limited" : "failed" };
   };
 }
 
@@ -178,12 +215,15 @@ export function BillingScreen() {
   // KB-385 (D101, D107): the V3 voice path - one path for every order. The recording is kept on the phone (voiceQueue) until its bill
   // exists, sent through Supabase Storage + /voice-run, and its answer becomes lines on the phone (aiAnswerBill), added once. It works
   // offline (queued, sent when back online); with no live session the send ends as "session" (sign in, then Retry).
+  const [devSubmit] = useState(devVoiceFake);
   const submitVoice = useCallback(
     (recordingId: string, audio: Blob) =>
-      accessToken && shop
+      devSubmit
+        ? devSubmit(recordingId, audio)
+        : accessToken && shop
         ? submitRecording({ client: supabase, shopId: shop.id, recordingId, audio, accessToken })
         : Promise.resolve({ kind: "failed" as const, recordingId, reason: "session" }),
-    [accessToken, shop],
+    [accessToken, devSubmit, shop],
   );
   const orders = useVoiceOrders({
     db: localDb ?? null,
