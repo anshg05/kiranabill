@@ -38,14 +38,6 @@ describe("KB-384a e2e - recordings bucket + voice_recordings (local stack)", () 
     b = await shopUser("B");
   }, 60_000);
   afterAll(async () => {
-    // No client may delete a recording, so the test removes its own objects' rows directly (local stack only) - the KB-407 backup
-    // e2e refuses a dump while Storage holds files it cannot back up.
-    if (pg && a && b) {
-      await pg.query("begin");
-      await pg.query("select set_config('storage.allow_delete_query', 'true', true)");
-      await pg.query("delete from storage.objects where bucket_id = 'recordings' and (storage.foldername(name))[1] in ($1, $2)", [a.shopId, b.shopId]);
-      await pg.query("commit");
-    }
     await pg?.end();
   });
 

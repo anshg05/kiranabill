@@ -7,6 +7,7 @@ import {
   DumpScanner,
   EXPECTED_PUBLIC_TABLES,
   PENDING_PUBLIC_TABLES,
+  PUBLIC_EXCLUDE,
   MIN_FREE_BYTES,
   assertSafeArgs,
   backupFileName,
@@ -165,6 +166,7 @@ describe("the data dump: which commands, never dry-run or debug", () => {
     for (const t of ["auth.refresh_tokens", "auth.sessions", "auth.one_time_tokens", "auth.flow_state", "auth.mfa_factors", "auth.audit_log_entries"]) expect(x.split(",")).toContain(t);
     for (const t of ["storage.buckets", "storage.iceberg_tables", "storage.s3_multipart_uploads"]) expect(x.split(",")).toContain(t);
     expect(x.split(",")).not.toContain("storage.objects");
+    expect(x.split(",")).toContain("public.voice_recordings"); // KB-384a: transcripts never go into a month-long backup
     expect(x.split(",")).not.toContain("auth.users");
     expect(x.split(",")).not.toContain("auth.identities");
   });
@@ -283,6 +285,32 @@ describe("DumpScanner: proves the file holds rows, not just structure (KI-25 not
     expect(evaluateScan(s.finish()).join(" ")).toMatch(/storage\.buckets/);
   });
 
+  // KB-384a (owner, 9 Nov 2026): recordings exist only to make the bill now - the bill is what is backed up. Their files are never
+  // backed up, so they do not fail the Storage check; any other bucket's file still does.
+  const objects = (rows: string[][]) => `\nCOPY "storage"."objects" ("id", "bucket_id", "name", "owner") FROM stdin;\n${rows.map((r) => r.join("\t") + "\n").join("")}\\.\n`;
+  it("KB-384a: files in the `recordings` bucket do not fail the Storage check", () => {
+    const s = new DumpScanner();
+    s.feed(dump(everything()) + objects([["o1", "recordings", "shop/rec1", "\\N"], ["o2", "recordings", "shop/rec2", "\\N"]]));
+    const r = s.finish();
+    expect(r.counts["storage.objects"]).toBe(2); // still counted for the restore rehearsal
+    expect(evaluateScan(r)).toEqual([]);
+  });
+  it("KB-384a: a file in ANY other bucket still fails it, next to recordings", () => {
+    const s = new DumpScanner();
+    s.feed(dump(everything()) + objects([["o1", "recordings", "shop/rec1", "\\N"], ["o2", "shop-logos", "shop/logo.png", "\\N"]]));
+    expect(evaluateScan(s.finish()).join(" ")).toMatch(/Storage holds 1 file\(s\)/);
+  });
+  it("KB-384a: a storage.objects block whose header has no bucket_id counts every row as a file (fail safe)", () => {
+    const s = new DumpScanner();
+    s.feed(dump(everything({ "storage.objects": ["o1\trecordings"] })));
+    expect(evaluateScan(s.finish()).join(" ")).toMatch(/Storage holds 1 file/);
+  });
+  it("KB-384a: voice_recordings (transcripts) in a dump is a fault - it must never be backed up", () => {
+    const s = new DumpScanner();
+    s.feed(dump(everything({ "public.voice_recordings": ["r1\tदो किलो चीनी"] })));
+    expect(evaluateScan(s.finish()).join(" ")).toMatch(/public\.voice_recordings must never be in a backup/);
+  });
+
   it("an empty storage.objects is fine", () => {
     const s = new DumpScanner();
     s.feed(dump(everything({ "storage.objects": [] })));
@@ -323,7 +351,7 @@ describe("the list of public tables cannot drift from the migrations", () => {
       const sql = readFileSync(join(dir, f), "utf8");
       for (const m of sql.matchAll(/^\s*create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?"?([a-z_]+)"?\s*\(/gim)) created.add(`public.${m[1]}`);
     }
-    expect([...EXPECTED_PUBLIC_TABLES, ...PENDING_PUBLIC_TABLES].sort()).toEqual([...created].sort());
+    expect([...EXPECTED_PUBLIC_TABLES, ...PENDING_PUBLIC_TABLES, ...PUBLIC_EXCLUDE].sort()).toEqual([...created].sort());
   });
 });
 

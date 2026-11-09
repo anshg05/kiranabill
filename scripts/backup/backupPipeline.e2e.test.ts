@@ -3,6 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createClient } from "@supabase/supabase-js";
+import { Client } from "pg";
+import { createShop } from "../../src/data/shops";
 import { gpgPath, runBackup, type BackupConfig } from "./backup";
 import { parseBackupName } from "./backupCore";
 import { rehearse } from "./rehearseRestore";
@@ -23,6 +26,26 @@ describe("KB-407 encrypted backup + restore rehearsal - real local stack", () =>
   let cfg: BackupConfig;
   let fullHome: string;
   const drive = () => cfg.driveFolder;
+
+  // KB-384a (owner, 9 Nov 2026): the backup stays green WITH real recording files in Storage, and a recording's transcript never
+  // reaches it. A real upload through the Storage API + a finished voice_recordings row, made before the first backup.
+  const TRANSCRIPT = `KB384A-TRANSCRIPT-${crypto.randomUUID()}`;
+  beforeAll(async () => {
+    const url = process.env.VITE_SUPABASE_URL as string;
+    if (!["127.0.0.1", "localhost"].includes(new URL(url).hostname)) throw new Error("Refusing to run: not the local stack");
+    const client = createClient(url, process.env.VITE_SUPABASE_ANON_KEY as string, { auth: { persistSession: false, autoRefreshToken: false } });
+    // Generated test credentials for the LOCAL stack only - never printed.
+    const { data, error } = await client.auth.signUp({ email: `e2e-${crypto.randomUUID()}@kb407.local`, password: crypto.randomUUID() });
+    if (error || !data.user) throw new Error(`local signUp failed: ${error?.message}`);
+    const shopId = (await createShop(client, { ownerUserId: data.user.id, name: "KB-407 e2e recordings", phone: null, catalogMode: "custom_only" })).id;
+    const rec = crypto.randomUUID();
+    const up = await client.storage.from("recordings").upload(`${shopId}/${rec}`, new Uint8Array([26, 69, 223, 163, 7]), { contentType: "audio/webm" });
+    if (up.error) throw new Error(`upload failed: ${up.error.message}`);
+    await client.from("voice_recordings").insert({ recording_id: rec, shop_id: shopId, mime: "audio/webm" });
+    await client.rpc("claim_voice_recording", { p_recording_id: rec });
+    const fin = await client.rpc("finish_voice_recording", { p_recording_id: rec, p_attempt: 1, p_status: "done", p_transcript: TRANSCRIPT, p_items: [], p_usage: {}, p_model: "x", p_error: null });
+    if (fin.data !== true) throw new Error("could not finish the test recording");
+  }, 60_000);
 
   beforeAll(() => {
     root = mkdtempSync(join(tmpdir(), "kbt-"));
@@ -63,6 +86,14 @@ describe("KB-407 encrypted backup + restore rehearsal - real local stack", () =>
     expect(r.counts["auth.users"]).toBeGreaterThan(0);
     expect(existsSync(join(cfg.stateDir, "LAST_SUCCESS.json"))).toBe(true);
     expect(Object.keys(r.counts).some((t) => t === "auth.refresh_tokens" || t === "auth.sessions")).toBe(false);
+    // KB-384a: real recording files were in Storage and the backup still passed; voice_recordings (transcripts) is not in it
+    expect(r.counts["storage.objects"]).toBeGreaterThan(0);
+    expect("public.voice_recordings" in r.counts).toBe(false);
+    const pg = new Client({ connectionString: "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+    await pg.connect();
+    const live = (await pg.query("select count(*)::int n from voice_recordings where transcript = $1", [TRANSCRIPT])).rows[0].n;
+    await pg.end();
+    expect(live).toBe(1); // the row is in the database - and the backup left it out
   }, 240_000);
 
   it("2. the rehearsal: decrypt with the private key, restore into a scratch database, every table's row count equal to the manifest (the dump's own snapshot)", async () => {
@@ -74,6 +105,7 @@ describe("KB-407 encrypted backup + restore rehearsal - real local stack", () =>
     expect(r.tables).toBeGreaterThanOrEqual(14);
     expect(r.rows).toBeGreaterThan(0);
     expect(out.join("\n")).toMatch(/public\.bills\s+backup\s+\d+\s+restored\s+\d+/);
+    expect(out.join("\n")).not.toMatch(/voice_recordings/); // KB-384a: never in the backup, so never restored or compared
   }, 240_000);
 
   it("3. retention on real files: the month's first set and the newest of each day stay, a middle same-day set goes, a next-day set is added - always whole sets", async () => {

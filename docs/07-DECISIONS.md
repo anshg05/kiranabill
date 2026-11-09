@@ -2408,9 +2408,14 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
      - Only the shop's members can add or read.
      - Nobody can overwrite (no upsert) or delete from the app.
    - **Tests:** `test:rls` 156/156 (32 new checks), the e2e test through the real Storage + PostgREST APIs, 4 plants caught.
-   - **OPEN - must be settled before the first real recording** (the step 6 draft test):
-     - **The nightly backup (KB-407) refuses any dump while Storage holds files.** Recordings are deliberately not backed up, so the backup must skip the `recordings` bucket in that check.
-     - **Recordings' transcripts would sit in month-long backups** unless `voice_recordings` is left out of the backup data. That breaks the 7-day promise. The owner decides.
+9. **Backups (owner, 9 Nov 2026): recordings exist only to make the bill now - the bill itself is what is backed up.**
+   - **`voice_recordings` is left out of every backup** (`PUBLIC_EXCLUDE`). A dump that holds it is a fault.
+   - **The backup's Storage check skips the `recordings` bucket** (`UNBACKED_BUCKETS`). A file in any other bucket still fails it, and so does a dump with no `bucket_id` column (fail safe).
+   - **Proven on the local stack:** the backup e2e runs with a real uploaded recording and a transcript row present. It passes, the transcript is not in the backup, and the restore rehearsal never sees the table. 3 unit plants and 1 e2e plant were caught.
+10. **Retention (owner, 9 Nov 2026):**
+    - "The recording stays until its bill is made (Retry always resends the same audio)."
+    - **After the bill it stays as D105:** deleted 7 days after the bill, which is useful for checking disputed bills during the pilot. To be reconsidered after the pilot.
+    - **Still to confirm at step 5:** how this sits with the earlier "unbilled recordings: delete 7 days after upload".
 
 ---
 

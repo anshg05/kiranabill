@@ -44,8 +44,17 @@ export const EXPECTED_PUBLIC_TABLES = [
  * before the push has no such table and must still pass; once it is pushed, move the name into EXPECTED_PUBLIC_TABLES
  * (a dump then missing it is a real fault). The data dump takes every public table - this list only decides what is checked.
  */
-// KB-384a (9 Nov 2026): voice_recordings until the owner pushes 20261109110000_kb384a_voice_recordings.
-export const PENDING_PUBLIC_TABLES: string[] = ["public.voice_recordings"]; // was empty since 22 Oct 2026 (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
+export const PENDING_PUBLIC_TABLES: string[] = []; // empty since 22 Oct 2026 (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
+
+/**
+ * KB-384a (owner, 9 Nov 2026): public tables NEVER backed up. voice_recordings holds the recordings' transcripts; recordings exist
+ * only to make the bill now, and the bill itself is what is backed up - a month-long backup would break the 7-day promise (D105).
+ * Excluded from the dump; a dump that holds one anyway is a fault.
+ */
+export const PUBLIC_EXCLUDE = ["public.voice_recordings"];
+
+/** KB-384a: Storage buckets whose files are deliberately NOT backed up (the same reason) - they do not fail the Storage check. */
+export const UNBACKED_BUCKETS = ["recordings"];
 
 /** The only `auth` tables a backup keeps: who the users are, and which Google account each one is. */
 export const ALLOWED_AUTH_TABLES = ["auth.users", "auth.identities", "auth.instances"];
@@ -213,7 +222,7 @@ export function freeSpaceVerdict(freeBytes: number, drive: string): { ok: boolea
 
 /** The CLI arguments for the data dump. Never --dry-run or --debug: they print the temporary database password. */
 export function buildDataDumpArgs(source: "linked" | "local"): string[] {
-  return ["db", "dump", `--${source}`, "--data-only", "--use-copy", "--schema", "public,auth,storage", "-x", [...AUTH_EXCLUDE, ...STORAGE_EXCLUDE].join(",")];
+  return ["db", "dump", `--${source}`, "--data-only", "--use-copy", "--schema", "public,auth,storage", "-x", [...AUTH_EXCLUDE, ...STORAGE_EXCLUDE, ...PUBLIC_EXCLUDE].join(",")];
 }
 
 export function assertSafeArgs(args: string[]): void {
@@ -228,6 +237,8 @@ export interface ScanResult {
   counts: Record<string, number>;
   /** the dump switched triggers off first (`SET session_replication_role = replica`) */
   sawReplicaRole: boolean;
+  /** storage.objects rows OUTSIDE UNBACKED_BUCKETS - files the backup would miss. Every row counts when the header has no bucket_id. */
+  filesToBackUp: number;
 }
 
 /** Reads a data-only COPY dump as a stream and counts the rows of every table. Never keeps a row. */
@@ -237,6 +248,8 @@ export class DumpScanner {
   private table: string | null = null;
   private readonly counts: Record<string, number> = {};
   private replica = false;
+  private bucketColumn = -1; // in the current storage.objects block; -1 = no bucket_id column (fail safe: every row is a file)
+  private files = 0;
 
   feed(chunk: string | Buffer): void {
     const text = this.rest + (typeof chunk === "string" ? chunk : this.decoder.write(chunk));
@@ -249,13 +262,16 @@ export class DumpScanner {
     this.rest += this.decoder.end();
     if (this.rest !== "") this.line(this.rest);
     this.rest = "";
-    return { counts: { ...this.counts }, sawReplicaRole: this.replica };
+    return { counts: { ...this.counts }, sawReplicaRole: this.replica, filesToBackUp: this.files };
   }
 
   private line(line: string): void {
     if (this.table !== null) {
       if (line === "\\.") this.table = null;
-      else this.counts[this.table] = (this.counts[this.table] ?? 0) + 1;
+      else {
+        this.counts[this.table] = (this.counts[this.table] ?? 0) + 1;
+        if (this.table === "storage.objects" && !UNBACKED_BUCKETS.includes(line.split("\t")[this.bucketColumn] ?? "")) this.files++;
+      }
       return;
     }
     if (line.startsWith("SET session_replication_role = replica")) this.replica = true;
@@ -263,6 +279,7 @@ export class DumpScanner {
     if (m) {
       this.table = `${m[1]}.${m[2]}`;
       this.counts[this.table] = 0;
+      if (this.table === "storage.objects") this.bucketColumn = (/\(([^)]*)\)/.exec(line)?.[1] ?? "").split(",").map((c) => c.trim()).indexOf('"bucket_id"');
     }
   }
 }
@@ -280,7 +297,9 @@ export function evaluateScan(result: ScanResult): string[] {
       if (!ALLOWED_AUTH_TABLES.includes(k)) problems.push(`${k} is not on the allow-list of auth tables (it may hold credentials) - judge it, then add it to the list or to the exclusions`);
     } else if (schema === "storage") {
       if (!ALLOWED_STORAGE_TABLES.includes(k)) problems.push(`${k} is not on the allow-list of storage tables - judge it, then add it to the list or to the exclusions`);
-      else if (counts[k]! > 0) problems.push(`Storage holds ${counts[k]} file(s); the dump has only their metadata, so the files themselves are NOT backed up`);
+      else if (result.filesToBackUp > 0) problems.push(`Storage holds ${result.filesToBackUp} file(s); the dump has only their metadata, so the files themselves are NOT backed up`);
+    } else if (PUBLIC_EXCLUDE.includes(k)) {
+      problems.push(`${k} must never be in a backup (KB-384a: transcripts; the bill is what is backed up)`);
     } else if (schema !== "public") {
       problems.push(`${k}: a schema the backup does not expect`);
     }
