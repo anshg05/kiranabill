@@ -2416,6 +2416,18 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
     - "The recording stays until its bill is made (Retry always resends the same audio)."
     - **After the bill it stays as D105:** deleted 7 days after the bill, which is useful for checking disputed bills during the pilot. To be reconsidered after the pilot.
     - **Still to confirm at step 5:** how this sits with the earlier "unbilled recordings: delete 7 days after upload".
+11. **KB-384a step 3 - the worker** `netlify/functions/voice-run.mts`: a background function (`config.background`), and the phone gets 202 at once.
+    - **Input:** it takes `{recordingId}` with the caller's login token and checks that token itself.
+    - **The job** (`_shared/voiceRun.ts`):
+      1. claim (one statement, as the caller);
+      2. the shop's rate limit, touched only after the claim proved membership;
+      3. download the audio as the caller;
+      4. ONE Gemini call - gemini-3.8-flash (`GEMINI_AUDIO_MODEL` may pin another), thinking low, the V3 prompt, long answer form, 60 s limit, under the 70 s reclaim;
+      5. `finish` done with the raw answer. The phone builds the bill from it (step 4).
+    - **Every failure is a FAILED row holding the kind only** (`rate_limited`, `download`, `timeout`, `busy`, `failed`): never a message, a body or a transcript.
+    - **It never throws.** Netlify retries a throwing background function, and that would be a second Gemini call.
+    - **The not-wired guard** now allows exactly the Gemini audio provider in `/voice-run`; Sarvam stays out until KB-384b.
+    - **Tests:** 15 unit (job + handler); 5 e2e on the real local stack (real token, claim, upload, download, finish; Gemini faked), proving one call per recording, no second call on a retry or double tap, shop B runs nothing, Gemini failure -> failed -> Retry -> done (attempt 2). 4 plants caught.
 
 ---
 
