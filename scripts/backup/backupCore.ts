@@ -44,7 +44,8 @@ export const EXPECTED_PUBLIC_TABLES = [
  * before the push has no such table and must still pass; once it is pushed, move the name into EXPECTED_PUBLIC_TABLES
  * (a dump then missing it is a real fault). The data dump takes every public table - this list only decides what is checked.
  */
-export const PENDING_PUBLIC_TABLES: string[] = []; // empty since 22 Oct 2026 (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
+// KB-384a (9 Nov 2026): voice_recordings until the owner pushes 20261109110000_kb384a_voice_recordings.
+export const PENDING_PUBLIC_TABLES: string[] = ["public.voice_recordings"]; // was empty since 22 Oct 2026 (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
 
 /** The only `auth` tables a backup keeps: who the users are, and which Google account each one is. */
 export const ALLOWED_AUTH_TABLES = ["auth.users", "auth.identities", "auth.instances"];

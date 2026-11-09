@@ -2394,7 +2394,23 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
      A61 is exact. The A63 transcript is complete: 324 words, 134 numbers, 71 items.
    - **NOT adopted yet - a possible unit regression:** the A63 compact run billed 8 lines with the unit "packet"; each of the 3 long runs billed 4. "बेसन पैकेट आधा किलो" became 0.5 packet and "मिर्ची पैकेट 100 ग्राम" became 100 packet. All 3 long runs had kg / gm, so this breaks D103's "the unit next to the number wins". This is one sample.
    - **A middle form** keeps the long key names and only drops `catalogId` and the nulls: A63 2,716 tokens (-20%), keeping 667 of the 809 tokens saved. The owner decides which to test; every call is asked first (item 5).
+   - **Owner's decision (9 Nov 2026): V3 keeps the LONG answer form** - accuracy first, and the async path already removes the time limit. The compact and middle forms are **PARKED as a later cost optimisation**, revisited after the V3 release with real usage numbers. Any adoption needs the full 85-recording run first (asked for with its cost). The `compact` option stays in the code, unwired, for that revisit.
 7. **Full `npm test` before every commit** from now on.
+8. **KB-384a step 2 - the storage** (migration `20261109110000_kb384a_voice_recordings.sql`, additive; the owner's `db push` before the step 6 draft test).
+   - **`voice_recordings`:** one row per `recording_id`, with RLS on `shop_id`.
+     - Clients may only ADD a row (`recording_id`, `shop_id`, `mime`) and set `billed_at`, which the server stamps once.
+     - No client writes `status` or a result, and none deletes.
+   - **The status moves only through two functions** that check the shop:
+     - `claim_voice_recording`: queued, failed, or running for more than 70 s -> running, attempt + 1;
+     - `finish_voice_recording`: only the running attempt -> done (with transcript + items) or failed.
+     - So a done row is never claimed again, and nobody can push it back to queued to buy a second Gemini call.
+   - **The PRIVATE `recordings` bucket:** audio only, 10 MB at most, at `{shop_id}/{recording_id}`.
+     - Only the shop's members can add or read.
+     - Nobody can overwrite (no upsert) or delete from the app.
+   - **Tests:** `test:rls` 156/156 (32 new checks), the e2e test through the real Storage + PostgREST APIs, 4 plants caught.
+   - **OPEN - must be settled before the first real recording** (the step 6 draft test):
+     - **The nightly backup (KB-407) refuses any dump while Storage holds files.** Recordings are deliberately not backed up, so the backup must skip the `recordings` bucket in that check.
+     - **Recordings' transcripts would sit in month-long backups** unless `voice_recordings` is left out of the backup data. That breaks the 7-day promise. The owner decides.
 
 ---
 

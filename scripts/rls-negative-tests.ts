@@ -1233,6 +1233,226 @@ async function main(): Promise<void> {
       if (res.rows[0].metadata !== null) throw new Error(`metadata changed: ${JSON.stringify(res.rows[0].metadata)}`);
       return "present, metadata untouched";
     });
+
+    // (5) KB-384a (D107): voice_recordings + the private `recordings` bucket. One row per recording (recording_id, made by the
+    // phone); the worker acts AS THE USER, so every claim / result write goes through these same policies. Clients add only
+    // (recording_id, shop_id, mime); status / created_at / results are the server's or the claim's; nobody deletes (the 7-day
+    // clean-up runs inside Supabase); billed_at is server-stamped once.
+    const recA = randomUUID();
+    const recB = randomUUID();
+    const addRec = (rec: string, shop: string) => client.query(`insert into voice_recordings (recording_id, shop_id, mime) values ($1, $2, 'audio/webm')`, [rec, shop]);
+    await asUser(client, ownerB);
+    await addRec(recB, shopB);
+
+    await check(client, "KB-384a sanity: owner A adds a voice_recordings row for their OWN shop - queued, server-stamped, path = shop/recording", async () => {
+      await asUser(client, ownerA);
+      await addRec(recA, shopA);
+      const r = await client.query(`select status, attempts, path, created_at > now() - interval '1 minute' as fresh from voice_recordings where recording_id = $1`, [recA]);
+      if (r.rows[0]?.status !== "queued" || r.rows[0].attempts !== 0 || r.rows[0].path !== `${shopA}/${recA}` || !r.rows[0].fresh) throw new Error(JSON.stringify(r.rows[0]));
+      return "queued, attempts 0, path shop/recording, created now";
+    });
+    await checkRejects(client, "KB-384a: owner A cannot add a recording row into shop B", "42501", async () => {
+      await asUser(client, ownerA);
+      await addRec(randomUUID(), shopB);
+    });
+    await checkRejects(client, "KB-384a: a client cannot add a row already 'done' with its own transcript (column privilege)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into voice_recordings (recording_id, shop_id, mime, status, transcript) values ($1, $2, 'audio/webm', 'done', 'x')`, [randomUUID(), shopA]);
+    });
+    await checkRejects(client, "KB-384a: a client cannot set created_at (the 7-day clock) on insert", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into voice_recordings (recording_id, shop_id, mime, created_at) values ($1, $2, 'audio/webm', now() + interval '1 year')`, [randomUUID(), shopA]);
+    });
+    await checkRejects(client, "KB-384a: a mime that is not audio is rejected", "23514", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into voice_recordings (recording_id, shop_id, mime) values ($1, $2, 'text/html')`, [randomUUID(), shopA]);
+    });
+    await check(client, "KB-384a: owner A cannot SEE shop B's recordings", async () => {
+      await asUser(client, ownerA);
+      const r = await client.query(`select 1 from voice_recordings where recording_id = $1`, [recB]);
+      if (r.rowCount !== 0) throw new Error(`saw ${r.rowCount} row(s)`);
+      return "0 rows";
+    });
+    await check(client, "KB-384a: owner A's UPDATE (billed_at) of shop B's recording affects zero rows", async () => {
+      await asUser(client, ownerA);
+      const r = await client.query(`update voice_recordings set billed_at = now() where recording_id = $1`, [recB]);
+      if (r.rowCount !== 0) throw new Error(`${r.rowCount} row(s) changed`);
+      return "0 rows affected";
+    });
+    await checkRejects(client, "KB-384a: a client cannot write status directly - only through claim / finish (column privilege)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set status = 'queued' where recording_id = $1`, [recA]);
+    });
+    await checkRejects(client, "KB-384a: a client cannot write a transcript directly (column privilege)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set transcript = 'forged' where recording_id = $1`, [recA]);
+    });
+    await checkRejects(client, "KB-384a: owner A cannot move their own recording to shop B (shop_id is not updatable)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set shop_id = $1 where recording_id = $2`, [shopB, recA]);
+    });
+    await checkRejects(client, "KB-384a: a client cannot change created_at (the 7-day clock) on update", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set created_at = now() + interval '1 year' where recording_id = $1`, [recA]);
+    });
+    await checkRejects(client, "KB-384a: nobody deletes a recording row from the app (no delete privilege)", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`delete from voice_recordings where recording_id = $1`, [recA]);
+    });
+    await checkRejects(client, "KB-384a: the anon role cannot add a recording row", "42501", async () => {
+      await asAnon(client);
+      await addRec(randomUUID(), shopA);
+    });
+    await checkRejects(client, "KB-384a: the anon role cannot read recording rows (no privilege)", "42501", async () => {
+      await asAnon(client);
+      await client.query(`select 1 from voice_recordings`);
+    });
+
+    // the claim: ONE Gemini call per recording - a second claim, a done row, or another shop's row claims nothing
+    const claim = async (rec: string) => (await client.query(`select status, attempts from claim_voice_recording($1)`, [rec])).rows;
+    const finish = async (rec: string, attempt: number, status: string, transcript: string | null = null) =>
+      (await client.query(`select finish_voice_recording($1, $2, $3, $4, $5::jsonb, '{}'::jsonb, 'gemini-3.8-flash', $6) as ok`, [rec, attempt, status, transcript, transcript === null ? null : "[]", status === "failed" ? "timeout" : null])).rows[0].ok as boolean;
+    await check(client, "KB-384a claim: the first claim takes the queued row (running, attempt 1); a second claim at once gets nothing", async () => {
+      await asUser(client, ownerA);
+      const first = await claim(recA);
+      const second = await claim(recA);
+      if (first.length !== 1 || first[0].status !== "running" || first[0].attempts !== 1 || second.length !== 0) throw new Error(JSON.stringify({ first, second }));
+      return "1 then 0";
+    });
+    await check(client, "KB-384a claim: owner B cannot claim shop A's QUEUED recording (the shop check, not the status, refuses it)", async () => {
+      const rec = randomUUID();
+      await asUser(client, ownerA);
+      await addRec(rec, shopA);
+      await asUser(client, ownerB);
+      const r = await claim(rec);
+      if (r.length !== 0) throw new Error(JSON.stringify(r));
+      await asUser(client, ownerA);
+      if ((await claim(rec)).length !== 1) throw new Error("shop A could not claim its own queued row");
+      return "B: nothing; A: claimed";
+    });
+    await check(client, "KB-384a claim: a run stuck for more than 70 s is claimed again (attempt 2); a fresh one is not", async () => {
+      await asSuperuser(client);
+      await client.query(`update voice_recordings set started_at = now() - interval '71 seconds' where recording_id = $1`, [recA]);
+      await asUser(client, ownerA);
+      const r = await claim(recA);
+      if (r.length !== 1 || r[0].attempts !== 2) throw new Error(JSON.stringify(r));
+      if ((await claim(recA)).length !== 0) throw new Error("a fresh run was claimed again");
+      return "stale reclaimed, fresh kept";
+    });
+    await check(client, "KB-384a claim: a done row is never claimed again (a retry or double tap makes no second Gemini call)", async () => {
+      await asUser(client, ownerA);
+      if (!(await finish(recA, 2, "done", "दो किलो चीनी"))) throw new Error("finish refused");
+      await asSuperuser(client);
+      await client.query(`update voice_recordings set started_at = now() - interval '1 hour' where recording_id = $1`, [recA]);
+      await asUser(client, ownerA);
+      if ((await claim(recA)).length !== 0) throw new Error("a done row was claimed");
+      return "nothing claimed";
+    });
+    await check(client, "KB-384a claim: a failed row is claimed again (Retry with the same recording)", async () => {
+      const rec = randomUUID();
+      await asUser(client, ownerA);
+      await addRec(rec, shopA);
+      await claim(rec);
+      if (!(await finish(rec, 1, "failed"))) throw new Error("finish refused");
+      const r = await claim(rec);
+      if (r.length !== 1 || r[0].attempts !== 2) throw new Error(JSON.stringify(r));
+      return "reclaimed, attempt 2";
+    });
+    await check(client, "KB-384a finish: only the RUNNING attempt can finish - not a done row, not an old attempt, not shop B", async () => {
+      const rec = randomUUID();
+      await asUser(client, ownerA);
+      await addRec(rec, shopA);
+      if (await finish(rec, 1, "done", "x")) throw new Error("a queued row was finished");
+      await claim(rec);
+      await asUser(client, ownerB);
+      if (await finish(rec, 1, "done", "x")) throw new Error("shop B finished A's recording");
+      await asUser(client, ownerA);
+      if (await finish(rec, 7, "done", "x")) throw new Error("another attempt finished it");
+      if (!(await finish(rec, 1, "done", "x"))) throw new Error("the running attempt could not finish");
+      if (await finish(rec, 1, "failed")) throw new Error("a done row was finished again");
+      return "only the running attempt, once";
+    });
+    await checkRejects(client, "KB-384a finish: a status other than done / failed is rejected", "22023", async () => {
+      const rec = randomUUID();
+      await asUser(client, ownerA);
+      await addRec(rec, shopA);
+      await claim(rec);
+      await finish(rec, 1, "queued");
+    });
+    await checkRejects(client, "KB-384a finish: done with no transcript is rejected", "23514", async () => {
+      const rec = randomUUID();
+      await asUser(client, ownerA);
+      await addRec(rec, shopA);
+      await claim(rec);
+      await finish(rec, 1, "done", null);
+    });
+    await checkRejects(client, "KB-384a: the anon role cannot claim", "42501", async () => {
+      await asAnon(client);
+      await claim(recA);
+    });
+    await check(client, "KB-384a billed_at: the client's value is replaced by the server's now() (no far-future date keeps a recording)", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set billed_at = '2099-01-01' where recording_id = $1`, [recA]);
+      const r = await client.query(`select billed_at < now() + interval '1 minute' as stamped from voice_recordings where recording_id = $1`, [recA]);
+      if (!r.rows[0]?.stamped) throw new Error("billed_at kept the client's date");
+      return "server-stamped";
+    });
+    await checkRejects(client, "KB-384a billed_at: once set it cannot be changed or cleared", "P0001", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set billed_at = null where recording_id = $1`, [recA]);
+    });
+
+    // the private `recordings` bucket: {shop_id}/{recording_id}, written and read only by that shop's members; never updated or
+    // deleted from the app (no overwrite of a recording; the 7-day clean-up deletes through the Storage API inside Supabase)
+    const audioA = `${shopA}/${recA}`;
+    const audioB = `${shopB}/${recB}`;
+    await asSuperuser(client);
+    await client.query(`insert into storage.objects (bucket_id, name) values ('recordings', $1)`, [audioB]);
+    await check(client, "KB-384a recordings: the bucket is PRIVATE, audio only, 10 MB at most", async () => {
+      await asSuperuser(client);
+      const r = await client.query(`select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'recordings'`);
+      const b = r.rows[0];
+      if (b?.public !== false || Number(b.file_size_limit) !== 10485760 || !b.allowed_mime_types?.includes("audio/webm")) throw new Error(JSON.stringify(r.rows));
+      return "public = false, 10 MB, audio types";
+    });
+    await check(client, "KB-384a recordings sanity: owner A uploads under their own shop and can read it back", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('recordings', $1)`, [audioA]);
+      const r = await client.query(`select 1 from storage.objects where bucket_id = 'recordings' and name = $1`, [audioA]);
+      if (r.rowCount !== 1) throw new Error("not readable");
+      return "accepted, readable";
+    });
+    await checkRejects(client, "KB-384a recordings: owner A cannot upload under shop B's folder", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('recordings', $1)`, [`${shopB}/${randomUUID()}`]);
+    });
+    await check(client, "KB-384a recordings: owner A cannot SEE (download) shop B's recording", async () => {
+      await asUser(client, ownerA);
+      const r = await client.query(`select 1 from storage.objects where bucket_id = 'recordings' and name = $1`, [audioB]);
+      if (r.rowCount !== 0) throw new Error("visible");
+      return "0 rows";
+    });
+    await checkRejects(client, "KB-384a recordings: a file name that is not a recording id is rejected", "22P02", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('recordings', $1)`, [`${shopA}/song.mp3`]);
+    });
+    await checkRejects(client, "KB-384a recordings: a deeper path is rejected", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into storage.objects (bucket_id, name) values ('recordings', $1)`, [`${shopA}/x/${randomUUID()}`]);
+    });
+    await check(client, "KB-384a recordings: owner A's UPDATE and DELETE of their OWN recording affect zero rows (no overwrite, no delete)", async () => {
+      await asUser(client, ownerA);
+      const upd = await client.query(`update storage.objects set metadata = '{"tampered":true}'::jsonb where bucket_id = 'recordings' and name = $1`, [audioA]);
+      const del = await client.query(`delete from storage.objects where bucket_id = 'recordings' and name = $1`, [audioA]);
+      if (upd.rowCount !== 0 || del.rowCount !== 0) throw new Error(`${upd.rowCount} / ${del.rowCount}`);
+      return "0 / 0 rows affected";
+    });
+    await check(client, "KB-384a recordings: the anon role sees no recording", async () => {
+      await asAnon(client);
+      const r = await client.query(`select 1 from storage.objects where bucket_id = 'recordings'`);
+      if (r.rowCount !== 0) throw new Error(`saw ${r.rowCount}`);
+      return "0 rows";
+    });
   } finally {
     await client.query("rollback");
     await client.end();
