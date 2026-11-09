@@ -15,7 +15,7 @@ import { recordedMimeType } from "./recordingType";
 // A warm track the browser has ended is never recorded from. Never opened
 // before a tap - the mic is never on unasked.
 
-export type CapturePhase = "idle" | "requesting" | "listening" | "stopping";
+export type CapturePhase = "idle" | "requesting" | "listening" | "paused" | "stopping";
 
 export type CaptureErrorKind = "permission" | "no-mic" | "unsupported" | "failed" | "interrupted";
 
@@ -31,6 +31,21 @@ const MESSAGES: Record<CaptureErrorKind, string> = {
   failed: "The microphone didn't start — try again",
   interrupted: "Recording stopped — the app went to the background. Tap to try again",
 };
+
+/**
+ * KB-385 (owner, 10 Nov 2026; D101, doc 25 §5 and §9): the ORDER recorder's settings. Without options the hook is the old push-to-talk
+ * capture, unchanged. With them: 24 kbps, Pause / Resume (paused time is not recorded), the 5:00 stop (the screen warns at 4:30), under
+ * 1 s recorded = nothing, and an app going to the background KEEPS the recording so far (handed on as "hidden") - never thrown away.
+ */
+export interface OrderRecordingOptions {
+  bitsPerSecond?: number;
+  maxMs?: number;
+  warnAtMs?: number;
+  minMs?: number;
+  /** The 5:00 limit or the app going to the background stopped the recording; the audio so far (null if under minMs). */
+  onAutoStop?: (audio: Blob | null, reason: "limit" | "hidden") => void;
+}
+export const ORDER_RECORDING = { bitsPerSecond: 24_000, maxMs: 300_000, warnAtMs: 270_000, minMs: 1_000 } as const;
 
 /** D45: how long the mic stays open after a recording ends. */
 export const WARM_MIC_MS = 60_000;
@@ -71,7 +86,7 @@ export interface CaptureTiming {
 export interface VoiceCapture {
   phase: CapturePhase;
   error: CaptureError | null;
-  /** ms since recording started, while listening (drives the mm:ss timer). */
+  /** ms RECORDED so far - paused time excluded (drives the mm:ss timer); after stop, the recording's length. */
   elapsedMs: number;
   /** The last tap's timing - null until the first recording starts. */
   lastTiming: CaptureTiming | null;
@@ -79,11 +94,16 @@ export interface VoiceCapture {
   start: () => Promise<void>;
   /** Stops recording; resolves to the audio, or null if nothing was captured. */
   stop: () => Promise<Blob | null>;
+  /** KB-385: pause / resume the recording (paused time is not recorded). */
+  pause: () => void;
+  resume: () => void;
   /** Turns the mic off now (sign-out). */
   release: () => void;
 }
 
-export function useVoiceCapture(): VoiceCapture {
+export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [error, setError] = useState<CaptureError | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -93,6 +113,10 @@ export function useVoiceCapture(): VoiceCapture {
   const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef(0);
+  /** KB-385: ms recorded in the segments before the current one (a pause closes a segment). */
+  const recordedBeforeRef = useRef(0);
+  const recordedMs = () => recordedBeforeRef.current + (recorderRef.current?.state === "recording" ? performance.now() - startedAtRef.current : 0);
+  const autoStopRef = useRef<(reason: "limit" | "hidden") => void>(() => {});
 
   const clearReleaseTimer = useCallback(() => {
     if (releaseTimerRef.current !== null) clearTimeout(releaseTimerRef.current);
@@ -116,6 +140,10 @@ export function useVoiceCapture(): VoiceCapture {
     const onVisibility = () => {
       if (!isHidden()) return;
       const recorder = recorderRef.current;
+      if (recorder && recorder.state !== "inactive" && optionsRef.current?.onAutoStop) {
+        autoStopRef.current("hidden"); // KB-385: keep the order recorded so far; it releases the mic itself
+        return;
+      }
       if (recorder && recorder.state !== "inactive") {
         recorder.ondataavailable = null;
         recorder.onstop = null;
@@ -131,7 +159,12 @@ export function useVoiceCapture(): VoiceCapture {
 
   useEffect(() => {
     if (phase !== "listening") return;
-    const timer = setInterval(() => setElapsedMs(performance.now() - startedAtRef.current), 250);
+    const timer = setInterval(() => {
+      const ms = recordedMs();
+      setElapsedMs(ms);
+      const max = optionsRef.current?.maxMs;
+      if (max !== undefined && ms >= max) autoStopRef.current("limit");
+    }, 250);
     return () => clearInterval(timer);
   }, [phase]);
 
@@ -140,6 +173,7 @@ export function useVoiceCapture(): VoiceCapture {
     clearReleaseTimer(); // a tap inside the warm window keeps the mic
     setError(null);
     setElapsedMs(0);
+    recordedBeforeRef.current = 0;
     if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setError(captureError("unsupported"));
       return;
@@ -172,7 +206,8 @@ export function useVoiceCapture(): VoiceCapture {
 
     const recorderAt = performance.now();
     try {
-      const recorder = new MediaRecorder(stream);
+      const bits = optionsRef.current?.bitsPerSecond;
+      const recorder = bits === undefined ? new MediaRecorder(stream) : new MediaRecorder(stream, { audioBitsPerSecond: bits });
       recorderRef.current = recorder;
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
@@ -207,6 +242,9 @@ export function useVoiceCapture(): VoiceCapture {
       setPhase("idle");
       return null;
     }
+    const length = recordedMs();
+    recordedBeforeRef.current = length;
+    setElapsedMs(length);
     setPhase("stopping");
     const blob = await new Promise<Blob>((resolve) => {
       recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recordedMimeType(recorder.mimeType, navigator.userAgent) }));
@@ -217,8 +255,34 @@ export function useVoiceCapture(): VoiceCapture {
     clearReleaseTimer();
     releaseTimerRef.current = setTimeout(release, WARM_MIC_MS);
     setPhase("idle");
-    return blob.size > 0 ? blob : null;
+    const min = optionsRef.current?.minMs;
+    return blob.size > 0 && (min === undefined || length >= min) ? blob : null;
   }, [clearReleaseTimer, release]);
 
-  return { phase, error, elapsedMs, lastTiming, start, stop, release };
+  const pause = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (recorder?.state !== "recording") return;
+    recordedBeforeRef.current = recordedMs();
+    recorder.pause();
+    setElapsedMs(recordedBeforeRef.current);
+    setPhase("paused");
+  }, []);
+
+  const resume = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (recorder?.state !== "paused") return;
+    startedAtRef.current = performance.now();
+    recorder.resume();
+    setPhase("listening");
+  }, []);
+
+  autoStopRef.current = (reason) => {
+    if (!recorderRef.current || recorderRef.current.state === "inactive") return;
+    void stop().then((audio) => {
+      if (reason === "hidden") release();
+      optionsRef.current?.onAutoStop?.(audio, reason);
+    });
+  };
+
+  return { phase, error, elapsedMs, lastTiming, start, stop, pause, resume, release };
 }

@@ -15,7 +15,7 @@ const fakeStore = (): ClipStore & { rows: Map<string, StoredClip> } => {
   return { rows, list: async () => [...rows.values()], put: async (c) => void rows.set(c.id, c), remove: async (id) => void rows.delete(id) };
 };
 const capture = (blob: Blob | null): VoiceCapture =>
-  ({ phase: "idle", error: null, elapsedMs: 0, lastTiming: null, start: vi.fn(async () => {}), stop: vi.fn(async () => blob), release: vi.fn() }) as VoiceCapture;
+  ({ phase: "idle", error: null, elapsedMs: 0, lastTiming: null, start: vi.fn(async () => {}), stop: vi.fn(async () => blob), pause: vi.fn(), resume: vi.fn(), release: vi.fn() }) as VoiceCapture;
 const click = (name: string) => act(() => screen.getByRole("button", { name }).click());
 
 describe("the recorder session page", () => {
