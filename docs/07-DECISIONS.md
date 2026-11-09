@@ -2467,6 +2467,25 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
       - the Vault secrets `voice_cleanup_url` (67 chars) and `voice_cleanup_secret` (48), via `supabase db query --linked`, NOT the SQL editor, which saves snippets;
       - the job `voice-cleanup-daily` active (30 21 * * *);
       - a test run of the job's call: Vault -> `pg_net` -> the function -> `200 {"files":0,"rows":0,"failedBatches":0}`.
+14. **KB-384a step 6 - the draft test PASSED (owner, 10 Nov 2026).**
+    - **Setup:** draft-v17 (deploy `6af20fcb78d58b0a05fe6f46`, code `f873afc`), production Supabase, real Gemini. The owner ran `npm run draft:voice` with his own login, the token at a hidden prompt.
+
+    | | A63 (3 min 22 s, 3.3 MB) | A61 (1.2 MB) |
+    |---|---|---|
+    | Result | done | done |
+    | Phone's total (upload + start + waiting) | 38.5 s | 14.9 s |
+    | Worker (claim -> Gemini -> stored) | **32.8 s** | 10.9 s |
+    | Tokens in / out | 5,904 / 4,341 | 2,751 / 913 |
+    | Retry on the done recording | done in 1.0 s | done in 0.7 s |
+    | Double tap | done / done | done / done |
+    | Attempts after Retry + double tap | **1** (no second Gemini call) | **1** |
+    | Bill | 71 lines, 1 Theek hai check, 0 Price needed, Rs 8,798.00 priced | 18 lines, 0 Theek hai, 0 Price needed, Rs 2,955.00; **18/18 lines match the sheet** (quantity, unit, total) |
+
+    - **A63's worker took 32.8 s, past the 30 s at which Netlify cut a normal function on draft-v16.** Under the old synchronous design this order would have failed; the async path finished it.
+    - **Netlify credits:** 220 before and 220 after, as the owner read them - the draft deploy and the two background runs cost less than one credit.
+    - **Gemini:** 2 calls (cap Rs 2).
+    - **The two test recordings are not billed**, so the daily job deletes them 7 days after upload.
+    - **KB-384a is done, except:** the time-limit spike is deleted before the V3 release (`npm run check:spike`), and the screen is KB-385.
 
 ---
 
