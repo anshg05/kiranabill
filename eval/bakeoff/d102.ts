@@ -1,6 +1,6 @@
 import type { ParserCatalog } from "../../src/domain/catalogIndex.js";
 import { amountNeeded } from "../../src/domain/finalBill.js";
-import { canonicalUnit, matchProductName } from "../../src/domain/grammar.js";
+import { canonicalUnit, extractSpokenNumbers, matchProductName } from "../../src/domain/grammar.js";
 import { mostlySame, numbersOf, sameName, type ActualBill, type Verdict } from "../acceptance/compare.js";
 import type { ExpectedBill, ExpectedLine } from "../acceptance/types.js";
 import { scoringCatalog, type RunScore } from "./score.js";
@@ -126,4 +126,20 @@ export function aroundWords(transcript: string, heard: string, n = 8): string {
   const from = Math.max(0, k - n);
   const to = Math.min(words.length, k + n + 1);
   return `${from > 0 ? "… " : ""}${words.slice(from, k).join(" ")} [${words[k]}] ${words.slice(k + 1, to).join(" ")}${to < words.length ? " …" : ""}`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * D106 (owner, 9 Nov 2026, tightened): is a silent wrong NUMBER the EAR's? Only when the transcript has that exact number inside THAT item's
+ * own segment - from its name up to the next bill line's name (or the end). Anywhere else, it counts against our code.
+ */
+export function earHeard(transcript: string, name: string, value: number, otherNames: readonly string[]): boolean {
+  const fold = (s: string) => s.normalize("NFD").replace(/़/g, "").normalize("NFC").replace(/[,।]/g, "").toLowerCase();
+  const words = transcript.split(/\s+/).filter(Boolean).map(fold);
+  const first = (n: string) => fold(n.split(/\s+/)[0] ?? "");
+  const at = words.findIndex((w) => w === first(name));
+  if (at < 0) return false;
+  const others = new Set(otherNames.map(first).filter((o) => o !== first(name)));
+  let end = at + 1;
+  while (end < words.length && !others.has(words[end]!)) end++;
+  return words.slice(at, end).some((w) => extractSpokenNumbers(w).some((n) => Math.abs(n - value) < 1e-9));
 }

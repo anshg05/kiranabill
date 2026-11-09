@@ -9,11 +9,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { extractSpokenNumbers } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import { parseSheet } from "../acceptance/sheet.js";
 import { SHEET } from "../acceptance/store.js";
-import { scoreRunD102 } from "./d102.js";
+import { earHeard, scoreRunD102 } from "./d102.js";
 import { nocatBill } from "./pipeline.js";
 import { summarize, toSaved, type RunResult } from "./score.js";
 
@@ -56,14 +55,16 @@ console.log(`\nRuns whose bill differs from the saved one (${changed.length}):${
 console.log("\nEvery dropped line (silent = nothing on the bill warns about it):");
 for (const r of replayed) if (r.dropped) console.log(`  ${r.id} run ${r.run}: ${r.dropped} dropped, ${r.silentDropped ?? 0} silent`);
 // D106 (owner, 9 Nov 2026): the finish line counts silent wrong lines caused by OUR CODE strictly (0); an EAR mis-hearing is counted apart
-// (at most 1 per full run). A silent wrong NUMBER is the ear's when the billed number is exactly what the model's own transcript says.
+// (at most 1 per full run). A silent wrong NUMBER is the ear's only when the transcript has that exact number inside THAT item's own segment
+// (earHeard: from its name to the next line's name); anywhere else it counts against our code.
 const earOrCode = replayed.flatMap((r) =>
   r.wrong
     .filter((w) => w.endsWith("[NO warning]"))
     .map((w) => {
       const billed = /wrong (?:price|total|quantity) (\d+(?:\.\d+)?)/.exec(w)?.[1];
       const value = billed === undefined ? null : w.includes("wrong quantity") ? Number(billed) : Number(billed) / 100;
-      const said = value !== null && extractSpokenNumbers(r.transcript ?? "").some((n) => Math.abs(n - value) < 1e-9);
+      const heard = /heard "([^"]*)"/.exec(w)?.[1] ?? "";
+      const said = value !== null && earHeard(r.transcript ?? "", heard, value, (r.lines ?? []).map((l) => l.name));
       return `${said ? "EAR " : "CODE"} ${r.id} run ${r.run}: ${w}`;
     }),
 );

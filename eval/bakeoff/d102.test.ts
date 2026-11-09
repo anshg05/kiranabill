@@ -3,7 +3,7 @@ import type { ParsedItem } from "../../src/domain/grammar.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
 import type { ActualBill } from "../acceptance/compare.js";
 import type { ExpectedBill } from "../acceptance/types.js";
-import { aroundWords, scoreRunD102 } from "./d102.js";
+import { aroundWords, earHeard, scoreRunD102 } from "./d102.js";
 
 // KB-370 round 2, scored under D102 (owner, 4 Nov 2026): a bill line is right when its NAME is the name that was said (spelling variants
 // fine) with the right quantity, unit and price. The catalog product it claims no longer matters - but a DIFFERENT product's name, or a
@@ -116,5 +116,20 @@ describe("aroundWords - the transcript words around a heard name, so a wrong num
   });
   it("falls back to the start when the name is not found", () => {
     expect(aroundWords("एक दो तीन", "साबुन", 2)).toBe("एक दो तीन");
+  });
+});
+
+describe("D106 (tightened, owner 9 Nov 2026): a silent wrong number is the EAR's only inside that item's own segment", () => {
+  const A47 = "फुटाने ₹102 किलो लाइजोल ₹110 गुड़ ₹98 चावल ₹98";
+  const names = ["फुटाने", "लाइजोल", "गुड़", "चावल"];
+  it("A47: Rs 102 sits right after फुटाने - the ear's", () => {
+    expect(earHeard(A47, "फुटाने", 102, names)).toBe(true);
+  });
+  it("a number said for ANOTHER item (Rs 110 of लाइजोल) billed on फुटाने is our code's, not the ear's", () => {
+    expect(earHeard(A47, "फुटाने", 110, names)).toBe(false);
+  });
+  it("a number said nowhere, or a name not in the transcript, is our code's", () => {
+    expect(earHeard(A47, "फुटाने", 104, names)).toBe(false);
+    expect(earHeard(A47, "चीनी", 98, names)).toBe(false);
   });
 });

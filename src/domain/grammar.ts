@@ -123,6 +123,7 @@ function fractionBeforeDigits(digits: number, add: number | null, fixed: number 
   }
   return fixed !== null ? null : digits + add!;
 }
+const WRITTEN_FRACTIONS: Readonly<Record<string, number>> = { "1/2": 0.5, "1/4": 0.25, "3/4": 0.75 };
 const digitsOf = (word: string | undefined) => (word !== undefined && /^\d+$/.test(word) ? Number(word) : undefined);
 
 // chataak is a traditional small-weight UNIT (~50g), not a fraction
@@ -297,6 +298,15 @@ function classifySegment(words: readonly string[]): Classified[] {
         continue;
       }
       out.push({ type: "word", raw: word });
+      i += 1;
+      continue;
+    }
+
+    // KB-383 follow-up (owner, 9 Nov 2026): "1/2 किलो" = 0.5 kg - a written fraction, read only straight before a unit word (a table, no
+    // division: KB-005f). "1/2" alone, or any other fraction, stays an ordinary word - never a guess.
+    const written = WRITTEN_FRACTIONS[word];
+    if (written !== undefined && words[i + 1] !== undefined && UNIT_ALIASES[words[i + 1]!] !== undefined) {
+      out.push({ type: "num", value: written });
       i += 1;
       continue;
     }

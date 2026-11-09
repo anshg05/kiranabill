@@ -52,3 +52,21 @@ describe("पौने / सवा / साढ़े / डेढ़ / ढाई 
     expect(extractSpokenNumbers("डेढ़ 200")).toEqual([1.5, 200]); // not Hindi for anything: two numbers, never a guess
   });
 });
+
+describe("KB-383 follow-up (owner, 9 Nov 2026): '1/2' / '1/4' / '3/4' directly before a unit word - both paths, no division", () => {
+  it("the number reader: '1/2 किलो' = 0.5, '1/4 किलो' = 0.25, '3/4 लीटर' = 0.75", () => {
+    expect(extractSpokenNumbers("1/2 किलो")).toEqual([0.5]);
+    expect(extractSpokenNumbers("1/4 किलो")).toEqual([0.25]);
+    expect(extractSpokenNumbers("3/4 लीटर")).toEqual([0.75]);
+  });
+
+  it("Layer 1's bill: '1/2 किलो चीनी' is 0.5 kg (it was a Price-needed line with no quantity); A42's 'सह्याद्री चाय 1/2 किलो 185 रुपए' is 0.5 kg at Rs 185", () => {
+    expect(parseUtterance("1/2 किलो चीनी", SEED_PARSER_CATALOG)?.[0]).toMatchObject({ qty: 0.5, unit: "kg" });
+    expect(parseUtterance("सह्याद्री चाय 1/2 किलो 185 रुपए", SEED_PARSER_CATALOG)?.[0]).toMatchObject({ qty: 0.5, unit: "kg", total: 18500 });
+  });
+
+  it("unchanged: '1/2' with no unit after it, and any other fraction ('2/3 किलो'), is never read as a number", () => {
+    expect(extractSpokenNumbers("1/2")).toEqual([]);
+    expect(extractSpokenNumbers("2/3 किलो")).toEqual([]);
+  });
+});
