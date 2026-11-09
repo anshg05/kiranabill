@@ -2460,7 +2460,13 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
       3. `npx supabase secrets set VOICE_CLEANUP_SECRET=<new random value> --project-ref <ref>`;
       4. in the SQL editor, `vault.create_secret` for `voice_cleanup_url` (`https://<ref>.supabase.co/functions/v1/voice-cleanup`) and `voice_cleanup_secret` (the same value);
       5. run `scripts/voice-cleanup-schedule.sql` once.
-    - **`public/privacy.html`:** the new wording is drafted and waits for the owner's review before it is committed (D105, doc 25 §15).
+    - **`public/privacy.html`:** the owner approved the wording; committed `f9b8e38`.
+    - **LIVE in production (owner, 10 Nov 2026), set up by the owner one step at a time:**
+      - `voice-cleanup` deployed (`--no-verify-jwt`; without the secret: 404, checked);
+      - `VOICE_CLEANUP_SECRET` set (generated in PowerShell, never shown);
+      - the Vault secrets `voice_cleanup_url` (67 chars) and `voice_cleanup_secret` (48), via `supabase db query --linked`, NOT the SQL editor, which saves snippets;
+      - the job `voice-cleanup-daily` active (30 21 * * *);
+      - a test run of the job's call: Vault -> `pg_net` -> the function -> `200 {"files":0,"rows":0,"failedBatches":0}`.
 
 ---
 

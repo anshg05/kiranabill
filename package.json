@@ -26,6 +26,7 @@
     "smoke:voice": "tsx scripts/smoke-voice.ts",
     "check:recorder": "tsx scripts/check-recorder-absent.ts",
     "check:spike": "tsx scripts/check-spike-absent.ts",
+    "draft:voice": "tsx scripts/draft-voice-check.ts",
     "accept:import": "tsx eval/acceptance/import.ts",
     "accept:build": "tsx eval/acceptance/build.ts",
     "accept:live": "tsx eval/acceptance/live.ts",
