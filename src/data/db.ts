@@ -283,6 +283,27 @@ export interface LocalSyncState {
   pendingCount: number;
 }
 
+/**
+ * KB-385 (owner, 10 Nov 2026; doc 25 §6): a voice recording kept ON THE PHONE until its bill exists (src/data/voiceQueue.ts). Device-only,
+ * never synced. The audio is stored as bytes + type (some phone browsers have stored Blobs in IndexedDB badly).
+ */
+export interface LocalVoiceRecording {
+  recordingId: string;
+  shopId: string;
+  /** the bill (draft) it belongs to - its lines are added there, once */
+  billLocalId: string;
+  bytes: ArrayBuffer;
+  mime: string;
+  recordedMs: number;
+  createdAt: string;
+  state: "queued" | "done" | "failed" | "gave_up" | "appended";
+  /** failed: "upload" | "start" | "session" | the server's kind */
+  reason?: string;
+  /** done: the answer, kept until it is added to the bill */
+  transcript?: string;
+  items?: unknown[];
+}
+
 export class KiranaBillDB extends Dexie {
   bills!: EntityTable<LocalBill, "localId">;
   billItems!: EntityTable<LocalBillItem, "id">;
@@ -304,6 +325,8 @@ export class KiranaBillDB extends Dexie {
   billMetrics!: EntityTable<LocalBillMetrics, "billLocalId">;
   /** KB-404 (D80), S2: device-only heard / billed pairs. Never synced. */
   reviewCapture!: EntityTable<LocalReviewCapture, "id">;
+  /** KB-385: device-only voice recordings until their bill exists. Never synced. */
+  voiceQueue!: EntityTable<LocalVoiceRecording, "recordingId">;
 
   constructor(name: string) {
     super(name);
@@ -388,6 +411,9 @@ export class KiranaBillDB extends Dexie {
     // KB-323 (D81): alias confidence is derived from the alias events, so they are read by (shop, type) - a compound index,
     // additive (Dexie builds it from the existing rows; nothing is rewritten).
     this.version(7).stores({ learningEvents: "&localId, shopId, syncStatus, [shopId+eventType]" });
+
+    // KB-385 (doc 25 §6): the phone's voice queue - a new store, additive.
+    this.version(8).stores({ voiceQueue: "&recordingId, shopId, billLocalId, state" });
   }
 }
 
