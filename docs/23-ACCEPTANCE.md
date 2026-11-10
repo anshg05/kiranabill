@@ -124,6 +124,11 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
      - **Why:** both test the old Whisper / typed-text path, which V3 no longer uses on the screen.
      - **The V3 evidence instead:** `KB-387` (the live run of all 85 recordings through the final code) and the owner's draft-v18 phone check.
      - **Post-deploy step added:** the owner makes ONE real voice order on the production URL, and it must bill correctly.
+   - **V3 release (owner, 10 Nov 2026): the two-phone session (item 5) is WAIVED.**
+     - No shop uses the app yet.
+     - Rollback is one click, and the database is backward-compatible (every migration is additive).
+     - The shared bill-number sequence is server-side, unchanged, and covered by the green e2e suite.
+     - It is done at the START of the pilot instead (`17` "Before the real shop", item 8).
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
 
