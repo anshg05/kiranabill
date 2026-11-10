@@ -186,6 +186,14 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **Built into the recorder in `KB-385`.** `KB-386` only VERIFIES the accuracy on fresh recordings; it does not set the bitrate.
 - **Why it matters for storage** (owner, 7 Nov 2026): Supabase's free tier holds 1 GB. Seven days of recordings at 100 bills a day is about 0.5 GB at 126 kbps and about 0.1 GB at 24 kbps. Both figures assume about 45 s per recording on average; the acceptance set averages 12 s short and 36 s long.
 - **Today:** about 126 kbps (A61: 1,198 KB for 76 s).
+**Measured (KB-386, 10 Nov 2026):**
+- **Source:** the owner's phone recordings on draft-v18, read from production Storage.
+- **Bitrate:** 155 KB / ~58 s, 43 KB / ~16 s, 200 KB / ~74 s and 64 KB / ~24 s, which is **21.6-22.5 kbps, 21.9 overall** (Opus in WebM, Android Chrome). Before: about 129 kbps (A61). Files are about 6x smaller; a 5-minute order is about 0.8 MB.
+- **Storage:** 100 bills/day x 45 s x 7 days is about 0.09 GB.
+- **How the length was estimated:** Gemini's input tokens, at about 25 per second of audio plus about 851 for the prompt, fitted on A63 (202 s) and A61 (76 s).
+- **Accuracy (owner, 10 Nov 2026):** his real orders were accurate. About 5 orders, mostly long ones, every phone-check item passed, and his head-to-head against Ezy Parchi was "mostly the same".
+  - **Recorded as the accuracy evidence:** this is the owner's judgement on fresh orders, NOT the formal same-orders-re-recorded comparison.
+  - **The live regression of the 85 (KB-387)** stays the measured check.
 - **Verified on FRESH recordings from the owner's phone:**
   - the real bytes per second (a browser may ignore the hint - iOS records mp4);
   - the same exact rate and 0 silent wrong lines as the 126 kbps set, on the same orders re-recorded.
