@@ -120,6 +120,10 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
 4. `npm run check:recorder` on the production build.
    - **The V3 release (`KB-384a`, owner 9 Nov 2026): `public/privacy.html` "Last updated" (English AND हिन्दी) becomes the real release date**, in the commit before the `[deploy]` marker; `src/ui/privacyPage.test.tsx` checks both languages show the same date. Also confirm the Gemini key's Google Cloud project still has an ACTIVE billing account - the page's "paid API terms" sentence is true only then. **Evidence (owner, 10 Nov 2026):** the key's project "Kirana Bill" shows **Tier 1** in Google AI Studio with prepaid credits, which requires an active billing account. **Rule: the Gemini prepaid balance must never reach zero** (paid terms, and the app's voice stops).
    - **Until the V3 release (`KB-384`, owner 9 Nov 2026): `npm run check:spike`** must print "no KB-384 spike left - releasable": `netlify/functions/voice-spike.mts` and `_shared/voiceSpike.test.ts` DELETED and `KB384_SPIKE_KEY` removed from Netlify (all contexts) BEFORE any `[deploy]` commit. Production's build command runs the same check first (`netlify.toml`), so a release that still has the spike fails its build.
+   - **V3 release (owner, 10 Nov 2026):** `smoke:voice` and `accept:live` are SKIPPED for this release.
+     - **Why:** both test the old Whisper / typed-text path, which V3 no longer uses on the screen.
+     - **The V3 evidence instead:** `KB-387` (the live run of all 85 recordings through the final code) and the owner's draft-v18 phone check.
+     - **Post-deploy step added:** the owner makes ONE real voice order on the production URL, and it must bill correctly.
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
 
