@@ -91,5 +91,10 @@ export function aiAnswerBill(transcript: string, items: readonly ParsedItem[], s
     if (repeated[from] !== items[from]) return [{ index, kind: "repeat" }]; // a copied price was spoken (earlier), so the checks keep it
     return [];
   });
-  return { ...bill, filled };
+  // Owner, 10 Nov 2026: on a line whose price OUR CODE filled no price was spoken in its own piece, so comparing it with what Layer 1
+  // read there invents one ("Heard 1 liter for ₹1" for "1 बंसल तेल 1 लीटर"). The disagreement check is for spoken prices; the line's
+  // other warnings - "said twice, or heard twice?" - stay.
+  const filledAt = new Set(filled.map((f) => f.index));
+  const flags = bill.flags.filter((f) => !(f.code === "layer2_disagrees" && f.itemIndex !== null && filledAt.has(f.itemIndex)));
+  return { ...bill, flags, filled };
 }

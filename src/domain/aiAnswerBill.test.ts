@@ -39,6 +39,19 @@ describe("aiAnswerBill - which prices our code filled", () => {
     expect(b.filled).toEqual([{ index: 1, kind: "repeat" }]);
   });
 
+  it("owner, 10 Nov 2026: a repeat keeps 'said twice, or heard twice?' but its warning never INVENTS a price (no '₹1' read into '1 बंसल तेल 1 लीटर')", () => {
+    const t = "2 किलो चीनी, 1 बंसल तेल 1 लीटर 150 रुपए, फुटाने 102 रुपए किलो 1 किलो, 1 बंसल तेल 1 लीटर";
+    const b = aiAnswerBill(t, [ai("चीनी", 2, "kg", "default", null, null), ai("बंसल तेल", 1, "liter", "total", null, 15000), ai("फुटाने", 1, "kg", "rate", 10200, null), ai("बंसल तेल", 1, "liter", "default", null, null)], SEED_PARSER_CATALOG);
+    const on3 = b.flags.filter((f) => f.itemIndex === 3 && f.severity === "HIGH");
+    expect(on3.map((f) => f.code)).toEqual(["duplicate_line"]);
+    expect(b.flags.some((f) => /₹1\b(?!\d)/.test(f.message))).toBe(false);
+  });
+
+  it("a line whose price was SPOKEN still gets the disagreement check (only filled prices are exempt)", () => {
+    const b = aiAnswerBill("चीनी 2 किलो 90 रुपए", [ai("चीनी", 2, "kg", "total", null, 9500)], SEED_PARSER_CATALOG);
+    expect(b.flags.map((f) => f.code)).toContain("layer2_disagrees");
+  });
+
   it("a line with no price at all (Price needed) is not 'filled'", () => {
     const b = aiAnswerBill("2 किलो अनजाना सामान", [ai("अनजाना सामान", 2, "kg", "default", null, null)], SEED_PARSER_CATALOG);
     expect(b.lines[0]!.item.total).toBeNull();
