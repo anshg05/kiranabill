@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 9 Nov 2026 (rev 19) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 11 Nov 2026 (rev 20) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -33,12 +33,12 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 | V3.6 | `KB-384` | **Server path: Storage upload + RLS, `/voice` by path, the result cache, the 7-day clean-up, the Sarvam backup under D102 / D103, the time limit measured (`25` §1, §6, §7).** Finish line: a 3-4 minute recording (the longest real order, owner 7 Nov 2026; the 5-min cap stays as the stop limit) works end to end and the function's time is measured on it; a retry makes no second Gemini call; with Gemini forced to fail, every recording gives a Sarvam bill with 0 silent wrong lines and the same names / units as the Gemini bill on every line Layer 1 reads; `public/privacy.html` (English + Hindi) updated in the same release, before any recording is stored (`25` §15). | yes | todo |
 | V3.6a | `KB-384a` | **Async voice (D107):** one path for all orders - Storage upload, a `voice_recordings` row by `recording_id`, a Netlify background worker, the phone polls ~1.5 s, then Retry / Add by hand; the smaller Gemini answer. **Switch trigger (owner, 9 Nov 2026):** Netlify credit use past ~200 in a month, or before scaling past ~300 bills/day -> the worker moves to a Supabase Edge Function; the owner decides, nothing paid without his OK. Every spend is asked for first, with its amount. **DONE 10 Nov 2026** (step 6 passed on draft-v17). |
 | V3.6b | `KB-384b` | **The Sarvam backup (Sarvam `saaras:v4` + Layer 1 under D102 / D103, `25` §7) - AFTER the V3 release (D108, owner 10 Nov 2026).** Speed to launch: without it a Gemini failure still ends in Retry (the same recording) or Add by hand. Revisited right after launch, or if the pilot shows Gemini failures. Privacy page keeps Sarvam unlisted until it ships. |
-| V3.7 | `KB-385` | **The phone: the D101 flow, Pause / Resume, the 5-min cap, recording at 24 kbps, the local queue, Retry, one recording = one bill, the error states, Devanagari names (`25` §5, §6, §8).** Finish line: every error state ends in Retry or Add by hand; a retry or a double tap never adds lines twice; preview browser, then the owner's phone. | yes | todo |
-| V3.8 | `KB-386` | **VERIFY the 24 kbps recording (built in `KB-385`) on fresh recordings (`25` §9).** Finish line: the measured kbps; the same exact rate and 0 silent wrong lines as the 126 kbps originals. | no | todo |
-| V3.9 | `KB-387` | **The final live regression run, then V4 / V5 (`25` §12).** Finish line: 0 silent wrong lines caused by our code AND 0 silent dropped lines (an ear mis-hearing counted apart, at most 1 per run - D106), at least 90% exact on short AND at least 90% on long orders (each separately), live; then the draft, the phone check, the head-to-head. | yes | todo |
-| V3b | - | **The owner repeats the head-to-head test against Ezy Parchi** on the V3 draft (the new ear + the new flow) - **before the pilot**. | Owner | todo |
+| V3.7 | `KB-385` | **The phone: the D101 flow, Pause / Resume, the 5-min cap, recording at 24 kbps, the local queue, Retry, one recording = one bill, the error states, Devanagari names (`25` §5, §6, §8).** Finish line: every error state ends in Retry or Add by hand; a retry or a double tap never adds lines twice; preview browser, then the owner's phone. | yes | done 10 Nov 2026 (`db636c8` .. `78f3d9e`; phone check passed on draft-v18) |
+| V3.8 | `KB-386` | **VERIFY the 24 kbps recording (built in `KB-385`) on fresh recordings (`25` §9).** Finish line: the measured kbps; the same exact rate and 0 silent wrong lines as the 126 kbps originals. | no | done 10 Nov 2026 (21.9 kbps measured; accuracy = the owner's real orders) |
+| V3.9 | `KB-387` | **The final live regression run, then V4 / V5 (`25` §12).** Finish line: 0 silent wrong lines caused by our code AND 0 silent dropped lines (an ear mis-hearing counted apart, at most 1 per run - D106), at least 90% exact on short AND at least 90% on long orders (each separately), live; then the draft, the phone check, the head-to-head. | yes | done 10 Nov 2026 (`fe180da`: short 92%, long 100%, 0 silent wrong from our code, 1 ear) |
+| V3b | - | **The owner repeats the head-to-head test against Ezy Parchi** on the V3 draft (the new ear + the new flow) - **before the pilot**. | Owner | done 10 Nov 2026 (owner: mostly the same) |
 | V4 | `KB-373` | **Re-run the acceptance set** (`23`) on the new voice; decide the >= 90% exact unlock (the set is not locked today: 28 of 41, 68%). **First fix the gate's product hole** (`23` known issue, found by the `KB-370` canary 1 Nov 2026: a wrong catalog product carrying the owner's words scores as right). | yes | todo |
-| V5 | `KB-374` | **Draft -> the owner's phone check -> release** (marker only on his approval, D55; rollback target recorded first). | yes | todo |
+| V5 | `KB-374` | **Draft -> the owner's phone check -> release** (marker only on his approval, D55; rollback target recorded first). | yes | done 10 Nov 2026 - **V3 released**: `ffb073f`, production deploy `6af30305b41f8bc4b86b42be` (D109) |
 
 **Open questions before V2 / V3 - NOT decided (recorded 4 Nov 2026).** V2 (`KB-371`) is **open**: the owner is doing his own outside research before choosing (started 4 Nov 2026). Nothing below is decided; a "suggestion only" is the reviewer's current view, recorded as the question was asked, and changes nothing.
 
@@ -101,12 +101,12 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 |---|---|---|---|---|
 | P0a | - | **Owner decides before P1 - PRD `01` section 8 S3** (median mic-tap to items < 2 s on the fast path, < 5 s otherwise). It is not in the `06` release gate, and today's voice probably fails it. **Reviewer's recommendation: keep S3 as a measured target, not a pass/fail gate; re-measure after Phase V.** **Decided (owner, 31 Oct 2026): as recommended - S3 is a measured target, not a gate.** | Owner | done 31 Oct 2026 |
 | P0b | - | **Owner decides before P1 - one fresh restore of a real backup before the pilot.** The last restore of a real production backup with the real key was 11 Oct 2026 (15 tables, 553 rows, `22`); `bill_cancellations`, `bill_metrics` and the bill-number tables (migrations of 14 - 22 Oct) were added since. **Reviewer's recommendation: one step in the pilot checklist (`17`), run as in `22`.** **Decided (owner, 31 Oct 2026): as recommended - it is step 5 of the `17` checklist.** | Owner | done 31 Oct 2026 (decided; the restore itself is in P1) |
-| P1 | `KB-405` | The owner's shop pilot **on the new voice**: the "Before the real shop" checklist in `17` unchanged, Review mode on for the first 20 bills, the weekly Drive look (`M-38`). Waits for Phase V. | Owner | todo (waits for V) |
+| P1 | `KB-405` | The owner's shop pilot **on the new voice**: the "Before the real shop" checklist in `17` unchanged, Review mode on for the first 20 bills, the weekly Drive look (`M-38`). Waits for Phase V. | Owner | in progress - runs IN PARALLEL with Phase A (D109): the owner's own-voice bills done; he bills with production meanwhile |
 | P2 | - | After the first 20 bills: read the Heard -> Billed pairs, decide whether to unlock the acceptance set, then the next big thing (`10`). | - | todo |
 
 ---
 
-## d. Phase F — Bill features
+## d. Phase F — Bill features (AFTER Phase A - owner, 10 Nov 2026, D109)
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
@@ -116,7 +116,7 @@ The cause is visible in our "Heard" text. Whisper (`whisper-large-v3` on Groq) t
 
 ---
 
-## e. Phase A — The Android app (Capacitor, Android only; `KB-406` is the umbrella)
+## e. Phase A — The Android app (Capacitor, Android only; `KB-406` is the umbrella) - NEXT, BEFORE Phase F (owner, 10 Nov 2026, D109)
 
 Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays the PWA.
 
@@ -126,6 +126,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 | A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | todo |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
+| A5 | - | **Full redesign of the app** (owner, 10 Nov 2026, D109) - part of Phase A; its scope is set in its own PLAN before any code. | no | todo |
 
 **A1 `KB-408` - thermal printing, what it holds**
 - Bluetooth Classic (SPP) **and** BLE printers.
@@ -142,6 +143,18 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 - **How updates ship:** the web code is served from the app bundle or from the site - to be decided in its PLAN, with the foreground-update rule of `KB-401` in mind.
 
 ---
+
+## e2. Open after the V3 release (owner, 10 Nov 2026, D109)
+
+**Voice follow-ups:**
+- **Delete the old voice path** - Whisper, the typed-text `/voice` and `GROQ_API_KEY` - after V3 runs well in production for a few days. It also removes `check:spike` from production's build command.
+- **`KB-384b`, the Sarvam backup** (after the release, D108).
+- **Gemini's price doubles on 1 Jan 2027:** re-check the cost per bill and the Rs 1,500 budget alarm before then.
+- **Watch ear mis-hearings like A47 in real use** (D106: at most 1 per full run; a second ear is revisited if real use shows more).
+- **iPhone is untested:** pause / resume, the 24 kbps hint, mp4 recording.
+
+**Parked for later (owner's words):** login (Google vs phone OTP), how the app earns money, distribution.
+
 
 ## f. Phase L — Later (ids only; the text is in `12-PARKED.md`)
 

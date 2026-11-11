@@ -2497,12 +2497,43 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 5. **`SARVAM_API_KEY` is not needed for the V3 release.**
 6. **`KB-384`'s finish line** ("with Gemini forced to fail, every recording gives a Sarvam bill") moves with it to `KB-384b`. For V3, Gemini forced to fail must end in Retry or Add by hand (`KB-385`).
 
+
+### D109 — V3 voice is in production; Phase A comes before Phase F; the pilot runs in parallel (owner, 10-11 Nov 2026) 🟢
+
+1. **V3 is LIVE (owner, 10 Nov 2026).**
+   - **Release:** the owner pushed `ffb073f` (app code `fa49edb`); Netlify built production deploy **`6af30305b41f8bc4b86b42be`** (published 10 Nov 2026 11:42 UTC).
+   - **Post-deploy checks, all passed:**
+     - Settings shows the new build;
+     - a real voice order on production billed correctly;
+     - `/privacy` shows 10 November 2026 in both languages;
+     - the `/voice-run` log shows the order.
+   - **The two-phone session** (`17` item 8) was also done and passed.
+2. **Rollback targets.**
+   - **Now:** `6af30305b41f8bc4b86b42be` (`ffb073f`, V3).
+   - **The older fallback:** `6ae4e6a80b53133c1233a15a` (`5b9a551`, 30 Oct 2026, the pre-V3 app).
+   - **How:** Netlify -> Deploys -> Publish deploy (no build, no credits). Every V3 migration is additive.
+3. **The pilot (`KB-405`) runs IN PARALLEL with Phase A** (owner): his own-voice bills are done, and he bills with the production app meanwhile. The "first 20 real bills" review continues during Phase A; it is not a gate before it.
+4. **Order change - Phase A BEFORE Phase F** (replaces D100 item 4's order):
+   - voice (done)
+   - -> **Phase A** (the Android app, thermal printing, and a **full redesign**)
+   - -> **Phase F** (hold bills; discount / charges / old due; one-script names)
+   - -> later items.
+   - D100 item 5 (a decision record before any money code in `KB-376`) is unchanged.
+5. **Voice follow-ups (open, `24` §e2):**
+   - after V3 runs well for a few days, delete the old Whisper / typed path and `GROQ_API_KEY`;
+   - `KB-384b` (the Sarvam backup, D108);
+   - Gemini's price doubles on 1 Jan 2027 - re-check the cost then;
+   - watch ear mis-hearings like A47 in real use (D106);
+   - iPhone is untested.
+6. **Parked for later (owner's words):** login (Google vs phone OTP), how the app earns money, distribution.
+
 ---
 
 ## Superseded
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 10 Nov 2026 | D100 item 4: voice -> the pilot -> Phase F (hold bills, discount) -> Phase A (Android, thermal printing) | **voice (done) -> Phase A (Android, thermal printing, full redesign) -> Phase F; the pilot runs in parallel with Phase A** (D109) | Owner decision after the V3 release |
 | 4 Nov 2026 | D48 item 4: "the bill shows the shop catalog's name for a Layer 1 line, never the spoken words"; D42: "a matched line shows the shop's name" | **The bill line keeps the name that was SAID; the catalog only fills a price that was not said, when the name clearly matches one item, else Price needed** (D102) | `KB-370`'s wrong products (रिन -> Lifebuoy, वुश -> Washing Powder) and the owner's head-to-head with Ezy Parchi. Built in V3. |
 | 31 Oct 2026 | Tracker / `06` (30 Oct): "the next step is the owner's shop pilot (`KB-405`)"; `KB-369` PARKED "after the pilot starts" | **Phase V (voice accuracy, `KB-370` - `KB-374`) first; the pilot waits; `KB-369` is folded into `KB-370`** (D100) | Owner's head-to-head test against a competitor on a 40 s, 10-item order: our Whisper restarted and garbled the numbers on long audio. |
 | 18 Oct 2026 | D83: "units that do not fit (or a line with no unit yet): the quantity is CLEARED and the unit becomes the product's" | **A line with NO unit fits every product: it keeps its qty and its "—" unit (D86, `KB-338`)** | Owner: "—" is a choice on every line and the product's own unit never changes - only the line's. |

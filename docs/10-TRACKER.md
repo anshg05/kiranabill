@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 10 Nov 2026 (rev 187) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
+**Last updated:** 11 Nov 2026 (rev 188) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -12,15 +12,15 @@
 
 ## Right now
 
-**Production:** app code **`07843ae`**, deployed by the marker `5b9a551` (30 Oct 2026 18:49 UTC), deploy `6ae4e6a80b53133c1233a15a`, served build id `20261030-1849-5b9a551` (`KB-368`; on top of `aef37a2`). **Rollback target** (Netlify -> Deploys -> Publish deploy; no build, no credits): `6ae4d5cdb05a356e46d974df` (`aef37a2` via `773fd95`), then `6ae43ef37632217d26a8e515` (`0eaf046`), then `6ae2f73bc04975be8ca66d0e`, then `6ae1e5de507e259d58c6e891` (`37e48cc`). A push deploys only a commit carrying the owner-approved `[deploy]` marker (D55). Code after `5b9a551`: none (docs only).
+**Production (V3, 10 Nov 2026):** commit **`ffb073f`** (app code `fa49edb`), deploy **`6af30305b41f8bc4b86b42be`** (published 10 Nov 2026 11:42 UTC) - the V3 voice path. Post-deploy checks and the two-phone session passed (owner). **Rollback target:** `6af30305b41f8bc4b86b42be`; **older fallback:** `6ae4e6a80b53133c1233a15a` (`5b9a551`, 30 Oct 2026, pre-V3) - Netlify -> Deploys -> Publish deploy (D109).
 
 **`draft-v14` check (KB-368): PASSED (owner, 30 Oct 2026)** - an ordinary bill showed no badge; the garbled name got a badge / became a custom line, never a silent product; the pencil correction taught the alias and the repeat came out clean.
 
 **Latest (10 Nov 2026):** `KB-384a` (D107, async voice) steps 1-5 built and committed: the storage (`voice_recordings`, the private `recordings` bucket, claim / finish), backups leave recordings and transcripts out, the `/voice-run` background worker, the phone's data side (`src/data/voiceJob.ts`) with the bill chain moved to `src/domain/aiAnswerBill.ts` (replay byte-identical: short 45/49, long 36/36, 0 silent wrong from our code), the 7-day deletion inside Supabase (Edge Function `voice-cleanup`, tested on the Docker stack), and the owner-approved privacy page. **The owner pushed the three migrations to production on 10 Nov 2026** (`20261109100000_kb383_futane_alias`, `20261109110000_kb384a_voice_recordings`, `20261110090000_kb384a_voice_cleanup`) - additive, the deployed app does not use them. `voice_recordings` stays EXCLUDED from backups (`PUBLIC_EXCLUDE`; a dump holding it fails).
 
-**Next work:** `KB-385` (the V3 phone screens) is BUILT and checked in the preview browser at phone width (commits `db636c8` .. `78f3d9e`); next is its draft and the owner's phone check (Gemini cap Rs 10 to be approved). `KB-384b` (Sarvam) is after the V3 release (D108). The time-limit spike is deleted before the V3 release (`npm run check:spike`).
+**Next work (D109):** **Phase A** - the Android app (Capacitor), thermal printing, a full redesign - BEFORE Phase F; each starts with its own PLAN (no Phase A code yet). The pilot (`KB-405`) runs in parallel: the owner bills with production. Voice follow-ups and parked items: `24` §e2.
 
-**Waiting on the owner:** nothing for KB-384a. The 7-day deletion is live in production (job `voice-cleanup-daily`).
+**Waiting on the owner:** the go-ahead for Phase A's first PLAN.
 
 **Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 
@@ -607,6 +607,7 @@ catalog index under 16 ms at 10,000 products ✅.
 | 10 Nov 2026 | **`KB-385` phone check PASSED (owner, draft-v18):** short and long orders, Pause / Resume, playback, add more by voice, the filled-price marks, the airplane-mode queue, Retry after a network drop, Bill Banao and the Devanagari receipt; head-to-head vs Ezy Parchi "mostly the same". **`KB-386` done:** 21.9 kbps measured on his phone recordings in production Storage (was ~129 kbps), a 5-min order ~0.8 MB; accuracy = the owner's real orders (his judgement). All 4 phone recordings were marked billed. | Agent |
 | 10 Nov 2026 | **V3 release prepared, STOPPED before `[deploy]` (the owner approves the release himself).**
 | 10 Nov 2026 | **V3 release APPROVED by the owner: `fa49edb`.** `[deploy]` marker commit made; the owner pushes.
+| 10 Nov 2026 | **V3 LIVE (owner):** `ffb073f` pushed; production deploy `6af30305b41f8bc4b86b42be`. Post-deploy checks passed (new build in Settings, a real voice order billed, `/privacy` 10 Nov in both languages, the `/voice-run` log line); the two-phone session also passed. D109: Phase A before Phase F; the pilot in parallel; voice follow-ups and parked items in `24` §e2. | Agent |
   - **Two-phone session WAIVED for this release** (owner): no shop uses the app yet; rollback is one click; the database is backward-compatible; the bill-number sequence is server-side, unchanged and e2e-covered.
   - It moves to the pilot's start (`17` item 8).
   - **Rollback target:** deploy `6ae4e6a80b53133c1233a15a`. | Agent |
