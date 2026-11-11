@@ -1,0 +1,291 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "Home.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "8 · Home",
+   "w": 390,
+   "x": 1410,
+   "y": 1544
+  },
+  "Main.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "1 · Splash",
+   "w": 390,
+   "x": 0,
+   "y": 300
+  },
+  "Onboarding1.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "2 · Onboarding: speak",
+   "w": 390,
+   "x": 470,
+   "y": 300
+  },
+  "Onboarding2.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "3 · Onboarding: bill",
+   "w": 390,
+   "x": 940,
+   "y": 300
+  },
+  "Onboarding3.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "4 · Onboarding: learns",
+   "w": 390,
+   "x": 1410,
+   "y": 300
+  },
+  "Permissions.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "7 · Permissions",
+   "w": 390,
+   "x": 940,
+   "y": 1544
+  },
+  "ShopSetup.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "6 · Shop setup",
+   "w": 390,
+   "x": 470,
+   "y": 1544
+  },
+  "SignIn.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "5 · Sign in",
+   "w": 390,
+   "x": 0,
+   "y": 1544
+  },
+  "Recording.dc.html": {
+   "x": 0,
+   "y": 3048,
+   "w": 390,
+   "h": 844,
+   "title": "9 · Recording",
+   "is_interactive": true
+  },
+  "Review.dc.html": {
+   "x": 470,
+   "y": 3048,
+   "w": 390,
+   "h": 844,
+   "title": "10 · Check recording",
+   "is_interactive": true
+  },
+  "Generating.dc.html": {
+   "x": 940,
+   "y": 3048,
+   "w": 390,
+   "h": 844,
+   "title": "11 · Making the bill",
+   "is_interactive": true
+  },
+  "BillReview.dc.html": {
+   "x": 1410,
+   "y": 3048,
+   "w": 390,
+   "h": 844,
+   "title": "12 · Review bill (price needed)",
+   "is_interactive": true
+  },
+  "BillSaved.dc.html": {
+   "x": 1880,
+   "y": 3048,
+   "w": 390,
+   "h": 844,
+   "title": "13 · Bill saved",
+   "is_interactive": true
+  },
+  "BillsList.dc.html": {
+   "x": 0,
+   "y": 4552,
+   "w": 390,
+   "h": 844,
+   "title": "14 · Bills",
+   "is_interactive": true
+  },
+  "BillDetail.dc.html": {
+   "x": 470,
+   "y": 4552,
+   "w": 390,
+   "h": 844,
+   "title": "15 · Bill detail",
+   "is_interactive": true
+  },
+  "Items.dc.html": {
+   "x": 940,
+   "y": 4552,
+   "w": 390,
+   "h": 844,
+   "title": "16 · Items",
+   "is_interactive": true
+  },
+  "More.dc.html": {
+   "x": 1410,
+   "y": 4552,
+   "w": 390,
+   "h": 844,
+   "title": "17 · More",
+   "is_interactive": true
+  },
+  "Printer.dc.html": {
+   "x": 1880,
+   "y": 4552,
+   "w": 390,
+   "h": 844,
+   "title": "18 · Printer",
+   "is_interactive": true
+  },
+  "AddItem.dc.html": {
+   "x": 0,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "19 · Add item",
+   "is_interactive": true
+  },
+  "LearnedPrices.dc.html": {
+   "x": 470,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "20 · Learned prices",
+   "is_interactive": true
+  },
+  "BillDesign.dc.html": {
+   "x": 940,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "21 · Bill design",
+   "is_interactive": true
+  },
+  "PrinterSearch.dc.html": {
+   "x": 1410,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "22 · Find printer",
+   "is_interactive": true
+  },
+  "ReadFailed.dc.html": {
+   "x": 1880,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "23 · Couldn’t read",
+   "is_interactive": true
+  },
+  "Offline.dc.html": {
+   "x": 2350,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "24 · Offline",
+   "is_interactive": true
+  },
+  "CancelBill.dc.html": {
+   "x": 2820,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "25 · Cancel bill",
+   "is_interactive": true
+  },
+  "FirstDay.dc.html": {
+   "x": 3290,
+   "y": 6056,
+   "w": 390,
+   "h": 844,
+   "title": "26 · Home · first day",
+   "is_interactive": true
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-11-11T12:02:23Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "view": "canvas"
+ },
+ "notes": {
+  "t1": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Step 2a — First-time flow (English, ink-blue)",
+   "w": 240,
+   "x": 0,
+   "y": 40
+  },
+  "t2": {
+   "kind": "title1",
+   "maxW": 1800,
+   "text": "Sign in → setup → permissions → home",
+   "w": 240,
+   "x": 0,
+   "y": 1284
+  },
+  "t3": {
+   "x": 0,
+   "y": 2788,
+   "text": "Step 2b — Record → bill → print",
+   "kind": "title1",
+   "maxW": 2240
+  },
+  "t4": {
+   "x": 0,
+   "y": 4292,
+   "text": "Step 2c — Bills, items, more, printer",
+   "kind": "title1",
+   "maxW": 2240
+  },
+  "t5": {
+   "x": 0,
+   "y": 5796,
+   "text": "Step 2d — Items, settings, printer & error states",
+   "kind": "title1",
+   "maxW": 3600
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Onboarding1.dc.html",
+  "Onboarding2.dc.html",
+  "Onboarding3.dc.html",
+  "SignIn.dc.html",
+  "ShopSetup.dc.html",
+  "Permissions.dc.html",
+  "Home.dc.html",
+  "Recording.dc.html",
+  "Review.dc.html",
+  "Generating.dc.html",
+  "BillReview.dc.html",
+  "BillSaved.dc.html",
+  "BillsList.dc.html",
+  "BillDetail.dc.html",
+  "Items.dc.html",
+  "More.dc.html",
+  "Printer.dc.html",
+  "AddItem.dc.html",
+  "LearnedPrices.dc.html",
+  "BillDesign.dc.html",
+  "PrinterSearch.dc.html",
+  "ReadFailed.dc.html",
+  "Offline.dc.html",
+  "CancelBill.dc.html",
+  "FirstDay.dc.html"
+ ],
+ "pages": [],
+ "title": "KiranaBill Design — Step 2a: First-time flow"
+}

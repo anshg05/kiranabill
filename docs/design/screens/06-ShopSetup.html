@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>6 · Shop setup - KiranaBill design</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2563D9}a:hover{color:#1F4FA3}
+@keyframes kbUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes kbPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
+@keyframes kbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes kbTwinkle{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes kbBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.kb-up{animation:kbUp .6s cubic-bezier(.2,.7,.2,1) both}.kb-up2{animation:kbUp .6s .12s cubic-bezier(.2,.7,.2,1) both}.kb-up3{animation:kbUp .6s .24s cubic-bezier(.2,.7,.2,1) both}
+.kb-float{animation:kbFloat 4.5s ease-in-out infinite}.kb-ring{animation:kbPulse 1.9s ease-out infinite}
+.kb-tw{animation:kbTwinkle 2.6s ease-in-out infinite}.kb-bar{transform-origin:center;animation:kbBar 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.kb-up,.kb-up2,.kb-up3,.kb-float,.kb-ring,.kb-tw,.kb-bar{animation:none}}
+</style>
+
+<style>body{display:flex;justify-content:center;padding:24px;background:#E9E6DF}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FAF8F3; font-family: 'Inter','Noto Sans Devanagari',sans-serif; color: #263238; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 4px; padding: 12px 12px 0"><a href="05-SignIn.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #263238"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><div style="flex: 1; font-size: 18px; font-weight: 700">Set up your shop</div><div style="background: #EAF2FF; color: #2563D9; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; margin-right: 8px">Almost done</div></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 12px 20px 0">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="shopname" style="font-size: 14px; font-weight: 600">Shop name</label><div style="display: flex; align-items: center; gap: 10px; min-height: 54px; border-radius: 14px; border: 1.5px solid #2563D9; background: #FFFFFF; padding: 0 14px; box-shadow: 0 0 0 4px rgba(37,99,217,.10)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F6A74" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9h16v2a2.7 2.7 0 0 1-5.3 0 2.7 2.7 0 0 1-5.4 0A2.7 2.7 0 0 1 4 11z"/><path d="M5 13v7h14v-7"/><path d="M10 20v-4h4v4"/></svg><input id="shopname" value="Gupta Kirana Store" style="flex: 1; border: 0; outline: none; background: transparent; font-family: 'Inter','Noto Sans Devanagari',sans-serif; font-size: 16px; color: #263238"></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="shopphone" style="font-size: 14px; font-weight: 600">Phone <span style="font-weight: 400; color: #5F6A74">· optional, printed on bills</span></label><div style="display: flex; align-items: center; gap: 10px; min-height: 54px; border-radius: 14px; border: 1px solid #E7E1D8; background: #FFFFFF; padding: 0 14px"><span style="font-size: 16px; color: #5F6A74">+91</span><input id="shopphone" placeholder="98765 43210" style="flex: 1; border: 0; outline: none; background: transparent; font-family: 'Inter','Noto Sans Devanagari',sans-serif; font-size: 16px; color: #263238"></div></div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #5F6A74; letter-spacing: .4px; margin-top: 4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>YOUR BILL WILL LOOK LIKE THIS</div>
+<div class="kb-float" style="display: flex; justify-content: center"><div style="width: 330px; filter: drop-shadow(0 10px 22px rgba(38,50,56,.10))">
+<div style="background: #FFFFFF; border-radius: 4px 4px 0 0; padding: 16px 16px 10px; font-family: 'IBM Plex Mono','Noto Sans Devanagari',monospace; color: #263238">
+<div style="text-align: center; font-weight: 700; font-size: 16px; letter-spacing: .5px">GUPTA KIRANA STORE</div>
+<div style="text-align: center; font-size: 10px; color: #6B7580; margin-top: 4px">10-11-2026 | 1:02 PM</div>
+<div style="border-top: 1px dashed #C9C2B8; margin: 10px 0 8px"></div>
+<div style="font-size: 12px">Bill No. <b>1</b></div>
+<div style="border-top: 1px dashed #C9C2B8; margin: 8px 0 6px"></div>
+<div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding-bottom: 6px; border-bottom: 2px solid #4B5560; font-size: 12px; font-weight: 700"><span>Item</span><span>Qty</span><span style="text-align: right">Rate</span><span style="text-align: right">Amt</span></div>
+<div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 6px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>चावल</span><span style="color: #4B5560">5 kg</span><span style="text-align: right; color: #4B5560">₹68</span><span style="text-align: right; font-weight: 700">₹340</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 6px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>शक्कर</span><span style="color: #4B5560">3 kg</span><span style="text-align: right; color: #4B5560">₹58</span><span style="text-align: right; font-weight: 700">₹174</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 6px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>टाटा नमक</span><span style="color: #4B5560">1 pc</span><span style="text-align: right; color: #4B5560">₹30</span><span style="text-align: right; font-weight: 700">₹30</span></div>
+<div style="border-top: 1px dashed #C9C2B8; margin-top: 6px"></div>
+<div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 16px; font-weight: 700"><span>TOTAL</span><span>₹544</span></div>
+<div style="border-top: 1px dashed #C9C2B8"></div>
+<div style="text-align: center; font-size: 11px; color: #6B7580; padding-top: 8px">Thank You!</div>
+</div><svg width="100%" height="10" viewBox="0 0 280 10" preserveAspectRatio="none" aria-hidden="true" style="display: block"><path d="M0 0 L280 0 L280 2 L275 10 L270 2 L265 10 L260 2 L255 10 L250 2 L245 10 L240 2 L235 10 L230 2 L225 10 L220 2 L215 10 L210 2 L205 10 L200 2 L195 10 L190 2 L185 10 L180 2 L175 10 L170 2 L165 10 L160 2 L155 10 L150 2 L145 10 L140 2 L135 10 L130 2 L125 10 L120 2 L115 10 L110 2 L105 10 L100 2 L95 10 L90 2 L85 10 L80 2 L75 10 L70 2 L65 10 L60 2 L55 10 L50 2 L45 10 L40 2 L35 10 L30 2 L25 10 L20 2 L15 10 L10 2 L5 10 L0 2 Z" fill="#FFFFFF"/></svg></div></div>
+</div>
+<div style="padding: 14px 20px 30px"><a href="07-Permissions.html" style="display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; border-radius: 16px; background: #2563D9; color: #FFFFFF; border: 0; box-shadow: 0 8px 18px rgba(37,99,217,.25); font-size: 16px; font-weight: 600; text-decoration: none">Continue<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+</div>
+
+</body>
+</html>

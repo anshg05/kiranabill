@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 11 Nov 2026 (rev 20) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 11 Nov 2026 (rev 21) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -126,7 +126,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 | A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | todo |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
-| A5 | - | **Full redesign of the app** (owner, 10 Nov 2026, D109) - part of Phase A; its scope is set in its own PLAN before any code. | no | todo |
+| A5 | `KB-411` - `KB-425` | **Full redesign of the app** (owner, 10 Nov 2026, D109) - **its spec is `26-DESIGN-SPEC.md` + `docs/design/`, approved 11 Nov 2026 (D110)**. Build steps and new features: the list below. Twelve conflicts with today's code and docs are open (D110 item 7). | no | todo - spec approved |
 
 **A1 `KB-408` - thermal printing, what it holds**
 - Bluetooth Classic (SPP) **and** BLE printers.
@@ -136,6 +136,11 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 - A clear "printer not connected" message, with **Share** as the fallback (printing never blocks the bill).
 - Android 12+ Bluetooth permissions (`BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`).
 - **Owner tests on real printers** (his own 58 mm and 80 mm).
+
+**A5 - the redesign, what it holds (`26` §10 build steps, then §9 new features; each its own PLAN)**
+- **Riskiest first (owner, 11 Nov 2026):** a Capacitor shell of the CURRENT app + Bluetooth ESC/POS printing of the real receipt (`KB-406`, `KB-408`), planned before the build steps.
+- Build steps: `KB-411` tokens, fonts, icons, motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens (9-13, 23, 24) -> `KB-414` tab screens (8, 14-17, 19-21, 25) -> `KB-415` first-time flow (1-7) -> `KB-416` printer screens (18, 22) with `KB-408`.
+- New features (`26` §9), one ticket each: `KB-417` today's numbers on Home + the 7-day chart · `KB-418` Reprint last · auto-print + copies = `KB-408` · `KB-419` learned-prices review (decision first) · `KB-420` cancel reason chips · `KB-421` first-day Home · `KB-422` address + thank-you note on the bill (decision first) · `KB-423` unfinished-bill card · `KB-424` rotating tips · `KB-425` Android splash, icon, permission screen, offline strip.
 
 **A3 `KB-410` - Play Store, what it holds**
 - Developer account ($25 one-time, `11` SD-008) - **Owner**.
@@ -191,3 +196,4 @@ The strongest available model runs every item that touches **numbers, money, syn
 | Test on his own 58 mm and 80 mm printers | A1 | todo |
 | The Play developer account ($25) | A3 | todo |
 | List the Profile and Settings content | A4 | todo |
+| Answer the redesign's open conflicts (D110 item 7) | A5 | todo |

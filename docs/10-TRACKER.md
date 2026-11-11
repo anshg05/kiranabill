@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 11 Nov 2026 (rev 188) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
+**Last updated:** 11 Nov 2026 (rev 189) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -18,9 +18,9 @@
 
 **Latest (10 Nov 2026):** `KB-384a` (D107, async voice) steps 1-5 built and committed: the storage (`voice_recordings`, the private `recordings` bucket, claim / finish), backups leave recordings and transcripts out, the `/voice-run` background worker, the phone's data side (`src/data/voiceJob.ts`) with the bill chain moved to `src/domain/aiAnswerBill.ts` (replay byte-identical: short 45/49, long 36/36, 0 silent wrong from our code), the 7-day deletion inside Supabase (Edge Function `voice-cleanup`, tested on the Docker stack), and the owner-approved privacy page. **The owner pushed the three migrations to production on 10 Nov 2026** (`20261109100000_kb383_futane_alias`, `20261109110000_kb384a_voice_recordings`, `20261110090000_kb384a_voice_cleanup`) - additive, the deployed app does not use them. `voice_recordings` stays EXCLUDED from backups (`PUBLIC_EXCLUDE`; a dump holding it fails).
 
-**Next work (D109):** **Phase A** - the Android app (Capacitor), thermal printing, a full redesign - BEFORE Phase F; each starts with its own PLAN (no Phase A code yet). The pilot (`KB-405`) runs in parallel: the owner bills with production. Voice follow-ups and parked items: `24` §e2.
+**Next work (D109, D110):** **Phase A.** The redesign's spec is approved (`26-DESIGN-SPEC.md` + `docs/design/`, D110; tickets `KB-411` - `KB-425`). **First: the PLAN for the riskiest piece** - a Capacitor Android shell of the current app + Bluetooth ESC/POS printing of the real receipt as an image (`KB-406`, `KB-408`). No Phase A code before that PLAN is approved. The pilot (`KB-405`) runs in parallel. Voice follow-ups and parked items: `24` §e2.
 
-**Waiting on the owner:** the go-ahead for Phase A's first PLAN.
+**Waiting on the owner:** (1) approval of the Capacitor + printing PLAN; (2) answers to the redesign's 12 open conflicts (D110 item 7) - each is needed before the ticket it touches, not before the shell.
 
 **Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 
@@ -608,6 +608,7 @@ catalog index under 16 ms at 10,000 products ✅.
 | 10 Nov 2026 | **V3 release prepared, STOPPED before `[deploy]` (the owner approves the release himself).**
 | 10 Nov 2026 | **V3 release APPROVED by the owner: `fa49edb`.** `[deploy]` marker commit made; the owner pushes.
 | 10 Nov 2026 | **V3 LIVE (owner):** `ffb073f` pushed; production deploy `6af30305b41f8bc4b86b42be`. Post-deploy checks passed (new build in Settings, a real voice order billed, `/privacy` 10 Nov in both languages, the `/voice-run` log line); the two-phone session also passed. D109: Phase A before Phase F; the pilot in parallel; voice follow-ups and parked items in `24` §e2. | Agent |
+| 11 Nov 2026 | **Phase A redesign spec approved (owner, D110):** `26-DESIGN-SPEC.md` + `docs/design/` (26 screens, logos, canvas) are binding for the look and on-screen behaviour, never for billing / number-safety / voice / sync rules. Added to `00` and `18`'s doc maps; `24` A5 has its spec; tickets `KB-411` - `KB-416` (build steps) and `KB-417` - `KB-425` (new features); `KB-406` - `KB-410` now Phase A todo. 12 conflicts with today's code / docs listed in D110 item 7, not resolved. Docs only. | Agent |
   - **Two-phone session WAIVED for this release** (owner): no shop uses the app yet; rollback is one click; the database is backward-compatible; the bill-number sequence is server-side, unchanged and e2e-covered.
   - It moves to the pilot's start (`17` item 8).
   - **Rollback target:** deploy `6ae4e6a80b53133c1233a15a`. | Agent |

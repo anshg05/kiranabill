@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>15 · Bill detail - KiranaBill design</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2563D9}a:hover{color:#1F4FA3}
+@keyframes kbUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes kbPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
+@keyframes kbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes kbTwinkle{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes kbBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.kb-up{animation:kbUp .6s cubic-bezier(.2,.7,.2,1) both}.kb-up2{animation:kbUp .6s .12s cubic-bezier(.2,.7,.2,1) both}.kb-up3{animation:kbUp .6s .24s cubic-bezier(.2,.7,.2,1) both}
+.kb-float{animation:kbFloat 4.5s ease-in-out infinite}.kb-ring{animation:kbPulse 1.9s ease-out infinite}
+.kb-tw{animation:kbTwinkle 2.6s ease-in-out infinite}.kb-bar{transform-origin:center;animation:kbBar 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.kb-up,.kb-up2,.kb-up3,.kb-float,.kb-ring,.kb-tw,.kb-bar{animation:none}}
+</style>
+
+<style>body{display:flex;justify-content:center;padding:24px;background:#E9E6DF}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FAF8F3; font-family: 'Inter','Noto Sans Devanagari',sans-serif; color: #263238; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 4px; padding: 12px 12px 4px"><a href="14-BillsList.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #263238"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><div style="flex: 1; font-size: 18px; font-weight: 700">Bill 514</div><div style="display: flex; align-items: center; gap: 6px; background: #E7F3EC; color: #2E7D52; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; margin-right: 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2E7D52" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Saved</div></div>
+<div style="padding: 0 20px 8px; font-size: 14px; color: #5F6A74">10 Nov 2026 · 1:02 pm · 38 items · Cash</div>
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4px 20px 0; overflow: hidden">
+<div style="width: 340px; position: relative; filter: drop-shadow(0 10px 22px rgba(38,50,56,.10))"><div style="background: #FFFFFF; border-radius: 4px; padding: 14px 16px 10px; font-family: 'IBM Plex Mono','Noto Sans Devanagari',monospace">
+<div style="text-align: center; font-weight: 700; font-size: 15px; letter-spacing: .5px">GUPTA KIRANA STORE</div>
+<div style="text-align: center; font-size: 11px; color: #6B7580; margin-top: 3px">10-11-2026 | 1:02 PM</div>
+<div style="border-top: 1px dashed #C9C2B8; margin: 8px 0 6px"></div><div style="font-size: 12px">Bill No. <b>514</b></div><div style="border-top: 1px dashed #C9C2B8; margin: 6px 0 4px"></div>
+<div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding-bottom: 5px; border-bottom: 2px solid #4B5560; font-size: 12px; font-weight: 700"><span>Item</span><span>Qty</span><span style="text-align: right">Rate</span><span style="text-align: right">Amt</span></div>
+<div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>चावल</span><span style="color: #4B5560">5 kg</span><span style="text-align: right; color: #4B5560">₹68</span><span style="text-align: right; font-weight: 700">₹340</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>शक्कर</span><span style="color: #4B5560">3 kg</span><span style="text-align: right; color: #4B5560">₹58</span><span style="text-align: right; font-weight: 700">₹174</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>उड़द मोगर</span><span style="color: #4B5560">0.5 kg</span><span style="text-align: right; color: #4B5560">₹130</span><span style="text-align: right; font-weight: 700">₹65</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>मसूर सैगी</span><span style="color: #4B5560">0.5 kg</span><span style="text-align: right; color: #4B5560">₹80</span><span style="text-align: right; font-weight: 700">₹40</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>मूंग दाल</span><span style="color: #4B5560">0.5 kg</span><span style="text-align: right; color: #4B5560">₹100</span><span style="text-align: right; font-weight: 700">₹50</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>तूर दाल</span><span style="color: #4B5560">1 kg</span><span style="text-align: right; color: #4B5560">₹150</span><span style="text-align: right; font-weight: 700">₹150</span></div><div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr; gap: 4px; padding: 5px 0; border-bottom: 1px solid #ECE8E1; font-size: 12px"><span>दाने</span><span style="color: #4B5560">1 kg</span><span style="text-align: right; color: #4B5560">₹150</span><span style="text-align: right; font-weight: 700">₹150</span></div>
+<div style="display: flex; justify-content: center; padding: 10px 0 4px"><a href="#" style="display: flex; align-items: center; gap: 6px; font-family: 'Inter','Noto Sans Devanagari',sans-serif; font-size: 13px; font-weight: 700; text-decoration: none">Show all 38 items</a></div>
+<div style="display: flex; justify-content: space-between; padding: 7px 0; font-size: 16px; font-weight: 700; border-top: 1px dashed #C9C2B8"><span>TOTAL</span><span>₹2,216</span></div>
+</div></div></div>
+<div style="padding: 12px 18px 22px; display: flex; flex-direction: column; gap: 10px">
+<a href="#" style="display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; border-radius: 16px; background: #2563D9; color: #FFFFFF; font-size: 16px; font-weight: 700; text-decoration: none; box-shadow: 0 8px 18px rgba(37,99,217,.25)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>Reprint</a>
+<div style="display: flex; gap: 10px"><a href="#" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 70px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E7E1D8; color: #2E7D52; font-size: 13px; font-weight: 700; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D52" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z"/><path d="M9 9.5c.5 2 2 3.5 4 4l1.2-1.2 1.8.8-.4 1.6c-3.2.3-6.6-3-6.4-6.4L10.8 8l.8 1.8z"/></svg>WhatsApp</a><a href="#" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 70px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E7E1D8; color: #263238; font-size: 13px; font-weight: 700; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#263238" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg>PDF</a><a href="#" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 70px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E7E1D8; color: #263238; font-size: 13px; font-weight: 700; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#263238" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg>Share</a></div>
+<a href="25-CancelBill.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; color: #C0392B; font-size: 15px; font-weight: 700; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v4h4"/></svg>Cancel &amp; make a corrected bill</a>
+</div>
+</div>
+
+</body>
+</html>

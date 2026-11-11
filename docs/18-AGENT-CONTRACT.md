@@ -1,6 +1,6 @@
 # 18 — Agent Contract
 
-**Last updated:** 11 Oct 2026 · **Status:** Binding on every session
+**Last updated:** 11 Nov 2026 · **Status:** Binding on every session
 
 > **If you are an AI agent working on this project, this document is your operating contract.
 > Read it in full before doing anything. It overrides your defaults.**
@@ -43,10 +43,11 @@ on this project.
 | Learning engine | `08-LEARNING-ENGINE.md` |
 | Schema, RLS, migrations | `03-DATA-MODEL.md` |
 | Sync, offline, receipt numbers | `02-ARCHITECTURE.md` §2–4, `16-APP-FLOW.md` §5 |
-| Any screen | `05-FRONTEND-SPEC.md`, `13-DESIGN.md`, `16-APP-FLOW.md` |
+| Any screen | `26-DESIGN-SPEC.md` + the screen's file in `docs/design/` (Phase A, D110 - binding for the look), `05-FRONTEND-SPEC.md`, `13-DESIGN.md` (until D110's open item 1 is settled), `16-APP-FLOW.md` |
 | Manual setup | `17-MANUAL-TASKS.md` |
 | Backups, restore, key custody | `22-BACKUP-AND-RESTORE.md` |
 | V3 voice (the new pipeline, `KB-379` - `KB-387`) | `25-V3-VOICE-DESIGN.md` |
+| Android app, printing, the redesign (Phase A) | `24-ROADMAP.md` §e, `26-DESIGN-SPEC.md`, `docs/design/` |
 
 **Never read `legacy/` in depth.** It is reference only, never imported, never edited, never linted.
 Its useful content is already extracted into `14-LEGACY-REFERENCE.md`. Read that instead.

@@ -1,6 +1,6 @@
 # KiranaBill — Documentation Set
 
-**Last updated:** 31 Oct 2026 (rev 9) · **Phase:** 3 complete, next `KB-370` (the voice bake-off; the pilot waits - D100) - current state: `10-TRACKER.md` "Right now" · **Status:** Phase 4 (pilot)
+**Last updated:** 11 Nov 2026 (rev 10) · **Phase:** V3 voice live (D109); next Phase A - the Android app and the redesign (D110) - current state: `10-TRACKER.md` "Right now" · **Status:** Phase A
 
 ---
 
@@ -72,6 +72,7 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 23 | `23-ACCEPTANCE.md` | The owner's recorded orders, the release gate, the two-phone session |
 | 24 | `24-ROADMAP.md` | **What is next and in what order** - voice accuracy, the pilot, bill features, the Android app; status per item (D100) |
 | 25 | `25-V3-VOICE-DESIGN.md` | **How V3's voice is built** (D104, D105): the pipeline, the prompt, the checks on an AI answer, the recording flow, the Sarvam backup, the tickets `KB-379` - `KB-387` and their finish lines |
+| 26 | `26-DESIGN-SPEC.md` + `docs/design/` | **The Phase A look (D110), binding:** tokens, fonts, components, motion, every screen. `docs/design/` holds the 26 approved screens as HTML (`index.html`), the logos and `canvas.json`. Before building or changing any screen |
 
 ### Documents that don't exist yet, on purpose
 

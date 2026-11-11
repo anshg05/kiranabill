@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>10 · Check recording - KiranaBill design</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2563D9}a:hover{color:#1F4FA3}
+@keyframes kbUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes kbPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.6);opacity:0}}
+@keyframes kbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes kbTwinkle{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+@keyframes kbBar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.kb-up{animation:kbUp .6s cubic-bezier(.2,.7,.2,1) both}.kb-up2{animation:kbUp .6s .12s cubic-bezier(.2,.7,.2,1) both}.kb-up3{animation:kbUp .6s .24s cubic-bezier(.2,.7,.2,1) both}
+.kb-float{animation:kbFloat 4.5s ease-in-out infinite}.kb-ring{animation:kbPulse 1.9s ease-out infinite}
+.kb-tw{animation:kbTwinkle 2.6s ease-in-out infinite}.kb-bar{transform-origin:center;animation:kbBar 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.kb-up,.kb-up2,.kb-up3,.kb-float,.kb-ring,.kb-tw,.kb-bar{animation:none}}
+@keyframes kbShimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+@keyframes kbPrint{from{max-height:0}to{max-height:520px}}
+@keyframes kbPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes kbSlide{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes kbBlink{0%,100%{opacity:1}50%{opacity:.25}}
+.kb-shim{background:linear-gradient(90deg,#EFEBE3 0px,#F8F6F1 60px,#EFEBE3 120px);background-size:400px 100%;animation:kbShimmer 1.4s linear infinite}
+.kb-print{overflow:hidden;animation:kbPrint 2.4s ease-out both}
+.kb-pop{animation:kbPop .6s cubic-bezier(.2,.8,.2,1.2) both}
+.kb-s1{animation:kbSlide .45s .05s both}.kb-s2{animation:kbSlide .45s .15s both}.kb-s3{animation:kbSlide .45s .25s both}.kb-s4{animation:kbSlide .45s .35s both}
+.kb-blink{animation:kbBlink 1.2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.kb-shim,.kb-print,.kb-pop,.kb-s1,.kb-s2,.kb-s3,.kb-s4,.kb-blink{animation:none}}
+</style>
+
+<style>body{display:flex;justify-content:center;padding:24px;background:#E9E6DF}</style>
+</head>
+<body>
+
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FAF8F3; font-family: 'Inter','Noto Sans Devanagari',sans-serif; color: #263238; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 4px; padding: 12px 12px 4px"><a href="09-Recording.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #263238"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><div style="flex: 1; font-size: 18px; font-weight: 700">Check your recording</div></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 18px; padding: 10px 20px 0">
+<div style="background: linear-gradient(170deg, #FFFFFF 0%, #EAF2FF 100%); border: 1px solid #E7E1D8; border-radius: 26px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 18px; box-shadow: 0 10px 26px rgba(38,50,56,.06)">
+<div style="width: 72px; height: 72px; border-radius: 50%; background: #E7F3EC; color: #2E7D52; display: flex; align-items: center; justify-content: center" class="kb-pop"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2E7D52" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></div>
+<div style="text-align: center"><div style="font-size: 22px; font-weight: 800">Recording ready</div><div style="font-size: 15px; color: #5F6A74; margin-top: 4px">0:42 · saved on this phone</div></div>
+<div style="align-self: stretch; background: #FFFFFF; border: 1px solid #E7E1D8; border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 12px">
+<button aria-label="Play recording" style="width: 48px; height: 48px; flex: none; border-radius: 50%; border: 0; background: #2563D9; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></button>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px"><div style="display: flex; align-items: center; justify-content: center; gap: 4px; height: 30px"><div class="" style="width: 5px; height: 10px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.00s"></div><div class="" style="width: 5px; height: 22px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.11s"></div><div class="" style="width: 5px; height: 36px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.22s"></div><div class="" style="width: 5px; height: 18px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.33s"></div><div class="" style="width: 5px; height: 48px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.44s"></div><div class="" style="width: 5px; height: 30px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.55s"></div><div class="" style="width: 5px; height: 56px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.66s"></div><div class="" style="width: 5px; height: 26px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.00s"></div><div class="" style="width: 5px; height: 40px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.11s"></div><div class="" style="width: 5px; height: 14px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.22s"></div><div class="" style="width: 5px; height: 34px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.33s"></div><div class="" style="width: 5px; height: 52px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.44s"></div><div class="" style="width: 5px; height: 20px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.55s"></div><div class="" style="width: 5px; height: 44px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.66s"></div><div class="" style="width: 5px; height: 28px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.00s"></div><div class="" style="width: 5px; height: 58px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.11s"></div><div class="" style="width: 5px; height: 24px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.22s"></div><div class="" style="width: 5px; height: 38px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.33s"></div><div class="" style="width: 5px; height: 12px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.44s"></div><div class="" style="width: 5px; height: 30px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.55s"></div><div class="" style="width: 5px; height: 46px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.66s"></div><div class="" style="width: 5px; height: 18px; border-radius: 3px; background: #B9CDF3; animation-delay: 0.00s"></div></div><div style="display: flex; justify-content: space-between; font-size: 12px; color: #5F6A74; font-variant-numeric: tabular-nums"><span>0:00</span><span>0:42</span></div></div>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E7E1D8; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start"><div style="color: #2563D9; margin-top: 2px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 18a3 3 0 0 0 3 3c2 0 2.5-1.5 3.5-3.5S18 14 18 9a6 6 0 0 0-12 0"/><path d="M10 10a2 2 0 0 1 4 0c0 1.5-2 2-2 4"/></svg></div><div style="font-size: 14px; color: #5F6A74; line-height: 1.5">Listen once if the shop was noisy. You can always re-record — nothing is lost.</div></div>
+</div>
+<div style="padding: 18px 20px 26px; display: flex; flex-direction: column; gap: 10px">
+<a href="11-Generating.html" style="display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; border-radius: 16px; background: #2563D9; color: #FFFFFF; border: 0; box-shadow: 0 8px 18px rgba(37,99,217,.25); font-size: 16px; font-weight: 700; text-decoration: none; "><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>Generate bill</a>
+<div style="display: flex; gap: 10px">
+<a href="09-Recording.html" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E7E1D8; color: #263238; font-size: 15px; font-weight: 700; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v4h4"/></svg>Re-record</a>
+<a href="#" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E7E1D8; color: #263238; font-size: 15px; font-weight: 700; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>Type instead</a>
+</div></div>
+</div>
+
+</body>
+</html>

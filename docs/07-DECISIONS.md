@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 5 Nov 2026 (rev 61) · Supersedes rev 40
+**Last updated:** 11 Nov 2026 (rev 62) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2526,6 +2526,29 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
    - watch ear mis-hearings like A47 in real use (D106);
    - iPhone is untested.
 6. **Parked for later (owner's words):** login (Google vs phone OTP), how the app earns money, distribution.
+
+
+### D110 — The Phase A redesign is approved: `26-DESIGN-SPEC.md` and `docs/design/` are binding for look and on-screen behaviour (owner, 11 Nov 2026) 🟢
+
+1. **Approved (owner, 11 Nov 2026):** `docs/26-DESIGN-SPEC.md` (the design specification) and `docs/design/` (the 26 approved screens as standalone HTML - open `docs/design/index.html` -, the logos `logo-blue2.svg` = main, `logo-light.svg` = splash, `logo-original.svg` = the old icon, and `canvas.json`).
+2. **Binding for how the app LOOKS and BEHAVES ON SCREEN** in Phase A: every screen, colour, font, component and animation (`24` A5).
+3. **It changes no rule.** Billing, number safety, voice (`25`, D101-D108), sync, RLS, backups and the twelve hard rules in `CLAUDE.md` stay exactly as they are. A screen that seems to need a rule change -> stop and ask (`26` §0).
+4. **When the spec and a screen file disagree -> ask the owner; never guess** (`26` header).
+5. **New features shown in the screens are NOT built as part of "the redesign"** (`26` §9): each has its own ticket (`KB-408`, `KB-417` - `KB-425`); the ones touching money, prices or what a printed bill contains need a decision record first (D100 item 5).
+6. **Build order = `26` §10, each step its own PLAN:** `KB-411` tokens + fonts + icons + motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens -> `KB-414` tab screens -> `KB-415` first-time flow -> `KB-416` printer screens with `KB-408` -> the §9 features. The owner asked for **the riskiest piece first**: a Capacitor shell of the current app + Bluetooth ESC/POS printing (`KB-406` / `KB-408`), planned before `KB-411`.
+7. **Open - the conflicts found on 11 Nov 2026, NOT resolved (waiting on the owner):**
+   1. **`13-DESIGN.md` (final for MVP, "the ONLY colours allowed") vs `26`:** 13's tokens (indigo `#2C3E7B`, turmeric, paper `#FBF9F4`, Mukta everywhere) are replaced, and 13 §1 names Inter, gradients and frosted panels as "AI-generated" tells - `26` uses Inter, a blue gradient splash and glass chips. Does `26` supersede 13 (and the look parts of `05-FRONTEND-SPEC.md`) in whole or in part?
+   2. **Fonts = new dependencies:** Inter and Noto Sans Devanagari (bundled) are new packages (`09` §B6 gate); Mukta (`@fontsource/mukta`, KI-19) would go; the receipt keeps IBM Plex Mono but its Devanagari fallback changes from Mukta to Noto Sans Devanagari; the service worker's precached font list (`KB-401`) changes.
+   3. **The price-learning promise vs `08-LEARNING-ENGINE.md`:** onboarding 3 says "Say a price once. Next time, KiranaBill fills it in"; screen 20 says "Approve once" with "You said Rs 45 / kg in 6 bills". Today a NEW product is promoted after 3 sightings (or "Save to catalog", L1); a different price for a catalog product is only SUGGESTED after 3 observations in 30 days, in Catalog, never applied (L3, hard rule 7). One spoken price does not fill the next bill.
+   4. **Cancel reasons:** today 5 preset reasons, one required (`KB-325`, D79: wrong item, wrong price, wrong quantity, customer cancelled, other); screen 25 shows 4 OPTIONAL chips (no "wrong quantity"; "Customer returned").
+   5. **"Saved on this phone as you speak" (screen 9):** today the recorder keeps the audio in memory and saves it to the phone at Stop (or when the app goes to the background); not while speaking. Wording or behaviour?
+   6. **The printed layout:** `26` §5 says the printed bill keeps exactly the Bill 514 table (Item / Qty / Rate / Amt); screens 18 and 21 show a different layout (name + amount, then "2 kg x Rs 45" below; phone under the shop name; "Bill No. 515 · date" on one line). Which one does the printer get at 58 mm and 80 mm?
+   7. **Bill design (screen 21 / 17):** the More row says "Header, footer, bill language" - a bill language is in no doc; "Item names on bill: As spoken" touches `KB-377` (one-script names, Phase F).
+   8. **Price needed, inline (screen 12):** "Price for दाने Rs [ ] Add" does not say whether the number is the rate per unit or the line's total.
+   9. **"Backup & sync: Synced" (screen 17):** backups are the owner's whole-database dumps (D75), not per shop; only sync is per phone. A "Backup" status a shopkeeper sees must be true.
+   10. **Reprints:** `KB-408` says a reprint is marked as a reprint; screens 8, 14 and 15 (Reprint last, per-row print, Reprint) show no reprint mark.
+   11. **Phone and desktop:** `05` says the app must work on phone AND desktop, and iPhone stays the PWA (D100) - the same code. `26` is Android, 360-430 dp. What do the PWA and a desktop browser get?
+   12. **Small:** `26` names screen files `Main.dc.html` etc. (the canvas names); the repo has `docs/design/screens/01-Main.html` etc. The screen files use about 12 colours not in `26` §2.1 (receipt greys `#4B5560` / `#6B7580`, dividers `#ECE8E1` / `#EFEBE3`, panels `#F5F0E6` / `#F8F6F1`, pale blues `#C9D8F5` / `#CFDDF7` / `#BFD0F2`, `#D5CEC3`, `#DCD5CA`, `#E3C47E`) - `26` §2 says never hard-code a colour, so each needs a token or the nearest one. Screen 12 shows "1 pc" for "एक टाटा नमक", where no unit was said (D103: units as said) - to check against today's display in `KB-413`.
 
 ---
 
