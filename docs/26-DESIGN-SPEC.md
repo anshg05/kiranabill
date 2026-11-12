@@ -1,7 +1,7 @@
 # 26 — Design specification: the KiranaBill Android app (Phase A redesign)
 
 Status: APPROVED by the owner (Ansh), 11 Nov 2026. Source of truth for every screen, colour, font, component and animation in the Phase A app.
-Visual reference: `docs/design/` — the 26 approved screens as HTML files (open in a browser at 390 x 844), the logo SVGs, and `canvas.json` (layout and names). When this document and a screen file disagree, ask the owner; do not guess.
+Visual reference: `docs/design/` — the 26 approved screens as HTML files (open in a browser at 390 x 844), the logo SVGs, and `canvas.json` (layout and names). When this document and a screen file disagree, ask the owner; do not guess. **The owner's rulings (§0b) come first.**
 Related: D101 (record-review-generate), D102 (names as said), D103 (units as said), D105 (Devanagari names, recordings 7 days), D106 (ear mis-hearings counted apart), D108 (Sarvam later), D109 (Phase A before F), `24-ROADMAP.md` Phase A, `25-V3-VOICE-DESIGN.md`.
 
 ---
@@ -10,7 +10,23 @@ Related: D101 (record-review-generate), D102 (names as said), D103 (units as sai
 
 - It defines **how the app looks and behaves** on screen. It does **not** change any billing, number-safety, sync, RLS, backup or voice rule. Every rule in `25-V3-VOICE-DESIGN.md`, D102-D108 and the hard rules in CLAUDE.md stays exactly as it is. If a screen here seems to need a rule change, stop and ask.
 - Some screens show **features the app does not have yet**. They are listed in section 9 and need their own tickets (and a decision record where money is involved) before they are built. Do not build them silently as part of "the redesign".
-- Platform: the existing React 19 + Tailwind 4 + lucide-react code, wrapped for Android with Capacitor (D100/SD-008). Android only. Design width 390 dp; must work from 360 dp to 430 dp and with system font scaling up to 130%.
+- Platform: the existing React 19 + Tailwind 4 + lucide-react code, wrapped for Android with Capacitor (D100/SD-008). **The same look is used by the Android app, the PWA and desktop (§0b item 11).** Design width 390 dp; must work from 360 dp to 430 dp and with system font scaling up to 130%.
+
+## 0b. The owner's rulings (12 Nov 2026, D110 item 8) - they override anything below and any screen file
+
+- **General rule:** **The design (`26` + `docs/design/`) decides the LOOK. The app's real data, rules, units, options and wording decide the CONTENT.** Where a screen's sample content differs from the app (units "piece" / "packet", not "pc" / "pkt"; the 5 cancel reasons; the real receipt; the real learning behaviour), the app wins. When unsure, ask the owner - never copy sample content blindly, never drop a real feature to match a picture.
+1. **`26` supersedes `13-DESIGN.md` and the look parts of `05-FRONTEND-SPEC.md`.** Both are marked; their non-visual rules stay binding.
+2. **Fonts approved:** Inter, Noto Sans Devanagari, and IBM Plex Mono (receipt only), all bundled locally; Mukta goes. The dependency gate applies (exact versions, at least two weeks old).
+3. **Learning wording must be true:** "It learns your prices. After a few bills it suggests your price; approve it once, and it fills in from then on." Onboarding 3 and screen 20 use this when built. Hard rule 7 is unchanged.
+4. **Cancel keeps today's 5 reasons, one required (D79).** The design's chips are only the look.
+5. **Screen 9 says "Saved on this phone when you stop"** (true today).
+6. **Printing: 80 mm prints exactly like today's bill** (the Bill 514 table: Item / Qty / Rate / Amt); **58 mm uses the same table fitted to 32 characters**; names wrap, never cut. The two-line layout drawn on screens 18 and 21 is not used.
+7. **"Item names on bill: as spoken" = D102 / D105**; `KB-377` decides the script detail.
+8. **Price needed entry follows today's app** (rate or amount, clearly labelled).
+9. **More shows only "Sync"** with the phone's real sync state - never a per-shop "Backup" status.
+10. **Any bill can be reprinted any time; the printed copy carries a "REPRINT" line** (`KB-408`).
+11. **The new look is for EVERYONE:** the Android app, the PWA and desktop. For now desktop shows the phone layout centred (max about 480 px); a desktop layout is a later ticket.
+12. **Every colour used in `docs/design/` is in the token table** (`26` §2.1); screen files are named `docs/design/screens/NN-Name.html`.
 
 ## 1. Principles (apply to every screen)
 
@@ -52,6 +68,23 @@ Define all tokens once (CSS variables + Tailwind theme). Never hard-code a colou
 | `--kb-disabled-bg` | `#DCE3EE` | Locked Bill Banao |
 | `--kb-disabled-text` | `#4E5A66` | Text on locked button |
 | `--kb-receipt-rule` | `#C9C2B8` | Dashed lines inside the receipt |
+| `--kb-receipt-strong` | `#4B5560` | Receipt: the header rule and the Qty column text |
+| `--kb-receipt-sub` | `#6B7580` | Receipt: secondary text (detail lines) |
+| `--kb-receipt-row` | `#ECE8E1` | Receipt: the light divider between rows |
+| `--kb-shimmer` | `#EFEBE3` | Placeholder lines and their dividers while waiting |
+| `--kb-shimmer-hi` | `#F8F6F1` | The moving highlight of the shimmer |
+| `--kb-warm-end` | `#F5F0E6` | End of the pale-blue -> warm gradient (illustration panels) |
+| `--kb-primary-line` | `#CFDDF7` | Border of pale-blue cards and banners |
+| `--kb-chart-bar` | `#C9D8F5` | The 7-day mini chart's bars (Bills) |
+| `--kb-spinner-track` | `#BFD0F2` | The track of a small spinner |
+| `--kb-wave-played` | `#B9CDF3` | Waveform bars in playback |
+| `--kb-toggle-off` | `#CFC8BD` | A toggle that is off |
+| `--kb-handle` | `#D5CEC3` | A bottom sheet's grab handle |
+| `--kb-slot` | `#DCD5CA` | The paper slot on the waiting screen |
+| `--kb-warn-field` | `#E3C47E` | Border of the inline price field on a Price needed line |
+| `--kb-splash-1`, `--kb-splash-2` | `#5A93F2`, `#3B78E6` | The splash gradient (with `--kb-primary` as its end) |
+
+Not UI tokens: `#FFC72C` / `#1F3A75` live only in the logo SVGs; `#4285F4` `#34A853` `#FBBC05` `#EA4335` only in Google's sign-in mark; `#E9E6DF` is the design board's background around each screen, not part of the app.
 
 Contrast rules: `--kb-sub` text only on `--kb-card` or `--kb-bg` (not on `--kb-muted` at small sizes). White text on `--kb-primary` is fine (about 5:1). Amber is never used for text. Green and red always come with an icon or a word, never colour alone.
 
@@ -142,9 +175,9 @@ Build each once as a reusable component; screens only compose them.
 - **List row**: icon tile 38-42 (pale blue + primary icon), title 15 / 600-700, sub 13, right value or chevron, min height 60, divider between rows inside one card.
 - **Bill card (Bills list)**: icon tile, "Bill 514", "1:02 pm · 38 items", amount 16 / 800, and a separate 42 dp print button. Cancelled: muted tile, red "Cancelled" chip, amount struck through.
 - **Bill line (draft)**: white card radius 16; name 17 / 600 Devanagari; detail line "2 kg × ₹45" 14 sub; amount 17 / 800; 40 dp edit button. Optional marker chip (pale blue, Sparkles 11): **"your price"** (shop price filled) or **"price said earlier"** (repeat, D106 item 3).
-- **Price needed line**: `--kb-warn-bg`, 1.5 px `--kb-warn-border`, TriangleAlert + "Price needed" in `--kb-warn-text`, an inline ₹ price field and an "Add" button. Counts as a pending check.
+- **Price needed line**: `--kb-warn-bg`, 1.5 px `--kb-warn-border`, TriangleAlert + "Price needed" in `--kb-warn-text`, an inline ₹ price field and an "Add" button - rate or amount, clearly labelled, as the app does today (§0b item 8). Counts as a pending check.
 - **Heard card**: Ear icon, "Heard:" + the transcript (13, sub, 2 lines then expand chevron). Shown for every recording (KB-385 rule).
-- **Receipt** (the real bill look, from Bill 514): white paper, mono font, centred shop name 15-17 / 700 letter-spacing .5, date line, dashed rule, "Bill No. **514**", dashed rule, header row Item / Qty / Rate / Amt (bold, 2 px bottom rule), rows with light dividers, Amt bold, rate "—" when unknown, dashed rule, TOTAL bold, dashed rule, "Thank You!" centred. Zig-zag torn bottom edge on screen. **The printed bill keeps exactly this content**; only the width adapts (58 mm ≈ 32 characters, 80 mm ≈ 48 characters; long names wrap, never cut).
+- **Receipt** (the real bill look, from Bill 514): white paper, mono font, centred shop name 15-17 / 700 letter-spacing .5, date line, dashed rule, "Bill No. **514**", dashed rule, header row Item / Qty / Rate / Amt (bold, 2 px bottom rule), rows with light dividers, Amt bold, rate "—" when unknown, dashed rule, TOTAL bold, dashed rule, "Thank You!" centred. Zig-zag torn bottom edge on screen. **The printed bill keeps exactly this content**; only the width adapts (58 mm ≈ 32 characters, 80 mm ≈ 48 characters; long names wrap, never cut). A reprint adds a "REPRINT" line (§0b items 6, 10).
 - **Mic button**: 112-114 dp primary circle, white Mic 46-48, inside a 138 dp tap area with the pulse ring. On Recording: 132 dp inside a 210 dp pale circle.
 - **Waveform**: 5 dp bars, radius 3, primary (live) or `#B9CDF3` (playback).
 - **Tip card**: Lightbulb amber icon; warm variant (`--kb-warn-bg` + warn text, "DID YOU KNOW") or white card variant.
@@ -162,40 +195,40 @@ Build each once as a reusable component; screens only compose them.
 
 ## 7. Screens
 
-Numbers match the canvas and the files in `docs/design/` (file name in brackets). "Today" = what the app already does; "New" = see section 9.
+Numbers match the canvas and the files in `docs/design/screens/` (file name in brackets; `canvas.json` still uses the old `Name.dc.html` names). "Today" = what the app already does; "New" = see section 9.
 
 ### First-time flow
-1. **Splash** (`Main.dc.html`) — Full-screen soft blue gradient (`#5A93F2` → `#3B78E6` → `#2563D9`, 170°), two faint circles, 2 sparkles, light logo 92, "KiranaBill" 36 / 800 white, "Speak the order. Get the bill." 18 / 600, two glass chips (Hindi · Hinglish, 58 / 80 mm), white "Get started" button with blue text, "Made for kirana shops in India". Shown once per install (returning users go straight to Home).
-2-4. **Onboarding 1-3** (`Onboarding1-3.dc.html`) — "1 of 3" + Skip at top; a large illustration panel (440 dp, radius 30, pale-blue → warm gradient, two soft circles, sparkles); dots; title 30 / 800; one line of text; primary button at the bottom (Next / Get started).
+1. **Splash** (`screens/01-Main.html`) — Full-screen soft blue gradient (`#5A93F2` → `#3B78E6` → `#2563D9`, 170°), two faint circles, 2 sparkles, light logo 92, "KiranaBill" 36 / 800 white, "Speak the order. Get the bill." 18 / 600, two glass chips (Hindi · Hinglish, 58 / 80 mm), white "Get started" button with blue text, "Made for kirana shops in India". Shown once per install (returning users go straight to Home).
+2-4. **Onboarding 1-3** (`screens/02-Onboarding.html`, `03-Onboarding.html`, `04-Onboarding.html`) — "1 of 3" + Skip at top; a large illustration panel (440 dp, radius 30, pale-blue → warm gradient, two soft circles, sparkles); dots; title 30 / 800; one line of text; primary button at the bottom (Next / Get started).
    - 1 "Speak the whole order": speech bubble with a real order in Devanagari, mic with pulse, sound bars both sides.
    - 2 "Get a clear bill": the real receipt (3 lines) with floating Print and WhatsApp chips.
-   - 3 "It remembers your prices": "Today you said चीनी 45 रुपये किलो" → "Next time, just say 2 किलो चीनी" → ₹90 with badge "Your price ₹45/kg · remembered". Wording must stay true to the learning engine.
-5. **Sign in** (`SignIn.dc.html`) — Hero panel (300 dp) with logo, "KiranaBill", Speak / Bill / Print chips; "Sign in to your shop"; "One tap. No password to remember."; three trust rows (Bills saved safely to your shop / Bill from more than one phone / We never post to your Google account); "Continue with Google" (white button, Google mark); privacy link. Today: Google sign-in (phone OTP later, parked).
-6. **Shop setup** (`ShopSetup.dc.html`) — "Almost done" badge; shop name field (focused, store icon); phone (+91, optional, "printed on bills"); "YOUR BILL WILL LOOK LIKE THIS" with a live receipt preview using the typed name (Bill No. 1); Continue.
-7. **Permissions** (`Permissions.dc.html`) — Mic ↔ printer illustration; "Two quick permissions"; two cards: Microphone (Required) and Nearby devices (For printing); "Allow" triggers Android's own prompts one after another; "Not now".
-8. **Home** (`Home.dc.html`) — Logo 42 + "Good morning" + shop name, profile button. Hero record card (gradient white → pale blue, radius 26): "Ready for the next order", mic button with pulse, "Tap to record · pause any time", two buttons: Type items / Reprint last. Two stat cards: Today's bills, Today's sales (New). Recent bills (2 rows, See all). Bottom bar.
-26. **Home · first day** (`FirstDay.dc.html`) — Same header; hero "Make your first bill — say any order you know" with mic and an example order; "Get set up · 1 of 3" checklist (Shop details ✓, Connect your printer, Check your item prices). Replaces Home until the first bill is saved or the checklist is dismissed (New).
+   - 3 "It remembers your prices": "Today you said चीनी 45 रुपये किलो" → "Next time, just say 2 किलो चीनी" → ₹90 with badge "Your price ₹45/kg · remembered". Wording: §0b item 3 (true to the learning engine).
+5. **Sign in** (`screens/05-SignIn.html`) — Hero panel (300 dp) with logo, "KiranaBill", Speak / Bill / Print chips; "Sign in to your shop"; "One tap. No password to remember."; three trust rows (Bills saved safely to your shop / Bill from more than one phone / We never post to your Google account); "Continue with Google" (white button, Google mark); privacy link. Today: Google sign-in (phone OTP later, parked).
+6. **Shop setup** (`screens/06-ShopSetup.html`) — "Almost done" badge; shop name field (focused, store icon); phone (+91, optional, "printed on bills"); "YOUR BILL WILL LOOK LIKE THIS" with a live receipt preview using the typed name (Bill No. 1); Continue.
+7. **Permissions** (`screens/07-Permissions.html`) — Mic ↔ printer illustration; "Two quick permissions"; two cards: Microphone (Required) and Nearby devices (For printing); "Allow" triggers Android's own prompts one after another; "Not now".
+8. **Home** (`screens/08-Home.html`) — Logo 42 + "Good morning" + shop name, profile button. Hero record card (gradient white → pale blue, radius 26): "Ready for the next order", mic button with pulse, "Tap to record · pause any time", two buttons: Type items / Reprint last. Two stat cards: Today's bills, Today's sales (New). Recent bills (2 rows, See all). Bottom bar.
+26. **Home · first day** (`screens/26-FirstDay.html`) — Same header; hero "Make your first bill — say any order you know" with mic and an example order; "Get set up · 1 of 3" checklist (Shop details ✓, Connect your printer, Check your item prices). Replaces Home until the first bill is saved or the checklist is dismissed (New).
 
 ### Record → bill (D101; behaviour unchanged from KB-385)
-9. **Recording** (`Recording.dc.html`) — Top bar "New voice bill"; red "Recording" chip with blinking dot; timer 64 / 800 "00:42" and "of 5:00"; big mic in a pale circle with pulse; live waveform; tip "Say item · quantity · price. Pause if a customer talks."; Pause (secondary) + Stop (primary, wider); "Saved on this phone as you speak" (ok colour). Paused: timer holds, chip becomes "Paused", Pause becomes Resume. 4:30 one-line warning; auto-stop at 5:00.
-10. **Check recording** (`Review.dc.html`) — Card with tick pop, "Recording ready", "0:42 · saved on this phone", play bar with waveform and times; note "Listen once if the shop was noisy… nothing is lost"; Generate bill (primary with Sparkles); Re-record / Type instead.
-11. **Making your bill** (`Generating.dc.html`) — The waiting screen. Paper slot bar; a receipt printing downward in the real style with the shop name and shimmering placeholder rows; "Reading your order…" + elapsed seconds "· long orders take a little longer" (true); a warm "DID YOU KNOW" tip that rotates every ~6 s among 3-4 true tips (price memory, pause, Retry never re-speaks…); "Recording safe on this phone"; "Add items by hand meanwhile". No fake stages. Fails → screen 23. Offline → screen 24.
-12. **Review bill** (`BillReview.dc.html`) — Top bar "New bill" + "Draft · not saved"; Heard card; lines slide in one by one; marker chips on filled prices; a Price needed line with inline price entry; dashed "Add item"; sticky bottom panel: "Total so far · N items", amber "1 item needs a price", total 30 / 800; "More" (mic, add by voice) + Bill Banao (locked while any check is pending, primary when clear). All existing checks, warnings (Theek hai) and the BLOCK flag (KB-382) keep their current rules; Theek hai keeps its card style, BLOCK has no Theek hai button.
-13. **Bill saved** (`BillSaved.dc.html`) — Tick pop (ok), "Bill 515 saved", "4 items · Cash · 1:18 pm"; the receipt prints out (1.2 s); Print bill (primary); WhatsApp / PDF / Share tiles; "Start a new bill". If "Print after Bill Banao" is on, printing starts automatically and the button shows progress.
+9. **Recording** (`screens/09-Recording.html`) — Top bar "New voice bill"; red "Recording" chip with blinking dot; timer 64 / 800 "00:42" and "of 5:00"; big mic in a pale circle with pulse; live waveform; tip "Say item · quantity · price. Pause if a customer talks."; Pause (secondary) + Stop (primary, wider); "Saved on this phone when you stop" (ok colour; §0b item 5). Paused: timer holds, chip becomes "Paused", Pause becomes Resume. 4:30 one-line warning; auto-stop at 5:00.
+10. **Check recording** (`screens/10-Review.html`) — Card with tick pop, "Recording ready", "0:42 · saved on this phone", play bar with waveform and times; note "Listen once if the shop was noisy… nothing is lost"; Generate bill (primary with Sparkles); Re-record / Type instead.
+11. **Making your bill** (`screens/11-Generating.html`) — The waiting screen. Paper slot bar; a receipt printing downward in the real style with the shop name and shimmering placeholder rows; "Reading your order…" + elapsed seconds "· long orders take a little longer" (true); a warm "DID YOU KNOW" tip that rotates every ~6 s among 3-4 true tips (price memory, pause, Retry never re-speaks…); "Recording safe on this phone"; "Add items by hand meanwhile". No fake stages. Fails → screen 23. Offline → screen 24.
+12. **Review bill** (`screens/12-BillReview.html`) — Top bar "New bill" + "Draft · not saved"; Heard card; lines slide in one by one; marker chips on filled prices; a Price needed line with inline price entry; dashed "Add item"; sticky bottom panel: "Total so far · N items", amber "1 item needs a price", total 30 / 800; "More" (mic, add by voice) + Bill Banao (locked while any check is pending, primary when clear). All existing checks, warnings (Theek hai) and the BLOCK flag (KB-382) keep their current rules; Theek hai keeps its card style, BLOCK has no Theek hai button.
+13. **Bill saved** (`screens/13-BillSaved.html`) — Tick pop (ok), "Bill 515 saved", "4 items · Cash · 1:18 pm"; the receipt prints out (1.2 s); Print bill (primary); WhatsApp / PDF / Share tiles; "Start a new bill". If "Print after Bill Banao" is on, printing starts automatically and the button shows progress.
 
 ### Bills, items, more, printer
-14. **Bills** (`BillsList.dc.html`) — Title; search (bill number, item or amount); chips Today / Yesterday / This week / Pick dates; amber "Unfinished bill · N items · 1 price needed" card when a draft exists (New placement; the draft itself exists today); "Today · 12 bills · ₹8,450" card with a 7-day mini bar chart (New); bill cards with per-row print button; cancelled bills struck through. Bottom bar.
-15. **Bill detail** (`BillDetail.dc.html`) — "Bill 514" + Saved badge; date · items · payment; the receipt (first ~7 rows + "Show all 38 items" + TOTAL); Reprint (primary); WhatsApp / PDF / Share; red text "Cancel & make a corrected bill" → screen 25. Today: cancel and reissue exist.
-16. **Items** (`Items.dc.html`) — Title + "+ Add"; search ("items or what customers say"); chips All / Has price / Needs price / Learned; "N prices learned from your bills" banner → screen 20; one card list: initial tile, Devanagari name, English name + other names, "learned" chip, price per unit, or an amber "Add price" button.
-17. **More** (`More.dc.html`) — Title; shop card (logo 52, name, phone · Edit shop details); BILLING group: Printer (status), Bill design, Items & prices; APP group: App language (value), Backup & sync (Synced), Help & support, Privacy; Sign out (red, bordered). Bottom bar. Not drawn but required, same row/form pattern: Edit shop details, App language picker (English / हिन्दी / Hinglish), Help & support, Privacy page link, account deletion request.
-18. **Printer** (`Printer.dc.html`) — Connected printer card (name, "Connected · Bluetooth" green dot, Change → screen 22); PAPER SIZE segmented 58 mm · 2 inch / 80 mm · 3 inch; toggles: Print after Bill Banao (New), Show shop phone; Copies stepper (New); live 58/80 mm receipt preview with "Long lines wrap so nothing is cut off"; Test print (primary). States: not connected (card says "No printer" + "Choose printer"), Bluetooth off (banner + "Turn on Bluetooth"), test print failed (warning banner + Retry).
-19. **Add item** (`AddItem.dc.html`) — Name (focused); "Other names customers say" removable chips + "Add name"; Sold by segmented (kg / gram / litre / piece / packet); price per unit (₹ prefix, "Fills in when you don't say a price"); pack size optional; Save item. Edit item = same screen filled, plus Archive.
-20. **Prices from your bills** (`LearnedPrices.dc.html`) — Helper line; one card per learned price ("You said ₹45 / kg · in 6 bills") with Use this price / Change; amber conflict card when two prices were heard (choose one; never auto-pick) (New presentation); "Use all N prices". Must follow the learning engine's real data.
-21. **Bill design** (`BillDesign.dc.html`) — Live receipt preview on a muted panel; shop name; address line (optional, New); thank-you note (New); toggle Show shop phone; "Item names on bill: As spoken"; Save.
-22. **Choose printer** (`PrinterSearch.dc.html`) — Pulsing Bluetooth "Looking for printers…"; FOUND NEARBY list (paired printers first, with paper size if known) each with Connect; tip "Not listed? Pair it once in Bluetooth settings (PIN 0000 or 1234)"; Bluetooth settings / Search again. Must work with any ESC/POS Bluetooth printer (KB-408), not only the owner's.
-23. **Couldn't read the order** (`ReadFailed.dc.html`) — Warning tile pops; "Couldn't read the order"; one true reason sentence (connection dropped / service busy / hourly limit / session expired → sign-in prompt); recording card "Saved on this phone"; Try again (same recording); Type instead / Record again.
-24. **Offline** (`Offline.dc.html`) — Ink strip "No internet · billing still works"; pale-blue card "Order saved · will send when online" + small spinner; typing items still works; bottom panel "Waiting for 1 recording"; Bill Banao locked until the recording is billed or removed (existing rule).
-25. **Cancel bill** (`CancelBill.dc.html`) — Sheet over Bill detail: "Cancel Bill 514?"; explanation (stays in history as cancelled; a corrected bill opens with the same items); optional reason chips (New); "Why not just edit?" explanation; red "Cancel & make corrected bill"; "Keep Bill 514".
+14. **Bills** (`screens/14-BillsList.html`) — Title; search (bill number, item or amount); chips Today / Yesterday / This week / Pick dates; amber "Unfinished bill · N items · 1 price needed" card when a draft exists (New placement; the draft itself exists today); "Today · 12 bills · ₹8,450" card with a 7-day mini bar chart (New); bill cards with per-row print button; cancelled bills struck through. Bottom bar.
+15. **Bill detail** (`screens/15-BillDetail.html`) — "Bill 514" + Saved badge; date · items · payment; the receipt (first ~7 rows + "Show all 38 items" + TOTAL); Reprint (primary); WhatsApp / PDF / Share; red text "Cancel & make a corrected bill" → screen 25. Today: cancel and reissue exist.
+16. **Items** (`screens/16-Items.html`) — Title + "+ Add"; search ("items or what customers say"); chips All / Has price / Needs price / Learned; "N prices learned from your bills" banner → screen 20; one card list: initial tile, Devanagari name, English name + other names, "learned" chip, price per unit, or an amber "Add price" button.
+17. **More** (`screens/17-More.html`) — Title; shop card (logo 52, name, phone · Edit shop details); BILLING group: Printer (status), Bill design, Items & prices; APP group: App language (value), Sync (the phone's real sync state; §0b item 9), Help & support, Privacy; Sign out (red, bordered). Bottom bar. Not drawn but required, same row/form pattern: Edit shop details, App language picker (English / हिन्दी / Hinglish), Help & support, Privacy page link, account deletion request.
+18. **Printer** (`screens/18-Printer.html`) — Connected printer card (name, "Connected · Bluetooth" green dot, Change → screen 22); PAPER SIZE segmented 58 mm · 2 inch / 80 mm · 3 inch; toggles: Print after Bill Banao (New), Show shop phone; Copies stepper (New); live 58/80 mm receipt preview with "Long lines wrap so nothing is cut off"; Test print (primary). States: not connected (card says "No printer" + "Choose printer"), Bluetooth off (banner + "Turn on Bluetooth"), test print failed (warning banner + Retry).
+19. **Add item** (`screens/19-AddItem.html`) — Name (focused); "Other names customers say" removable chips + "Add name"; Sold by segmented (kg / gram / litre / piece / packet); price per unit (₹ prefix, "Fills in when you don't say a price"); pack size optional; Save item. Edit item = same screen filled, plus Archive.
+20. **Prices from your bills** (`screens/20-LearnedPrices.html`) — Helper line; one card per learned price ("You said ₹45 / kg · in 6 bills") with Use this price / Change; amber conflict card when two prices were heard (choose one; never auto-pick) (New presentation); "Use all N prices". Must follow the learning engine's real data; wording §0b item 3.
+21. **Bill design** (`screens/21-BillDesign.html`) — Live receipt preview on a muted panel; shop name; address line (optional, New); thank-you note (New); toggle Show shop phone; "Item names on bill: As spoken"; Save.
+22. **Choose printer** (`screens/22-PrinterSearch.html`) — Pulsing Bluetooth "Looking for printers…"; FOUND NEARBY list (paired printers first, with paper size if known) each with Connect; tip "Not listed? Pair it once in Bluetooth settings (PIN 0000 or 1234)"; Bluetooth settings / Search again. Must work with any ESC/POS Bluetooth printer (KB-408), not only the owner's.
+23. **Couldn't read the order** (`screens/23-ReadFailed.html`) — Warning tile pops; "Couldn't read the order"; one true reason sentence (connection dropped / service busy / hourly limit / session expired → sign-in prompt); recording card "Saved on this phone"; Try again (same recording); Type instead / Record again.
+24. **Offline** (`screens/24-Offline.html`) — Ink strip "No internet · billing still works"; pale-blue card "Order saved · will send when online" + small spinner; typing items still works; bottom panel "Waiting for 1 recording"; Bill Banao locked until the recording is billed or removed (existing rule).
+25. **Cancel bill** (`screens/25-CancelBill.html`) — Sheet over Bill detail: "Cancel Bill 514?"; explanation (stays in history as cancelled; a corrected bill opens with the same items); the reason chips = today's 5 reasons, one required (D79; §0b item 4); "Why not just edit?" explanation; red "Cancel & make corrected bill"; "Keep Bill 514".
 
 ## 8. Copy and language
 
@@ -212,7 +245,7 @@ Each item needs a ticket in 06/24; the ones touching money or bill content need 
 2. "Reprint last" on Home.
 3. Print after Bill Banao (auto-print) and Copies (printing ticket KB-408).
 4. Learned-prices review screen with the two-prices conflict choice.
-5. Cancel reason chips.
+5. ~~Cancel reason chips~~ - not new: today's 5 reasons stay (§0b item 4); only their look changes.
 6. First-day Home with the setup checklist.
 7. Address line and thank-you note on the bill (changes printed content: decision record first).
 8. Unfinished-bill card on Bills.

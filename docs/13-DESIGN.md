@@ -1,6 +1,9 @@
 # 13 — Design
 
-**Last updated:** 9 Oct 2026 (rev 6) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 12 Nov 2026 (rev 7) · **Status:** **SUPERSEDED for the look by `26-DESIGN-SPEC.md` (owner, 12 Nov 2026, D110 item 8.1)**
+
+> **What is superseded:** colours (§3, §8 tokens), typography (§4), layout (§5), button styles (§6b), the visual "forbidden" items in §7 (gradients, shadows, animation, illustrations, the blue accent), icons (§9) and the app icon (§10) - `26` replaces them.
+> **Still binding (content and number safety, not look):** §6 (the thesis rules: the total is the biggest number, flags are sentences, offline is calm), §6c (number display: `—` never `₹0` for an unpriced line, tabular figures), §6d (the Devanagari sub-label in search lists), and from §7: no `₹0` for an unpriced line, no emoji as UI icons, labels never clip inside a button.
 
 ---
 

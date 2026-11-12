@@ -1,6 +1,8 @@
 # 05 — Frontend Specification
 
-**Last updated:** 20 Oct 2026 (rev 27) · **Status:** Final for MVP · Validated against mockups
+**Last updated:** 12 Nov 2026 (rev 28) · **Status:** Final for MVP behaviour · **its LOOK parts are superseded by `26-DESIGN-SPEC.md` (owner, 12 Nov 2026, D110 item 8.1)**
+
+> **Superseded:** how screens look (colours, fonts, sizes, layout drawings and visual descriptions). **Still binding:** what every screen does and holds - flows, states, behaviour, the implementation notes, §8 non-negotiable UI rules, §9 accessibility and §10 performance budgets. Phone AND desktop stays true: for now desktop shows the phone layout centred, max about 480 px (D110 item 8.11).
 
 React + TypeScript + Vite. Web and installable PWA first; Android via Capacitor afterwards.
 Must work on **both phone and desktop**.

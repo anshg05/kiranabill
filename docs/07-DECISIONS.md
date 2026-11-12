@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 11 Nov 2026 (rev 62) · Supersedes rev 40
+**Last updated:** 12 Nov 2026 (rev 63) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2536,19 +2536,44 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 4. **When the spec and a screen file disagree -> ask the owner; never guess** (`26` header).
 5. **New features shown in the screens are NOT built as part of "the redesign"** (`26` §9): each has its own ticket (`KB-408`, `KB-417` - `KB-425`); the ones touching money, prices or what a printed bill contains need a decision record first (D100 item 5).
 6. **Build order = `26` §10, each step its own PLAN:** `KB-411` tokens + fonts + icons + motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens -> `KB-414` tab screens -> `KB-415` first-time flow -> `KB-416` printer screens with `KB-408` -> the §9 features. The owner asked for **the riskiest piece first**: a Capacitor shell of the current app + Bluetooth ESC/POS printing (`KB-406` / `KB-408`), planned before `KB-411`.
-7. **Open - the conflicts found on 11 Nov 2026, NOT resolved (waiting on the owner):**
-   1. **`13-DESIGN.md` (final for MVP, "the ONLY colours allowed") vs `26`:** 13's tokens (indigo `#2C3E7B`, turmeric, paper `#FBF9F4`, Mukta everywhere) are replaced, and 13 §1 names Inter, gradients and frosted panels as "AI-generated" tells - `26` uses Inter, a blue gradient splash and glass chips. Does `26` supersede 13 (and the look parts of `05-FRONTEND-SPEC.md`) in whole or in part?
-   2. **Fonts = new dependencies:** Inter and Noto Sans Devanagari (bundled) are new packages (`09` §B6 gate); Mukta (`@fontsource/mukta`, KI-19) would go; the receipt keeps IBM Plex Mono but its Devanagari fallback changes from Mukta to Noto Sans Devanagari; the service worker's precached font list (`KB-401`) changes.
-   3. **The price-learning promise vs `08-LEARNING-ENGINE.md`:** onboarding 3 says "Say a price once. Next time, KiranaBill fills it in"; screen 20 says "Approve once" with "You said Rs 45 / kg in 6 bills". Today a NEW product is promoted after 3 sightings (or "Save to catalog", L1); a different price for a catalog product is only SUGGESTED after 3 observations in 30 days, in Catalog, never applied (L3, hard rule 7). One spoken price does not fill the next bill.
-   4. **Cancel reasons:** today 5 preset reasons, one required (`KB-325`, D79: wrong item, wrong price, wrong quantity, customer cancelled, other); screen 25 shows 4 OPTIONAL chips (no "wrong quantity"; "Customer returned").
-   5. **"Saved on this phone as you speak" (screen 9):** today the recorder keeps the audio in memory and saves it to the phone at Stop (or when the app goes to the background); not while speaking. Wording or behaviour?
-   6. **The printed layout:** `26` §5 says the printed bill keeps exactly the Bill 514 table (Item / Qty / Rate / Amt); screens 18 and 21 show a different layout (name + amount, then "2 kg x Rs 45" below; phone under the shop name; "Bill No. 515 · date" on one line). Which one does the printer get at 58 mm and 80 mm?
-   7. **Bill design (screen 21 / 17):** the More row says "Header, footer, bill language" - a bill language is in no doc; "Item names on bill: As spoken" touches `KB-377` (one-script names, Phase F).
-   8. **Price needed, inline (screen 12):** "Price for दाने Rs [ ] Add" does not say whether the number is the rate per unit or the line's total.
-   9. **"Backup & sync: Synced" (screen 17):** backups are the owner's whole-database dumps (D75), not per shop; only sync is per phone. A "Backup" status a shopkeeper sees must be true.
-   10. **Reprints:** `KB-408` says a reprint is marked as a reprint; screens 8, 14 and 15 (Reprint last, per-row print, Reprint) show no reprint mark.
-   11. **Phone and desktop:** `05` says the app must work on phone AND desktop, and iPhone stays the PWA (D100) - the same code. `26` is Android, 360-430 dp. What do the PWA and a desktop browser get?
-   12. **Small:** `26` names screen files `Main.dc.html` etc. (the canvas names); the repo has `docs/design/screens/01-Main.html` etc. The screen files use about 12 colours not in `26` §2.1 (receipt greys `#4B5560` / `#6B7580`, dividers `#ECE8E1` / `#EFEBE3`, panels `#F5F0E6` / `#F8F6F1`, pale blues `#C9D8F5` / `#CFDDF7` / `#BFD0F2`, `#D5CEC3`, `#DCD5CA`, `#E3C47E`) - `26` §2 says never hard-code a colour, so each needs a token or the nearest one. Screen 12 shows "1 pc" for "एक टाटा नमक", where no unit was said (D103: units as said) - to check against today's display in `KB-413`.
+7. **The conflicts found on 11 Nov 2026 - each now has the owner's ruling (item 8):**
+   1. **`13-DESIGN.md` (final for MVP, "the ONLY colours allowed") vs `26`:** 13's tokens (indigo `#2C3E7B`, turmeric, paper `#FBF9F4`, Mukta everywhere) are replaced, and 13 §1 names Inter, gradients and frosted panels as "AI-generated" tells - `26` uses Inter, a blue gradient splash and glass chips. Does `26` supersede 13 (and the look parts of `05-FRONTEND-SPEC.md`) in whole or in part? **Ruling (12 Nov 2026):** see item 8.1.
+   2. **Fonts = new dependencies:** Inter and Noto Sans Devanagari (bundled) are new packages (`09` §B6 gate); Mukta (`@fontsource/mukta`, KI-19) would go; the receipt keeps IBM Plex Mono but its Devanagari fallback changes from Mukta to Noto Sans Devanagari; the service worker's precached font list (`KB-401`) changes. **Ruling (12 Nov 2026):** see item 8.2.
+   3. **The price-learning promise vs `08-LEARNING-ENGINE.md`:** onboarding 3 says "Say a price once. Next time, KiranaBill fills it in"; screen 20 says "Approve once" with "You said Rs 45 / kg in 6 bills". Today a NEW product is promoted after 3 sightings (or "Save to catalog", L1); a different price for a catalog product is only SUGGESTED after 3 observations in 30 days, in Catalog, never applied (L3, hard rule 7). One spoken price does not fill the next bill. **Ruling (12 Nov 2026):** see item 8.3.
+   4. **Cancel reasons:** today 5 preset reasons, one required (`KB-325`, D79: wrong item, wrong price, wrong quantity, customer cancelled, other); screen 25 shows 4 OPTIONAL chips (no "wrong quantity"; "Customer returned"). **Ruling (12 Nov 2026):** see item 8.4.
+   5. **"Saved on this phone as you speak" (screen 9):** today the recorder keeps the audio in memory and saves it to the phone at Stop (or when the app goes to the background); not while speaking. Wording or behaviour? **Ruling (12 Nov 2026):** see item 8.5.
+   6. **The printed layout:** `26` §5 says the printed bill keeps exactly the Bill 514 table (Item / Qty / Rate / Amt); screens 18 and 21 show a different layout (name + amount, then "2 kg x Rs 45" below; phone under the shop name; "Bill No. 515 · date" on one line). Which one does the printer get at 58 mm and 80 mm? **Ruling (12 Nov 2026):** see item 8.6.
+   7. **Bill design (screen 21 / 17):** the More row says "Header, footer, bill language" - a bill language is in no doc; "Item names on bill: As spoken" touches `KB-377` (one-script names, Phase F). **Ruling (12 Nov 2026):** see item 8.7.
+   8. **Price needed, inline (screen 12):** "Price for दाने Rs [ ] Add" does not say whether the number is the rate per unit or the line's total. **Ruling (12 Nov 2026):** see item 8.8.
+   9. **"Backup & sync: Synced" (screen 17):** backups are the owner's whole-database dumps (D75), not per shop; only sync is per phone. A "Backup" status a shopkeeper sees must be true. **Ruling (12 Nov 2026):** see item 8.9.
+   10. **Reprints:** `KB-408` says a reprint is marked as a reprint; screens 8, 14 and 15 (Reprint last, per-row print, Reprint) show no reprint mark. **Ruling (12 Nov 2026):** see item 8.10.
+   11. **Phone and desktop:** `05` says the app must work on phone AND desktop, and iPhone stays the PWA (D100) - the same code. `26` is Android, 360-430 dp. What do the PWA and a desktop browser get? **Ruling (12 Nov 2026):** see item 8.11.
+   12. **Small:** `26` names screen files `Main.dc.html` etc. (the canvas names); the repo has `docs/design/screens/01-Main.html` etc. The screen files use about 12 colours not in `26` §2.1 (receipt greys `#4B5560` / `#6B7580`, dividers `#ECE8E1` / `#EFEBE3`, panels `#F5F0E6` / `#F8F6F1`, pale blues `#C9D8F5` / `#CFDDF7` / `#BFD0F2`, `#D5CEC3`, `#DCD5CA`, `#E3C47E`) - `26` §2 says never hard-code a colour, so each needs a token or the nearest one. Screen 12 shows "1 pc" for "एक टाटा नमक", where no unit was said (D103: units as said) - to check against today's display in `KB-413`. **Ruling (12 Nov 2026):** see item 8.12.
+8. **The owner's rulings (12 Nov 2026), binding and also written into `26` §0b:**
+   - **General rule:** **The design (`26` + `docs/design/`) decides the LOOK. The app's real data, rules, units, options and wording decide the CONTENT.** Where a screen's sample content differs from the app (units "piece" / "packet", not "pc" / "pkt"; the 5 cancel reasons; the real receipt; the real learning behaviour), the app wins. When unsure, ask the owner - never copy sample content blindly, never drop a real feature to match a picture.
+   1. **`26` supersedes `13-DESIGN.md` and the look parts of `05-FRONTEND-SPEC.md`.** Both are marked; their non-visual rules stay binding.
+   2. **Fonts approved:** Inter, Noto Sans Devanagari, and IBM Plex Mono (receipt only), all bundled locally; Mukta goes. The dependency gate applies (exact versions, at least two weeks old).
+   3. **Learning wording must be true:** "It learns your prices. After a few bills it suggests your price; approve it once, and it fills in from then on." Onboarding 3 and screen 20 use this when built. Hard rule 7 is unchanged.
+   4. **Cancel keeps today's 5 reasons, one required (D79).** The design's chips are only the look.
+   5. **Screen 9 says "Saved on this phone when you stop"** (true today).
+   6. **Printing: 80 mm prints exactly like today's bill** (the Bill 514 table: Item / Qty / Rate / Amt); **58 mm uses the same table fitted to 32 characters**; names wrap, never cut. The two-line layout drawn on screens 18 and 21 is not used.
+   7. **"Item names on bill: as spoken" = D102 / D105**; `KB-377` decides the script detail.
+   8. **Price needed entry follows today's app** (rate or amount, clearly labelled).
+   9. **More shows only "Sync"** with the phone's real sync state - never a per-shop "Backup" status.
+   10. **Any bill can be reprinted any time; the printed copy carries a "REPRINT" line** (`KB-408`).
+   11. **The new look is for EVERYONE:** the Android app, the PWA and desktop. For now desktop shows the phone layout centred (max about 480 px); a desktop layout is a later ticket.
+   12. **Every colour used in `docs/design/` is in the token table** (`26` §2.1); screen files are named `docs/design/screens/NN-Name.html`.
+
+
+### D111 — The Android shell: name, application id, how it loads, how it signs in, how it is installed (owner, 12 Nov 2026) 🟢
+
+1. **App name "Kirana Voice Bill"; application id `com.kiranavoicebill.app`** (permanent on the Play Store; the owner is checking the Play Store and the domain - anything that blocks it is flagged before `KB-410`).
+2. **Android versions:** Capacitor 8 (`@capacitor/*` 8.5.3, pinned): **minimum Android 7.0 (API 24)**, **target and compile SDK 36**. Java 21 (Android Studio's bundled JDK).
+3. **For testing, the shell loads the release-draft site (`server.url`)**: same-origin `/voice` and `/voice-run`, the service worker and Supabase work unchanged; web changes reach the phone with a draft deploy, no reinstall. **`KB-410` decides production** (bundled or remote).
+4. **Sign-in: a Chrome Custom Tab + PKCE** with official plugins (`@capacitor/browser`, `@capacitor/app`); Supabase redirects to the app, the app exchanges the code. **`KB-409` gets its own short PLAN, strongest model (D33).**
+5. **Native code in Kotlin only.** Bluetooth Classic printing is a small plugin of our own inside `android/` (no maintained Capacitor 8 plugin exists); BLE uses `@capacitor-community/bluetooth-le` 8.3.0. ESC/POS bytes are our own code (`ESC @`, `GS v 0` in bands, `ESC d`, `GS V`; an `ESC *` fallback).
+6. **The APK reaches the owner's phone by USB** (`adb install -r`, debug build).
+7. **Build steps S1-S6** (the plan approved 12 Nov 2026): S1 the shell, S2 `KB-409` sign-in, S3 the encoder + the receipt image (384 / 576 dots), S4 Classic + BLE sending, S5 the minimal print UI, S6 the owner's test on his two printers. Every draft deploy and every spend is asked first (Gemini cap Rs 2 for the S1 voice order approved).
 
 ---
 
