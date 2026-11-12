@@ -2567,8 +2567,8 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 
 ### D111 — The Android shell: name, application id, how it loads, how it signs in, how it is installed (owner, 12 Nov 2026) 🟢
 
-1. **App name "Kirana Voice Bill"; application id `com.kiranavoicebill.app`** (permanent on the Play Store; the owner is checking the Play Store and the domain - anything that blocks it is flagged before `KB-410`).
-2. **Android versions:** Capacitor 8 (`@capacitor/*` 8.5.3, pinned): **minimum Android 7.0 (API 24)**, **target and compile SDK 36**. Java 21 (Android Studio's bundled JDK).
+1. **App name "Kirana Voice Bill" - FINAL (owner, 12 Nov 2026); application id `com.kiranavoicebill.app`** (permanent on the Play Store). Checked 12 Nov 2026: the id shows "Not Found" on the Play Store, and the domain `kiranavoicebill.com` is available (the owner may buy it later; not needed now).
+2. **Android versions:** Capacitor 8 (`@capacitor/*` 8.5.3, pinned): **minimum Android 7.0 (API 24)**, **target and compile SDK 36**. Java 21 for Gradle: Capacitor 8.5.3's template uses Gradle 8.14.3 + AGP 8.13.0, which cannot RUN on Java 25 (Android Studio's bundled JBR on 12 Nov 2026), so a separate JDK 21 is used. Toolchain on the owner's machine: Android Studio and the SDK under `E:\Android`.
 3. **For testing, the shell loads the release-draft site (`server.url`)**: same-origin `/voice` and `/voice-run`, the service worker and Supabase work unchanged; web changes reach the phone with a draft deploy, no reinstall. **`KB-410` decides production** (bundled or remote).
 4. **Sign-in: a Chrome Custom Tab + PKCE** with official plugins (`@capacitor/browser`, `@capacitor/app`); Supabase redirects to the app, the app exchanges the code. **`KB-409` gets its own short PLAN, strongest model (D33).**
 5. **Native code in Kotlin only.** Bluetooth Classic printing is a small plugin of our own inside `android/` (no maintained Capacitor 8 plugin exists); BLE uses `@capacitor-community/bluetooth-le` 8.3.0. ESC/POS bytes are our own code (`ESC @`, `GS v 0` in bands, `ESC d`, `GS V`; an `ESC *` fallback).
