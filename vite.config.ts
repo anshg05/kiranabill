@@ -88,7 +88,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          exclude: [...configDefaults.exclude, "**/*.perf.test.ts", "**/*.e2e.test.ts"],
+          exclude: [...configDefaults.exclude, "**/*.perf.test.ts", "**/*.e2e.test.ts", "android/**"],
           sequence: { groupOrder: 0 },
         },
       },

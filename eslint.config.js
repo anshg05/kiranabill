@@ -16,10 +16,10 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    ignores: ["legacy/**", "dist/**", "node_modules/**", "supabase/**", ".netlify/**"],
+    ignores: ["legacy/**", "dist/**", "node_modules/**", "supabase/**", ".netlify/**", "android/**"],
   },
   {
-    files: ["src/**/*.{ts,tsx}", "netlify/**/*.{ts,mts}", "eval/**/*.ts", "scripts/**/*.ts", "vite.config.ts"],
+    files: ["src/**/*.{ts,tsx}", "netlify/**/*.{ts,mts}", "eval/**/*.ts", "scripts/**/*.ts", "vite.config.ts", "capacitor.config.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: { ecmaFeatures: { jsx: true } },

@@ -326,6 +326,20 @@ Nothing in `KB-346` was run on an iPhone - the code follows WebKit's, Groq's and
 
 ---
 
+## 9d. The Android app (`KB-406`, D111)
+
+- **Toolchain (owner's machine, 12 Nov 2026):** Android Studio at `E:\Android\Studio`; the SDK at `E:\Android\Sdk` (platform android-36, build-tools 36.0.0, platform-tools, cmdline-tools); **JDK 21** at `E:\Android\jdk-21` (Temurin). Android Studio's own bundled JDK is Java 25, which Gradle 8.14.3 (Capacitor 8.5.3's template) cannot run on - never point `JAVA_HOME` at it.
+- **User variables:** `JAVA_HOME=E:\Android\jdk-21`, `ANDROID_HOME=E:\Android\Sdk` (an app started before they were set must be restarted to see them).
+- **Build the debug APK** (the first build downloads Gradle and the Android libraries, about 7 minutes):
+
+```bash
+npx cap sync android
+cd android && ./gradlew.bat assembleDebug
+```
+
+- The APK: `android/app/build/outputs/apk/debug/app-debug.apk`. Install by USB: `adb install -r` with the phone's USB debugging on (Redmi: also Developer options -> "Install via USB").
+- For testing the shell loads the release-draft site (`capacitor.config.ts`, D111); a web change reaches the phone with a draft deploy, no reinstall. Only a native change (the `android/` folder, a plugin) needs a new APK.
+
 ## 10. What this document deliberately does not cover
 
 - **Product/account setup questions** (which Claude plan, billing, UI navigation) — see `support.claude.com`.
