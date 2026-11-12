@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 12 Nov 2026 (rev 63) · Supersedes rev 40
+**Last updated:** 13 Nov 2026 (rev 64) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2574,6 +2574,23 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
 5. **Native code in Kotlin only.** Bluetooth Classic printing is a small plugin of our own inside `android/` (no maintained Capacitor 8 plugin exists); BLE uses `@capacitor-community/bluetooth-le` 8.3.0. ESC/POS bytes are our own code (`ESC @`, `GS v 0` in bands, `ESC d`, `GS V`; an `ESC *` fallback).
 6. **The APK reaches the owner's phone by USB** (`adb install -r`, debug build).
 7. **Build steps S1-S6** (the plan approved 12 Nov 2026): S1 the shell, S2 `KB-409` sign-in, S3 the encoder + the receipt image (384 / 576 dots), S4 Classic + BLE sending, S5 the minimal print UI, S6 the owner's test on his two printers. Every draft deploy and every spend is asked first (Gemini cap Rs 2 for the S1 voice order approved).
+
+
+### D112 — Google sign-in inside the Android app: a Chrome Custom Tab, PKCE, one app link (built as `KB-409`, owner-approved plan 12-13 Nov 2026) 🟢
+
+Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it decides which shop's data a phone sees). No migration; the web and the PWA are unchanged.
+
+1. **The flow (only inside the app, `Capacitor.isNativePlatform()`):** `signInWithOAuth` with `skipBrowserRedirect: true` and `redirectTo` = **`com.kiranavoicebill.app://auth-callback`** -> the Google address opens in a **Chrome Custom Tab** (`@capacitor/browser` 8.0.5, pinned) -> Supabase returns to the app link -> the app turns it into the WEB return on its own origin (`/?code=...` or `/?error=...`) and loads it -> **from there today's code does everything** (auth-js exchanges the code with the PKCE key in this web view; `readOAuthReturn` / `stripOAuthReturn` say the one sentence and clean the address - D82). No second exchange path exists.
+2. **The link is a trust boundary** - any app on the phone can send one (`nativeReturnPath`, `data/oauthReturn.ts`): only our scheme and host (no user, port or path); only `code`, `error`, `error_code`, `error_description`, `sb_flow_id` pass, re-encoded; the result is always a path on the app's own origin; a link with nothing to act on is ignored.
+3. **Why a custom scheme is safe enough for now:** another app that registers the same scheme can receive the code but cannot use it - the exchange needs the PKCE key, which never leaves this app's web view. A forged link with someone else's code fails the same way (the "didn't finish" sentence). Verified https App Links need the release key's fingerprint on the site: `KB-410`.
+4. **Found in the re-check on Fable 5.2 (13 Nov 2026) and built:**
+   - **No reload loop on a cold start.** The link that launched the app is still reported after the page reloads onto `/?code=...`; each link is acted on ONCE, remembered in `localStorage` (`kb.nativeReturn.handled`). If the phone cannot remember it, the link is not acted on (one unfinished sign-in is better than a loop).
+   - **Links are listened for ONLY on the sign-in screen** (auth settled and signed out). A link sent by another app can never reload a signed-in app in the middle of a bill or a recording.
+   - **A second tap reuses the same sign-in.** Read in auth-js 2.116: a returning code is exchanged with the key of the NEWEST start, so a second start would orphan a Custom Tab still open. The second tap reopens the same address (one PKCE key until the page reloads), so a late return from either tab works. One tap = one sign-in (KB-342).
+   - `Browser.close()` does not exist on Android and is not needed: `MainActivity` is `singleTask`, so the link returns to the running app and closes the tab above it.
+5. **The button comes back (owner, 13 Nov 2026)** when the attempt is over without a sign-in - whichever comes first: the Custom Tab reports it closed (`browserFinished`), **the app is in the foreground again (`appStateChange` active - MIUI does not always report the tab closing)**, or **60 seconds** pass. A return link arriving later is still accepted (the listener does not depend on the button). On the web nothing changes: the button stays busy while the page leaves for Google.
+6. **Owner step:** Supabase -> Authentication -> URL Configuration -> Redirect URLs: add `com.kiranavoicebill.app://auth-callback` (the web URLs stay).
+7. **Android:** one intent filter (VIEW, DEFAULT, BROWSABLE; that scheme and host only; no https link claimed).
 
 ---
 

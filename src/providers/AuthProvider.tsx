@@ -10,6 +10,7 @@ import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { supabase } from "@/data/supabaseClient";
 import { DeviceDB, getActiveUserId, setActiveUserId } from "@/data/device";
 import { resolveAuthMode, signOutDevice, type AuthMode } from "@/data/offlineSession";
+import { isNativeApp, startNativeSignIn, watchNativeReturn } from "@/data/nativeSignIn";
 import { markCold } from "@/ui/coldMarks";
 
 /** KB-352: how long the cold start waits for getSession() (a token refresh over the network) before a remembered user is let in offline. */
@@ -27,7 +28,9 @@ interface AuthContextValue {
   userId: string | null;
   deviceDb: DeviceDB;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  /** Resolves "returned" only inside the Android app, when a sign-in attempt is over without a sign-in (KB-409): the button may
+   * come back. On the web it resolves with nothing - the page is leaving for Google and the button stays busy (KB-342). */
+  signInWithGoogle: () => Promise<"returned" | void>;
   signOut: () => Promise<void>;
 }
 
@@ -101,6 +104,14 @@ export function AuthProvider({ children, client = supabase, deviceDb: injectedDe
     };
   }, [client, deviceDb]);
 
+  // KB-409 (D111): inside the Android app the sign-in returns as an app link. It is listened for ONLY on the sign-in screen
+  // (auth settled, signed out): a link sent by another app can then never reload a signed-in app in the middle of a bill.
+  const awaitingSignIn = !loading && mode.kind === "signedOut";
+  useEffect(() => {
+    if (!awaitingSignIn || !isNativeApp()) return;
+    return watchNativeReturn();
+  }, [awaitingSignIn]);
+
   const value: AuthContextValue = {
     user: mode.kind === "online" ? mode.session.user : null,
     session: mode.kind === "online" ? mode.session : null,
@@ -109,6 +120,7 @@ export function AuthProvider({ children, client = supabase, deviceDb: injectedDe
     deviceDb,
     loading,
     signInWithGoogle: async () => {
+      if (isNativeApp()) return startNativeSignIn(client); // KB-409: a Chrome Custom Tab, never this web view
       // KB-309: back to THIS origin (a draft deploy, localhost), not the Site URL (the live site).
       const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/` } });
       if (error) throw error;

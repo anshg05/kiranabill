@@ -39,3 +39,31 @@ export function stripOAuthReturn(href: string): string {
   const h = hash.toString();
   return `${url.pathname}${url.search}${h ? `#${h}` : ""}`;
 }
+
+/** KB-409 (D111): where Supabase returns to inside the Android app - the one app link the app opens for (AndroidManifest.xml). */
+export const NATIVE_REDIRECT = "com.kiranavoicebill.app://auth-callback";
+
+/**
+ * KB-409: the app's own path for a sign-in return link, or null when the link is not exactly ours or holds nothing to act on.
+ * ANY app on the phone can send a link, so: only our scheme and host (no user, port or path), only the auth parameters, values
+ * re-encoded, and always a path on the app's own origin - never an address taken from the link.
+ */
+export function nativeReturnPath(link: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(link);
+  } catch {
+    return null;
+  }
+  const ours = new URL(NATIVE_REDIRECT);
+  if (url.protocol !== ours.protocol || url.host !== ours.host) return null;
+  if (url.username || url.password || url.port || (url.pathname !== "" && url.pathname !== "/")) return null;
+  const from = paramsOf(url);
+  const out = new URLSearchParams();
+  for (const k of AUTH_PARAMS) {
+    const v = from.get(k);
+    if (v) out.set(k, v);
+  }
+  if (!["code", "error", "error_code", "error_description"].some((k) => out.has(k))) return null;
+  return `/?${out.toString()}`;
+}

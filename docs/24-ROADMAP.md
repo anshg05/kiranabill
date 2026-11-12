@@ -1,6 +1,6 @@
 # 24 — Roadmap
 
-**Last updated:** 12 Nov 2026 (rev 22) · **Status:** Living plan - every item's status is updated when its work lands
+**Last updated:** 13 Nov 2026 (rev 23) · **Status:** Living plan - every item's status is updated when its work lands
 **Source of truth for:** the ORDER and the STATUS of work. The description of each deferred idea lives in `12-PARKED.md` (by id); a ticket's detail lives in `06-FEATURE-TICKETS.md`; the decisions are `07-DECISIONS.md` D100. The current state of the world is `10-TRACKER.md` "Right now".
 
 **Status values:** `todo` · `in progress` · `done` (with date and commit). **D33** = the item touches numbers, money, sync, RLS or migrations, so it runs on the strongest model (`07` D33). **Owner** = only the owner can do it.
@@ -123,7 +123,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
 | A1 | `KB-408` | **Thermal printing** - the list below. | no | todo |
-| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | todo |
+| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | built 13 Nov 2026 (D112) - waits for the owner's phone check |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
 | A5 | `KB-411` - `KB-426` | **Full redesign of the app** (owner, 10 Nov 2026, D109) - **its spec is `26-DESIGN-SPEC.md` + `docs/design/`, approved 11 Nov 2026 (D110)**. Build steps and new features: the list below. The owner ruled on all twelve conflicts (D110 item 8, `26` §0b): **the design decides the LOOK, the app's real data and rules decide the CONTENT.** | no | todo - spec approved |

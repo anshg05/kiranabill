@@ -52,6 +52,17 @@ describe("the Android shell (D111)", () => {
     const pkg = JSON.parse(read("package.json")) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
     const all = { ...pkg.dependencies, ...pkg.devDependencies };
     const cap = Object.entries(all).filter(([name]) => name.startsWith("@capacitor/"));
-    expect(Object.fromEntries(cap)).toEqual({ "@capacitor/android": "8.5.3", "@capacitor/app": "8.1.2", "@capacitor/cli": "8.5.3", "@capacitor/core": "8.5.3" });
+    expect(Object.fromEntries(cap)).toEqual({ "@capacitor/android": "8.5.3", "@capacitor/app": "8.1.2", "@capacitor/browser": "8.0.5", "@capacitor/cli": "8.5.3", "@capacitor/core": "8.5.3" });
+  });
+  it("opens for ONE app link only: the sign-in return (KB-409)", () => {
+    const filters = [...manifest.matchAll(/<intent-filter[^>]*>([\s\S]*?)<\/intent-filter>/g)].map((m) => m[1]!);
+    const links = filters.filter((f) => f.includes("android.intent.action.VIEW"));
+    expect(links).toHaveLength(1);
+    const data = [...links[0]!.matchAll(/<data\s+([^>]*?)\s*\/>/g)].map((m) => m[1]!.trim().split(/\s+/).sort().join(" "));
+    expect(data).toEqual(['android:host="auth-callback" android:scheme="com.kiranavoicebill.app"']);
+    expect(links[0]).toContain("android.intent.category.BROWSABLE"); // Chrome must be allowed to hand the link over
+    expect(links[0]).toContain("android.intent.category.DEFAULT");
+    expect(manifest).not.toMatch(/android:scheme="https?"/); // no web link claimed without verification (KB-410)
+    expect(manifest).toMatch(/android:launchMode="singleTask"/); // the link returns to the running app and closes the tab above it
   });
 });

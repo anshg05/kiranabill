@@ -29,11 +29,15 @@ export function SignInScreen() {
     if (opening) return;
     setError(null);
     setOpening(true);
-    signInWithGoogle().catch((err: unknown) => {
-      setOpening(false);
-      console.warn("[signin] could not start:", err instanceof Error ? err.name : "error"); // the raw text is for developers, not the shopkeeper (KB-343)
-      setError(START_FAILED);
-    });
+    signInWithGoogle()
+      .then((answer) => {
+        if (answer === "returned") setOpening(false); // KB-409, in the app: the Custom Tab is done with no sign-in - the tap comes back
+      })
+      .catch((err: unknown) => {
+        setOpening(false);
+        console.warn("[signin] could not start:", err instanceof Error ? err.name : "error"); // the raw text is for developers, not the shopkeeper (KB-343)
+        setError(START_FAILED);
+      });
   };
 
   return (

@@ -23,6 +23,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- KB-409 (D111): the Google sign-in's return from the Chrome Custom Tab - the ONE link this app opens for.
+                 The code in it is useless without the PKCE key kept in this app (src/data/oauthReturn.ts nativeReturnPath). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.kiranavoicebill.app" android:host="auth-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
