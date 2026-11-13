@@ -123,7 +123,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
 | A1 | `KB-408` | **Thermal printing** - the list below. | no | todo |
-| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | built 13 Nov 2026 (D112) - waits for the owner's phone check |
+| A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | done 13 Nov 2026 (D112) - the owner's phone check passed on draft-v19 |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
 | A5 | `KB-411` - `KB-426` | **Full redesign of the app** (owner, 10 Nov 2026, D109) - **its spec is `26-DESIGN-SPEC.md` + `docs/design/`, approved 11 Nov 2026 (D110)**. Build steps and new features: the list below. The owner ruled on all twelve conflicts (D110 item 8, `26` §0b): **the design decides the LOOK, the app's real data and rules decide the CONTENT.** | no | todo - spec approved |

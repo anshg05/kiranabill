@@ -2591,6 +2591,7 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
 5. **The button comes back (owner, 13 Nov 2026)** when the attempt is over without a sign-in - whichever comes first: the Custom Tab reports it closed (`browserFinished`), **the app is in the foreground again (`appStateChange` active - MIUI does not always report the tab closing)**, or **60 seconds** pass. A return link arriving later is still accepted (the listener does not depend on the button). On the web nothing changes: the button stays busy while the page leaves for Google.
 6. **Owner step:** Supabase -> Authentication -> URL Configuration -> Redirect URLs: add `com.kiranavoicebill.app://auth-callback` (the web URLs stay).
 7. **Android:** one intent filter (VIEW, DEFAULT, BROWSABLE; that scheme and host only; no https link claimed).
+8. **Phone check PASSED (owner, 13 Nov 2026)** on draft-v19 (deploy `6af6b8a066eaac381fcdfe1b`, commit `02bfabf`) with the S2 APK: sign-in in the app, the shop opens, a real voice order billed correctly, the button comes back after closing the Chrome tab, sign out and in again, a draft bill survives the app being closed. The owner added the Supabase redirect URL (`M-43`).
 
 ---
 

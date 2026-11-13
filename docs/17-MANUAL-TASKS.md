@@ -188,7 +188,7 @@ Do these once, in this order, before the first real customer. Each says what to 
 
 | # | Task | Cost |
 |---|---|---|
-| M-43 | **`KB-409` (D112):** Supabase -> Authentication -> URL Configuration -> Redirect URLs -> add `com.kiranavoicebill.app://auth-callback` (keep the web URLs). Without it the Google sign-in inside the Android app cannot return to the app. | Free |
+| M-43 | ✅ **Done 13 Nov 2026.** **`KB-409` (D112):** Supabase -> Authentication -> URL Configuration -> Redirect URLs -> add `com.kiranavoicebill.app://auth-callback` (keep the web URLs). Without it the Google sign-in inside the Android app cannot return to the app. | Free |
 | M-40 | Google Play developer account | **$25 one-time** |
 | M-41 | Play Store listing: screenshots, description, privacy policy | Free |
 | M-42 | Generate a signing key, **back it up** | Free — losing it means you can never update the app |
