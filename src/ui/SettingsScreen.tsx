@@ -16,6 +16,7 @@ import type { BillLanguage } from "@/domain/receipt";
 import { parseShopName, parseShopPhone } from "@/domain/shopSettings";
 import { priceDriftText } from "./priceDriftText";
 import { PilotNumbers } from "./PilotNumbers";
+import { PrinterSection } from "./PrinterSection";
 import type { ReconcileResult } from "@/data/billMetrics";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
@@ -217,6 +218,9 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                 ))}
               </div>
               <p className="mt-3 text-[13px] text-ink-soft">{t("settings.receiptNote")}</p>
+
+              {/* KB-408 S5: inside the Android app only. */}
+              {shop && <PrinterSection shop={shop} />}
 
               <DeveloperMode localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} />
               <a href="/privacy" target="_blank" rel="noopener" className="mt-6 flex min-h-11 items-center text-indigo underline">

@@ -264,6 +264,40 @@ export const MESSAGES = {
   "history.cancelled": m("Cancelled", "रद्द", "Radd"),
 
   // ---- Settings
+  // ---- KB-408 (D111): printing to a Bluetooth thermal printer - inside the Android app only; printing never blocks a bill
+  "print.print": m("Print", "प्रिंट करें", "Print karein"),
+  "print.printing": m("Printing… {percent}%", "प्रिंट हो रहा है… {percent}%", "Print ho raha hai… {percent}%"),
+  "print.done": m("Printed", "प्रिंट हो गया", "Print ho gaya"),
+  "print.noPrinter": m("No printer chosen — choose one in Settings → Printer.", "कोई प्रिंटर नहीं चुना — सेटिंग्स → प्रिंटर में चुनें।", "Koi printer nahi chuna — Settings → Printer mein chunein."),
+  "print.unreachable": m(
+    "Printer not connected — switch it on, keep it close and tap Print again. You can still share the bill.",
+    "प्रिंटर से जुड़ नहीं पाए — उसे चालू करें, पास रखें और फिर से प्रिंट दबाएं। बिल अब भी शेयर कर सकते हैं।",
+    "Printer se jud nahi paaye — use chalu karein, paas rakhein aur phir se Print dabayein. Bill ab bhi share kar sakte hain.",
+  ),
+  "print.bluetoothOff": m("Bluetooth is off — turn it on and tap Print again.", "ब्लूटूथ बंद है — उसे चालू करें और फिर से प्रिंट दबाएं।", "Bluetooth band hai — use chalu karein aur phir se Print dabayein."),
+  "print.permission": m(
+    "Allow “Nearby devices” to print: phone Settings → Apps → Kirana Voice Bill → Permissions.",
+    "प्रिंट के लिए “आस-पास के डिवाइस” की अनुमति दें: फ़ोन की सेटिंग्स → ऐप्स → Kirana Voice Bill → अनुमतियां।",
+    "Print ke liye “Nearby devices” ki permission dein: phone Settings → Apps → Kirana Voice Bill → Permissions.",
+  ),
+  "print.disconnected": m("The printer stopped mid-print — tap Print to print the whole bill again.", "प्रिंटर बीच में रुक गया — पूरा बिल फिर से छापने के लिए प्रिंट दबाएं।", "Printer beech mein ruk gaya — poora bill phir se chhapne ke liye Print dabayein."),
+  "print.noBluetooth": m("This phone has no Bluetooth.", "इस फ़ोन में ब्लूटूथ नहीं है।", "Is phone mein Bluetooth nahi hai."),
+  "settings.printer": m("Printer", "प्रिंटर", "Printer"),
+  "settings.printerHelp": m(
+    "A Bluetooth thermal printer. Pair it once in the phone's Bluetooth settings (PIN 0000 or 1234), then choose it here.",
+    "ब्लूटूथ थर्मल प्रिंटर। उसे एक बार फ़ोन की ब्लूटूथ सेटिंग्स में जोड़ें (PIN 0000 या 1234), फिर यहां चुनें।",
+    "Bluetooth thermal printer. Use ek baar phone ki Bluetooth settings mein jodein (PIN 0000 ya 1234), phir yahan chunein.",
+  ),
+  "settings.printerNone": m("No printer chosen", "कोई प्रिंटर नहीं चुना", "Koi printer nahi chuna"),
+  "settings.printerChoose": m("Choose printer", "प्रिंटर चुनें", "Printer chunein"),
+  "settings.printerPaired": m("Paired with this phone", "इस फ़ोन से जुड़े हुए", "Is phone se jude hue"),
+  "settings.printerSearch": m("Search for Bluetooth LE printers", "ब्लूटूथ LE प्रिंटर खोजें", "Bluetooth LE printer khojein"),
+  "settings.printerSearching": m("Searching…", "खोज रहे हैं…", "Khoj rahe hain…"),
+  "settings.printerNoneFound": m("No printer found. Pair it in the phone's Bluetooth settings, then come back.", "कोई प्रिंटर नहीं मिला। उसे फ़ोन की ब्लूटूथ सेटिंग्स में जोड़ें, फिर वापस आएं।", "Koi printer nahi mila. Use phone ki Bluetooth settings mein jodein, phir wapas aayein."),
+  "settings.paper": m("Paper size", "कागज़ का साइज़", "Kagaz ka size"),
+  "settings.paper58": m("58 mm (2 inch)", "58 mm (2 इंच)", "58 mm (2 inch)"),
+  "settings.paper80": m("80 mm (3 inch)", "80 mm (3 इंच)", "80 mm (3 inch)"),
+  "settings.testPrint": m("Test print", "टेस्ट प्रिंट", "Test print"),
   "settings.privacy": m("Privacy policy", "गोपनीयता नीति", "Privacy policy"), // D91
   "settings.back": m("Back", "वापस", "Wapas"),
   "settings.shopDetails": m("Shop details", "दुकान की जानकारी", "Dukaan ki jaankari"),

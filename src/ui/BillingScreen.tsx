@@ -21,6 +21,7 @@ import { useShop } from "@/providers/ShopProvider";
 import { Receipt, ReceiptNumberText } from "./Receipt";
 import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
 import { ShareBar } from "./ShareBar";
+import { PrintButton } from "./PrintButton";
 import { HistoryScreen } from "./HistoryScreen";
 import { reissueState } from "./reissueDraft";
 import { useMetricsWiring } from "./useMetricsWiring";
@@ -1190,6 +1191,8 @@ export function BillView({
           {saved?.receipt ? (
             <div className="px-4 py-4">
               <Receipt receipt={saved.receipt} />
+              {/* KB-408 S5: Print next to Share (inside the Android app only); the first copy after Bill Banao is the original. */}
+              <PrintButton key={saved.receiptNumber} receipt={saved.receipt} firstIsOriginal />
               {share && <ShareBar share={share} />}
             </div>
           ) : (

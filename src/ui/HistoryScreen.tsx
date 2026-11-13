@@ -13,6 +13,7 @@ import { subscribeBillsPull } from "@/data/billsPullStatus";
 import { CancelBillSheet } from "./CancelBillSheet";
 import { Receipt, ReceiptNumberText } from "./Receipt";
 import { ShareBar } from "./ShareBar";
+import { PrintButton } from "./PrintButton";
 import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
 import { inject, mark } from "./inject";
@@ -356,6 +357,8 @@ function BillDetail({
               {t("history.replaces", { n: info.replaces.receiptNumber })}
             </button>
           )}
+          {/* KB-408 S5: a copy printed from History is always a reprint. */}
+          {receipt && <PrintButton receipt={receipt} firstIsOriginal={false} />}
           {share && <ShareBar share={share} />}
           {bill?.status === "final" && deviceId && (
             <div className="mx-auto mt-4 w-full max-w-[384px]">
