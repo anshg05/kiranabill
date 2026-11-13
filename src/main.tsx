@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/app/App";
 import { startServiceWorker } from "@/pwa/register";
+import { startNativeBack } from "@/data/nativeBack";
 import "./index.css";
 import { markCold } from "@/ui/coldMarks";
 
@@ -27,5 +28,7 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
     </StrictMode>,
   );
 }
+// KB-406: Android Back inside the app (nothing in a browser or the PWA).
+startNativeBack();
 // KB-401: production only (nothing registers in the dev server); after the first render, never before it.
 startServiceWorker();

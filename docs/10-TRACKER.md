@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 13 Nov 2026 (rev 194) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
+**Last updated:** 13 Nov 2026 (rev 195) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -20,7 +20,7 @@
 
 **Next work (D109 - D112):** **Phase A - `KB-406`.** S1 (the shell) is built; S2 = `KB-409` (Google sign-in in the app, D112) is built and unit-tested, not yet on the phone. Next: the owner's S1 check, then the S2 release to the draft + the S2 APK + the phone check (sign in, one real voice order), then S3-S6 printing (`KB-408`). The redesign (`26`, `KB-411` - `KB-426`) follows; rulings: D110 item 8. The pilot (`KB-405`) runs in parallel.
 
-**Waiting on the owner:** approval of the back-button fix (JS only - reaches the phone with a draft deploy, no reinstall) and its draft deploy.
+**Waiting on the owner:** his phone check of the back-button fix on draft-v20 (reopen the app; no reinstall).
 
 **Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 
@@ -614,6 +614,7 @@ catalog index under 16 ms at 10,000 products ✅.
 | 12 Nov 2026 | **S1 install attempt (USB, owner-confirmed):** refused by the phone - "not enough space" (396 MB free, /data 100%); nothing installed or changed. **Audit:** `npm audit --omit=dev` = 0 (nothing that ships is affected); the 43 dev-tool findings are `KB-427`. New owner rule: ask before any USB step, wait for 'connected', say when to unplug. | Agent |
 | 13 Nov 2026 | **`KB-409` (S2) built - D112:** Google sign-in inside the Android app through a Chrome Custom Tab + PKCE and ONE app link (`com.kiranavoicebill.app://auth-callback`), turned into the web return so today's exchange and sentences are reused. Plan re-checked on Fable 5.2: no reload loop on a cold start (a link is acted on once), links listened for only on the sign-in screen, a second tap reuses the same PKCE key, no `Browser.close`. The button comes back on tab-closed, app-in-front or 60 s (owner). `src/data/nativeSignIn.ts`, `nativeReturnPath`, `AuthProvider`, `SignInScreen`, the intent filter; `@capacitor/browser` 8.0.5 pinned. 44 planted bugs, all caught. NOT deployed, the S2 APK NOT installed. | Agent |
 | 13 Nov 2026 | **S1 check PASSED and S2 phone check PASSED (owner):** S1 APK installed by USB (1.2 GB free), then **draft-v19** (`02bfabf`, deploy `6af6b8a066eaac381fcdfe1b`, release-draft only; production `VITE_` values by name/length only; `dist` proven; local `dist` rebuilt after) and the S2 APK. Sign-in in the app, the shop, a real voice order, the button after closing Chrome, sign out / in, a draft surviving the app closing - all passed. **Bug found: the Android back button does nothing on the main screen** - `@capacitor/app` 8.1.2 (`AppPlugin.java`) only calls `webView.goBack()` when the web view can go back and otherwise swallows the press; S1's claim that no code was needed was wrong. | Agent |
+| 13 Nov 2026 | **Back-button fix (owner-approved, `KB-406`):** `src/data/nativeBack.ts` - inside the app only, Back goes back when the page can (a sheet, History, Settings, the menu close as before, `useBackEntry`), otherwise the app goes to the background (`App.minimizeApp`, never killed - the draft stays). Started in `main.tsx`. 3 tests, 4 planted bugs caught. JS only: reaches the phone with draft-v20, no reinstall. | Agent |
   - **Two-phone session WAIVED for this release** (owner): no shop uses the app yet; rollback is one click; the database is backward-compatible; the bill-number sequence is server-side, unchanged and e2e-covered.
   - It moves to the pilot's start (`17` item 8).
   - **Rollback target:** deploy `6ae4e6a80b53133c1233a15a`. | Agent |
