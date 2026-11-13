@@ -29,3 +29,5 @@ KiranaBill-BACKUP-PRIVATE-KEY*
 eval/acceptance/audio/
 # KB-370: the bake-off's local count of gemini-3.5-transcribe calls per Pacific day (machine state, not a result)
 eval/bakeoff/.transcribe-quota.json
+# KB-408 S3: print previews made by the dev page /__dev/print (re-made any time; the threshold fixtures that tests need live in eval/print/)
+eval/print-preview/

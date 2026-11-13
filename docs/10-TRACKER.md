@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 13 Nov 2026 (rev 196) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
+**Last updated:** 13 Nov 2026 (rev 197) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -20,7 +20,7 @@
 
 **Next work (D109 - D112):** **Phase A - `KB-406`.** S1 (the shell) and S2 (`KB-409`, Google sign-in in the app) passed the owner's phone checks; the Android back button is fixed (draft-v20). Next: S3-S6 printing (`KB-408`): the encoder + receipt image, Classic + BLE sending, the minimal print UI, the owner's test on his two printers. The redesign (`26`, `KB-411` - `KB-426`) follows; rulings: D110 item 8. The pilot (`KB-405`) runs in parallel.
 
-**Waiting on the owner:** the go-ahead for `KB-406` S3 (the ESC/POS encoder + the receipt image, 384 / 576 dots - no phone needed).
+**Waiting on the owner:** his look at the S3 print previews (`eval/print-preview/`, made by the dev page `/__dev/print`), then the go-ahead for S4 (Bluetooth Classic + BLE sending).
 
 **Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 
@@ -616,6 +616,7 @@ catalog index under 16 ms at 10,000 products ✅.
 | 13 Nov 2026 | **S1 check PASSED and S2 phone check PASSED (owner):** S1 APK installed by USB (1.2 GB free), then **draft-v19** (`02bfabf`, deploy `6af6b8a066eaac381fcdfe1b`, release-draft only; production `VITE_` values by name/length only; `dist` proven; local `dist` rebuilt after) and the S2 APK. Sign-in in the app, the shop, a real voice order, the button after closing Chrome, sign out / in, a draft surviving the app closing - all passed. **Bug found: the Android back button does nothing on the main screen** - `@capacitor/app` 8.1.2 (`AppPlugin.java`) only calls `webView.goBack()` when the web view can go back and otherwise swallows the press; S1's claim that no code was needed was wrong. | Agent |
 | 13 Nov 2026 | **Back-button fix (owner-approved, `KB-406`):** `src/data/nativeBack.ts` - inside the app only, Back goes back when the page can (a sheet, History, Settings, the menu close as before, `useBackEntry`), otherwise the app goes to the background (`App.minimizeApp`, never killed - the draft stays). Started in `main.tsx`. 3 tests, 4 planted bugs caught. JS only: reaches the phone with draft-v20, no reinstall. | Agent |
 | 13 Nov 2026 | **Back-button fix PASSED (owner, draft-v20, deploy `6af6bfb98d7c6886b1d92bc4`, commit `68a59e6`):** Back now works inside the app. S1 and S2 are done. | Agent |
+| 13 Nov 2026 | **`KB-408` S3 - the receipt image + the ESC/POS encoder (no phone, no printer, no deploy):** `src/domain/escpos.ts` (pure: `toMonoBitmap`, `encodeReceiptImage` - ESC @, GS v 0 in 64-row bands, ESC d, GS V partial cut, ESC * 24-dot fallback - `decodeEscPos`, `printProfile` 576 = today's 384 px layout x1.5, 384 = the same table x1.375 with a 4 px margin, about 32 characters; custom 256-1024 dots); `src/ui/receiptPrint.ts` (the share image's painter, shared, in pure black; the light row rule dotted); the receipt's optional REPRINT line (owner, D110 item 8.10). **Cut-off 160**, measured on the real Bill 514 render (`eval/print/threshold.test.ts`, fixtures `eval/print/fixtures/`): lighter breaks strokes, darker blots conjuncts. Bill 514 (38 rows) = 1952 dots (244 mm) at 576, 1817 dots (227 mm) at 384; 140,801 / 87,457 bytes (GS v 0). Previews from the dev page `/__dev/print` to `eval/print-preview/` (git-ignored). 32 planted bugs caught. | Agent |
   - **Two-phone session WAIVED for this release** (owner): no shop uses the app yet; rollback is one click; the database is backward-compatible; the bill-number sequence is server-side, unchanged and e2e-covered.
   - It moves to the pilot's start (`17` item 8).
   - **Rollback target:** deploy `6ae4e6a80b53133c1233a15a`. | Agent |

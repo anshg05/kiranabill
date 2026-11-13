@@ -78,6 +78,8 @@ export interface Receipt {
   readonly cancelled: string | null;
   /** SG-13 (D57): "Replaces Bill KB-000142" on the replacement's receipt, else null. One small muted line under the bill number. */
   readonly replaces: string | null;
+  /** KB-408 (owner, D110 item 8.10): "REPRINT" on a printed copy of a bill printed before - set only by the printer, never on screen. */
+  readonly reprint?: string | null;
 }
 
 /** "KB-6f1c...-3" -> ["KB-", "6f1c...-", ..., "3"]: a break is allowed only after a hyphen. */

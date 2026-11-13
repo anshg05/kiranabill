@@ -60,8 +60,48 @@ function devSaveRecording(): Plugin {
   };
 }
 
+/**
+ * KB-408 S3, DEV SERVER ONLY (`apply: "serve"`): POST /__dev/save-print from the /__dev/print page - the print previews and the
+ * threshold fixtures, written to eval/print-preview/ (git-ignored). The name must be a plain file name of the expected kinds.
+ */
+function devSavePrint(): Plugin {
+  return {
+    name: "kiranabill-dev-save-print",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use("/__dev/save-print", (req, res) => {
+        const reply = (status: number, body: object) => {
+          res.statusCode = status;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify(body));
+        };
+        if (req.method !== "POST") return reply(405, { error: "POST only" });
+        const chunks: Buffer[] = [];
+        let size = 0;
+        req.on("data", (c: Buffer) => {
+          size += c.length;
+          if (size <= MAX_SAVE_BYTES) chunks.push(c);
+        });
+        req.on("end", () => {
+          try {
+            if (size > MAX_SAVE_BYTES) return reply(413, { error: "too large" });
+            const { name, base64 } = JSON.parse(Buffer.concat(chunks).toString("utf8")) as { name?: unknown; base64?: unknown };
+            if (typeof name !== "string" || !/^[a-z0-9-]+(\.png|\.grey\.gz|\.json)$/.test(name) || typeof base64 !== "string") return reply(400, { error: "bad name or body" });
+            const dir = path.resolve(process.cwd(), "eval", "print-preview");
+            mkdirSync(dir, { recursive: true });
+            writeFileSync(path.join(dir, name), Buffer.from(base64, "base64"));
+            reply(200, { saved: `eval/print-preview/${name}` });
+          } catch (err) {
+            reply(400, { error: String(err) });
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), devSaveRecording(), serviceWorkerPlugin()],
+  plugins: [react(), tailwindcss(), devSaveRecording(), devSavePrint(), serviceWorkerPlugin()],
   // KB-401: which build a page is (shown in Settings); the worker is built after the app (scripts/pwa-build.ts).
   // A kill build (src/sw/mode.txt) never registers a worker - see src/pwa/register.ts.
   define: {

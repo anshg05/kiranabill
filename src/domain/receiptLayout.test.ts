@@ -110,3 +110,42 @@ describe("layoutReceipt - the share image's drawing steps (D57 layout)", () => {
     for (const v of ["बिल नं.", "ग्राहक: Ramesh", "सामान", "रकम", "2 किलो", "₹45/किलो", "कुल", "धन्यवाद!"]) expect(all, v).toContain(v);
   });
 });
+
+// KB-408 (owner, D110 item 8.10): any bill can be reprinted any time; the printed copy carries a "REPRINT" line, so it can never pass
+// as a second, separate sale. The screen's receipt never shows it.
+describe("layoutReceipt - a reprint", () => {
+  it("draws REPRINT once, centred and bold under the date, before the bill number; nothing else moves out of order", () => {
+    const r = { ...receipt(), reprint: "REPRINT" };
+    const t = texts(layoutReceipt(r, measure).ops);
+    const reprint = t.filter((x) => x.role === "reprint");
+    expect(reprint).toHaveLength(1);
+    expect(reprint[0]).toMatchObject({ text: "REPRINT", align: "center", weight: 600 });
+    const at = (role: string) => t.findIndex((x) => x.role === role);
+    expect(at("date-time")).toBeLessThan(at("reprint"));
+    expect(at("reprint")).toBeLessThan(at("bill-no-label"));
+    expect(t.filter((x) => x.role !== "reprint").map((x) => x.text)).toEqual(texts(layoutReceipt(receipt(), measure).ops).map((x) => x.text));
+  });
+
+  it("an ordinary receipt (no reprint, or null) has no REPRINT line", () => {
+    expect(texts(layoutReceipt(receipt(), measure).ops).some((x) => x.role === "reprint")).toBe(false);
+    expect(texts(layoutReceipt({ ...receipt(), reprint: null }, measure).ops).some((x) => x.role === "reprint")).toBe(false);
+  });
+
+  it("a cancelled bill's reprint shows both lines", () => {
+    const t = texts(layoutReceipt({ ...receipt({ status: "cancelled" }), reprint: "REPRINT" }, measure).ops).map((x) => x.role);
+    expect(t).toContain("cancelled");
+    expect(t).toContain("reprint");
+  });
+});
+
+// KB-408 S3: the printer's paper width - the same layout with its own padding (printProfile in escpos.ts).
+describe("layoutReceipt - padding", () => {
+  it("defaults to RECEIPT_PADDING; a narrower padding moves every edge and keeps everything inside", () => {
+    const narrow = layoutReceipt(receipt(), measure, 279, 4);
+    const t = texts(narrow.ops);
+    expect(Math.min(...t.map(left))).toBeGreaterThanOrEqual(4 - 1e-9);
+    expect(Math.max(...t.map(right))).toBeLessThanOrEqual(279 - 4 + 1e-9);
+    expect(Math.min(...t.map(left))).toBeLessThan(RECEIPT_PADDING);
+    expect(layoutReceipt(receipt(), measure, 384, RECEIPT_PADDING)).toEqual(layoutReceipt(receipt(), measure));
+  });
+});

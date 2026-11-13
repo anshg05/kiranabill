@@ -92,8 +92,8 @@ function wrap(tokens: readonly Token[], max: number, measure: Measure): Token[][
   return lines.map((l) => l.map((t, i) => (i === l.length - 1 ? { ...t, text: t.text.trimEnd() } : t)));
 }
 
-export function layoutReceipt(r: Receipt, measure: Measure, width = 384): ReceiptLayout {
-  const P = RECEIPT_PADDING;
+export function layoutReceipt(r: Receipt, measure: Measure, width = 384, padding = RECEIPT_PADDING): ReceiptLayout {
+  const P = padding;
   const inner = width - 2 * P;
   const ops: (DrawText | DrawRule)[] = [];
   let y = TOP;
@@ -141,6 +141,10 @@ export function layoutReceipt(r: Receipt, measure: Measure, width = 384): Receip
   if (r.cancelled) {
     y += GAP;
     paragraph(plain(r.cancelled, TOTAL, "cancelled"), "center", LEADING);
+  }
+  if (r.reprint) {
+    y += GAP;
+    paragraph(plain(r.reprint, TOTAL, "reprint"), "center", LEADING);
   }
   dashed();
 
