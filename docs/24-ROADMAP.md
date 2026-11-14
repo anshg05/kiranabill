@@ -122,7 +122,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| A1 | `KB-408` | **Thermal printing** - the list below. | no | todo |
+| A1 | `KB-408` | **Thermal printing** - the list below. | no | done 14 Nov 2026 (S3-S6, D113) - both printers passed the owner's re-test on draft-v22; auto-print + copies not built, open |
 | A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | done 13 Nov 2026 (D112) - the owner's phone check passed on draft-v19 |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
@@ -143,7 +143,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 - New features (`26` §9), one ticket each: `KB-417` today's numbers on Home + the 7-day chart · `KB-418` Reprint last · auto-print + copies = `KB-408` · `KB-419` learned-prices review (decision first) · ~~`KB-420`~~ (folded: the 5 reasons stay) · `KB-421` first-day Home · `KB-422` address + thank-you note on the bill (decision first) · `KB-423` unfinished-bill card · `KB-424` rotating tips · `KB-425` Android splash, icon, permission screen, offline strip · `KB-426` a desktop layout (later; until then the phone layout centred).
 
 **A3 `KB-410` - Play Store, what it holds**
-- Developer account ($25 one-time, `11` SD-008) - **Owner**.
+- Developer account ($25 one-time, `11` SD-008) - **Owner**. **A new personal developer account must run a 14-day closed test with 12+ testers before production** (owner, 14 Nov 2026); the owner decides when to open the account. Not started.
 - App signing; the data-safety form; a **privacy policy URL**, so **`KB-347` (the privacy notice, DPDP; a lawyer reviews) becomes required** instead of "before more than the pilot shops".
 - **How updates ship:** the web code is served from the app bundle or from the site - to be decided in its PLAN, with the foreground-update rule of `KB-401` in mind.
 
