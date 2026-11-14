@@ -145,12 +145,19 @@ export interface PrintProfile {
 }
 
 /**
+ * The blank margin each side of narrow (58 mm) paper: 8 dots = 1 mm (owner + reviewer, 14 Nov 2026). Never 0: a printer whose
+ * printable width is a dot or two narrower, slightly offset, or weak on its edge dots would cut the first letter of a name and the
+ * last digit of an amount - and this prints on ANY ESC/POS printer. It leaves 368 dots = 30 characters of 12 dots.
+ */
+export const PRINT_MARGIN_NARROW = 8;
+
+/**
  * The receipt at a paper width (owner, D110 item 8.6; S6 fix 2, 14 Nov 2026). The same table on both papers, laid out in the printer's
- * own dots: 80 mm and wider get bigger names, wider column gaps and a margin; narrower paper (58 mm, 384 dots = 32 characters of 12
- * dots) uses every dot - the paper itself has the margin.
+ * own dots: 80 mm and wider get bigger names, wider column gaps and a 16-dot margin; narrower paper (58 mm, 384 dots) keeps an 8-dot
+ * margin each side.
  */
 export function printProfile(requestedDots: number): PrintProfile {
   const dots = Math.floor(requestedDots / 8) * 8;
   if (!Number.isFinite(dots) || dots < 256 || dots > 1024) throw new Error(`printProfile: ${requestedDots} dots is not a receipt printer`);
-  return dots >= 512 ? { dots, padding: 16, style: printStyle("wide") } : { dots, padding: 0, style: printStyle("narrow") };
+  return dots >= 512 ? { dots, padding: 16, style: printStyle("wide") } : { dots, padding: PRINT_MARGIN_NARROW, style: printStyle("narrow") };
 }

@@ -37,6 +37,13 @@ function receipt(number: string, lines: readonly Line[], at: string): Receipt {
   );
 }
 
+/** The widest numbers a kirana bill can hold: a 6-digit amount and total, "80 packet", a per-kg rate on a gram quantity. */
+export const WIDE_NUMBERS_BILL: Receipt = receipt(
+  "100000",
+  [["काजू कतली मिठाई डिब्बा", 80, "packet", 1250, 100000], ["केसर कश्मीरी", 250, "gm", 1250, 312.5, "kg"]],
+  "2026-11-14T06:30:00.000Z",
+);
+
 export const DEV_PRINT_BILLS = {
   bill514: receipt("514", BILL_514, "2026-11-10T07:32:00.000Z"),
   three: receipt("515", THREE, "2026-11-11T07:48:00.000Z"),

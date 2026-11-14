@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PRINT_BAND_ROWS, PRINT_THRESHOLD, decodeEscPos, encodeReceiptImage, printProfile, toMonoBitmap, type MonoBitmap } from "./escpos";
+import { PRINT_BAND_ROWS, PRINT_MARGIN_NARROW, PRINT_THRESHOLD, decodeEscPos, encodeReceiptImage, printProfile, toMonoBitmap, type MonoBitmap } from "./escpos";
 import { printStyle } from "./receiptLayout";
 
 // KB-408 S3 (D111): the receipt goes to the printer as an IMAGE - cheap ESC/POS printers have no Devanagari font. Only standard
@@ -121,12 +121,17 @@ describe("printProfile - the paper width (laid out in the printer's own dots, no
     expect(printProfile(576)).toEqual({ dots: 576, padding: 16, style: printStyle("wide") });
   });
 
-  it("58 mm (384 dots): the narrow style on every dot - exactly 32 characters of the number size fit, 33 do not", () => {
+  it("58 mm (384 dots): the narrow style with an 8-dot (1 mm) margin each side - 30 characters of the number size fit, 31 do not", () => {
     const p = printProfile(384);
-    expect(p).toEqual({ dots: 384, padding: 0, style: printStyle("narrow") });
+    expect(p).toEqual({ dots: 384, padding: 8, style: printStyle("narrow") });
+    expect(PRINT_MARGIN_NARROW).toBe(8);
     const inner = p.dots - 2 * p.padding;
-    expect(chars(32, p.style.cell.size)).toBeLessThanOrEqual(inner);
-    expect(chars(33, p.style.cell.size)).toBeGreaterThan(inner);
+    expect(chars(30, p.style.cell.size)).toBeLessThanOrEqual(inner);
+    expect(chars(31, p.style.cell.size)).toBeGreaterThan(inner);
+  });
+
+  it("no paper width is ever laid out edge to edge", () => {
+    for (const dots of [256, 384, 432, 504, 512, 576, 832, 1024]) expect(printProfile(dots).padding, `${dots}`).toBeGreaterThanOrEqual(8);
   });
 
   it("a custom width is cut down to whole bytes; narrow paper is treated like 58 mm, wide like 80 mm", () => {

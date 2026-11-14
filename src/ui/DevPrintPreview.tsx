@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PRINT_BAND_ROWS, decodeEscPos, encodeReceiptImage, type MonoBitmap } from "@/domain/escpos";
 import type { Receipt } from "@/domain/receipt";
-import { DEV_PRINT_BILLS } from "./devPrintBills";
+import { DEV_PRINT_BILLS, WIDE_NUMBERS_BILL } from "./devPrintBills";
 import { longTestReceipt, testReceipt } from "./PrinterSection";
 import { renderReceiptForPrint } from "./receiptPrint";
 
@@ -22,7 +22,22 @@ const JOBS: readonly { name: string; receipt: Receipt; dots: number; reprint?: b
   { name: "testprint-384", receipt: testReceipt(TEST_SHOP, TEST_AT), dots: 384 },
   { name: "longtest-576", receipt: longTestReceipt(TEST_SHOP, TEST_AT), dots: 576 },
   { name: "longtest-384", receipt: longTestReceipt(TEST_SHOP, TEST_AT), dots: 384 },
+  { name: "wide-576", receipt: WIDE_NUMBERS_BILL, dots: 576 },
+  { name: "wide-384", receipt: WIDE_NUMBERS_BILL, dots: 384 },
 ];
+
+/** Blank dot columns at each side of what the printer gets. */
+function blankSides(m: MonoBitmap): { blankLeft: number; blankRight: number } {
+  const inkAt = (x: number) => {
+    for (let y = 0; y < m.height; y++) if (m.data[y * (m.width / 8) + (x >> 3)]! & (0x80 >> (x & 7))) return true;
+    return false;
+  };
+  let blankLeft = 0;
+  while (blankLeft < m.width && !inkAt(blankLeft)) blankLeft++;
+  let blankRight = 0;
+  while (blankRight < m.width && !inkAt(m.width - 1 - blankRight)) blankRight++;
+  return { blankLeft, blankRight };
+}
 
 async function save(name: string, bytes: Uint8Array): Promise<void> {
   let bin = "";
@@ -72,12 +87,13 @@ export function DevPrintPreview() {
         const same = decoded.width === bitmap.width && decoded.data.length === bitmap.data.length && decoded.data.every((b, i) => b === bitmap.data[i]);
         await save(`${job.name}-rendered.png`, await pngOf(bitmap.width, bitmap.height, (img) => img.data.set(rgba)));
         await save(`${job.name}-printer.png`, await monoPng(decoded));
-        if (job.name.startsWith("bill514")) {
+        // the grey renders the tests read (eval/print/fixtures): every 58 mm job, and Bill 514 on 80 mm
+        if (job.dots === 384 || job.name === "bill514-576") {
           const grey = new Uint8Array(bitmap.width * bitmap.height);
           for (let i = 0; i < grey.length; i++) grey[i] = Math.round((299 * rgba[i * 4]! + 587 * rgba[i * 4 + 1]! + 114 * rgba[i * 4 + 2]!) / 1000);
           await save(`${job.name}.grey.gz`, await gzip(grey));
         }
-        const row = { job: job.name, dots: bitmap.width, heightDots: bitmap.height, heightMm: +((bitmap.height / 8).toFixed(1)), rows: receipt.rows.length, rasterBytes: raster.length, bitImageBytes: bitimage.length, bands: Math.ceil(bitmap.height / PRINT_BAND_ROWS), decodedMatches: same };
+        const row = { job: job.name, dots: bitmap.width, heightDots: bitmap.height, heightMm: +((bitmap.height / 8).toFixed(1)), rows: receipt.rows.length, ...blankSides(decoded), rasterBytes: raster.length, bitImageBytes: bitimage.length, bands: Math.ceil(bitmap.height / PRINT_BAND_ROWS), decodedMatches: same };
         stats.push(row);
         setLog((l) => [...l, JSON.stringify(row)]);
       }

@@ -100,7 +100,7 @@ describe("PRINT_THRESHOLD on the real Bill 514 (the print layout, Devanagari inc
   });
 
   it("the fixtures are the expected renders (a new font or layout means re-measuring, not loosening the bounds)", () => {
-    expect(fixture(384).h).toBe(1982);
+    expect(fixture(384).h).toBe(2127);
     expect(fixture(576).h).toBe(2056);
   });
 });

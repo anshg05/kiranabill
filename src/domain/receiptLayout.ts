@@ -104,7 +104,7 @@ export const SCREEN_STYLE: ReceiptStyle = {
  * KB-408 fix 2 (owner's S6, 14 Nov 2026): the printed bill, in printer dots. Thin 1-dot strokes print faint or broken on thermal
  * paper, so nothing is lighter than semi-bold; amounts, headers and TOTAL are bold. Numbers and labels are IBM Plex Mono at sizes
  * whose character width (0.6 em) is a whole number of dots - 20 -> 12 dots, 25 -> 15, 30 -> 18 - so every character lands on the dot
- * grid the same way (sharp, never fuzzy). 20 dots = 48 characters across 80 mm (576 dots), 32 across 58 mm (384).
+ * grid the same way (sharp, never fuzzy). Inside the side margins (printProfile) that is 45 characters across 80 mm, 30 across 58 mm.
  * "wide" (80 mm) gives names more size and columns more air; "narrow" (58 mm) keeps the table inside 384 dots.
  */
 export function printStyle(paper: "wide" | "narrow"): ReceiptStyle {
