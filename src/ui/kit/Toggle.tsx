@@ -19,7 +19,7 @@ export function ToggleRow({
         aria-labelledby={`${id}-name`}
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative w-[52px] h-[30px] flex-none rounded-full ${checked ? "bg-kb-primary" : "bg-kb-toggle-off"}`}
+        className={`kb-hit relative w-[52px] h-[30px] flex-none rounded-full ${checked ? "bg-kb-primary" : "bg-kb-toggle-off"}`}
       >
         <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-kb-card shadow-kb-knob ${checked ? "right-[3px]" : "left-[3px]"}`} />
       </button>

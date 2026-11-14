@@ -24,9 +24,9 @@ const kebab = (designName: string) => "kb-" + designName.slice(2).replace(/[A-Z]
 
 const ours = keyframes(css, /^kb-/);
 const design = keyframes(screens, /^kb[A-Z]/);
-// kbPrint (max-height) waits for the owner's answer (it is not transform / opacity); kbShimmer moves the same highlight with a
-// transform instead of background-position - same look, 26 §3's rule.
-const COPIED = [...design.keys()].filter((k) => k !== "kbPrint" && k !== "kbShimmer");
+// kbShimmer moves the same highlight with a transform instead of background-position - same look, 26 §3's rule. kbPrint is copied
+// as drawn (max-height): the owner's one exception (14 Nov 2026, 26 §3).
+const COPIED = [...design.keys()].filter((k) => k !== "kbShimmer");
 
 describe("the design's motion, exactly (26 §3, docs/design/)", () => {
   it("the screens draw these animations", () => {
@@ -51,13 +51,20 @@ describe("the design's motion, exactly (26 §3, docs/design/)", () => {
     expect(timing("kb-sheet")).toBe(norm("kb-sheet .4s cubic-bezier(.2,.8,.2,1) both"));
     expect(timing("kb-fade")).toBe(norm("kb-fade .4s both")); // the sheet's backdrop (26 §3 "backdrop fades")
     expect(timing("kb-spin")).toBe(norm("kb-spin 1s linear infinite"));
+    expect(timing("kb-print")).toBe(norm("kb-print 2.4s ease-out both")); // as both 11 and 13 draw it
   });
 
-  it("every animation moves only transform and opacity (26 §3, smooth on a cheap phone)", () => {
+  it("every animation moves only transform and opacity (26 §3, smooth on a cheap phone) - but the receipt print, the one exception", () => {
     for (const [name, body] of ours) {
       const props = [...body.matchAll(/([a-z-]+):/g)].map((m) => m[1]);
-      expect(props.filter((p) => p !== "transform" && p !== "opacity"), name).toEqual([]);
+      const allowed = name === "kb-print" ? ["max-height"] : ["transform", "opacity"];
+      expect(props.filter((p) => !allowed.includes(p!)), name).toEqual([]);
     }
+  });
+
+  it("the exception is written in 26 §3 (owner, 14 Nov 2026)", () => {
+    const spec = readFileSync(join(ROOT, "docs", "26-DESIGN-SPEC.md"), "utf8");
+    expect(spec).toMatch(/Receipt print[^\n]*only exception[^\n]*max-height/i);
   });
 
   it("every animation token has its keyframes", () => {

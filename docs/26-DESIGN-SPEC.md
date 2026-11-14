@@ -124,6 +124,8 @@ Font stack: `'Inter', 'Noto Sans Devanagari', sans-serif`. **Bundle the font fil
 
 lucide-react (already in the app), stroke width 1.9, sizes 18 / 20 / 22 / 24. Every list row and action button carries an icon. Mapping used in the design: Mic, Pause, Square (stop), Play, RotateCcw (re-record / redo), Keyboard (type), Printer, MessageCircle or the WhatsApp mark (share on WhatsApp), FileText (PDF), Share2, ReceiptText (bill), Home, Package (items), MoreHorizontal, ChevronRight, ChevronLeft (back), Plus, Minus, Check, X, Pencil (edit), TriangleAlert (warning / price needed), Lightbulb (tips), Sparkles (learned / your price), Bluetooth, RefreshCw, WifiOff, Cloud, ShieldCheck, Languages, CircleHelp, LogOut, Store, Phone (smartphone), Ear (Heard).
 
+**Exceptions - the screen file's own drawing (owner, 14 Nov 2026, D110 item 9: match the design; lucide wherever it looks the same):** Pause and Stop are drawn filled (09-Recording: filled bars / a filled rounded square, stroke 1.6); Sparkles is a single 4-point star (10-Review, also the "your price" chip of 12); LogOut has the arrow pointing left out of the door (17-More). **Added 14 Nov 2026 (batch b sheet):** Home is a simple house - roof and walls, no door (17-More's bottom bar); ReceiptText is a torn-edge receipt with two lines (17-More "Bills"); "Bill design" uses the same receipt with a third short line (17-More); ShieldCheck is drawn as a plain shield, no tick (17-More "Privacy"). In code: `src/ui/kit/icons.ts`, tested against the files. lucide-react 1.x names: Home = House, MoreHorizontal = Ellipsis, CircleHelp = CircleQuestionMark, Phone = Smartphone.
+
 ## 3. Motion
 
 All motion uses `transform` / `opacity` only. Every animation is switched off when the phone has "Remove animations" / reduced motion on (`prefers-reduced-motion: reduce`): the end state shows instantly.
@@ -136,7 +138,7 @@ All motion uses `transform` / `opacity` only. Every animation is switched off wh
 | Recording dot | Red dot blinks | 1.2 s |
 | Float | Illustrations drift 6-7 px up and down | 4.5 s ease-in-out, infinite (onboarding only) |
 | Twinkle | Small amber sparkles fade and scale | 2.6 s (onboarding, splash only; max 2-3 per screen) |
-| Receipt print | The receipt grows from 0 height out of a paper slot | 2.4 s ease-out (waiting screen); 1.2 s on Bill saved |
+| Receipt print | The receipt grows from 0 height out of a paper slot. **The only exception to transform / opacity (owner, 14 Nov 2026): it animates max-height (0 -> 520 px) as the screen files draw it** - on 11-Generating the text and tip below the receipt are pushed down as it grows, which a clip-path (or any transform) cannot show. Reduced motion: no animation, the receipt fully shown. | 2.4 s ease-out (waiting screen); 1.2 s on Bill saved (13-BillSaved's file draws 2.4 s - asked, 14 Nov 2026) |
 | Shimmer | Grey placeholder lines shimmer while waiting | 1.4 s linear, infinite |
 | Lines slide in | Bill lines enter one by one from the left (14 px), 100 ms apart | 450 ms each |
 | Tick pop | Success circle scales .4 → 1.08 → 1 | 600 ms, cubic-bezier(.2,.8,.2,1.2) |

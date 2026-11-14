@@ -110,6 +110,7 @@
   --shadow-kb-mic: 0 12px 26px rgba(37, 99, 217, .32);
   --shadow-kb-segment: 0 2px 6px rgba(38, 50, 56, .10);
   --shadow-kb-knob: 0 1px 3px rgba(0, 0, 0, .2);
+  --shadow-kb-hero: 0 10px 26px rgba(38, 50, 56, .07); /* 26-FirstDay's hero card */
 
   /* 26 §2.2 text sizes in rem (the design's px / 16), so a phone's bigger text setting grows the text, not the boxes. */
   /* The screen files set no line-height (CSS "normal"); each size keeps that, never Tailwind's 1.5. */
@@ -131,6 +132,14 @@
   --text-kb-17--line-height: normal;
   --text-kb-18: 1.125rem;
   --text-kb-18--line-height: normal;
+  --text-kb-19: 1.1875rem;
+  --text-kb-19--line-height: normal;
+  --text-kb-20: 1.25rem;
+  --text-kb-20--line-height: normal;
+  --text-kb-21: 1.3125rem;
+  --text-kb-21--line-height: normal;
+  --text-kb-22: 1.375rem;
+  --text-kb-22--line-height: normal;
   --text-kb-26: 1.625rem;
   --text-kb-26--line-height: normal;
   --text-kb-28: 1.75rem;
@@ -143,7 +152,8 @@
   --text-kb-64--line-height: normal;
 
   /* KB-411 (26 §3): the motion of docs/design/, copied exactly (src/ui/kit/motion.test.ts) - transform and opacity only.
-   * The receipt "print" (the design's max-height) waits for the owner (KB-411 review). Stagger with an animation-delay. */
+   * One exception (owner, 14 Nov 2026, 26 §3): the receipt print grows max-height as drawn - top first, pushing what is below it.
+   * Stagger with an animation-delay. */
   --animate-kb-up: kb-up .6s cubic-bezier(.2,.7,.2,1) both;
   --animate-kb-pulse: kb-pulse 1.9s ease-out infinite;
   --animate-kb-bar: kb-bar 1.1s ease-in-out infinite;
@@ -156,6 +166,7 @@
   --animate-kb-sheet: kb-sheet .4s cubic-bezier(.2,.8,.2,1) both;
   --animate-kb-fade: kb-fade .4s both;
   --animate-kb-spin: kb-spin 1s linear infinite;
+  --animate-kb-print: kb-print 2.4s ease-out both;
 
   @keyframes kb-up { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
   @keyframes kb-pulse { 0% { transform: scale(1); opacity: .5 } 100% { transform: scale(1.6); opacity: 0 } }
@@ -170,7 +181,16 @@
   @keyframes kb-sheet { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
   @keyframes kb-fade { from { opacity: 0 } to { opacity: 1 } }
   @keyframes kb-spin { to { transform: rotate(360deg) } }
+  /* reduced motion: no animation, so no max-height - the receipt is fully shown */
+  @keyframes kb-print { from { max-height: 0 } to { max-height: 520px } }
 }
+
+/* KB-412 (owner, 14 Nov 2026): the drawn look stays exactly, but every tappable part reaches at least 48 x 48 px (44 x 44 for an
+ * icon-only button) - an invisible, centred tap area that moves nothing on screen. */
+.kb-hit, .kb-hit-icon { position: relative; }
+.kb-hit::before, .kb-hit-icon::before { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.kb-hit::before { width: max(100%, 48px); height: max(100%, 48px); }
+.kb-hit-icon::before { width: max(100%, 44px); height: max(100%, 44px); }
 
 /* KB-411 (26 §3): press - buttons scale to .97 in 100 ms; tab change - the active pill fades in 200 ms. */
 .kb-press { transition: transform 100ms; }

@@ -67,7 +67,7 @@ export function Button({
       onClick={onClick}
       aria-disabled={locked ? true : undefined}
       aria-describedby={locked ? reasonId : undefined}
-      className={`font-kb kb-press flex items-center justify-center font-bold ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
+      className={`font-kb kb-press kb-hit flex items-center justify-center font-bold ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
     >
       {locked ? <Icon icon={KB_ICONS.Lock} size={18} /> : icon && !iconEnd && <Icon icon={icon} size={iconSize} />}
       {children}

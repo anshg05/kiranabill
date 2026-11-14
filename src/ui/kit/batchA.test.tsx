@@ -4,7 +4,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
-import { AddChip, ChoiceChip, FilterChip, RemovableChip } from "./Chip";
+import { AddChip, ChoiceChip, FilterChip, FilterChipRow, RemovableChip } from "./Chip";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ToggleRow } from "./Toggle";
 import { Segmented } from "./Segmented";
 import { Stepper } from "./Stepper";
@@ -228,5 +230,90 @@ describe("TextField and SearchField", () => {
     has(input, "text-kb-15", "placeholder:text-kb-sub");
     has(input.parentElement!, "min-h-[50px]", "rounded-[14px]", "gap-[10px]");
     expect(input.parentElement!.querySelector("svg")!.getAttribute("width")).toBe("20");
+  });
+});
+
+// Owner's review of batch a (14 Nov 2026).
+describe("tap areas: the drawn look stays, every tappable part is at least 48 px (44 icon-only) to a finger", () => {
+  const css = readFileSync(join(__dirname, "..", "..", "index.css"), "utf8");
+
+  it("the invisible tap area is a centred ::before, at least 48 x 48 (kb-hit) or 44 x 44 (kb-hit-icon), never moving anything", () => {
+    expect(css).toMatch(/\.kb-hit,\s*\.kb-hit-icon\s*\{\s*position:\s*relative;\s*\}/);
+    expect(css).toMatch(/\.kb-hit::before,\s*\.kb-hit-icon::before\s*\{[^}]*content:\s*"";[^}]*position:\s*absolute;[^}]*left:\s*50%;[^}]*top:\s*50%;[^}]*transform:\s*translate\(-50%,\s*-50%\);[^}]*\}/);
+    expect(css).toMatch(/\.kb-hit::before\s*\{\s*width:\s*max\(100%,\s*48px\);\s*height:\s*max\(100%,\s*48px\);\s*\}/);
+    expect(css).toMatch(/\.kb-hit-icon::before\s*\{\s*width:\s*max\(100%,\s*44px\);\s*height:\s*max\(100%,\s*44px\);\s*\}/);
+  });
+
+  it("every button of every batch-a part carries one (icon-only buttons the 44 one)", () => {
+    const { container } = render(<>
+      <Button variant="tertiary">Keep</Button><Button variant="primary">Go</Button>
+      <FilterChip selected onClick={() => {}}>Today</FilterChip><ChoiceChip selected={false} onClick={() => {}}>Other</ChoiceChip>
+      <RemovableChip removeLabel="Remove x" onRemove={() => {}}>x</RemovableChip><AddChip onClick={() => {}}>Add name</AddChip>
+      <ToggleRow label="T" checked={false} onChange={() => {}} />
+      <Segmented label="S" value="a" onChange={() => {}} options={[{ value: "a", label: "A" }, { value: "b", label: "B" }]} />
+      <Stepper value={2} min={1} max={3} onChange={() => {}} decreaseLabel="Fewer" increaseLabel="More" />
+    </>);
+    const buttons = [...container.querySelectorAll("button")];
+    expect(buttons.length).toBe(11);
+    for (const b of buttons) {
+      const iconOnly = !b.textContent?.trim() && !!b.querySelector("svg"); // the switch has no words but is not an icon button: 48
+      expect(cls(b).split(/\s+/), `${b.getAttribute("aria-label") ?? b.textContent}`).toContain(iconOnly ? "kb-hit-icon" : "kb-hit");
+    }
+  });
+});
+
+describe("icons keep their size when a label wraps (360 px + 130% text, Hindi)", () => {
+  it("every icon inside a batch-a part is shrink-0", () => {
+    const { container } = render(<>
+      <Button variant="secondary" icon={KB_ICONS.Bluetooth}>Bluetooth settings that wrap onto two lines</Button>
+      <Button variant="locked">Bill Banao</Button>
+      <Badge kind="saved">Saved</Badge>
+      <RemovableChip removeLabel="Remove x" onRemove={() => {}}>x</RemovableChip><AddChip onClick={() => {}}>Add name</AddChip>
+      <Stepper value={2} min={1} max={3} onChange={() => {}} decreaseLabel="Fewer" increaseLabel="More" />
+      <TextField label="Shop" icon={KB_ICONS.Store} value="" onChange={() => {}} />
+      <SearchField label="Search" placeholder="Search" value="" onChange={() => {}} />
+    </>);
+    const svgs = [...container.querySelectorAll("svg")];
+    expect(svgs.length).toBe(9);
+    for (const s of svgs) expect(s.getAttribute("class")).toMatch(/\bshrink-0\b/);
+  });
+});
+
+describe("not drawn in the screens - the reviewer's choice (14 Nov 2026)", () => {
+  it("Paused badge: the Recording badge's shape in the warning colours, with a still dot", () => {
+    render(<Badge kind="paused">Paused</Badge>);
+    const b = screen.getByText("Paused");
+    has(b, "bg-kb-warn-bg", "text-kb-warn-text", "text-kb-14", "px-[14px]", "py-[7px]", "rounded-full");
+    const dot = b.querySelector("span")!;
+    has(dot, "w-[9px]", "h-[9px]", "bg-kb-warn-text");
+    expect(cls(dot)).not.toMatch(/animate-/);
+  });
+
+  it("a stepper button at its limit: same shape, the icon in sub at reduced opacity, aria-disabled and not tappable", () => {
+    const onChange = vi.fn();
+    render(<Stepper value={1} min={1} max={3} onChange={onChange} decreaseLabel="Fewer copies" increaseLabel="More copies" />);
+    const minus = screen.getByRole("button", { name: "Fewer copies" }) as HTMLButtonElement;
+    expect(minus.disabled).toBe(true);
+    expect(minus.getAttribute("aria-disabled")).toBe("true");
+    has(minus, "w-10", "h-10", "rounded-[10px]", "border-kb-border", "[&:disabled_svg]:text-kb-sub", "[&:disabled_svg]:opacity-40");
+    fireEvent.click(minus);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("filter chip row (owner, 14 Nov 2026): scrolls sideways, no scrollbar, the cut chip hints at more", () => {
+  it("scrolls on its own axis with the scrollbar hidden, and keeps the chips' tap areas inside it", () => {
+    const { container } = render(<FilterChipRow>{["Today", "Yesterday"].map((c) => <FilterChip key={c} selected={c === "Today"} onClick={() => {}}>{c}</FilterChip>)}</FilterChipRow>);
+    const row = container.firstElementChild!;
+    has(row, "overflow-x-auto", "overflow-y-hidden", "[scrollbar-width:none]", "[&::-webkit-scrollbar]:hidden", "py-[5px]", "-my-[5px]");
+    has(screen.getByRole("button", { name: "Today" }), "flex-none");
+  });
+
+  it("a chip reached by the keyboard is scrolled into view", () => {
+    const into = vi.fn();
+    Element.prototype.scrollIntoView = into;
+    render(<FilterChipRow>{["Today", "Pick dates"].map((c) => <FilterChip key={c} selected={false} onClick={() => {}}>{c}</FilterChip>)}</FilterChipRow>);
+    fireEvent.focus(screen.getByRole("button", { name: "Pick dates" }));
+    expect(into).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
   });
 });
