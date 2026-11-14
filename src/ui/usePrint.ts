@@ -40,7 +40,7 @@ export function usePrint(): { state: PrintState; print: (receipt: Receipt) => Pr
       setState({ kind: "printing", percent: 0 });
       const { bitmap } = await renderReceiptForPrint(receipt, settings.dots);
       const transport = settings.device.kind === "ble" ? bleTransport : classicTransport;
-      await sendToPrinter(transport, settings.device.id, encodeReceiptImage(bitmap), (done) => setState({ kind: "printing", percent: Math.round(done * 100) }), { bytesPerSecond: printRate(settings.dots) });
+      await sendToPrinter(transport, settings.device.id, encodeReceiptImage(bitmap, { mode: settings.compat ? "bitimage" : "raster" }), (done) => setState({ kind: "printing", percent: Math.round(done * 100) }), { bytesPerSecond: printRate(settings.dots) });
       setState({ kind: "done" });
       return true;
     } catch (err) {

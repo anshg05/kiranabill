@@ -298,6 +298,8 @@ export const MESSAGES = {
   "settings.paper58": m("58 mm (2 inch)", "58 mm (2 इंच)", "58 mm (2 inch)"),
   "settings.paper80": m("80 mm (3 inch)", "80 mm (3 इंच)", "80 mm (3 inch)"),
   "settings.testPrint": m("Test print", "टेस्ट प्रिंट", "Test print"),
+  "settings.compatMode": m("Compatible mode (for older printers)", "कम्पैटिबल मोड (पुराने प्रिंटर के लिए)", "Compatible mode (purane printer ke liye)"),
+  "settings.compatHint": m("Turn on if your printer prints strange symbols.", "अगर प्रिंटर अजीब निशान छापे, तो इसे चालू करें।", "Agar printer ajeeb nishaan chhaape, to ise chalu karein."),
   "settings.longTestPrint": m("Long test print (60 lines)", "लंबा टेस्ट प्रिंट (60 लाइन)", "Lamba test print (60 line)"),
   "settings.printerChecking": m("Checking the printer…", "प्रिंटर जाँच रहे हैं…", "Printer check kar rahe hain…"),
   "settings.privacy": m("Privacy policy", "गोपनीयता नीति", "Privacy policy"), // D91

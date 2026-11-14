@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { PRINT_THRESHOLD, printProfile } from "@/domain/escpos";
+import { PRINT_THRESHOLD, decodeEscPos, encodeReceiptImage, printProfile, toMonoBitmap } from "@/domain/escpos";
 
 // KB-408 (owner + reviewer, 14 Nov 2026): on the REAL rendered pixels (the browser engine's, /__dev/print) no ink may sit in the side
 // margins - 8 dots each side on 58 mm (384), 16 on 80 mm (576). The 58 mm print once had ink on dot 0 and dot 383: a printer a dot
@@ -60,5 +60,27 @@ describe("the printed image keeps its side margins (real renders)", () => {
     expect(blank(255, false), "pure white columns on the left").toBeGreaterThanOrEqual(margin - 1);
     expect(blank(255, true), "pure white columns on the right").toBeGreaterThanOrEqual(margin - 1);
     expect(darkestInMargin).toBeGreaterThanOrEqual(PRINT_THRESHOLD + 15);
+  });
+});
+
+// Owner, 14 Nov 2026: Compatible mode sends the SAME image as ESC * bit image (older printers without GS v 0). Read back from those
+// bytes, it must be the image dot for dot - margins included - on both papers.
+describe("Compatible mode (ESC *): the printer draws exactly the image (real renders)", () => {
+  it.each(["bill514-384.grey.gz", "bill514-576.grey.gz", "wide-384.grey.gz"])("%s", (file) => {
+    const dots = Number(/-(\d+)\.grey\.gz$/.exec(file)![1]);
+    const grey = gunzipSync(readFileSync(path.join(DIR, file)));
+    const h = grey.length / dots;
+    const rgba = new Uint8Array(dots * h * 4);
+    for (let i = 0; i < grey.length; i++) rgba.set([grey[i]!, grey[i]!, grey[i]!, 255], i * 4);
+    const img = toMonoBitmap(rgba, dots, h);
+    const back = decodeEscPos(encodeReceiptImage(img, { mode: "bitimage" }));
+    expect(back.width).toBe(dots);
+    expect(back.height).toBe(Math.ceil(h / 24) * 24); // ESC * prints whole 24-dot bands
+    expect(Buffer.from(back.data.subarray(0, img.data.length)).equals(Buffer.from(img.data))).toBe(true);
+    expect(back.data.subarray(img.data.length).every((b) => b === 0)).toBe(true);
+    // the margins survive: no dot in the outer columns
+    const margin = printProfile(dots).padding;
+    const dot = (x: number, y: number) => (back.data[y * (dots / 8) + (x >> 3)]! & (0x80 >> (x & 7))) !== 0;
+    for (let y = 0; y < back.height; y++) for (let x = 0; x < margin; x++) expect(dot(x, y) || dot(dots - 1 - x, y), `dot in the margin at ${x}, ${y}`).toBe(false);
   });
 });

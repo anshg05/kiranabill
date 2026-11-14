@@ -88,13 +88,14 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
     setChecking(true);
     try {
       const device = await preferClassic(found, classicTransport);
-      save({ device, dots: settings?.dots ?? 384 });
+      save({ device, dots: settings?.dots ?? 384, compat: settings?.compat ?? false }); // a new printer keeps the paper and the mode
       setDevices(null);
     } finally {
       setChecking(false);
     }
   };
   const setPaper = (dots: PaperDots) => settings && save({ ...settings, dots });
+  const setCompat = (compat: boolean) => settings && save({ ...settings, compat });
 
   return (
     <section aria-label={t("settings.printer")} className="mt-6">
@@ -155,6 +156,12 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
               </label>
             ))}
           </div>
+          {/* Owner, 14 Nov 2026: for printers that print garbage for GS v 0 - the same image as ESC * bit image. */}
+          <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3">
+            <input type="checkbox" role="switch" checked={settings.compat} onChange={(e) => setCompat(e.target.checked)} className="h-5 w-5 accent-ink" />
+            <span className="font-medium">{t("settings.compatMode")}</span>
+          </label>
+          <p className="text-[13px] text-ink-soft">{t("settings.compatHint")}</p>
         </>
       )}
       <PrintStatus state={test.state} />

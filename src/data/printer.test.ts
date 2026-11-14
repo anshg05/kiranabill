@@ -216,10 +216,22 @@ describe("printer settings - this phone only", () => {
 
   it("none until chosen; saved and read back; cleared", () => {
     expect(loadPrinterSettings()).toBeNull();
-    savePrinterSettings({ device: dev(), dots: 384 });
-    expect(loadPrinterSettings()).toEqual({ device: dev(), dots: 384 });
+    savePrinterSettings({ device: dev(), dots: 384, compat: false });
+    expect(loadPrinterSettings()).toEqual({ device: dev(), dots: 384, compat: false });
+    savePrinterSettings({ device: dev(), dots: 576, compat: true });
+    expect(loadPrinterSettings()).toEqual({ device: dev(), dots: 576, compat: true });
     savePrinterSettings(null);
     expect(loadPrinterSettings()).toBeNull();
+  });
+
+  // Owner, 14 Nov 2026: Compatible mode (ESC * for printers without GS v 0) is OFF unless it was switched on - a damaged value is off.
+  it("Compatible mode: off when missing (a printer saved before it existed) or damaged; on only for a stored true", () => {
+    for (const compat of [undefined, null, "true", 1, "yes", {}]) {
+      localStorage.setItem("kb.printer.v1", JSON.stringify({ device: dev(), dots: 384, compat }));
+      expect(loadPrinterSettings()?.compat, String(compat)).toBe(false);
+    }
+    localStorage.setItem("kb.printer.v1", JSON.stringify({ device: dev(), dots: 384, compat: true }));
+    expect(loadPrinterSettings()?.compat).toBe(true);
   });
 
   it("damaged or unknown data reads as 'no printer', never a crash or a wrong width", () => {
@@ -232,7 +244,7 @@ describe("printer settings - this phone only", () => {
   it("storage that throws (private mode, full) is 'no printer'", () => {
     vi.stubGlobal("localStorage", { getItem: () => { throw new Error("denied"); }, setItem: () => { throw new Error("denied"); }, removeItem: () => {} });
     expect(loadPrinterSettings()).toBeNull();
-    expect(() => savePrinterSettings({ device: dev(), dots: 576 })).not.toThrow();
+    expect(() => savePrinterSettings({ device: dev(), dots: 576, compat: false })).not.toThrow();
   });
 });
 

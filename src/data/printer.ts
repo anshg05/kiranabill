@@ -134,6 +134,8 @@ export function sortDevices(devices: readonly PrinterDevice[]): PrinterDevice[] 
 export interface PrinterSettings {
   readonly device: PrinterDevice;
   readonly dots: PaperDots;
+  /** Compatible mode (owner, 14 Nov 2026): the image goes as ESC * bit image, for older printers that print garbage for GS v 0. */
+  readonly compat: boolean;
 }
 
 const KEY = "kb.printer.v1";
@@ -143,7 +145,8 @@ export function loadPrinterSettings(): PrinterSettings | null {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<PrinterSettings> | null;
     const d = raw?.device;
     if (!d || typeof d.id !== "string" || typeof d.name !== "string" || (d.kind !== "classic" && d.kind !== "ble") || (raw.dots !== 384 && raw.dots !== 576)) return null;
-    return { device: { id: d.id, name: d.name, kind: d.kind, printerLike: d.printerLike === true }, dots: raw.dots };
+    // compat is ON only for a stored true: a printer saved before it existed, or a damaged value, prints as before (GS v 0)
+    return { device: { id: d.id, name: d.name, kind: d.kind, printerLike: d.printerLike === true }, dots: raw.dots, compat: raw.compat === true };
   } catch {
     return null;
   }

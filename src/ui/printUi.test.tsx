@@ -55,7 +55,10 @@ import { PrinterSection } from "./PrinterSection";
 
 const receipt = { shopName: "Gupta Kirana Store", receiptNumber: "514", rows: [], reprint: null } as unknown as Receipt;
 const BT58: PrinterDevice = { id: "AA:BB", name: "BT-SRT-58", kind: "classic", printerLike: true };
-const choose = (device: PrinterDevice, dots: 384 | 576 = 384) => localStorage.setItem("kb.printer.v1", JSON.stringify({ device, dots }));
+const choose = (device: PrinterDevice, dots: 384 | 576 = 384, compat = false) => localStorage.setItem("kb.printer.v1", JSON.stringify({ device, dots, compat }));
+const ESC_STAR = [0x1b, 0x2a, 33];
+const GS_V_0 = [0x1d, 0x76, 0x30];
+const has = (bytes: number[], seq: number[]) => bytes.some((_, i) => seq.every((b, k) => bytes[i + k] === b));
 const shop = { name: "Gupta Kirana Store", phone: "9876543210", billLanguage: "en" as const };
 
 beforeEach(() => {
@@ -106,6 +109,23 @@ describe("PrintButton", () => {
     expect(classic.t.sent.slice(0, 2)).toEqual([0x1b, 0x40]);
     expect(rendered.calls).toHaveLength(1);
     expect(printBtn().getAttribute("aria-disabled")).toBe("false");
+  });
+
+  it("Compatible mode OFF: the image goes as GS v 0 raster; ON: the same image as ESC * bit image - never both", async () => {
+    choose(BT58, 384, false);
+    const first = render(<PrintButton receipt={receipt} firstIsOriginal />);
+    fireEvent.click(printBtn());
+    await settle();
+    expect(has(classic.t.sent, GS_V_0)).toBe(true);
+    expect(has(classic.t.sent, ESC_STAR)).toBe(false);
+    first.unmount();
+    classic.t.sent = [];
+    choose(BT58, 384, true);
+    render(<PrintButton receipt={receipt} firstIsOriginal />);
+    fireEvent.click(printBtn());
+    await settle();
+    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
+    expect(has(classic.t.sent, GS_V_0)).toBe(false);
   });
 
   it("a BLE printer is sent through the BLE transport", async () => {
@@ -197,8 +217,46 @@ describe("Settings → Printer", () => {
     await settle();
     fireEvent.click(screen.getByRole("button", { name: "KP307-UEWB" }));
     await settle();
-    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!)).toEqual({ device: { id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }, dots: 384 });
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!)).toEqual({ device: { id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }, dots: 384, compat: false });
     expect(screen.getByText("KP307-UEWB")).toBeTruthy();
+  });
+
+  it("Compatible mode: a switch with its one-line hint, OFF by default; switching it is saved on this phone", async () => {
+    choose(BT58);
+    render(<PrinterSection shop={shop} />);
+    const sw = screen.getByRole("switch", { name: "Compatible mode (for older printers)" });
+    expect((sw as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByText("Turn on if your printer prints strange symbols.")).toBeTruthy();
+    fireEvent.click(sw);
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(true);
+    fireEvent.click(sw);
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(false);
+  });
+
+  it("Compatible mode is kept when the paper size or the printer changes", async () => {
+    choose(BT58, 384, true);
+    classic.t.devices = [{ id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }];
+    render(<PrinterSection shop={shop} />);
+    fireEvent.click(screen.getByRole("radio", { name: "80 mm (3 inch)" }));
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "KP307-UEWB" }));
+    await settle();
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!)).toMatchObject({ device: { id: "CC" }, dots: 576, compat: true });
+  });
+
+  it("Test print and Long test print use Compatible mode too", async () => {
+    choose(BT58, 384, true);
+    render(<PrinterSection shop={shop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Test print" }));
+    await settle();
+    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
+    classic.t.sent = [];
+    fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
+    await settle();
+    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
+    expect(has(classic.t.sent, GS_V_0)).toBe(false);
   });
 
   it("paper size: 80 mm is saved as 576 dots", async () => {
