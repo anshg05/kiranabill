@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
-import { AddChip, ChoiceChip, FilterChip, FilterChipRow, RemovableChip } from "./Chip";
+import { AddChip, ChipGroup, ChoiceChip, FilterChip, FilterChipRow, RemovableChip } from "./Chip";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ToggleRow } from "./Toggle";
@@ -240,8 +240,9 @@ describe("tap areas: the drawn look stays, every tappable part is at least 48 px
   it("the invisible tap area is a centred ::before, at least 48 x 48 (kb-hit) or 44 x 44 (kb-hit-icon), never moving anything", () => {
     expect(css).toMatch(/\.kb-hit,\s*\.kb-hit-icon\s*\{\s*position:\s*relative;\s*\}/);
     expect(css).toMatch(/\.kb-hit::before,\s*\.kb-hit-icon::before\s*\{[^}]*content:\s*"";[^}]*position:\s*absolute;[^}]*left:\s*50%;[^}]*top:\s*50%;[^}]*transform:\s*translate\(-50%,\s*-50%\);[^}]*\}/);
-    expect(css).toMatch(/\.kb-hit::before\s*\{\s*width:\s*max\(100%,\s*48px\);\s*height:\s*max\(100%,\s*48px\);\s*\}/);
-    expect(css).toMatch(/\.kb-hit-icon::before\s*\{\s*width:\s*max\(100%,\s*44px\);\s*height:\s*max\(100%,\s*44px\);\s*\}/);
+    // owner, 15 Nov 2026: never two tap areas overlapping - each stops at the middle of the gap its container declares
+    expect(css).toMatch(/\.kb-hit::before\s*\{\s*width:\s*min\(max\(100%,\s*48px\),\s*calc\(100% \+ var\(--kb-gap-x,\s*48px\)\)\);\s*height:\s*min\(max\(100%,\s*48px\),\s*calc\(100% \+ var\(--kb-gap-y,\s*48px\)\)\);\s*\}/);
+    expect(css).toMatch(/\.kb-hit-icon::before\s*\{\s*width:\s*min\(max\(100%,\s*44px\),\s*calc\(100% \+ var\(--kb-gap-x,\s*44px\)\)\);\s*height:\s*min\(max\(100%,\s*44px\),\s*calc\(100% \+ var\(--kb-gap-y,\s*44px\)\)\);\s*\}/);
   });
 
   it("every button of every batch-a part carries one (icon-only buttons the 44 one)", () => {
@@ -317,3 +318,21 @@ describe("filter chip row (owner, 14 Nov 2026): scrolls sideways, no scrollbar, 
     expect(into).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
   });
 });
+
+describe("tap areas never overlap (owner, 15 Nov 2026): each stops at the middle of the gap", () => {
+  it("a chip group (19 other names, 25 reasons) wraps with 8 px gaps and tells its chips so", () => {
+    const { container } = render(<ChipGroup><ChoiceChip selected onClick={() => {}}>A</ChoiceChip></ChipGroup>);
+    has(container.firstElementChild!, "flex", "flex-wrap", "gap-2", "[--kb-gap-x:8px]", "[--kb-gap-y:8px]", "[--kb-chip-gap:8px]");
+  });
+
+  it("the chip x reaches over its own chip's words but stops half way to the next chip: 12 px of chip + the gap across, 8 px of chip + the gap up and down", () => {
+    render(<RemovableChip removeLabel="Remove x" onRemove={() => {}}>x</RemovableChip>);
+    has(screen.getByText("x"), "[--kb-gap-x:calc(12px+var(--kb-chip-gap,48px))]", "[--kb-gap-y:calc(8px+var(--kb-chip-gap,48px))]");
+  });
+
+  it("the filter row tells its chips the 8 px gap between them", () => {
+    const { container } = render(<FilterChipRow><FilterChip selected onClick={() => {}}>T</FilterChip></FilterChipRow>);
+    has(container.firstElementChild!, "[--kb-gap-x:8px]");
+  });
+});
+

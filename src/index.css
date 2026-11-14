@@ -167,6 +167,7 @@
   --animate-kb-fade: kb-fade .4s both;
   --animate-kb-spin: kb-spin 1s linear infinite;
   --animate-kb-print: kb-print 2.4s ease-out both;
+  --animate-kb-print-saved: kb-print 1.2s ease-out both; /* 13 Bill saved: 1.2 s (owner, 15 Nov 2026, 26 §3) */
 
   @keyframes kb-up { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
   @keyframes kb-pulse { 0% { transform: scale(1); opacity: .5 } 100% { transform: scale(1.6); opacity: 0 } }
@@ -189,8 +190,10 @@
  * icon-only button) - an invisible, centred tap area that moves nothing on screen. */
 .kb-hit, .kb-hit-icon { position: relative; }
 .kb-hit::before, .kb-hit-icon::before { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.kb-hit::before { width: max(100%, 48px); height: max(100%, 48px); }
-.kb-hit-icon::before { width: max(100%, 44px); height: max(100%, 44px); }
+/* Owner, 15 Nov 2026: never two tap areas overlapping - a container that puts controls closer declares its gap (--kb-gap-x / -y)
+ * and each area stops at the middle of it (100% + the gap = half the gap each side). */
+.kb-hit::before { width: min(max(100%, 48px), calc(100% + var(--kb-gap-x, 48px))); height: min(max(100%, 48px), calc(100% + var(--kb-gap-y, 48px))); }
+.kb-hit-icon::before { width: min(max(100%, 44px), calc(100% + var(--kb-gap-x, 44px))); height: min(max(100%, 44px), calc(100% + var(--kb-gap-y, 44px))); }
 
 /* KB-411 (26 §3): press - buttons scale to .97 in 100 ms; tab change - the active pill fades in 200 ms. */
 .kb-press { transition: transform 100ms; }

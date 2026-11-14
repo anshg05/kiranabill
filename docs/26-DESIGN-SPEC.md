@@ -40,7 +40,7 @@ Related: D101 (record-review-generate), D102 (names as said), D103 (units as sai
 6. **Every error ends in an action**: Retry (same recording) or Add by hand / Type instead. No dead ends.
 7. **Premium and real, not "AI-generated"**: real Hindi item names and rupee amounts in examples, the real receipt style, restrained colour, purposeful motion.
 8. **Fast on cheap phones.** Target: smooth on a Redmi 9 Power (Android 12). Animate only `transform` and `opacity`. No blur filters on large areas, no heavy shadows on long lists.
-9. **Touch targets at least 48 dp** (44 dp absolute minimum for icon buttons in dense rows). Large readable text.
+9. **Touch targets at least 48 dp** (44 dp absolute minimum for icon buttons in dense rows). Large readable text. **(Owner, 14-15 Nov 2026)** The drawn size stays; an invisible tap area makes up the rest, and where two controls' areas would overlap each stops at the middle of the gap (`kb-hit`, `src/index.css`).
 
 ## 2. Design tokens
 
@@ -138,7 +138,7 @@ All motion uses `transform` / `opacity` only. Every animation is switched off wh
 | Recording dot | Red dot blinks | 1.2 s |
 | Float | Illustrations drift 6-7 px up and down | 4.5 s ease-in-out, infinite (onboarding only) |
 | Twinkle | Small amber sparkles fade and scale | 2.6 s (onboarding, splash only; max 2-3 per screen) |
-| Receipt print | The receipt grows from 0 height out of a paper slot. **The only exception to transform / opacity (owner, 14 Nov 2026): it animates max-height (0 -> 520 px) as the screen files draw it** - on 11-Generating the text and tip below the receipt are pushed down as it grows, which a clip-path (or any transform) cannot show. Reduced motion: no animation, the receipt fully shown. | 2.4 s ease-out (waiting screen); 1.2 s on Bill saved (13-BillSaved's file draws 2.4 s - asked, 14 Nov 2026) |
+| Receipt print | The receipt grows from 0 height out of a paper slot. **The only exception to transform / opacity (owner, 14 Nov 2026): it animates max-height (0 -> 520 px) as the screen files draw it** - on 11-Generating the text and tip below the receipt are pushed down as it grows, which a clip-path (or any transform) cannot show. Reduced motion: no animation, the receipt fully shown. | 2.4 s ease-out (waiting screen); 1.2 s on Bill saved (owner, 15 Nov 2026 - the 13-BillSaved file's 2.4 s is not used) |
 | Shimmer | Grey placeholder lines shimmer while waiting | 1.4 s linear, infinite |
 | Lines slide in | Bill lines enter one by one from the left (14 px), 100 ms apart | 450 ms each |
 | Tick pop | Success circle scales .4 → 1.08 → 1 | 600 ms, cubic-bezier(.2,.8,.2,1.2) |
@@ -185,7 +185,7 @@ Build each once as a reusable component; screens only compose them.
 - **Mic button**: 112-114 dp primary circle, white Mic 46-48, inside a 138 dp tap area with the pulse ring. On Recording: 132 dp inside a 210 dp pale circle.
 - **Waveform**: 5 dp bars, radius 3, primary (live) or `#B9CDF3` (playback).
 - **Tip card**: Lightbulb amber icon; warm variant (`--kb-warn-bg` + warn text, "DID YOU KNOW") or white card variant.
-- **Banners**: info (pale blue + primary icon), warning (warn bg), offline strip (ink background, white text, full width at top: "No internet · billing still works").
+- **Banners**: info (pale blue + primary icon), warning (warn bg - **not drawn on any screen; built only when a screen needs it, as the info banner's shape in `--kb-warn-bg` / `--kb-warn-text`**, owner 15 Nov 2026), offline strip (ink background, white text, full width at top: "No internet · billing still works").
 - **Status badges**: Saved (ok pale + Check), Draft · not saved (muted), Recording (err pale + blinking dot), Almost done (pale blue), Required / For printing (muted small).
 - **Bottom sheet**: `--kb-bg`, radius 28 top, 44 x 5 grab handle, backdrop `rgba(38,50,56,.45)`.
 - **Empty and first-use states**: a friendly hero card with one action, never an empty grey page.

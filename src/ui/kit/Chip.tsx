@@ -24,7 +24,7 @@ export function FilterChip({ selected, onClick, children }: { selected: boolean;
 export function FilterChipRow({ children, className = "" }: { children: ReactNode; className?: string }) {
   const onFocus = (e: FocusEvent<HTMLDivElement>) => e.target.scrollIntoView({ block: "nearest", inline: "nearest" });
   return (
-    <div onFocus={onFocus} className={`flex gap-2 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-[5px] -my-[5px] ${className}`}>
+    <div onFocus={onFocus} className={`flex gap-2 [--kb-gap-x:8px] overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-[5px] -my-[5px] ${className}`}>
       {children}
     </div>
   );
@@ -47,13 +47,19 @@ export function ChoiceChip({ selected, onClick, children }: { selected: boolean;
 
 export function RemovableChip({ removeLabel, onRemove, children }: { removeLabel: string; onRemove: () => void; children: ReactNode }) {
   return (
-    <span className="font-kb inline-flex items-center gap-[6px] min-h-[34px] pl-3 pr-[6px] rounded-full bg-kb-primary-pale text-kb-ink text-kb-14 font-semibold">
+    // the x's tap area: over its own chip's words, then half the gap to the next chip (owner, 15 Nov 2026: never overlapping)
+    <span className="font-kb [--kb-gap-x:calc(12px+var(--kb-chip-gap,48px))] [--kb-gap-y:calc(8px+var(--kb-chip-gap,48px))] inline-flex items-center gap-[6px] min-h-[34px] pl-3 pr-[6px] rounded-full bg-kb-primary-pale text-kb-ink text-kb-14 font-semibold">
       {children}
       <button type="button" aria-label={removeLabel} onClick={onRemove} className="kb-hit-icon w-[26px] h-[26px] rounded-full text-kb-sub flex items-center justify-center">
         <Icon icon={KB_ICONS.X} size={14} />
       </button>
     </span>
   );
+}
+
+/** 19-AddItem other names / 25-CancelBill reasons: chips that wrap, 8 px apart; tells its chips the gap so no two tap areas overlap. */
+export function ChipGroup({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap gap-2 [--kb-gap-x:8px] [--kb-gap-y:8px] [--kb-chip-gap:8px]">{children}</div>;
 }
 
 export function AddChip({ onClick, children }: { onClick: () => void; children: ReactNode }) {

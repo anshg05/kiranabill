@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { render, type Language, type MessageId } from "@/domain/messages";
 import { Button } from "./kit/Button";
 import { Badge } from "./kit/Badge";
-import { AddChip, ChoiceChip, FilterChip, FilterChipRow, RemovableChip } from "./kit/Chip";
+import { AddChip, ChipGroup, ChoiceChip, FilterChip, FilterChipRow, RemovableChip } from "./kit/Chip";
 import { ToggleRow } from "./kit/Toggle";
 import { Segmented } from "./kit/Segmented";
 import { Stepper } from "./kit/Stepper";
@@ -105,18 +105,18 @@ const PARTS: Part[] = [
     ours: () => (
       <Stateful start="Wrong item">
         {(v, set) => (
-          <div className="flex flex-wrap gap-2">
+          <ChipGroup>
             {["Wrong item", "Wrong price", "Customer returned", "Other"].map((c) => <ChoiceChip key={c} selected={v === c} onClick={() => set(c)}>{c}</ChoiceChip>)}
-          </div>
+          </ChipGroup>
         )}
       </Stateful>
     ) },
   { name: "Removable chips + add chip", find: { file: "19-AddItem.html", text: "Add name", up: 1 },
     ours: () => (
-      <div className="flex flex-wrap gap-2">
+      <ChipGroup>
         {["तुअर दाल", "toor dal", "अरहर"].map((c) => <RemovableChip key={c} removeLabel={`Remove ${c}`} onRemove={noop}>{c}</RemovableChip>)}
         <AddChip onClick={noop}>Add name</AddChip>
-      </div>
+      </ChipGroup>
     ) },
   { name: "Toggle row / off with a sub-line", find: { file: "18-Printer.html", text: "Print after Bill Banao", up: 2 },
     ours: () => <Stateful start={false}>{(v, set) => <ToggleRow label="Print after Bill Banao" sub="Prints by itself when the bill is saved" checked={v} onChange={set} divider />}</Stateful> },
@@ -207,9 +207,9 @@ function BATCH_B_PARTS(): Part[] {
         <BottomSheet position="static" backKey="kbGallerySheet" title="Cancel Bill 514?" intro="Bill 514 stays in history, marked cancelled. A new corrected bill opens with the same items so you can fix it." onClose={noop}>
           <div className="flex flex-col gap-2">
             <div className="text-kb-14 font-semibold">Why? · optional</div>
-            <div className="flex flex-wrap gap-2">
+            <ChipGroup>
               {["Wrong item", "Wrong price", "Customer returned", "Other"].map((c, i) => <ChoiceChip key={c} selected={i === 0} onClick={noop}>{c}</ChoiceChip>)}
-            </div>
+            </ChipGroup>
           </div>
           <div className="flex gap-3 bg-kb-card border border-kb-border rounded-[16px] py-3 px-[14px]">
             <div className="text-kb-14 text-kb-sub leading-[1.5]"><b className="text-kb-ink">Why not just edit?</b> Saved bills are never changed quietly — your records always match what the customer got.</div>
@@ -334,11 +334,41 @@ function LanguageSample() {
       </div>
       <SearchField label={t("history.search")} placeholder={t("history.search")} value="" onChange={noop} />
       <Button variant="secondary" icon={KB_ICONS.Bluetooth}>{t("settings.printerChoose")}</Button>
-      <div className="flex gap-2 flex-wrap">
+      <ChipGroup>
         {["चीनी", "चावल", "टाटा नमक", "लाइज़ॉल"].map((c) => <RemovableChip key={c} removeLabel={c} onRemove={noop}>{c}</RemovableChip>)}
-      </div>
+      </ChipGroup>
     </div>
   );
+}
+
+/** Owner, 15 Nov 2026: no two tap areas overlap. Each kb-hit area is its ::before, centred on the control; any two controls (neither
+ *  inside the other) whose areas cross by more than half a pixel are listed. Shown at the top of every gallery view. */
+function TapAreaCheck() {
+  const [text, setText] = useState("checking tap areas…");
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0);
+      const areas = els.map((e) => {
+        const r = e.getBoundingClientRect();
+        const b = getComputedStyle(e, "::before");
+        const w = parseFloat(b.width), h = parseFloat(b.height);
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2 + window.scrollY;
+        return { e, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
+      });
+      const bad: string[] = [];
+      for (let i = 0; i < areas.length; i++)
+        for (let j = i + 1; j < areas.length; j++) {
+          const a = areas[i]!, c = areas[j]!;
+          if (a.e.contains(c.e) || c.e.contains(a.e)) continue;
+          const x = Math.min(a.r, c.r) - Math.max(a.l, c.l), y = Math.min(a.b, c.b) - Math.max(a.t, c.t);
+          if (x > 0.5 && y > 0.5) bad.push(`${(a.e.getAttribute("aria-label") ?? a.e.textContent ?? "").trim().slice(0, 24)} / ${(c.e.getAttribute("aria-label") ?? c.e.textContent ?? "").trim().slice(0, 24)}`);
+        }
+      const under = areas.filter((a) => a.small < (a.e.classList.contains("kb-hit-icon") ? 44 : 48) - 0.5).length;
+      setText(`Tap areas: ${areas.length} · overlapping pairs: ${bad.length}${bad.length ? " - " + bad.join("; ") : ""} · capped below 48 / 44 by a gap: ${under}`);
+    }, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+  return <p data-tap-check style={{ font: "600 12px system-ui", color: text.includes("overlapping pairs: 0") ? "#2a6" : "#b00" }}>{text}</p>;
 }
 
 export function DevKitGallery() {
@@ -355,7 +385,8 @@ export function DevKitGallery() {
   if (compare) {
     return (
       <main style={{ padding: 16, maxWidth: 820 }}>
-        <h1 style={{ font: "700 16px system-ui" }}>KB-412 batches a + b - kit beside the approved design (D110 item 9)</h1>
+        <h1 style={{ font: "700 16px system-ui" }}>KB-412 - kit beside the approved design (D110 item 9)</h1>
+        <TapAreaCheck />
         {ALL_PARTS().slice(Number(params.get("from") ?? 0), Number(params.get("to") ?? ALL_PARTS().length)).map((p) => <CompareRow key={p.name} part={p} />)}
       </main>
     );
@@ -363,7 +394,8 @@ export function DevKitGallery() {
   return (
     // ?w= - the page width in px (headless Edge will not open a window narrower than about 500 px)
     <main className="font-kb text-kb-ink px-4 py-4 flex flex-col gap-5" style={params.get("w") ? { width: Number(params.get("w")), boxSizing: "border-box" } : undefined}>
-      <h1 className="text-kb-18 font-bold">Kit - batch a ({LANG}{params.get("w") ? `, ${params.get("w")} px` : ""}{params.get("scale") ? `, text ${params.get("scale")}%` : ""}{params.get("motion") ? ", reduced motion" : ""})</h1>
+      <TapAreaCheck />
+      <h1 className="text-kb-18 font-bold">Kit ({LANG}{params.get("w") ? `, ${params.get("w")} px` : ""}{params.get("scale") ? `, text ${params.get("scale")}%` : ""}{params.get("motion") ? ", reduced motion" : ""})</h1>
       {ALL_PARTS().map((p) => (
         <section key={p.name} className="flex flex-col gap-2">
           <h2 className="text-kb-12 font-bold text-kb-sub uppercase tracking-[.5px]">{p.name}</h2>

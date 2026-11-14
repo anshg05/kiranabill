@@ -51,7 +51,8 @@ describe("the design's motion, exactly (26 §3, docs/design/)", () => {
     expect(timing("kb-sheet")).toBe(norm("kb-sheet .4s cubic-bezier(.2,.8,.2,1) both"));
     expect(timing("kb-fade")).toBe(norm("kb-fade .4s both")); // the sheet's backdrop (26 §3 "backdrop fades")
     expect(timing("kb-spin")).toBe(norm("kb-spin 1s linear infinite"));
-    expect(timing("kb-print")).toBe(norm("kb-print 2.4s ease-out both")); // as both 11 and 13 draw it
+    expect(timing("kb-print")).toBe(norm("kb-print 2.4s ease-out both")); // 11, the waiting screen
+    expect(timing("kb-print-saved")).toBe(norm("kb-print 1.2s ease-out both")); // 13 Bill saved: 1.2 s (owner, 15 Nov 2026, 26 §3)
   });
 
   it("every animation moves only transform and opacity (26 §3, smooth on a cheap phone) - but the receipt print, the one exception", () => {
