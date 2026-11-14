@@ -2,7 +2,7 @@
 // MoreHorizontal -> Ellipsis, CircleHelp -> CircleQuestionMark, Phone (smartphone) -> Smartphone); the drawings are the same.
 import { createElement } from "react";
 import {
-  Bluetooth, Check, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ear, Ellipsis, FileText, House, Keyboard, Languages,
+  ArrowRight, Bluetooth, Check, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ear, Ellipsis, FileText, House, Keyboard, Languages,
   Lightbulb, Lock, LogOut, MessageCircle, Mic, Minus, Package, Pause, Pencil, Play, Plus, Printer, ReceiptText, RefreshCw,
   RotateCcw, Search, Share2, ShieldCheck, Smartphone, Sparkles, Square, Store, TriangleAlert, WifiOff, X,
   type LucideIcon,
@@ -13,13 +13,12 @@ export const KB_ICONS = {
   MoreHorizontal: Ellipsis, ChevronRight, ChevronLeft, Plus, Minus, Check, X, Pencil, TriangleAlert, Lightbulb, Sparkles,
   Bluetooth, RefreshCw, WifiOff, Cloud, ShieldCheck, Languages, CircleHelp: CircleQuestionMark, LogOut, Store, Phone: Smartphone,
   Ear,
-  // drawn by 26 §5's components: the search field and the locked Bill Banao
-  Search, Lock,
+  // drawn by 26 §5's components: the search field and the locked Bill Banao; 06-ShopSetup's Continue arrow
+  Search, Lock, ArrowRight,
 } satisfies Record<string, LucideIcon>;
 
-export type IconSize = 11 | 18 | 20 | 22 | 24;
-
-/** One icon at the design's stroke (1.9), coloured by its text; the button or row it sits in carries the words. */
-export function Icon({ icon, size, className }: { icon: LucideIcon; size: IconSize; className?: string }) {
-  return createElement(icon, { size, strokeWidth: 1.9, absoluteStrokeWidth: false, "aria-hidden": true, className });
+/** One icon at the design's stroke (1.9 - the Saved tick draws 2.4), coloured by its text; the button or row carries the words.
+ *  size = the px the screen file draws (26 §2.4 names 18 / 20 / 22 / 24; the screens also draw 11, 13, 14, 15, 16, 17, 19). */
+export function Icon({ icon, size, strokeWidth = 1.9, className }: { icon: LucideIcon; size: number; strokeWidth?: number; className?: string }) {
+  return createElement(icon, { size, strokeWidth, absoluteStrokeWidth: false, "aria-hidden": true, className });
 }

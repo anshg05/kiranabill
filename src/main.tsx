@@ -20,6 +20,9 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
 } else if (import.meta.env.DEV && window.location.pathname === "/__dev/print") {
   // DEV ONLY (KB-408 S3): the print previews - rendered, encoded, decoded back from the printer bytes, saved to eval/print-preview/.
   void import("@/ui/DevPrintPreview").then(({ DevPrintPreview }) => root.render(<DevPrintPreview />));
+} else if (import.meta.env.DEV && window.location.pathname === "/__dev/kit") {
+  // DEV ONLY (KB-412): the kit gallery and its side-by-side sheet against docs/design/ (?view=compare).
+  void import("@/ui/DevKitGallery").then(({ DevKitGallery }) => root.render(<DevKitGallery />));
 } else if (import.meta.env.VITE_ACCEPTANCE === "1" && new URLSearchParams(window.location.search).has("session")) {
   // DRAFT BUILDS ONLY (KB-364): the acceptance-order recorder. VITE_ACCEPTANCE is set only when a draft is built; in any other build
   // this condition is a build-time `false`, so the import and its chunk are gone (scripts/check-recorder-absent.ts proves it).

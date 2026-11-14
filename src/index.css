@@ -112,20 +112,35 @@
   --shadow-kb-knob: 0 1px 3px rgba(0, 0, 0, .2);
 
   /* 26 §2.2 text sizes in rem (the design's px / 16), so a phone's bigger text setting grows the text, not the boxes. */
+  /* The screen files set no line-height (CSS "normal"); each size keeps that, never Tailwind's 1.5. */
   --text-kb-10: 0.625rem;
+  --text-kb-10--line-height: normal;
   --text-kb-11: 0.6875rem;
+  --text-kb-11--line-height: normal;
   --text-kb-12: 0.75rem;
+  --text-kb-12--line-height: normal;
   --text-kb-13: 0.8125rem;
+  --text-kb-13--line-height: normal;
   --text-kb-14: 0.875rem;
+  --text-kb-14--line-height: normal;
   --text-kb-15: 0.9375rem;
+  --text-kb-15--line-height: normal;
   --text-kb-16: 1rem;
+  --text-kb-16--line-height: normal;
   --text-kb-17: 1.0625rem;
+  --text-kb-17--line-height: normal;
   --text-kb-18: 1.125rem;
+  --text-kb-18--line-height: normal;
   --text-kb-26: 1.625rem;
+  --text-kb-26--line-height: normal;
   --text-kb-28: 1.75rem;
+  --text-kb-28--line-height: normal;
   --text-kb-30: 1.875rem;
+  --text-kb-30--line-height: normal;
   --text-kb-36: 2.25rem;
+  --text-kb-36--line-height: normal;
   --text-kb-64: 4rem;
+  --text-kb-64--line-height: normal;
 
   /* KB-411 (26 §3): the motion of docs/design/, copied exactly (src/ui/kit/motion.test.ts) - transform and opacity only.
    * The receipt "print" (the design's max-height) waits for the owner (KB-411 review). Stagger with an animation-delay. */

@@ -31,3 +31,5 @@ eval/acceptance/audio/
 eval/bakeoff/.transcribe-quota.json
 # KB-408 S3: print previews made by the dev page /__dev/print (re-made any time; the threshold fixtures that tests need live in eval/print/)
 eval/print-preview/
+# KB-412: the kit gallery screenshots and side-by-side sheets (made by headless Edge from /__dev/kit, re-made any time)
+eval/kit-preview/
