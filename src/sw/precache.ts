@@ -6,6 +6,8 @@
 const FONT = /\.(woff2?|ttf|otf|eot)$/;
 const MUKTA = /^mukta-[a-z-]+-\d+-normal-[^/]+\.woff2$/;
 const PLEX = /^ibm-plex-mono-(latin|latin-ext)-(400|600|700)-normal-[^/]+\.woff2$/; // 700: the printed bill's bold (KB-408)
+// KB-411: the new look's variable fonts - Inter latin + latin-ext (the rupee sign) and Noto Sans Devanagari's Devanagari only.
+const KB_FONTS = /^(inter-(latin|latin-ext)|noto-sans-devanagari-devanagari)-wght-normal-[^/]+\.woff2$/;
 const STATIC = /^icons\/[^/]+\.(png|svg|ico)$/;
 
 /** Built file paths relative to dist/ ("index.html", "assets/x.js") -> the URLs to precache, sorted. */
@@ -17,7 +19,7 @@ export function selectPrecache(files: readonly string[]): string[] {
     else if (file.startsWith("assets/")) {
       const name = file.slice("assets/".length);
       if (name.includes("/") || name.endsWith(".map")) continue;
-      if (!FONT.test(name) || MUKTA.test(name) || PLEX.test(name)) urls.add(`/${file}`);
+      if (!FONT.test(name) || MUKTA.test(name) || PLEX.test(name) || KB_FONTS.test(name)) urls.add(`/${file}`);
     }
   }
   return [...urls].sort();

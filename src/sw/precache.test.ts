@@ -15,6 +15,9 @@ const DIST = [
   "assets/index-DnLQ1OBX.css",
   ...["devanagari", "latin", "latin-ext"].flatMap((s) => [400, 500, 600, 700].flatMap((w) => [`assets/mukta-${s}-${w}-normal-AbCd1234.woff2`, `assets/mukta-${s}-${w}-normal-AbCd1234.woff`])),
   ...["cyrillic", "cyrillic-ext", "latin", "latin-ext", "vietnamese"].flatMap((s) => [400, 600, 700].flatMap((w) => [`assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff2`, `assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff`])),
+  // KB-411: the new look's variable fonts - every subset the packages ship (no .woff in the variable packages)
+  ...["cyrillic", "cyrillic-ext", "greek", "greek-ext", "latin", "latin-ext", "vietnamese"].map((s) => `assets/inter-${s}-wght-normal-Qq11Ww22.woff2`),
+  ...["devanagari", "latin", "latin-ext"].map((s) => `assets/noto-sans-devanagari-${s}-wght-normal-Ee33Rr44.woff2`),
 ];
 
 describe("selectPrecache", () => {
@@ -46,6 +49,16 @@ describe("selectPrecache", () => {
       "/assets/ibm-plex-mono-latin-ext-400-normal-ZyXw9876.woff2",
       "/assets/ibm-plex-mono-latin-ext-600-normal-ZyXw9876.woff2",
       "/assets/ibm-plex-mono-latin-ext-700-normal-ZyXw9876.woff2",
+    ]);
+  });
+
+  // KB-411 (owner-approved plan, 14 Nov 2026): the new look must work offline - Inter latin + latin-ext (latin-ext holds the
+  // rupee sign) and ONLY the Devanagari part of Noto Sans Devanagari (Inter draws every Latin letter). About 248 KB.
+  it("keeps only Inter latin + latin-ext and Noto Sans Devanagari's Devanagari, variable woff2 (3 files)", () => {
+    expect(urls.filter((u) => u.includes("/inter-") || u.includes("/noto-sans-devanagari-")).sort()).toEqual([
+      "/assets/inter-latin-ext-wght-normal-Qq11Ww22.woff2",
+      "/assets/inter-latin-wght-normal-Qq11Ww22.woff2",
+      "/assets/noto-sans-devanagari-devanagari-wght-normal-Ee33Rr44.woff2",
     ]);
   });
 

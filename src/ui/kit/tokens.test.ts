@@ -80,6 +80,16 @@ describe("the other design tokens (26 §2.2 - §2.3)", () => {
     for (const px of [12, 13, 14, 15, 16, 17, 18, 26, 30, 64]) expect(sizes.map(([p]) => p)).toContain(px);
   });
 
+  it("the new look's fonts are bundled (no font CDN), variable, and the kit's stack is 26 §2.2's", () => {
+    expect(css).toContain('@import "@fontsource-variable/inter/wght.css";');
+    expect(css).toContain('@import "@fontsource-variable/noto-sans-devanagari/wght.css";');
+    expect(css).not.toMatch(/fonts\.googleapis|fonts\.gstatic/);
+    expect(themeBlock).toMatch(/--font-kb:\s*"Inter Variable", "Noto Sans Devanagari Variable", sans-serif;/);
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["@fontsource-variable/inter"]).toBe("5.3.0"); // pinned exact (09 §B6, D110 item 8.2)
+    expect(pkg.dependencies["@fontsource-variable/noto-sans-devanagari"]).toBe("5.3.0");
+  });
+
   it("the screens of today keep their own tokens and font until they move to the new look (no screen change in KB-411)", () => {
     expect(css).toMatch(/--color-indigo:\s*#2C3E7B;/);
     expect(css).toMatch(/--font-sans:\s*"Mukta", system-ui, sans-serif;/);

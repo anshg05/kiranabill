@@ -470,6 +470,10 @@ their range is rendered; a modern browser takes woff2). Lockfile: +10 lines, 0 r
 | Latin subset only (commit 1) | No ₹ — see the correction above |
 | Hand-picking latin + latin-ext CSS per weight | Saves only unused files in `dist/` (never fetched); the per-weight files are fontsource's supported, Mukta-consistent import |
 
+
+## SD-030 — The new look's fonts: **`@fontsource-variable/inter` 5.3.0** + **`@fontsource-variable/noto-sans-devanagari` 5.3.0** (runtime, CSS + font files only) · 14 Nov 2026
+
+`KB-411`, owner-approved plan (14 Nov 2026; fonts approved in D110 item 8.2). Pinned exact; both published 19 Jul 2026. **Why variable:** one file per subset covers every weight the design uses (Inter 400-800, Noto Sans Devanagari 400-700): Inter latin + latin-ext 130 KB and Noto's Devanagari 118 KB, against about 448 KB for the static weights. **Why these and not 30 lines of our own:** they are font files; the alternative is copying the same OFL-1.1 files into the repo by hand. Self-hosted from our origin (offline; `src/sw/precache.ts` keeps only those 3 files), zero JavaScript. Variable fonts need WebView / Chrome 62+ (older: one weight shown). **Abandoned?** The files keep working; Fontsource only packages Google's OFL fonts. Mukta stays until `KB-429` (after `KB-415`).
 ## How to add to this document
 
 Every new dependency, service, or platform gets an entry: what was chosen, what was rejected, why,
