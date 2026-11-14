@@ -2,9 +2,9 @@
 // MoreHorizontal -> Ellipsis, CircleHelp -> CircleQuestionMark, Phone (smartphone) -> Smartphone); the drawings are the same.
 import { createElement } from "react";
 import {
-  ArrowRight, Bluetooth, Check, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ear, Ellipsis, FileText, Keyboard, Languages,
-  Lightbulb, Lock, MessageCircle, Mic, Minus, Package, Pencil, Play, Plus, Printer, RefreshCw,
-  RotateCcw, Search, Share2, Smartphone, Store, TriangleAlert, WifiOff, X,
+  ArrowRight, Bluetooth, Check, ChevronDown, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ellipsis, FileText, Keyboard, Languages,
+  Lightbulb, Lock, MessageCircle, Minus, Package, Play, Plus, Printer, RefreshCw,
+  RotateCcw, Search, Share2, Smartphone, Store, WifiOff, X,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +43,25 @@ const BillDesign = createLucideIcon("kb-bill-design", [
 /** 17-More "Privacy": a plain shield (no tick) */
 const ShieldCheck = createLucideIcon("kb-privacy", [["path", { d: "M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6z", key: "a" }]]);
 
+/** 12-BillReview "More" and every mic: a capsule on a cradle with a short stem */
+const Mic = createLucideIcon("kb-mic", [
+  ["path", { d: "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z", key: "a" }],
+  ["path", { d: "M5 11a7 7 0 0 0 14 0", key: "b" }],
+  ["path", { d: "M12 18v3", key: "c" }],
+]);
+/** 12-BillReview line edit: a plain pencil outline */
+const Pencil = createLucideIcon("kb-pencil", [["path", { d: "M4 20h4l11-11-4-4L4 16z", key: "a" }]]);
+/** 12-BillReview "Price needed": a sharp-cornered triangle with the mark */
+const TriangleAlert = createLucideIcon("kb-warning", [
+  ["path", { d: "M12 3l10 18H2z", key: "a" }],
+  ["path", { d: "M12 10v4M12 17h.01", key: "b" }],
+]);
+/** 12-BillReview "Heard:": the ear */
+const Ear = createLucideIcon("kb-ear", [
+  ["path", { d: "M8 18a3 3 0 0 0 3 3c2 0 2.5-1.5 3.5-3.5S18 14 18 9a6 6 0 0 0-12 0", key: "a" }],
+  ["path", { d: "M10 10a2 2 0 0 1 4 0c0 1.5-2 2-2 4", key: "b" }],
+]);
+
 export const KB_ICONS = {
   Mic, Pause, Square, Play, RotateCcw, Keyboard, Printer, MessageCircle, FileText, Share2, ReceiptText, Home: House, Package,
   MoreHorizontal: Ellipsis, ChevronRight, ChevronLeft, Plus, Minus, Check, X, Pencil, TriangleAlert, Lightbulb, Sparkles,
@@ -50,8 +69,8 @@ export const KB_ICONS = {
   Ear,
   // drawn by 26 §5's components: the search field and the locked Bill Banao; 06-ShopSetup's Continue arrow
   Search, Lock, ArrowRight,
-  // 17-More's "Bill design" row
-  BillDesign,
+  // 17-More's "Bill design" row; 12-BillReview's Heard card opens with a chevron down
+  BillDesign, ChevronDown,
 } satisfies Record<string, LucideIcon>;
 
 /** One icon at the design's stroke (1.9 - the Saved tick draws 2.4), coloured by its text; the button or row carries the words.

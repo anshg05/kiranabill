@@ -59,6 +59,11 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     ["ReceiptText", "17-More.html", "<span>Bills</span>", false],
     ["BillDesign", "17-More.html", "Bill design</div>", false],
     ["ShieldCheck", "17-More.html", "Privacy</div>", false],
+    // batch c (15 Nov 2026)
+    ["Mic", "12-BillReview.html", "More</a>", false],
+    ["Pencil", "12-BillReview.html", "class=\"kb-s2\"", false], // the first line's edit button
+    ["TriangleAlert", "12-BillReview.html", "Price needed</div>", false],
+    ["Ear", "12-BillReview.html", "Heard:</b>", false],
   ] as const)("%s is the drawing of %s", (name, file, before, filled) => {
     const want = design(file, before);
     const { container } = render(<Icon icon={KB_ICONS[name]} size={20} />);
@@ -77,6 +82,10 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     expect(list).toMatch(/Home[^.]*house[^.]*17-More/);
     expect(list).toMatch(/ReceiptText[^.]*17-More/);
     expect(list).toMatch(/ShieldCheck[^.]*plain shield[^.]*17-More/);
+    expect(list).toMatch(/Mic[^.]*12-BillReview/);
+    expect(list).toMatch(/Pencil[^.]*12-BillReview/);
+    expect(list).toMatch(/TriangleAlert[^.]*12-BillReview/);
+    expect(list).toMatch(/Ear[^.]*12-BillReview/);
   });
 });
 

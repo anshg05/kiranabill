@@ -7,7 +7,7 @@ import { ToggleRow } from "./kit/Toggle";
 import { Segmented } from "./kit/Segmented";
 import { Stepper } from "./kit/Stepper";
 import { SearchField, TextField } from "./kit/TextField";
-import { KB_ICONS, Icon } from "./kit/icons";
+import { KB_ICONS } from "./kit/icons";
 import { ScreenTitle, TopBar } from "./kit/TopBar";
 import { BottomNav } from "./kit/BottomNav";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
@@ -15,6 +15,15 @@ import { BottomSheet } from "./kit/BottomSheet";
 import { InfoBanner, LinkBanner, OfflineStrip } from "./kit/Banner";
 import { TipCard } from "./kit/TipCard";
 import { HeroCard } from "./kit/HeroCard";
+import { BillCard } from "./kit/BillCard";
+import { BillLine, PriceNeededLine } from "./kit/BillLine";
+import { HeardCard } from "./kit/HeardCard";
+import { ReceiptPaper } from "./kit/ReceiptPaper";
+import { MicButton } from "./kit/MicButton";
+import { Waveform } from "./kit/Waveform";
+import { Logo } from "./kit/Logo";
+import { Receipt } from "./Receipt";
+import { DEV_PRINT_BILLS } from "./devPrintBills";
 
 // DEV ONLY (KB-412, /__dev/kit): every kit part in every state.
 //   ?view=compare - each part beside the SAME element cropped live from its docs/design/ screen (the file is named), at the same
@@ -27,7 +36,8 @@ const LANG = (["en", "hi", "hl"].includes(params.get("lang") ?? "") ? params.get
 const t = (id: MessageId) => render(id, {}, LANG);
 
 /** How to find the drawn element in a screen file: the element whose own text (or aria-label) is `text`, then `up` parents. */
-type Find = { file: string; text: string; up?: number; first?: boolean };
+/** text: the element whose own text (or aria-label) it is; selector: a CSS selector instead, for parts without words. */
+type Find = { file: string; text: string; up?: number; first?: boolean; selector?: string };
 
 /** reference: NOT drawn in the screens - the crop is the drawn part it is based on, so no size verdict. */
 type Part = { name: string; find: Find; ours: () => ReactNode; reference?: string };
@@ -230,27 +240,60 @@ function BATCH_B_PARTS(): Part[] {
       ours: () => <TipCard variant="white"><b className="text-kb-ink">Not listed?</b> Pair it once in your phone’s Bluetooth settings (PIN is usually 0000 or 1234), then come back.</TipCard> },
     { name: "B / Tip card, white dense", find: { file: "09-Recording.html", text: "item · quantity · price", up: 2 },
       ours: () => <TipCard variant="white-dense">Say <b className="text-kb-ink">item · quantity · price</b>. Pause if a customer talks.</TipCard> },
-    { name: "B / Hero card (first use) - the mic inside is a gallery stand-in until batch c's mic button", find: { file: "26-FirstDay.html", text: "Make your first bill", up: 1 },
+    { name: "B / Hero card (first use), with batch c's mic button", find: { file: "26-FirstDay.html", text: "Make your first bill", up: 1 },
       ours: () => (
         <HeroCard title="Make your first bill" sub="Try it now — say any order you know">
-          <span className="relative w-[138px] h-[138px] flex items-center justify-center">
-            <span className="absolute inset-3 rounded-full bg-kb-primary animate-kb-pulse" />
-            <span className="relative w-[114px] h-[114px] rounded-full bg-kb-primary shadow-kb-mic flex items-center justify-center text-kb-card"><Icon icon={KB_ICONS.Mic} size={48} /></span>
-          </span>
+          <MicButton variant="home" label="Record your first order" onClick={noop} />
           <div className="bg-kb-card border border-kb-border rounded-[14px] py-[10px] px-[14px] text-kb-15 text-center">“2 किलो चीनी 45 रुपये किलो, 1 टाटा नमक 30”</div>
         </HeroCard>
       ) },
   ];
 }
 
-const ALL_PARTS = (): Part[] => [...PARTS, ...BATCH_B_PARTS()];
+const WAVE_09 = [10, 22, 36, 18, 48, 30, 56, 26, 40, 14, 34, 52, 20, 44, 28, 58, 24, 38, 12, 30, 46, 18, 36, 22, 50, 16];
+const WAVE_10 = WAVE_09.slice(0, 22);
+
+function BATCH_C_PARTS(): Part[] {
+  return [
+    { name: "C / Bill card", find: { file: "14-BillsList.html", text: "Bill 515", up: 3 },
+      ours: () => <BillCard title="Bill 515" meta="1:18 pm · 4 items" amount="₹610" onOpen={noop} printLabel="Print bill 515" onPrint={noop} /> },
+    { name: "C / Bill card, cancelled", find: { file: "14-BillsList.html", text: "Bill 512", up: 3 },
+      ours: () => <BillCard title="Bill 512" meta="12:05 pm · 3 items" amount="₹640" cancelledLabel="Cancelled" onOpen={noop} printLabel="Print bill 512" onPrint={noop} /> },
+    { name: "C / Bill line", find: { file: "12-BillReview.html", text: "चीनी", up: 2 },
+      ours: () => <BillLine name="चीनी" detail="2 kg × ₹45" amount="₹90" editLabel="Edit चीनी" onEdit={noop} /> },
+    { name: "C / Bill line with a filled-price mark (the design's words 'your price'; the app says 'shop price' today - KB-413 decides)", find: { file: "12-BillReview.html", text: "टाटा नमक", up: 2 },
+      ours: () => <BillLine name="टाटा नमक" detail="1 pc × ₹30" amount="₹30" mark="your price" editLabel="Edit टाटा नमक" onEdit={noop} /> },
+    { name: "C / Price needed line (the field's words come from the screen: rate or amount, as today - D110 8.8)", find: { file: "12-BillReview.html", text: "दाने", up: 3, first: true },
+      ours: () => <Stateful start="">{(v, set) => <PriceNeededLine name="दाने" detail="1 kg" needLabel="Price needed" inputLabel="Price for दाने" placeholder="Price per kg" value={v} onChange={set} addLabel="Add" onAdd={noop} />}</Stateful> },
+    { name: "C / Heard card", find: { file: "12-BillReview.html", text: "Heard:", up: 2 },
+      ours: () => <HeardCard label="Heard:" text="“2 किलो चीनी 45 रुपये किलो, चावल 5 किलो 340, एक टाटा नमक, एक किलो दाने…”" expandLabel="Show all" collapseLabel="Show less" /> },
+    { name: "C / Receipt paper, torn edge", find: { file: "13-BillSaved.html", text: "", selector: ".kb-print" },
+      reference: "the FRAME only (width, drop shadow, torn edge); inside is today's Receipt.tsx, unchanged - its look moves to the new style with the screens (KB-413 / KB-414), so the sizes differ.",
+      ours: () => <ReceiptPaper width={320} torn><Receipt receipt={DEV_PRINT_BILLS.three} /></ReceiptPaper> },
+    { name: "C / Mic button, home", find: { file: "08-Home.html", text: "Record order" },
+      ours: () => <MicButton variant="home" label="Record order" onClick={noop} /> },
+    { name: "C / Mic, recording", find: { file: "09-Recording.html", text: "", selector: "div[style*='width: 210px']" },
+      ours: () => <MicButton variant="recording" /> },
+    { name: "C / Waveform, live", find: { file: "09-Recording.html", text: "", selector: "div[style*='height: 64px']" },
+      ours: () => <Waveform heights={WAVE_09} live height={64} /> },
+    { name: "C / Waveform, playback", find: { file: "10-Review.html", text: "", selector: "div[style*='height: 30px']" },
+      ours: () => <Waveform heights={WAVE_10} height={30} /> },
+    { name: "C / Logo 42 with its shadow", find: { file: "08-Home.html", text: "", selector: "img[src*='logo-blue2']" }, ours: () => <Logo size={42} shadow /> },
+    { name: "C / Logo 52", find: { file: "17-More.html", text: "", selector: "img[src*='logo-blue2']" }, ours: () => <Logo size={52} /> },
+    { name: "C / Logo 76 with its shadow", find: { file: "05-SignIn.html", text: "", selector: "img[src*='logo-blue2']" }, ours: () => <Logo size={76} shadow alt="KiranaBill logo" /> },
+  ];
+}
+
+const ALL_PARTS = (): Part[] => [...PARTS, ...BATCH_B_PARTS(), ...BATCH_C_PARTS()];
 
 /** The drawn element: own text (direct text nodes) or aria-label equals `text`, deepest first. */
 function findIn(doc: Document, f: Find): HTMLElement | null {
   const all = [...doc.body.querySelectorAll<HTMLElement>("*")].reverse();
   const own = (el: HTMLElement) => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
   const order = f.first ? [...all].reverse() : all; // first = the first match in the page, else the deepest / last
-  let el = order.find((e) => own(e) === f.text) ?? order.find((e) => e.getAttribute("aria-label") === f.text) ?? null;
+  let el = f.selector
+    ? doc.querySelector<HTMLElement>(f.selector)
+    : (order.find((e) => own(e) === f.text) ?? order.find((e) => e.getAttribute("aria-label") === f.text) ?? null);
   for (let i = 0; el && i < (f.up ?? 0); i++) el = el.parentElement;
   return el;
 }
