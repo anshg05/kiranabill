@@ -27,6 +27,8 @@ Related: D101 (record-review-generate), D102 (names as said), D103 (units as sai
 10. **Any bill can be reprinted any time; the printed copy carries a "REPRINT" line** (`KB-408`).
 11. **The new look is for EVERYONE:** the Android app, the PWA and desktop. For now desktop shows the phone layout centred (max about 480 px); a desktop layout is a later ticket.
 12. **Every colour used in `docs/design/` is in the token table** (`26` §2.1); screen files are named `docs/design/screens/NN-Name.html`.
+13. **(14 Nov 2026, D110 item 9)** Every screen must look like its approved design; if anything cannot be built as drawn, conflicts with how the app works, or is unclear - **stop and ask the owner; never decide it or "improve" the design.** Component reviews show each part beside the same element cropped from its `docs/design/` screen, same size, with every unavoidable difference explained.
+14. **(14 Nov 2026)** Auto-print on Bill Banao and Copies (§9 item 3, screen 18) are **parked** (`12` SG-26): Bill Banao makes the final bill, Print is a separate button.
 
 ## 1. Principles (apply to every screen)
 

@@ -1,6 +1,6 @@
 # 10 — Tracker
 
-**Last updated:** 14 Nov 2026 (rev 204) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
+**Last updated:** 14 Nov 2026 (rev 205) · **Current phase:** 3 — Billing UI — **COMPLETE.** Everything the owner scoped for the pilot is built, tested and **live in production** (`KB-368` released 30 Oct 2026). **Next (owner, 31 Oct 2026, D100): `KB-370`, the voice bake-off (V1) - voice accuracy comes BEFORE the pilot; the shop pilot (`KB-405`) waits.** The whole plan and the status per item: `24-ROADMAP.md`. The "Before the real shop" checklist in `17-MANUAL-TASKS.md` is unchanged and runs when the pilot starts.
 
 > **This is the project's current state.** Any AI joining the project reads this second, right after
 > `00-README.md`. If this file is older than the last commit, the system has drifted — fix it before
@@ -20,7 +20,9 @@
 
 **Next work (D109 - D112):** **Phase A - `KB-406`.** S1 (the shell) and S2 (`KB-409`, Google sign-in in the app) passed the owner's phone checks; the Android back button is fixed (draft-v20). **S3-S6 printing (`KB-408`) DONE 14 Nov 2026** - both printers passed the re-test on draft-v22 (D113 item 12). Next: the redesign (`26`, D110 item 8), build order `KB-411` -> `KB-416`; the PLAN for `KB-411` (tokens, fonts, icons, motion) + `KB-412` (core components + dev gallery) goes to the owner first. The pilot (`KB-405`) runs in parallel. **Later, not started:** `KB-410` Play Store - a new personal developer account needs a 14-day closed test with 12+ testers before production; the owner decides when to open the account ($25).
 
-**Waiting on the owner:** approval of the `KB-411` + `KB-412` PLAN; and which ticket carries auto-print on Bill Banao + Copies (in `KB-408`'s scope, not built in S3-S6).
+**Now:** `KB-411` + `KB-412` PLAN approved (owner + reviewer, 14 Nov 2026): build `KB-411`, then `KB-412` batch a, then STOP for the owner's review (screenshots at 360 / 390 / 430 dp and 130% text + side-by-side sheets against `docs/design/`) before batches b and c. Owner rule for the whole redesign: D110 item 9 (look = the design; unclear or conflicting -> stop and ask). Auto-print + Copies parked (`12` SG-26). Mukta removal = `KB-429`, after `KB-415`.
+
+**Waiting on the owner:** nothing until the batch-a review.
 
 **Blocked on:** nothing. **Build tool:** Claude Code (D28). **Git:** single branch `main`, commit after each verified step (D29, `CLAUDE.md`).
 

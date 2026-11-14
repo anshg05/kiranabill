@@ -122,7 +122,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 
 | # | Ticket | What | D33 | Status |
 |---|---|---|---|---|
-| A1 | `KB-408` | **Thermal printing** - the list below. | no | done 14 Nov 2026 (S3-S6, D113) - both printers passed the owner's re-test on draft-v22; auto-print + copies not built, open |
+| A1 | `KB-408` | **Thermal printing** - the list below. | no | done 14 Nov 2026 (S3-S6, D113) - both printers passed the owner's re-test on draft-v22; auto-print + copies parked (`12` SG-26) |
 | A2 | `KB-409` | **Native Google sign-in.** Google blocks sign-in inside embedded web views, so the app needs a native sign-in; the design is fixed in its own PLAN. It decides which shop's data a phone can see (auth -> shop -> RLS). | yes | done 13 Nov 2026 (D112) - the owner's phone check passed on draft-v19 |
 | A3 | `KB-410` | **Play Store release** - the list below. | no | todo |
 | A4 | - | **Profile & settings - owner to list before the final app.** *Placeholder: no ticket until the owner writes what the Profile and Settings screens must hold.* | Owner | todo |
@@ -132,7 +132,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 - Bluetooth Classic (SPP) **and** BLE printers.
 - **Print the receipt as an IMAGE:** cheap printers have no Devanagari fonts. About **384 dots for 58 mm**, about **576 for 80 mm**, at 203 dpi.
 - A printer setting and a paper-size setting (58 / 80 mm); a **test print**.
-- Optional **auto-print on Bill Banao**; **reprint from History**, marked as a reprint; a copies setting.
+- ~~Optional **auto-print on Bill Banao**; a copies setting~~ - parked (owner, 14 Nov 2026, `12` SG-26); **reprint from History**, marked as a reprint (built).
 - A clear "printer not connected" message, with **Share** as the fallback (printing never blocks the bill).
 - Android 12+ Bluetooth permissions (`BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN`).
 - **Owner tests on real printers** (his own 58 mm and 80 mm).
@@ -140,7 +140,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 **A5 - the redesign, what it holds (`26` §10 build steps, then §9 new features; each its own PLAN)**
 - **Riskiest first (owner, 11 Nov 2026):** a Capacitor shell of the CURRENT app + Bluetooth ESC/POS printing of the real receipt (`KB-406`, `KB-408`), planned before the build steps. **Approved 12 Nov 2026 (D111):** "Kirana Voice Bill", `com.kiranavoicebill.app`, min API 24, target SDK 36; steps S1-S6.
 - Build steps: `KB-411` tokens, fonts, icons, motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens (9-13, 23, 24) -> `KB-414` tab screens (8, 14-17, 19-21, 25) -> `KB-415` first-time flow (1-7) -> `KB-416` printer screens (18, 22) with `KB-408`.
-- New features (`26` §9), one ticket each: `KB-417` today's numbers on Home + the 7-day chart · `KB-418` Reprint last · auto-print + copies = `KB-408` · `KB-419` learned-prices review (decision first) · ~~`KB-420`~~ (folded: the 5 reasons stay) · `KB-421` first-day Home · `KB-422` address + thank-you note on the bill (decision first) · `KB-423` unfinished-bill card · `KB-424` rotating tips · `KB-425` Android splash, icon, permission screen, offline strip · `KB-426` a desktop layout (later; until then the phone layout centred).
+- New features (`26` §9), one ticket each: `KB-417` today's numbers on Home + the 7-day chart · `KB-418` Reprint last · ~~auto-print + copies~~ parked (`12` SG-26) · `KB-419` learned-prices review (decision first) · ~~`KB-420`~~ (folded: the 5 reasons stay) · `KB-421` first-day Home · `KB-422` address + thank-you note on the bill (decision first) · `KB-423` unfinished-bill card · `KB-424` rotating tips · `KB-425` Android splash, icon, permission screen, offline strip · `KB-426` a desktop layout (later; until then the phone layout centred).
 
 **A3 `KB-410` - Play Store, what it holds**
 - Developer account ($25 one-time, `11` SD-008) - **Owner**. **A new personal developer account must run a 14-day closed test with 12+ testers before production** (owner, 14 Nov 2026); the owner decides when to open the account. Not started.

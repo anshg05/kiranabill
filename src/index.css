@@ -55,6 +55,70 @@
    * IBM Plex Mono is the receipt's face (KB-308, imported above); Mukta covers its Devanagari. */
   --font-sans: "Mukta", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "Mukta", monospace;
+
+  /* KB-411 (D110, 26 §2): the Phase A design tokens - 26 §2.1's --kb-<name> is --color-kb-<name> here (Tailwind's prefix:
+   * bg-kb-primary, text-kb-sub, ...). The kit (src/ui/kit) uses ONLY these; today's screens keep the tokens above until they
+   * move to the new look. src/ui/kit/tokens.test.ts keeps this list equal to 26 §2.1. */
+  --color-kb-primary: #2563D9;
+  --color-kb-primary-deep: #1F4FA3;
+  --color-kb-primary-pale: #EAF2FF;
+  --color-kb-bg: #FAF8F3;
+  --color-kb-card: #FFFFFF;
+  --color-kb-muted: #F4F1EA;
+  --color-kb-ink: #263238;
+  --color-kb-sub: #5F6A74;
+  --color-kb-border: #E7E1D8;
+  --color-kb-amber: #D69A35;
+  --color-kb-warn-bg: #FFF3D8;
+  --color-kb-warn-text: #80520B;
+  --color-kb-warn-border: #EBC877;
+  --color-kb-ok: #2E7D52;
+  --color-kb-ok-pale: #E7F3EC;
+  --color-kb-err: #C0392B;
+  --color-kb-err-pale: #FDECEA;
+  --color-kb-disabled-bg: #DCE3EE;
+  --color-kb-disabled-text: #4E5A66;
+  --color-kb-receipt-rule: #C9C2B8;
+  --color-kb-receipt-strong: #4B5560;
+  --color-kb-receipt-sub: #6B7580;
+  --color-kb-receipt-row: #ECE8E1;
+  --color-kb-shimmer: #EFEBE3;
+  --color-kb-shimmer-hi: #F8F6F1;
+  --color-kb-warm-end: #F5F0E6;
+  --color-kb-primary-line: #CFDDF7;
+  --color-kb-chart-bar: #C9D8F5;
+  --color-kb-spinner-track: #BFD0F2;
+  --color-kb-wave-played: #B9CDF3;
+  --color-kb-toggle-off: #CFC8BD;
+  --color-kb-handle: #D5CEC3;
+  --color-kb-slot: #DCD5CA;
+  --color-kb-warn-field: #E3C47E;
+  --color-kb-splash-1: #5A93F2;
+  --color-kb-splash-2: #3B78E6;
+
+  /* 26 §2.3 elevation; the segment and knob shadows are drawn in the screen files (18-Printer.html). */
+  --shadow-kb-1: 0 6px 16px rgba(38, 50, 56, .06);
+  --shadow-kb-2: 0 10px 22px rgba(38, 50, 56, .10);
+  --shadow-kb-primary: 0 8px 18px rgba(37, 99, 217, .25);
+  --shadow-kb-mic: 0 12px 26px rgba(37, 99, 217, .32);
+  --shadow-kb-segment: 0 2px 6px rgba(38, 50, 56, .10);
+  --shadow-kb-knob: 0 1px 3px rgba(0, 0, 0, .2);
+
+  /* 26 §2.2 text sizes in rem (the design's px / 16), so a phone's bigger text setting grows the text, not the boxes. */
+  --text-kb-10: 0.625rem;
+  --text-kb-11: 0.6875rem;
+  --text-kb-12: 0.75rem;
+  --text-kb-13: 0.8125rem;
+  --text-kb-14: 0.875rem;
+  --text-kb-15: 0.9375rem;
+  --text-kb-16: 1rem;
+  --text-kb-17: 1.0625rem;
+  --text-kb-18: 1.125rem;
+  --text-kb-26: 1.625rem;
+  --text-kb-28: 1.75rem;
+  --text-kb-30: 1.875rem;
+  --text-kb-36: 2.25rem;
+  --text-kb-64: 4rem;
 }
 
 /* KB-307 fix (owner's real-Chrome check): a Bill Banao tap moves focus to the

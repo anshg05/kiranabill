@@ -2563,6 +2563,7 @@ The design is `docs/25-V3-VOICE-DESIGN.md`, written on the strongest model (D33)
    10. **Any bill can be reprinted any time; the printed copy carries a "REPRINT" line** (`KB-408`).
    11. **The new look is for EVERYONE:** the Android app, the PWA and desktop. For now desktop shows the phone layout centred (max about 480 px); a desktop layout is a later ticket.
    12. **Every colour used in `docs/design/` is in the token table** (`26` §2.1); screen files are named `docs/design/screens/NN-Name.html`.
+9. **Owner rule for the whole redesign (14 Nov 2026, `KB-411` - `KB-426`):** every screen must LOOK like its approved design in `docs/design/`; the app's real data and rules decide the CONTENT (item 8). **If anything in a design cannot be built as drawn, conflicts with how the app works, or is unclear - STOP and ask the owner; never decide it yourself or "improve" the design.** Every component review shows the component next to the same element cropped from the `docs/design/` screen it comes from (file named), at the same size, with every difference that could not be avoided listed and explained.
 
 
 ### D111 — The Android shell: name, application id, how it loads, how it signs in, how it is installed (owner, 12 Nov 2026) 🟢
@@ -2623,7 +2624,7 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
    - **58 mm F2C BT-SRT-58:** now in the paired list and connected over **Classic** (no BLE search needed) - items 1-2 fixed it. Bill 514 (all 38 lines, REPRINT, Rs 2,216, nothing cut at either edge), a new bill 523 (4 items, Rs 1,370) and the long test print (1-60 in order, Rs 1,830) all correct, no garbage. The print is a little light / speckled: the printer's hardware (another app's print on the same printer looks the same) - **accepted, no darkness command** (item 5 stands).
    - **Compatible mode per printer:** F2C ON = garbage (this printer does not support ESC *); KP307 ON = clean. **Accepted, no code change:** both print perfectly in normal mode, the switch stays OFF by default, and its hint already says when to use it. So Compatible mode is for a printer that garbles in normal mode, never a general fix.
    - **80 mm Posiflow KP307-UEWB:** Bill 514 correct, the bold names clearly visible (better than S6). Not timed - the owner is fine with the speed.
-   - **Not built in S3-S6:** auto-print on Bill Banao and Copies (`KB-408`'s scope, `26` §9 item 3) - open; the owner says which ticket carries them.
+   - **Not built in S3-S6:** auto-print on Bill Banao and Copies (`KB-408`'s scope, `26` §9 item 3) - **parked by the owner (14 Nov 2026, `12` SG-26), not in `KB-416`**: Bill Banao makes the final bill, Print stays a separate button.
 
 ---
 
