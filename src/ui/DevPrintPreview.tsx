@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { decodeEscPos, encodeReceiptImage, type MonoBitmap } from "@/domain/escpos";
+import { PRINT_BAND_ROWS, decodeEscPos, encodeReceiptImage, type MonoBitmap } from "@/domain/escpos";
 import type { Receipt } from "@/domain/receipt";
 import { DEV_PRINT_BILLS } from "./devPrintBills";
+import { longTestReceipt, testReceipt } from "./PrinterSection";
 import { renderReceiptForPrint } from "./receiptPrint";
 
 // DEV ONLY (KB-408 S3, /__dev/print): renders the print previews in the real browser engine - the same canvas the Android web view uses -
 // encodes them, DECODES the printer bytes back and saves both pictures to eval/print-preview/ (git-ignored) through the dev server.
+
+const TEST_SHOP = { name: "Gupta Kirana Store", phone: null, billLanguage: "en" as const };
+const TEST_AT = new Date("2026-11-14T06:30:00.000Z");
 
 const JOBS: readonly { name: string; receipt: Receipt; dots: number; reprint?: boolean }[] = [
   { name: "bill514-576", receipt: DEV_PRINT_BILLS.bill514, dots: 576 },
@@ -14,6 +18,10 @@ const JOBS: readonly { name: string; receipt: Receipt; dots: number; reprint?: b
   { name: "three-384", receipt: DEV_PRINT_BILLS.three, dots: 384 },
   { name: "three-reprint-576", receipt: DEV_PRINT_BILLS.three, dots: 576, reprint: true },
   { name: "three-reprint-384", receipt: DEV_PRINT_BILLS.three, dots: 384, reprint: true },
+  { name: "testprint-576", receipt: testReceipt(TEST_SHOP, TEST_AT), dots: 576 },
+  { name: "testprint-384", receipt: testReceipt(TEST_SHOP, TEST_AT), dots: 384 },
+  { name: "longtest-576", receipt: longTestReceipt(TEST_SHOP, TEST_AT), dots: 576 },
+  { name: "longtest-384", receipt: longTestReceipt(TEST_SHOP, TEST_AT), dots: 384 },
 ];
 
 async function save(name: string, bytes: Uint8Array): Promise<void> {
@@ -69,7 +77,7 @@ export function DevPrintPreview() {
           for (let i = 0; i < grey.length; i++) grey[i] = Math.round((299 * rgba[i * 4]! + 587 * rgba[i * 4 + 1]! + 114 * rgba[i * 4 + 2]!) / 1000);
           await save(`${job.name}.grey.gz`, await gzip(grey));
         }
-        const row = { job: job.name, dots: bitmap.width, heightDots: bitmap.height, heightMm: +((bitmap.height / 8).toFixed(1)), rows: receipt.rows.length, rasterBytes: raster.length, bitImageBytes: bitimage.length, bands: Math.ceil(bitmap.height / 64), decodedMatches: same };
+        const row = { job: job.name, dots: bitmap.width, heightDots: bitmap.height, heightMm: +((bitmap.height / 8).toFixed(1)), rows: receipt.rows.length, rasterBytes: raster.length, bitImageBytes: bitimage.length, bands: Math.ceil(bitmap.height / PRINT_BAND_ROWS), decodedMatches: same };
         stats.push(row);
         setLog((l) => [...l, JSON.stringify(row)]);
       }

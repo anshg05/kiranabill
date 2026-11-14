@@ -29,7 +29,7 @@ function plexFaces() {
 }
 
 describe("receipt font - Plex Mono covers ₹", () => {
-  it.each([400, 600])("weight %i: an imported face's unicode-range includes U+20B9", (weight) => {
+  it.each([400, 600, 700])("weight %i: an imported face's unicode-range includes U+20B9", (weight) => {
     const faces = plexFaces().filter((f) => f.weight === weight);
     expect(faces.length, `no Plex Mono ${weight} imported`).toBeGreaterThan(0);
     expect(faces.some((f) => f.covers(RUPEE)), `no imported Plex Mono ${weight} face covers U+20B9: ${faces.map((f) => f.spec).join(", ")}`).toBe(true);

@@ -1,6 +1,6 @@
 # 07 — Decision Log
 
-**Last updated:** 13 Nov 2026 (rev 64) · Supersedes rev 40
+**Last updated:** 14 Nov 2026 (rev 65) · Supersedes rev 40
 
 Every architectural decision, dated, with reasoning. **Never edit an entry.** When a decision
 changes, add a new one that supersedes it. The history is the point — it stops decisions being
@@ -2592,6 +2592,30 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
 6. **Owner step:** Supabase -> Authentication -> URL Configuration -> Redirect URLs: add `com.kiranavoicebill.app://auth-callback` (the web URLs stay).
 7. **Android:** one intent filter (VIEW, DEFAULT, BROWSABLE; that scheme and host only; no https link claimed).
 8. **Phone check PASSED (owner, 13 Nov 2026)** on draft-v19 (deploy `6af6b8a066eaac381fcdfe1b`, commit `02bfabf`) with the S2 APK: sign-in in the app, the shop opens, a real voice order billed correctly, the button comes back after closing the Chrome tab, sign out and in again, a draft bill survives the app being closed. The owner added the Supabase redirect URL (`M-43`).
+
+
+### D113 — Printing after the first printer test: never faster than the paper, Classic first, the bill laid out in printer dots (owner, 13-14 Nov 2026; `KB-408`) 🟢
+
+**The owner's S6 result (13-14 Nov 2026, draft-v21):**
+- **80 mm Posiflow KP307-UEWB: PASSED.** Listed under the paired printers (Bluetooth Classic); the test print, his real Bill 514 (38 lines, REPRINT, Rs 2,216) and a reprint all complete; fast; the cutter cuts; Bluetooth off, printer off, out of range and off mid-print each showed the right sentence and Share kept working.
+- **58 mm F2C BT-SRT-58: FAILED.** Found only by "Search for Bluetooth LE printers", so it ran on the BLE path. Every print showed garbage text after the first part and then rows shifted sideways; Bill 514 lost its last 3 lines. The same printer prints another app's bills perfectly.
+- **Hindi is good on both** (names, matras, conjuncts readable). Bill 522 "Chini" was typed by hand by the owner - correct.
+
+**Cause (58 mm):** the job was sent faster than the printer prints (509-byte unacknowledged BLE packets every 8 ms, about 60 KB a second). A cheap printer cannot say "wait": it drops bytes, then raster data is read as text and later rows shift.
+
+**Rules (built 14 Nov 2026):**
+1. **Never faster than the paper.** Every job, on Classic and BLE, is sent no faster than a SLOW printer prints: **320 dot rows a second** (40 mm/s) of the paper's width - 15.4 KB/s at 58 mm, 23 KB/s at 80 mm (`printRate`, `sendToPrinter`). Time already spent writing counts, so a slow link is not slowed further. A correct bill comes before speed.
+2. **Bluetooth Classic whenever the printer offers it; BLE only for a BLE-only printer.** The paired list shows EVERY paired device (printers first) - none is hidden by its type or class. A printer picked from the BLE search (or paired only as LE) is tried once on Classic (SPP) before it is saved ("Checking the printer…"); if it answers, it is saved as Classic (`preferClassic`).
+3. **BLE made safe for cheap printers:** acknowledged writes (write-with-response) whenever the characteristic has them, at most 180 bytes each, with a fast connection interval asked for; a printer with only unacknowledged writes gets 60-byte packets with a 20 ms pause after each. Classic writes are 512-byte steps under the same rate limit.
+4. **Small raster bands: 24 rows** (was 64). If a byte is ever lost, 3 mm of paper is spoiled and the next command starts clean.
+5. **No per-printer speed or darkness setting, and no printer-specific heat / darkness command** (they differ by brand and can print garbage on others) - unless the owner is asked first.
+6. **A stress test:** Settings -> Printer -> "Long test print (60 lines)" - lines numbered 1..60, each worth its own number (total Rs 1,830), so a lost line, a shifted column or garbage is seen at a glance.
+7. **The printed bill is laid out in the printer's own dots** (`printStyle`, `printProfile`; the screen and the share image keep `SCREEN_STYLE`, unchanged). The content and the table are today's bill exactly; only size, weight and sharpness differ:
+   - nothing is scaled and every position is a whole dot; numbers and labels are IBM Plex Mono at 20 dots, whose character is exactly 12 dots wide (48 characters across 80 mm, 32 across 58 mm), so every character lands on the dot grid the same way;
+   - nothing is lighter than semi-bold: names (a little bigger - 26 dots on 80 mm, 22 on 58 mm), Qty, Rate, the date and the thanks are semi-bold; Amt, the headers, the bill number, the shop name, REPRINT and TOTAL are bold (Plex Mono 700 added, precached); no rule is thinner than 2 dots;
+   - Qty, Rate and Amt keep at least the column gap between them on every row (24 dots on 80 mm, 12 on 58 mm); if long numbers leave under 96 dots for names (58 mm), each name takes its own full-width line with the numbers below - never an overlap, never a cut.
+   - Measured on the real Bill 514: ink in 1-dot-wide strokes fell from 16% (58 mm) / 12% (80 mm) in the S6 printout to 1.0% / 0.6%; the cut-off stays 160, the darkest at which no two strokes run together (`eval/print/threshold.test.ts`).
+8. **The owner's assumption corrected:** the 80 mm image was never a stretched 384-dot bitmap (the text was drawn at 576 dots, scaled as shapes) - the fuzziness came from fractional positions and thin regular-weight strokes, which item 7 removes.
 
 ---
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const native = vi.hoisted(() => ({
   ensureReady: vi.fn(() => Promise.resolve()),
-  listPaired: vi.fn(() => Promise.resolve({ devices: [] as { address: string; name: string; printer: boolean }[] })),
+  listPaired: vi.fn(() => Promise.resolve({ devices: [] as { address: string; name: string; printer: boolean; type: string }[] })),
   connect: vi.fn((_o: { address: string }) => Promise.resolve()),
   write: vi.fn((_o: { data: string }) => Promise.resolve()),
   disconnect: vi.fn(() => Promise.resolve()),
@@ -23,11 +23,12 @@ const ble = vi.hoisted(() => ({
     Promise.resolve([{ uuid: "000018f0-0000-1000-8000-00805f9b34fb", characteristics: [{ uuid: "00002af1-0000-1000-8000-00805f9b34fb", properties: { write: true, writeWithoutResponse: true } }] }]),
   ),
   getMtu: vi.fn((_id: string) => Promise.resolve(185)),
+  requestConnectionPriority: vi.fn((_id: string, _p: number) => Promise.resolve()),
   write: vi.fn((..._a: unknown[]) => Promise.resolve()),
   writeWithoutResponse: vi.fn((..._a: unknown[]) => Promise.resolve()),
   disconnect: vi.fn((_id: string) => Promise.resolve()),
 }));
-vi.mock("@capacitor-community/bluetooth-le", () => ({ BleClient: ble }));
+vi.mock("@capacitor-community/bluetooth-le", () => ({ BleClient: ble, ConnectionPriority: { CONNECTION_PRIORITY_HIGH: 1 } }));
 
 import { CLASSIC_CHUNK, classicTransport, toBase64 } from "./printerClassic";
 import { BLE_PACE_MS, BLE_SCAN_MS, bleTransport, resetBle } from "./printerBle";
@@ -39,10 +40,19 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Bluetooth Classic (our Kotlin plugin)", () => {
-  it("lists the PAIRED devices, printers first", async () => {
-    native.listPaired.mockResolvedValueOnce({ devices: [{ address: "11", name: "Headphones", printer: false }, { address: "22", name: "BT-SRT-58", printer: true }] });
+  it("lists ALL the paired devices, printers first; one paired only as Bluetooth LE is marked BLE (the chooser then tries Classic first)", async () => {
+    native.listPaired.mockResolvedValueOnce({
+      devices: [
+        { address: "11", name: "Headphones", printer: false, type: "classic" },
+        { address: "22", name: "KP307-UEWB", printer: true, type: "dual" },
+        { address: "33", name: "BT-SRT-58", printer: false, type: "le" },
+        { address: "44", name: "Old printer", printer: true, type: "unknown" },
+      ],
+    });
     expect(await classicTransport.list()).toEqual([
-      { id: "22", name: "BT-SRT-58", kind: "classic", printerLike: true },
+      { id: "22", name: "KP307-UEWB", kind: "classic", printerLike: true },
+      { id: "44", name: "Old printer", kind: "classic", printerLike: true },
+      { id: "33", name: "BT-SRT-58", kind: "ble", printerLike: false },
       { id: "11", name: "Headphones", kind: "classic", printerLike: false },
     ]);
   });
@@ -63,7 +73,7 @@ describe("Bluetooth Classic (our Kotlin plugin)", () => {
     const link = await classicTransport.open("22");
     expect(native.connect).toHaveBeenCalledWith({ address: "22" });
     expect(link.chunk).toBe(CLASSIC_CHUNK);
-    expect(CLASSIC_CHUNK).toBe(2048); // big enough for few bridge calls, small enough for steady progress
+    expect(CLASSIC_CHUNK).toBe(512); // small steps, so the send rate (printRate) is held evenly - a cheap printer's buffer is small
     expect(link.paceMs).toBe(0);
     await link.write(new Uint8Array([0x1b, 0x40, 0xff]));
     expect(native.write).toHaveBeenCalledWith({ data: "G0D/" });
@@ -106,14 +116,32 @@ describe("Bluetooth LE (@capacitor-community/bluetooth-le)", () => {
     expect(ble.stopLEScan).toHaveBeenCalledTimes(1);
   });
 
-  it("open: the printer service's characteristic, packets of MTU - 3, paced; writes without response", async () => {
+  it("open: the printer service's characteristic; ACKNOWLEDGED writes of at most 180 bytes, no extra pause; a fast link is asked for", async () => {
     const link = await bleTransport.open("p1");
-    expect(link.chunk).toBe(182);
-    expect(link.paceMs).toBe(BLE_PACE_MS);
+    expect(link.chunk).toBe(180);
+    expect(link.paceMs).toBe(0);
+    expect(ble.requestConnectionPriority).toHaveBeenCalledWith("p1", 1);
     await link.write(new Uint8Array([1, 2, 3]));
-    const [id, service, characteristic, view] = ble.writeWithoutResponse.mock.calls[0]! as [string, string, string, DataView];
+    const [id, service, characteristic, view] = ble.write.mock.calls[0]! as [string, string, string, DataView];
     expect([id, service, characteristic]).toEqual(["p1", "000018f0-0000-1000-8000-00805f9b34fb", "00002af1-0000-1000-8000-00805f9b34fb"]);
     expect([...new Uint8Array(view.buffer, view.byteOffset, view.byteLength)]).toEqual([1, 2, 3]);
+    expect(ble.writeWithoutResponse).not.toHaveBeenCalled();
+  });
+
+  it("a printer that only takes unacknowledged writes: small packets (60) with a pause after each", async () => {
+    ble.getServices.mockResolvedValueOnce([{ uuid: "000018f0-0000-1000-8000-00805f9b34fb", characteristics: [{ uuid: "00002af1-0000-1000-8000-00805f9b34fb", properties: { write: false, writeWithoutResponse: true } }] }]);
+    const link = await bleTransport.open("p1");
+    expect(link.chunk).toBe(60);
+    expect(link.paceMs).toBe(BLE_PACE_MS);
+    expect(BLE_PACE_MS).toBe(20);
+    await link.write(new Uint8Array([9]));
+    expect(ble.writeWithoutResponse).toHaveBeenCalledTimes(1);
+    expect(ble.write).not.toHaveBeenCalled();
+  });
+
+  it("a phone that refuses the faster link still prints", async () => {
+    ble.requestConnectionPriority.mockRejectedValueOnce(new Error("not supported"));
+    await expect(bleTransport.open("p1")).resolves.toBeTruthy();
   });
 
   it("a printer that is off or out of range: 'unreachable' (connect fails or times out)", async () => {
@@ -139,7 +167,7 @@ describe("Bluetooth LE (@capacitor-community/bluetooth-le)", () => {
     await link.write(new Uint8Array([1]));
     onDisconnect!("p1");
     await expect(link.write(new Uint8Array([2]))).rejects.toMatchObject({ kind: "disconnected" });
-    expect(ble.writeWithoutResponse).toHaveBeenCalledTimes(1);
+    expect(ble.write).toHaveBeenCalledTimes(1);
   });
 
   it("an MTU the phone will not tell: 20-byte packets", async () => {

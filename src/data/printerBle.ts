@@ -1,4 +1,4 @@
-import { BleClient } from "@capacitor-community/bluetooth-le";
+import { BleClient, ConnectionPriority } from "@capacitor-community/bluetooth-le";
 import { PrintError, bleChunkSize, isPrinterService, pickCharacteristic, sortDevices, toPrintError, type PrinterDevice, type PrinterLink, type PrinterTransport } from "./printer";
 
 // KB-408 S4 (D111): Bluetooth LE printers through @capacitor-community/bluetooth-le 8.3.0 (pinned): a short scan, the writable
@@ -7,8 +7,8 @@ import { PrintError, bleChunkSize, isPrinterService, pickCharacteristic, sortDev
 /** How long "Search" scans. */
 export const BLE_SCAN_MS = 5000;
 export const BLE_CONNECT_TIMEOUT_MS = 10_000;
-/** Pause between packets written without response - cheap printers drop bytes that arrive faster. */
-export const BLE_PACE_MS = 8;
+/** Pause after each UNACKNOWLEDGED packet (a printer with no acknowledged writes): 60 bytes every 20 ms = 3 KB a second at most. */
+export const BLE_PACE_MS = 20;
 
 let initialized = false;
 /** Tests only. */
@@ -59,8 +59,10 @@ export const bleTransport: PrinterTransport = {
       const target = pickCharacteristic(await BleClient.getServices(id));
       if (!target) throw new PrintError("unreachable"); // nothing to write to: not a printer
       const mtu = await BleClient.getMtu(id).catch(() => 23);
+      // a short connection interval: acknowledged writes take one or two intervals each
+      await BleClient.requestConnectionPriority(id, ConnectionPriority.CONNECTION_PRIORITY_HIGH).catch(() => {});
       const link: PrinterLink = {
-        chunk: bleChunkSize(mtu),
+        chunk: bleChunkSize(mtu, target.withoutResponse),
         paceMs: target.withoutResponse ? BLE_PACE_MS : 0,
         async write(bytes) {
           if (lost) throw new PrintError("disconnected");

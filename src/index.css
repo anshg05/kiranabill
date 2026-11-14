@@ -24,6 +24,8 @@
  * Devanagari - --font-mono falls back to Mukta for Hindi glyphs. */
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/600.css";
+/* KB-408 fix 2 (owner, 14 Nov 2026): the PRINTED bill's bold (amounts, headers, TOTAL) - thermal paper needs heavier strokes. */
+@import "@fontsource/ibm-plex-mono/700.css";
 
 /*
  * KiranaBill design tokens — from docs/13-DESIGN.md §8.

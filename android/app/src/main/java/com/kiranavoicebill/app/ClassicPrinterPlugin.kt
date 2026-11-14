@@ -63,12 +63,19 @@ class ClassicPrinterPlugin : Plugin() {
         if (!permitted()) return call.reject("Nearby devices permission refused", "NO_PERMISSION")
         if (!a.isEnabled) return call.reject("Bluetooth is off", "BT_OFF")
         val devices = JSArray()
+        // EVERY paired device (owner, 14 Nov 2026): a printer must never be hidden by its class or type - the web side tries Classic first
         for (d in a.bondedDevices) {
-            if (d.type == BluetoothDevice.DEVICE_TYPE_LE) continue // BLE-only devices are found by the BLE search
+            val type = when (d.type) {
+                BluetoothDevice.DEVICE_TYPE_CLASSIC -> "classic"
+                BluetoothDevice.DEVICE_TYPE_DUAL -> "dual"
+                BluetoothDevice.DEVICE_TYPE_LE -> "le"
+                else -> "unknown"
+            }
             devices.put(
                 JSObject()
                     .put("address", d.address)
                     .put("name", d.name ?: "")
+                    .put("type", type)
                     .put("printer", d.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.IMAGING),
             )
         }

@@ -218,9 +218,60 @@ describe("Settings → Printer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Search for Bluetooth LE printers" }));
     await settle();
     expect(ble.t.ready).toHaveBeenCalled();
+    classic.t.failOpen = new PrintError("unreachable"); // it does not answer on Bluetooth Classic: a BLE-only printer
     fireEvent.click(screen.getByRole("button", { name: "Printer_8A21" }));
+    await settle();
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).device.kind).toBe("ble");
     vi.useRealTimers();
+  });
+
+  // Owner's S6 (14 Nov 2026): the 58 mm printer was found only by the BLE search and lost bytes there. Classic is tried first.
+  it("a printer found by the BLE search that also answers on Bluetooth Classic is saved as CLASSIC; 'Checking the printer…' shows meanwhile", async () => {
+    ble.t.devices = [{ id: "AA:BB", name: "BT-SRT-58", kind: "ble", printerLike: true }];
+    let answer: () => void = () => {};
+    const waiting = new Promise<void>((r) => (answer = r));
+    const realOpen = classic.t.open.getMockImplementation()!;
+    classic.t.open.mockImplementationOnce(async (id: string) => {
+      await waiting;
+      return realOpen(id);
+    });
+    render(<PrinterSection shop={shop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Search for Bluetooth LE printers" }));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "BT-SRT-58" }));
+    await settle();
+    expect(screen.getByRole("status").textContent).toBe("Checking the printer…");
+    expect(localStorage.getItem("kb.printer.v1")).toBeNull(); // nothing saved until it is known
+    answer();
+    await settle();
+    expect(classic.t.open).toHaveBeenCalledWith("AA:BB");
+    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).device).toEqual({ id: "AA:BB", name: "BT-SRT-58", kind: "classic", printerLike: true });
+  });
+
+  it("a paired Classic printer is saved at once - no check needed", async () => {
+    classic.t.devices = [BT58];
+    render(<PrinterSection shop={shop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "BT-SRT-58" }));
+    await settle();
+    expect(classic.t.open).not.toHaveBeenCalled();
+  });
+
+  it("Long test print: 60 numbered lines, so a lost or shifted line is seen at a glance on paper", async () => {
+    choose(BT58);
+    render(<PrinterSection shop={shop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
+    await settle();
+    const r = rendered.calls[0]!.receipt;
+    expect(r.reprint).toBe("TEST PRINT");
+    expect(r.rows).toHaveLength(60);
+    expect(r.rows.map((x) => x.amount)).toEqual(Array.from({ length: 60 }, (_, i) => `₹${i + 1}`));
+    expect(r.rows[0]!.name).toMatch(/1$/);
+    expect(r.rows[59]!.name).toMatch(/60$/);
+    expect(r.total).toBe("₹1,830");
   });
 
   it("permission refused or Bluetooth off while choosing: the same sentences as printing", async () => {

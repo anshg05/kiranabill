@@ -17,12 +17,12 @@ export const cssFont = (f: FontSpec) => `${f.weight} ${f.size}px ${FAMILY}`;
 /** Owner: Plex and Mukta are split by unicode-range and a canvas doesn't
  * trigger those subsets - load every face/weight with the receipt's ACTUAL
  * strings first, or the first image after a reload draws in a fallback. */
-export async function loadFonts(receipt: Receipt): Promise<void> {
+export async function loadFonts(receipt: Receipt, weights: readonly number[] = [400, 600]): Promise<void> {
   const r = receipt;
   const strings = [r.shopName.toUpperCase(), r.shopPhone ?? "", r.dateTime, r.billNoLabel, r.receiptNumber, r.customerLabel, r.customer ?? "",
     ...Object.values(r.headers), ...r.rows.flatMap((x) => [x.name, x.qty, x.rate, x.amount]), r.totalLabel, r.total, r.thanks, r.cancelled ?? "", r.replaces ?? "", r.reprint ?? ""];
   const sample = [...new Set(strings.join(""))].join("");
-  await Promise.all([400, 600].flatMap((w) => [`${w} 14px "IBM Plex Mono"`, `${w} 14px Mukta`].map((font) => document.fonts.load(font, sample))));
+  await Promise.all(weights.flatMap((w) => [`${w} 14px "IBM Plex Mono"`, `${w} 14px Mukta`].map((font) => document.fonts.load(font, sample))));
 }
 
 function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
@@ -36,6 +36,11 @@ export interface ReceiptPalette {
   readonly muted: string;
   /** Dash pattern of the light rule under each row; null = solid. */
   readonly lightDash: readonly number[] | null;
+  readonly dash: readonly number[];
+  /** Line widths: dashed, the dark header rule, the light row rule. */
+  readonly widths: { readonly dashed: number; readonly dark: number; readonly light: number };
+  /** Whole-dot painting (the printer): text and rules sit exactly on the dot grid. */
+  readonly snap: boolean;
   readonly border: boolean;
 }
 
@@ -55,14 +60,16 @@ export function paintReceipt(ctx: CanvasRenderingContext2D, layout: ReceiptLayou
       ctx.fillStyle = op.muted ? p.inkSoft : p.ink;
       ctx.textAlign = op.align;
       // The glyph sits in the middle of its line box, as in CSS (leading-snug).
-      ctx.fillText(op.text, op.x, op.y + op.size * 0.1875);
+      ctx.fillText(op.text, op.x, p.snap ? op.y + Math.round(op.size * 0.1875) : op.y + op.size * 0.1875);
     } else {
       ctx.beginPath();
-      ctx.setLineDash(op.style === "dashed" ? [3, 3] : op.style === "light" && p.lightDash ? [...p.lightDash] : []);
+      ctx.setLineDash(op.style === "dashed" ? [...p.dash] : op.style === "light" && p.lightDash ? [...p.lightDash] : []);
       ctx.strokeStyle = op.style === "dashed" ? p.muted : op.style === "dark" ? p.inkSoft : p.line;
-      ctx.lineWidth = op.style === "dark" ? 1.5 : 1;
-      ctx.moveTo(op.x1, op.y + 0.5);
-      ctx.lineTo(op.x2, op.y + 0.5);
+      ctx.lineWidth = p.widths[op.style];
+      // an odd whole width is centred on a half dot, an even one on a whole dot: the line covers whole dots exactly
+      const y = p.snap ? op.y + (p.widths[op.style] % 2) / 2 : op.y + 0.5;
+      ctx.moveTo(op.x1, y);
+      ctx.lineTo(op.x2, y);
       ctx.stroke();
     }
   }
@@ -90,6 +97,9 @@ export const renderReceiptFiles: RenderReceiptFiles = async (receipt) => {
     line: token("--color-line", "#E4E0D6"),
     muted: token("--color-muted", "#9A9689"),
     lightDash: null,
+    dash: [3, 3],
+    widths: { dashed: 1, dark: 1.5, light: 1 },
+    snap: false,
     border: true,
   });
 

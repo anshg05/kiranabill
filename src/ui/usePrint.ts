@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { encodeReceiptImage } from "@/domain/escpos";
 import type { MessageId } from "@/domain/messages";
 import type { Receipt } from "@/domain/receipt";
-import { loadPrinterSettings, sendToPrinter, toPrintError, type PrintFailure } from "@/data/printer";
+import { loadPrinterSettings, printRate, sendToPrinter, toPrintError, type PrintFailure } from "@/data/printer";
 import { bleTransport } from "@/data/printerBle";
 import { classicTransport } from "@/data/printerClassic";
 import { renderReceiptForPrint } from "./receiptPrint";
@@ -40,7 +40,7 @@ export function usePrint(): { state: PrintState; print: (receipt: Receipt) => Pr
       setState({ kind: "printing", percent: 0 });
       const { bitmap } = await renderReceiptForPrint(receipt, settings.dots);
       const transport = settings.device.kind === "ble" ? bleTransport : classicTransport;
-      await sendToPrinter(transport, settings.device.id, encodeReceiptImage(bitmap), (done) => setState({ kind: "printing", percent: Math.round(done * 100) }));
+      await sendToPrinter(transport, settings.device.id, encodeReceiptImage(bitmap), (done) => setState({ kind: "printing", percent: Math.round(done * 100) }), { bytesPerSecond: printRate(settings.dots) });
       setState({ kind: "done" });
       return true;
     } catch (err) {

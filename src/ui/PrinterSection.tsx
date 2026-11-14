@@ -2,7 +2,7 @@ import { useState } from "react";
 import { buildReceipt, type BillLanguage, type Receipt } from "@/domain/receipt";
 import type { Paise } from "@/domain/money";
 import { isNativeApp } from "@/data/nativeSignIn";
-import { loadPrinterSettings, savePrinterSettings, toPrintError, type PaperDots, type PrintFailure, type PrinterDevice, type PrinterSettings } from "@/data/printer";
+import { loadPrinterSettings, preferClassic, savePrinterSettings, toPrintError, type PaperDots, type PrintFailure, type PrinterDevice, type PrinterSettings } from "@/data/printer";
 import { bleTransport } from "@/data/printerBle";
 import { classicTransport } from "@/data/printerClassic";
 import { PrintStatus } from "./PrintButton";
@@ -30,6 +30,24 @@ export function testReceipt(shop: ShopForPrint, now = new Date()): Receipt {
   return { ...r, reprint: "TEST PRINT" };
 }
 
+/**
+ * Owner's S6 (14 Nov 2026): a long bill for the stress test - 60 lines numbered 1..60, each worth its own number (total 1,830), so on
+ * paper a lost line, a shifted column or garbage is seen at a glance.
+ */
+export function longTestReceipt(shop: ShopForPrint, now = new Date()): Receipt {
+  const at = now.toISOString();
+  const items = Array.from({ length: 60 }, (_, i) => {
+    const n = i + 1;
+    return { displayName: `जाँच पंक्ति ${n}`, qty: n, unit: "piece", ratePaise: 100 as Paise, rateUnit: "piece", totalPaise: (n * 100) as Paise };
+  });
+  const r = buildReceipt(
+    { receiptNumber: "TEST-60", customerName: "Cash", totalPaise: 183_000 as Paise, finalizedAt: at, createdAt: at, status: "final" },
+    items,
+    { name: shop.name, phone: shop.phone, logoUrl: null, billLanguage: shop.billLanguage },
+  );
+  return { ...r, reprint: "TEST PRINT" };
+}
+
 export function PrinterSection({ shop }: { shop: ShopForPrint }) {
   return isNativeApp() ? <PrinterSectionInApp shop={shop} /> : null;
 }
@@ -42,6 +60,7 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
   const [settings, setSettings] = useState<PrinterSettings | null>(() => loadPrinterSettings());
   const [devices, setDevices] = useState<PrinterDevice[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [failure, setFailure] = useState<PrintFailure | null>(null);
   const test = usePrint();
 
@@ -63,9 +82,17 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
       setSearching(false);
     }
   };
-  const pick = (device: PrinterDevice) => {
-    save({ device, dots: settings?.dots ?? 384 });
-    setDevices(null);
+  // Bluetooth Classic whenever the printer offers it (owner, 14 Nov 2026): a BLE-found printer is tried once on Classic before it is saved.
+  const pick = async (found: PrinterDevice) => {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const device = await preferClassic(found, classicTransport);
+      save({ device, dots: settings?.dots ?? 384 });
+      setDevices(null);
+    } finally {
+      setChecking(false);
+    }
   };
   const setPaper = (dots: PaperDots) => settings && save({ ...settings, dots });
 
@@ -79,14 +106,24 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
           {t("settings.printerChoose")}
         </button>
         {settings && (
-          <button type="button" aria-disabled={test.state.kind === "printing"} onClick={() => void test.print(testReceipt(shop))} className={btn}>
-            {t("settings.testPrint")}
-          </button>
+          <>
+            <button type="button" aria-disabled={test.state.kind === "printing"} onClick={() => void test.print(testReceipt(shop))} className={btn}>
+              {t("settings.testPrint")}
+            </button>
+            <button type="button" aria-disabled={test.state.kind === "printing"} onClick={() => void test.print(longTestReceipt(shop))} className={btn}>
+              {t("settings.longTestPrint")}
+            </button>
+          </>
         )}
       </div>
       {failure && (
         <p role="alert" className="mt-2 text-[13px] text-danger">
           {t(PRINT_FAILURE_TEXT[failure])}
+        </p>
+      )}
+      {checking && (
+        <p role="status" className="mt-2 text-[13px] text-ink-soft">
+          {t("settings.printerChecking")}
         </p>
       )}
       {devices && (
@@ -96,7 +133,7 @@ function PrinterSectionInApp({ shop }: { shop: ShopForPrint }) {
           <ul className="mt-1 flex flex-col gap-1">
             {devices.map((d) => (
               <li key={`${d.kind}:${d.id}`}>
-                <button type="button" onClick={() => pick(d)} className="flex min-h-11 w-full items-center rounded-[6px] px-2 text-left font-medium hover:bg-paper">
+                <button type="button" aria-disabled={checking} onClick={() => void pick(d)} className="flex min-h-11 w-full items-center rounded-[6px] px-2 text-left font-medium hover:bg-paper">
                   {d.name || d.id}
                 </button>
               </li>

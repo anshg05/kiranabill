@@ -4,13 +4,17 @@ import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { PRINT_THRESHOLD, toMonoBitmap } from "@/domain/escpos";
 
-// KB-408 S3 (owner, 13 Nov 2026): the black-and-white cut-off is tuned on REAL receipt text, Devanagari included - not on Latin alone.
-// The fixtures are the grey pixels of Bill 514 (src/ui/devPrintBills.ts, 38 rows: ि ी ् ँ ं, क्ष, द्ध, a wrapped name) exactly as the
-// browser engine rendered them at 576 and 384 dots (/__dev/print). Measured 13 Nov 2026 - text strokes broken / strokes run together:
-//   cut-off   128      144      160      176      192      208
-//   384 dots  74 / 0   74 / 0   73 / 1   63 / 11  47 / 42  40 / 47
-//   576 dots  69 / 0   59 / 10  57 / 12  50 / 19  46 / 23  13 / 56
-// Lighter breaks more strokes; darker blots conjuncts and fills counters. 160 keeps both low (thermal dots also spread a little on paper).
+// KB-408 (owner, 13-14 Nov 2026): the black-and-white cut-off is tuned on REAL receipt text, Devanagari included - not on Latin alone.
+// The fixtures are the grey pixels of the owner's real Bill 514 (src/ui/devPrintBills.ts, 38 lines) exactly as the browser engine
+// rendered the PRINT layout at 576 and 384 dots (/__dev/print). Re-measured 14 Nov 2026 after fix 2 (the bill laid out in whole dots,
+// semi-bold or bolder):
+//   cut-off            96      128     144     160     176     192
+//   384: merged        0       0       0       0       1       27
+//   384: hairlines     2.27%   1.56%   1.40%   1.03%   0.68%   -
+//   576: merged        0       0       0       0       1       26
+//   576: hairlines     1.23%   0.77%   0.71%   0.56%   0.41%   -
+// "merged" = separate strokes run together (a blotted mark); "hairlines" = ink in strokes only 1 dot wide, which thermal paper prints
+// faint or broken (the S6 printout had 16% / 12%). Lighter cut-offs leave more hairlines, darker ones blot. 160 = the darkest with no blot.
 
 const INK = 235; // any visible ink on white paper
 
@@ -59,30 +63,44 @@ function measure(dots: 384 | 576, threshold: number) {
   const rgba = new Uint8Array(w * h * 4);
   for (let i = 0; i < grey.length; i++) rgba.set([grey[i]!, grey[i]!, grey[i]!, 255], i * 4);
   const mono = toMonoBitmap(rgba, w, h, threshold);
-  const dot = (i: number) => (mono.data[Math.floor(i / w) * (w / 8) + ((i % w) >> 3)]! & (0x80 >> (i % w & 7))) !== 0;
+  const dot = (i: number) => i >= 0 && i < w * h && (mono.data[Math.floor(i / w) * (w / 8) + ((i % w) >> 3)]! & (0x80 >> (i % w & 7))) !== 0;
   const text = components((i) => grey[i]! < INK, w, h).list.filter((px) => px.length >= 3 && !isRule(px, w));
   const printed = components(dot, w, h).label;
   const shape = components((i) => grey[i]! < 128, w, h).label; // the glyphs' true shape: 50 % ink coverage
   const lost = text.filter((px) => !px.some(dot)).length;
-  const broken = text.filter((px) => new Set(px.filter(dot).map((i) => printed[i])).size > 1).length;
   const joined = new Map<number, Set<number>>();
   for (let i = 0; i < w * h; i++) if (printed[i] && shape[i]) (joined.get(printed[i]!) ?? joined.set(printed[i]!, new Set()).get(printed[i]!)!).add(shape[i]!);
   const merged = [...joined.values()].filter((s) => s.size > 1).length;
-  return { textMarks: text.length, lost, broken, merged };
+  // hairlines: dots in a stroke only 1 dot wide (or high) that runs 3 dots or more
+  const run = (i: number, step: number, sameRow: boolean) => {
+    let n = 1;
+    for (let k = i - step; dot(k) && (!sameRow || Math.floor(k / w) === Math.floor(i / w)); k -= step) n++;
+    for (let k = i + step; dot(k) && (!sameRow || Math.floor(k / w) === Math.floor(i / w)); k += step) n++;
+    return n;
+  };
+  let black = 0;
+  let hair = 0;
+  for (let i = 0; i < w * h; i++) {
+    if (!dot(i)) continue;
+    black++;
+    const x = i % w;
+    const alone = { across: !(x > 0 && dot(i - 1)) && !(x < w - 1 && dot(i + 1)), down: !dot(i - w) && !dot(i + w) };
+    if ((alone.across && run(i, w, false) >= 3) || (alone.down && run(i, 1, true) >= 3)) hair++;
+  }
+  return { textMarks: text.length, lost, merged, hairlinePercent: (100 * hair) / black };
 }
 
-describe("PRINT_THRESHOLD on the real Bill 514 text (Devanagari included)", () => {
-  it.each([384, 576] as const)("%i dots: no visible mark is lost, strokes do not break, separate strokes do not run together", (dots) => {
+describe("PRINT_THRESHOLD on the real Bill 514 (the print layout, Devanagari included)", () => {
+  it.each([384, 576] as const)("%i dots: no mark is lost, no mark blots, and almost no stroke is only 1 dot wide", (dots) => {
     const m = measure(dots, PRINT_THRESHOLD);
-    expect(m.textMarks).toBeGreaterThan(3000); // the fixture is the whole 38-row bill
+    expect(m.textMarks).toBeGreaterThan(2500); // the fixture is the whole 38-line bill
     expect(m.lost).toBe(0);
-    // measured at 160 (13 Nov 2026): 384 -> 73 broken / 1 merged; 576 -> 57 / 12. The bounds keep that, with a small margin.
-    expect(m.broken).toBeLessThanOrEqual(dots === 384 ? 78 : 62);
-    expect(m.merged).toBeLessThanOrEqual(dots === 384 ? 4 : 15);
+    expect(m.merged).toBe(0);
+    expect(m.hairlinePercent).toBeLessThan(dots === 384 ? 1.2 : 0.7); // measured 1.03 / 0.56; the S6 printout had 16 / 12
   });
 
   it("the fixtures are the expected renders (a new font or layout means re-measuring, not loosening the bounds)", () => {
-    expect(fixture(384).h).toBe(1817);
-    expect(fixture(576).h).toBe(1952);
+    expect(fixture(384).h).toBe(1982);
+    expect(fixture(576).h).toBe(2056);
   });
 });

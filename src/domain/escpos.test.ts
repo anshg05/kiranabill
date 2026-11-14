@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PRINT_THRESHOLD, decodeEscPos, encodeReceiptImage, printProfile, toMonoBitmap, type MonoBitmap } from "./escpos";
+import { PRINT_BAND_ROWS, PRINT_THRESHOLD, decodeEscPos, encodeReceiptImage, printProfile, toMonoBitmap, type MonoBitmap } from "./escpos";
+import { printStyle } from "./receiptLayout";
 
 // KB-408 S3 (D111): the receipt goes to the printer as an IMAGE - cheap ESC/POS printers have no Devanagari font. Only standard
 // commands, so ANY ESC/POS Bluetooth printer prints it: ESC @, GS v 0 in bands, ESC d, GS V; ESC * for printers without GS v 0.
@@ -112,32 +113,40 @@ describe("decodeEscPos - what the printer will draw, read back from the bytes", 
   });
 });
 
-describe("printProfile - the paper width", () => {
+describe("printProfile - the paper width (laid out in the printer's own dots, nothing scaled)", () => {
   // a monospace measure, 0.6 em a character (IBM Plex Mono's advance)
-  const mono = (n: number, size = 14) => n * 0.6 * size;
+  const chars = (n: number, size: number) => n * 0.6 * size;
 
-  it("80 mm (576 dots): today's receipt exactly - its 384 px layout, drawn 1.5x", () => {
-    expect(printProfile(576)).toEqual({ dots: 576, layoutWidth: 384, padding: 16, scale: 1.5 });
+  it("80 mm (576 dots): the wide style with a margin", () => {
+    expect(printProfile(576)).toEqual({ dots: 576, padding: 16, style: printStyle("wide") });
   });
 
-  it("58 mm (384 dots): the same table fitted to about 32 characters", () => {
+  it("58 mm (384 dots): the narrow style on every dot - exactly 32 characters of the number size fit, 33 do not", () => {
     const p = printProfile(384);
-    expect(p.dots).toBe(384);
-    expect(p.layoutWidth * p.scale).toBeCloseTo(384, 6);
-    const inner = p.layoutWidth - 2 * p.padding;
-    expect(mono(32)).toBeLessThanOrEqual(inner);
-    expect(mono(33)).toBeGreaterThan(inner);
+    expect(p).toEqual({ dots: 384, padding: 0, style: printStyle("narrow") });
+    const inner = p.dots - 2 * p.padding;
+    expect(chars(32, p.style.cell.size)).toBeLessThanOrEqual(inner);
+    expect(chars(33, p.style.cell.size)).toBeGreaterThan(inner);
   });
 
   it("a custom width is cut down to whole bytes; narrow paper is treated like 58 mm, wide like 80 mm", () => {
     expect(printProfile(436).dots).toBe(432);
-    expect(printProfile(432).padding).toBe(printProfile(384).padding);
-    expect(printProfile(512).padding).toBe(16);
-    expect(printProfile(512).layoutWidth * printProfile(512).scale).toBeCloseTo(512, 6);
+    expect(printProfile(432).style).toEqual(printStyle("narrow"));
+    expect(printProfile(512).style).toEqual(printStyle("wide"));
   });
 
   it("refuses a width no receipt fits (under 2 inches of dots, or absurd)", () => {
     expect(() => printProfile(200)).toThrow();
     expect(() => printProfile(5000)).toThrow();
+  });
+});
+
+describe("PRINT_BAND_ROWS", () => {
+  it("is 24 rows: a lost byte spoils 3 mm of paper, not the rest of the bill", () => {
+    expect(PRINT_BAND_ROWS).toBe(24);
+    const img: MonoBitmap = { width: 8, height: 50, data: new Uint8Array(50) };
+    const out = encodeReceiptImage(img, { feedLines: 0, cut: false });
+    expect(hex(out.slice(2, 10))).toBe("1d 76 30 00 01 00 18 00"); // the first band is 24 rows
+    expect(out.length).toBe(2 + 3 * 8 + 50); // 24 + 24 + 2 rows = three commands
   });
 });

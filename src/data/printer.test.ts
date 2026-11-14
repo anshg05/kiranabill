@@ -6,6 +6,8 @@ import {
   bleChunkSize,
   loadPrinterSettings,
   pickCharacteristic,
+  preferClassic,
+  printRate,
   savePrinterSettings,
   sendToPrinter,
   sortDevices,
@@ -62,8 +64,51 @@ describe("sendToPrinter", () => {
 
   it("waits paceMs between chunks (BLE printers drop bytes sent too fast) - not after the last", async () => {
     const sleep = vi.fn(() => Promise.resolve());
-    await sendToPrinter(fakeTransport({ chunk: 4, paceMs: 8 }).transport, "AA:BB", bytes, () => {}, sleep);
+    await sendToPrinter(fakeTransport({ chunk: 4, paceMs: 8 }).transport, "AA:BB", bytes, () => {}, { sleep });
     expect(sleep.mock.calls).toEqual([[8], [8]]);
+  });
+
+  // Owner's S6 (13-14 Nov 2026): the 58 mm printer printed garbage and shifted rows - it was sent bytes faster than it prints, and a
+  // cheap printer has no way to say "wait". So the job is never sent faster than the paper can take it.
+  it("never sends faster than bytesPerSecond: it waits until the bytes sent so far are 'due'", async () => {
+    let clock = 0;
+    const sleeps: number[] = [];
+    const sleep = (ms: number) => {
+      sleeps.push(ms);
+      clock += ms;
+      return Promise.resolve();
+    };
+    // 10 bytes at 4 bytes/second in chunks of 4: after 4 bytes 1000 ms must have passed, after 8 bytes 2000 ms
+    await sendToPrinter(fakeTransport({ chunk: 4 }).transport, "AA:BB", bytes, () => {}, { bytesPerSecond: 4, sleep, now: () => clock });
+    expect(sleeps).toEqual([1000, 1000]);
+  });
+
+  it("a slow link is not slowed further: time already spent writing counts", async () => {
+    let clock = 0;
+    const sleeps: number[] = [];
+    const t = fakeTransport({ chunk: 4 });
+    (t.link.write as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      clock += 1500; // each write itself took 1.5 s (BLE write-with-response)
+      return Promise.resolve();
+    });
+    await sendToPrinter(t.transport, "AA:BB", bytes, () => {}, { bytesPerSecond: 4, sleep: (ms) => (sleeps.push(ms), Promise.resolve()), now: () => clock });
+    expect(sleeps).toEqual([]);
+  });
+
+  it("the longer of the two waits is used, not their sum", async () => {
+    let clock = 0;
+    const sleeps: number[] = [];
+    const sleep = (ms: number) => {
+      sleeps.push(ms);
+      clock += ms;
+      return Promise.resolve();
+    };
+    await sendToPrinter(fakeTransport({ chunk: 4, paceMs: 300 }).transport, "AA:BB", bytes, () => {}, { bytesPerSecond: 4, sleep, now: () => clock });
+    expect(sleeps).toEqual([1000, 1000]);
+    sleeps.length = 0;
+    clock = 0;
+    await sendToPrinter(fakeTransport({ chunk: 4, paceMs: 3000 }).transport, "AA:BB", bytes, () => {}, { bytesPerSecond: 4, sleep, now: () => clock });
+    expect(sleeps).toEqual([3000, 3000]);
   });
 
   it("a disconnect mid-print is a PrintError('disconnected') and the link is still closed", async () => {
@@ -101,6 +146,39 @@ describe("sendToPrinter", () => {
     const { transport, closed } = fakeTransport({ chunk: 4 });
     closed.mockImplementationOnce(() => Promise.reject(new Error("socket already closed")));
     await expect(sendToPrinter(transport, "AA:BB", bytes, () => {})).resolves.toBeUndefined();
+  });
+});
+
+describe("printRate - how fast a receipt may be sent", () => {
+  it("no faster than a slow printer prints: 320 dot rows a second (40 mm/s) of the paper's width", () => {
+    expect(printRate(384)).toBe(48 * 320);
+    expect(printRate(576)).toBe(72 * 320);
+  });
+});
+
+describe("preferClassic - Bluetooth Classic whenever the printer offers it (owner, 14 Nov 2026)", () => {
+  const bleDev = dev({ id: "AA:BB", kind: "ble" });
+  const probe = (ok: boolean) => {
+    const close = vi.fn(() => Promise.resolve());
+    const open = vi.fn(() => (ok ? Promise.resolve({ chunk: 512, paceMs: 0, write: () => Promise.resolve(), close }) : Promise.reject(new PrintError("unreachable"))));
+    return { classic: { kind: "classic" as const, ready: () => Promise.resolve(), list: () => Promise.resolve([]), open }, open, close };
+  };
+
+  it("a device found by the BLE search that also answers on Classic (SPP) is saved as Classic - and the probe link is closed", async () => {
+    const p = probe(true);
+    expect(await preferClassic(bleDev, p.classic)).toEqual({ ...bleDev, kind: "classic" });
+    expect(p.open).toHaveBeenCalledWith("AA:BB");
+    expect(p.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("a BLE-only printer stays BLE", async () => {
+    expect(await preferClassic(bleDev, probe(false).classic)).toEqual(bleDev);
+  });
+
+  it("a device already known as Classic is not probed", async () => {
+    const p = probe(true);
+    expect(await preferClassic(dev(), p.classic)).toEqual(dev());
+    expect(p.open).not.toHaveBeenCalled();
   });
 });
 
@@ -164,12 +242,13 @@ describe("BLE: which characteristic carries the print job", () => {
 
   it("a known printer service first, even when another writable one comes earlier", () => {
     const pick = pickCharacteristic([svc("0000180a-0000-1000-8000-00805f9b34fb", [["00002a29-0000-1000-8000-00805f9b34fb", { write: true }]]), svc("000018f0-0000-1000-8000-00805f9b34fb", [["00002af0-0000-1000-8000-00805f9b34fb", {}], ["00002af1-0000-1000-8000-00805f9b34fb", { write: true, wwr: true }]])]);
-    expect(pick).toEqual({ service: "000018f0-0000-1000-8000-00805f9b34fb", characteristic: "00002af1-0000-1000-8000-00805f9b34fb", withoutResponse: true });
+    expect(pick).toEqual({ service: "000018f0-0000-1000-8000-00805f9b34fb", characteristic: "00002af1-0000-1000-8000-00805f9b34fb", withoutResponse: false });
   });
 
-  it("inside a service, write-without-response is preferred (faster); write-with-response is used when that is all there is", () => {
-    expect(pickCharacteristic([svc("49535343-fe7d-4ae5-8fa9-9fafd205e455", [["a", { write: true }], ["b", { wwr: true }]])])).toMatchObject({ characteristic: "b", withoutResponse: true });
-    expect(pickCharacteristic([svc("49535343-fe7d-4ae5-8fa9-9fafd205e455", [["a", { write: true }]])])).toMatchObject({ characteristic: "a", withoutResponse: false });
+  it("write-WITH-response is preferred - each packet is acknowledged, so a slow printer cannot be flooded (owner, 14 Nov 2026)", () => {
+    expect(pickCharacteristic([svc("49535343-fe7d-4ae5-8fa9-9fafd205e455", [["a", { wwr: true }], ["b", { write: true }]])])).toMatchObject({ characteristic: "b", withoutResponse: false });
+    expect(pickCharacteristic([svc("49535343-fe7d-4ae5-8fa9-9fafd205e455", [["both", { write: true, wwr: true }]])])).toMatchObject({ characteristic: "both", withoutResponse: false });
+    expect(pickCharacteristic([svc("49535343-fe7d-4ae5-8fa9-9fafd205e455", [["a", { wwr: true }]])])).toMatchObject({ characteristic: "a", withoutResponse: true });
   });
 
   it("an unknown printer: the first writable characteristic of any service; none -> null", () => {
@@ -177,11 +256,14 @@ describe("BLE: which characteristic carries the print job", () => {
     expect(pickCharacteristic([svc("x", [["r", {}]])])).toBeNull();
   });
 
-  it("packet size = MTU - 3, at least 20, at most 512", () => {
-    expect(bleChunkSize(185)).toBe(182);
-    expect(bleChunkSize(23)).toBe(20);
-    expect(bleChunkSize(5)).toBe(20);
-    expect(bleChunkSize(1000)).toBe(512);
-    expect(bleChunkSize(Number.NaN)).toBe(20);
+  it("packet size: MTU - 3, at least 20; acknowledged writes at most 180, unacknowledged ones at most 60 (small and slow is safe)", () => {
+    expect(bleChunkSize(185, false)).toBe(180);
+    expect(bleChunkSize(100, false)).toBe(97);
+    expect(bleChunkSize(517, false)).toBe(180);
+    expect(bleChunkSize(517, true)).toBe(60);
+    expect(bleChunkSize(50, true)).toBe(47);
+    expect(bleChunkSize(23, true)).toBe(20);
+    expect(bleChunkSize(5, false)).toBe(20);
+    expect(bleChunkSize(Number.NaN, true)).toBe(20);
   });
 });

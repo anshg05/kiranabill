@@ -14,7 +14,7 @@ const DIST = [
   "assets/index-4kpVDihe.js.map",
   "assets/index-DnLQ1OBX.css",
   ...["devanagari", "latin", "latin-ext"].flatMap((s) => [400, 500, 600, 700].flatMap((w) => [`assets/mukta-${s}-${w}-normal-AbCd1234.woff2`, `assets/mukta-${s}-${w}-normal-AbCd1234.woff`])),
-  ...["cyrillic", "cyrillic-ext", "latin", "latin-ext", "vietnamese"].flatMap((s) => [400, 600].flatMap((w) => [`assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff2`, `assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff`])),
+  ...["cyrillic", "cyrillic-ext", "latin", "latin-ext", "vietnamese"].flatMap((s) => [400, 600, 700].flatMap((w) => [`assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff2`, `assets/ibm-plex-mono-${s}-${w}-normal-ZyXw9876.woff`])),
 ];
 
 describe("selectPrecache", () => {
@@ -37,13 +37,15 @@ describe("selectPrecache", () => {
     expect(mukta.every((u) => u.endsWith(".woff2"))).toBe(true);
   });
 
-  it("keeps only IBM Plex Mono latin + latin-ext, 400 and 600, woff2 (4 files)", () => {
+  it("keeps only IBM Plex Mono latin + latin-ext, 400, 600 and 700 (the printed bill's bold, KB-408), woff2 (6 files)", () => {
     const plex = urls.filter((u) => u.includes("/ibm-plex-mono-")).sort();
     expect(plex).toEqual([
       "/assets/ibm-plex-mono-latin-400-normal-ZyXw9876.woff2",
       "/assets/ibm-plex-mono-latin-600-normal-ZyXw9876.woff2",
+      "/assets/ibm-plex-mono-latin-700-normal-ZyXw9876.woff2",
       "/assets/ibm-plex-mono-latin-ext-400-normal-ZyXw9876.woff2",
       "/assets/ibm-plex-mono-latin-ext-600-normal-ZyXw9876.woff2",
+      "/assets/ibm-plex-mono-latin-ext-700-normal-ZyXw9876.woff2",
     ]);
   });
 

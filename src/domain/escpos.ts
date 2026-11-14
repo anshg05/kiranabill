@@ -1,3 +1,5 @@
+import { printStyle, type ReceiptStyle } from "./receiptLayout.js";
+
 // KB-408 S3 (D111, owner rulings D110 item 8.6 / 8.10): the receipt goes to a thermal printer as an IMAGE - cheap printers have no
 // Devanagari font. Only standard ESC/POS commands, so ANY ESC/POS printer prints it. Pure: pixels in, bytes out (and back, for previews).
 
@@ -9,8 +11,8 @@ export interface MonoBitmap {
 }
 
 /**
- * Luminance below this prints as a dot. Tuned on the real Bill 514 text, Devanagari included (eval/print/threshold.test.ts): high
- * enough that thin, anti-aliased marks (ि ी ् ँ ं, क्ष, द्ध) keep their dots, low enough that strokes do not merge.
+ * Luminance below this prints as a dot. Tuned on the owner's real Bill 514 in the print layout, Devanagari included
+ * (eval/print/threshold.test.ts): the darkest cut-off at which no two strokes run together, so thin marks keep the most ink.
  */
 export const PRINT_THRESHOLD = 160;
 
@@ -41,11 +43,17 @@ export interface EncodeOptions {
   readonly cut?: boolean;
 }
 
+/**
+ * Rows per GS v 0 command. Small (3 mm of paper): if a printer ever loses a byte, only that band is spoiled and the next command
+ * starts clean - in the owner's S6 a lost byte in a 64-row band shifted and garbled everything after it.
+ */
+export const PRINT_BAND_ROWS = 24;
+
 const ESC = 0x1b;
 const GS = 0x1d;
 
 /** The whole print job for one receipt image. */
-export function encodeReceiptImage(img: MonoBitmap, { mode = "raster", bandRows = 64, feedLines = 4, cut = true }: EncodeOptions = {}): Uint8Array {
+export function encodeReceiptImage(img: MonoBitmap, { mode = "raster", bandRows = PRINT_BAND_ROWS, feedLines = 4, cut = true }: EncodeOptions = {}): Uint8Array {
   if (img.width % 8 !== 0 || img.width <= 0 || img.data.length !== (img.width / 8) * img.height) throw new Error("encodeReceiptImage: not a packed bitmap");
   if (!Number.isInteger(bandRows) || bandRows < 1) throw new Error("encodeReceiptImage: bandRows must be a whole number >= 1");
   if (!Number.isInteger(feedLines) || feedLines < 0 || feedLines > 255) throw new Error("encodeReceiptImage: feedLines must be 0-255");
@@ -130,22 +138,19 @@ export function decodeEscPos(bytes: Uint8Array): MonoBitmap {
 }
 
 export interface PrintProfile {
-  /** Dots a line - the image's width. */
+  /** Dots a line - the image's width; the receipt is laid out in these dots, nothing is scaled. */
   readonly dots: number;
-  /** The receipt layout's width in its own px (receiptLayout.ts); drawn `scale` times as large. */
-  readonly layoutWidth: number;
   readonly padding: number;
-  readonly scale: number;
+  readonly style: ReceiptStyle;
 }
 
 /**
- * The receipt at a paper width (owner, D110 item 8.6). 80 mm and wider: today's 384 px receipt exactly, scaled to the dots. Narrower
- * (58 mm, 384 dots): the same table with a small margin and a 19.25-dot font - about 32 monospace characters a line.
+ * The receipt at a paper width (owner, D110 item 8.6; S6 fix 2, 14 Nov 2026). The same table on both papers, laid out in the printer's
+ * own dots: 80 mm and wider get bigger names, wider column gaps and a margin; narrower paper (58 mm, 384 dots = 32 characters of 12
+ * dots) uses every dot - the paper itself has the margin.
  */
 export function printProfile(requestedDots: number): PrintProfile {
   const dots = Math.floor(requestedDots / 8) * 8;
   if (!Number.isFinite(dots) || dots < 256 || dots > 1024) throw new Error(`printProfile: ${requestedDots} dots is not a receipt printer`);
-  if (dots >= 512) return { dots, layoutWidth: 384, padding: 16, scale: dots / 384 };
-  const scale = 1.375;
-  return { dots, layoutWidth: dots / scale, padding: 4, scale };
+  return dots >= 512 ? { dots, padding: 16, style: printStyle("wide") } : { dots, padding: 0, style: printStyle("narrow") };
 }

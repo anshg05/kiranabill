@@ -63,24 +63,66 @@ export function toPrintError(err: unknown): PrintError {
 
 const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/** The whole job: ready, open, every byte in order (progress after each chunk), always close. */
-export async function sendToPrinter(transport: PrinterTransport, deviceId: string, bytes: Uint8Array, onProgress: (done: number) => void, sleep = realSleep): Promise<void> {
+/**
+ * Owner's S6 (13-14 Nov 2026): a cheap printer sent bytes faster than it prints drops some - then raster data prints as garbage text
+ * and later rows shift sideways. It has no way to say "wait", so the job is never sent faster than a SLOW printer prints:
+ * 320 dot rows a second (40 mm/s at 8 dots/mm) of the paper's width. A fast printer loses a second or two; a slow one loses no bytes.
+ */
+export const PRINT_ROWS_PER_SECOND = 320;
+export const printRate = (dots: number): number => (dots / 8) * PRINT_ROWS_PER_SECOND;
+
+export interface SendOptions {
+  /** The most bytes a second to send (printRate); none = no limit. */
+  readonly bytesPerSecond?: number;
+  readonly sleep?: (ms: number) => Promise<void>;
+  readonly now?: () => number;
+}
+
+/** The whole job: ready, open, every byte in order (progress after each chunk, never faster than bytesPerSecond), always close. */
+export async function sendToPrinter(
+  transport: PrinterTransport,
+  deviceId: string,
+  bytes: Uint8Array,
+  onProgress: (done: number) => void,
+  { bytesPerSecond, sleep = realSleep, now = () => performance.now() }: SendOptions = {},
+): Promise<void> {
   try {
     await transport.ready();
     const link = await transport.open(deviceId);
     try {
       if (!Number.isInteger(link.chunk) || link.chunk < 1) throw new PrintError("disconnected"); // a 0-byte chunk would loop forever
+      const started = now();
       for (let at = 0; at < bytes.length; at += link.chunk) {
         const end = Math.min(at + link.chunk, bytes.length);
         await link.write(bytes.subarray(at, end));
         onProgress(end / bytes.length);
-        if (link.paceMs > 0 && end < bytes.length) await sleep(link.paceMs);
+        if (end === bytes.length) break;
+        // the bytes sent so far are "due" at started + end / rate: wait out what is left of that, or the link's own pause if longer
+        const untilDue = bytesPerSecond ? started + (end / bytesPerSecond) * 1000 - now() : 0;
+        const wait = Math.max(link.paceMs, untilDue);
+        if (wait > 0) await sleep(wait);
       }
     } finally {
       await link.close().catch(() => {});
     }
   } catch (err) {
     throw toPrintError(err);
+  }
+}
+
+/**
+ * Owner, 14 Nov 2026: Bluetooth Classic whenever the printer offers it - BLE only for a BLE-only printer. A device found by the BLE
+ * search (or paired only as LE) is tried once on Classic (SPP); if it answers, it is saved as Classic. Classic has real flow control
+ * between the phone and the printer's Bluetooth chip; BLE has none.
+ */
+export async function preferClassic(device: PrinterDevice, classic: PrinterTransport): Promise<PrinterDevice> {
+  if (device.kind === "classic") return device;
+  try {
+    const link = await classic.open(device.id);
+    await link.close().catch(() => {});
+    return { ...device, kind: "classic" };
+  } catch {
+    return device;
   }
 }
 
@@ -147,15 +189,20 @@ export function pickCharacteristic(services: readonly BleServiceLike[]): BleTarg
     return i < 0 ? KNOWN_PRINTER_SERVICES.length : i;
   };
   for (const s of [...services].sort((a, b) => rank(a.uuid) - rank(b.uuid))) {
-    const fast = s.characteristics.find((c) => c.properties.writeWithoutResponse);
-    if (fast) return { service: s.uuid, characteristic: fast.uuid, withoutResponse: true };
-    const slow = s.characteristics.find((c) => c.properties.write);
-    if (slow) return { service: s.uuid, characteristic: slow.uuid, withoutResponse: false };
+    // acknowledged writes first: the printer's Bluetooth chip confirms each packet, so it cannot be flooded
+    const acked = s.characteristics.find((c) => c.properties.write);
+    if (acked) return { service: s.uuid, characteristic: acked.uuid, withoutResponse: false };
+    const blind = s.characteristics.find((c) => c.properties.writeWithoutResponse);
+    if (blind) return { service: s.uuid, characteristic: blind.uuid, withoutResponse: true };
   }
   return null;
 }
 
-/** One BLE packet: the MTU less its 3-byte header, within 20..512. */
-export function bleChunkSize(mtu: number): number {
-  return Number.isFinite(mtu) ? Math.min(512, Math.max(20, Math.floor(mtu) - 3)) : 20;
+/**
+ * One BLE packet: the MTU less its 3-byte header, at least 20. Capped well under what phones negotiate (up to 512): the S6 printer
+ * accepted 509-byte packets and then lost bytes. Acknowledged writes: 180. Unacknowledged ones: 60, with a pause after each.
+ */
+export function bleChunkSize(mtu: number, withoutResponse: boolean): number {
+  const cap = withoutResponse ? 60 : 180;
+  return Number.isFinite(mtu) ? Math.min(cap, Math.max(20, Math.floor(mtu) - 3)) : 20;
 }

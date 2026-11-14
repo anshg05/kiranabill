@@ -5,7 +5,7 @@
 
 const FONT = /\.(woff2?|ttf|otf|eot)$/;
 const MUKTA = /^mukta-[a-z-]+-\d+-normal-[^/]+\.woff2$/;
-const PLEX = /^ibm-plex-mono-(latin|latin-ext)-(400|600)-normal-[^/]+\.woff2$/;
+const PLEX = /^ibm-plex-mono-(latin|latin-ext)-(400|600|700)-normal-[^/]+\.woff2$/; // 700: the printed bill's bold (KB-408)
 const STATIC = /^icons\/[^/]+\.(png|svg|ico)$/;
 
 /** Built file paths relative to dist/ ("index.html", "assets/x.js") -> the URLs to precache, sorted. */

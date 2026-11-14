@@ -7,7 +7,8 @@ import { sortDevices, toPrintError, type PrinterLink, type PrinterTransport } fr
 interface ClassicPrinterPlugin {
   /** Android 12+: asks "Nearby devices" if not granted yet; then Bluetooth must be on. Rejects NO_PERMISSION / BT_OFF / NO_BLUETOOTH. */
   ensureReady(): Promise<void>;
-  listPaired(): Promise<{ devices: { address: string; name: string; printer: boolean }[] }>;
+  /** EVERY device paired with the phone; type = how Android knows it. */
+  listPaired(): Promise<{ devices: { address: string; name: string; printer: boolean; type: "classic" | "dual" | "le" | "unknown" }[] }>;
   /** Rejects UNREACHABLE (printer off, out of range, not paired). */
   connect(options: { address: string }): Promise<void>;
   /** Base64 bytes; rejects DISCONNECTED. */
@@ -17,8 +18,8 @@ interface ClassicPrinterPlugin {
 
 export const ClassicPrinter = registerPlugin<ClassicPrinterPlugin>("ClassicPrinter");
 
-/** Bytes per write call over the bridge (SPP has its own flow control, so no pause is needed). */
-export const CLASSIC_CHUNK = 2048;
+/** Bytes per write call: small steps, so the send rate (printRate) is held evenly and a cheap printer's small buffer never overflows. */
+export const CLASSIC_CHUNK = 512;
 
 export function toBase64(bytes: Uint8Array): string {
   let bin = "";
@@ -32,7 +33,8 @@ export const classicTransport: PrinterTransport = {
   async list() {
     try {
       const { devices } = await ClassicPrinter.listPaired();
-      return sortDevices(devices.map((d) => ({ id: d.address, name: d.name, kind: "classic" as const, printerLike: d.printer })));
+      // a device paired only as Bluetooth LE is marked BLE; the chooser still tries Classic first (preferClassic)
+      return sortDevices(devices.map((d) => ({ id: d.address, name: d.name, kind: d.type === "le" ? ("ble" as const) : ("classic" as const), printerLike: d.printer })));
     } catch (e) {
       throw toPrintError(e);
     }

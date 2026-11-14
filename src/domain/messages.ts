@@ -298,6 +298,8 @@ export const MESSAGES = {
   "settings.paper58": m("58 mm (2 inch)", "58 mm (2 इंच)", "58 mm (2 inch)"),
   "settings.paper80": m("80 mm (3 inch)", "80 mm (3 इंच)", "80 mm (3 inch)"),
   "settings.testPrint": m("Test print", "टेस्ट प्रिंट", "Test print"),
+  "settings.longTestPrint": m("Long test print (60 lines)", "लंबा टेस्ट प्रिंट (60 लाइन)", "Lamba test print (60 line)"),
+  "settings.printerChecking": m("Checking the printer…", "प्रिंटर जाँच रहे हैं…", "Printer check kar rahe hain…"),
   "settings.privacy": m("Privacy policy", "गोपनीयता नीति", "Privacy policy"), // D91
   "settings.back": m("Back", "वापस", "Wapas"),
   "settings.shopDetails": m("Shop details", "दुकान की जानकारी", "Dukaan ki jaankari"),
