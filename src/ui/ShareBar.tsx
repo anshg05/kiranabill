@@ -67,6 +67,8 @@ function ShareTiles({ share, smsOpen, onSms, onCloseSms }: { share: ReceiptShare
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(check);
     ro.observe(el);
+    // a word grows when its font arrives or the text size changes - the row itself may not
+    for (const w of el.querySelectorAll("[data-tile-word]")) ro.observe(w);
     return () => ro.disconnect();
   }, []);
   const tile = (key: string, label: string, icon: LucideIcon, onClick: (() => void) | undefined, opts: { disabled?: boolean; ok?: boolean; expanded?: boolean } = {}) => (

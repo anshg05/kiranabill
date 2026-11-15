@@ -11,6 +11,7 @@ import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
 import type { ShownFlag } from "./useBillLines";
 import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
 import { Capacitor } from "@capacitor/core";
+import Dexie from "dexie";
 import { KiranaBillDB } from "@/data/db";
 import { finaliseBill } from "@/data/finalise";
 import { cancelBillLocal } from "@/data/cancelBill";
@@ -235,13 +236,16 @@ function Screen13({ state }: { state: string }) {
 
 /** TODAY's History bill detail on a dev database: Bill 515 saved by the real finaliseBill (and, for "cancelled", cancelled by the real
  *  cancelBillLocal); the list opens the bill as a tap does. */
-function Screen15({ state }: { state: string }) {
+function Screen15({ state, onReady }: { state: string; onReady: () => void }) {
   const [db, setDb] = useState<KiranaBillDB | null>(null);
   useEffect(() => {
     void (async () => {
-      const name = "kb-dev-sheet-15";
-      await new KiranaBillDB(name).delete();
-      const d = new KiranaBillDB(name);
+      // the headless shot's virtual time does not wait for the browser's IndexedDB - this dev frame keeps its database in memory instead
+      // (fake-indexeddb, the tests' own; a dev-only chunk)
+      const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
+      Dexie.dependencies.indexedDB = new IDBFactory();
+      Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+      const d = new KiranaBillDB("kb-dev-sheet-15");
       const shopId = "11111111-1111-4111-8111-111111111111";
       const deviceId = "22222222-2222-4222-8222-222222222222";
       await d.shops.put({ id: shopId, syncStatus: "synced", name: "Gupta Kirana Store", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: null, updatedAt: "2026-11-11T00:00:00.000Z" });
@@ -262,6 +266,7 @@ function Screen15({ state }: { state: string }) {
       if (row) {
         row.click();
         window.clearInterval(id);
+        window.setTimeout(onReady, 1500); // the detail has loaded its receipt: now the checks may look
       }
     }, 100);
     return () => window.clearInterval(id);
@@ -280,6 +285,8 @@ const FILES: Record<string, string> = {
 /** The frame: the screen alone, filling the window; the checks run on it, out of sight (the sheet reads them). */
 function Frame() {
   const lang = params.get("lang");
+  // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
+  const [ready, setReady] = useState(params.get("screen") !== "15");
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -295,21 +302,24 @@ function Frame() {
   return (
     <>
       <main>
-        <div data-kit-part={`screen ${params.get("screen")}`}>
+        {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
+        <div data-kit-part={`screen ${params.get("screen")}`} style={params.get("screen") === "15" ? { minHeight: "100dvh" } : undefined}>
           {params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
             : params.get("screen") === "11" ? <Screen11 />
             : params.get("screen") === "23" ? <Screen23 state={params.get("state") ?? "failed"} />
             : params.get("screen") === "24" ? <Screen24 />
             : params.get("screen") === "13" ? <Screen13 state={params.get("state") ?? "saved"} />
-            : params.get("screen") === "15" ? <Screen15 state={params.get("state") ?? "history"} />
+            : params.get("screen") === "15" ? <Screen15 state={params.get("state") ?? "history"} onReady={() => setReady(true)} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>
-      <div style={{ position: "fixed", left: -9999, top: 0, width: 600 }}>
-        <TapAreaCheck />
-        <ContainmentCheck />
-      </div>
+      {ready && (
+        <div style={{ position: "fixed", left: -9999, top: 0, width: 600 }}>
+          <TapAreaCheck />
+          <ContainmentCheck />
+        </div>
+      )}
     </>
   );
 }

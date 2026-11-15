@@ -464,7 +464,8 @@ export function ContainmentCheck() {
           if (!e.closest("[class*='line-clamp']")) {
             let cut: Element | null = e.parentElement;
             while (cut && cut !== document.body && getComputedStyle(cut).overflow === "visible") cut = cut.parentElement;
-            if (cut && cut !== document.body) {
+            // ... a box that is moving right now cuts as drawn (13's print-out grows over the receipt; KB-413 step 4) - not counted
+            if (cut && cut !== document.body && !cut.getAnimations().length) {
               const c = cut.getBoundingClientRect();
               const visible = r.bottom > c.top + 0.5 && r.top < c.bottom - 0.5 && r.right > c.left + 0.5 && r.left < c.right - 0.5;
               const whole = r.top >= c.top - 0.5 && r.bottom <= c.bottom + 0.5 && r.left >= c.left - 0.5 && r.right <= c.right + 0.5;
