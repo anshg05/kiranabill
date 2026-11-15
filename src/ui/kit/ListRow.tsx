@@ -13,11 +13,11 @@ export function ListRow({
       <span className="w-[38px] h-[38px] flex-none rounded-[11px] bg-kb-primary-pale text-kb-primary flex items-center justify-center">
         <Icon icon={icon} size={19} />
       </span>
-      <span className="flex-1 flex flex-col gap-px">
+      <span className="flex-1 min-w-0 flex flex-col gap-px">
         <span className="text-kb-15 font-semibold">{title}</span>
         {sub && <span className="text-kb-13 text-kb-sub">{sub}</span>}
       </span>
-      {value && <span className="text-kb-13 text-kb-sub">{value}</span>}
+      {value && <span className="flex-none whitespace-nowrap text-kb-13 text-kb-sub">{value}</span>}
       <Icon icon={KB_ICONS.ChevronRight} size={18} className="text-kb-sub" />
     </button>
   );

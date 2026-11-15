@@ -170,3 +170,14 @@ describe("every sentence the domain can build has a translation (drift guard - r
     expect(missing).toEqual([]);
   });
 });
+
+// Owner, 15 Nov 2026: the mark on a price our code filled from the shop's own price says "your price" (26 §5, the onboarding learning
+// text); a repeat keeps "price said earlier" (D106).
+describe("the filled-price marks", () => {
+  it("a filled shop price: your price / आपका भाव / aapka bhaav", () => {
+    expect(LANGUAGES.map((l) => render("filled.shop", {}, l))).toEqual(["your price", "आपका भाव", "aapka bhaav"]);
+  });
+  it("a repeat keeps 'price said earlier'", () => {
+    expect(render("filled.repeat", {}, "en")).toBe("price said earlier");
+  });
+});

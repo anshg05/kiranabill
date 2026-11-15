@@ -9,7 +9,7 @@ import { Icon, KB_ICONS } from "./icons";
 export function MicButton(props: { variant: "home"; label: string; onClick: () => void } | { variant: "recording" }) {
   if (props.variant === "recording") {
     return (
-      <div aria-hidden="true" className="relative w-[210px] h-[210px] flex items-center justify-center">
+      <div aria-hidden="true" className="font-kb relative w-[210px] h-[210px] flex items-center justify-center">
         <span className="absolute inset-[18px] rounded-full bg-kb-primary animate-kb-pulse" />
         <span className="absolute inset-0 rounded-full bg-kb-primary-pale" />
         <span className="relative w-[132px] h-[132px] rounded-full bg-kb-primary shadow-kb-mic-lg flex items-center justify-center text-kb-card">
@@ -19,7 +19,7 @@ export function MicButton(props: { variant: "home"; label: string; onClick: () =
     );
   }
   return (
-    <button type="button" aria-label={props.label} onClick={props.onClick} className="kb-press relative w-[138px] h-[138px] flex items-center justify-center">
+    <button type="button" aria-label={props.label} onClick={props.onClick} className="font-kb kb-press relative w-[138px] h-[138px] flex items-center justify-center">
       <span className="absolute inset-3 rounded-full bg-kb-primary animate-kb-pulse" />
       <span className="relative w-[114px] h-[114px] rounded-full bg-kb-primary shadow-kb-mic flex items-center justify-center text-kb-card">
         <Icon icon={KB_ICONS.Mic} size={48} />

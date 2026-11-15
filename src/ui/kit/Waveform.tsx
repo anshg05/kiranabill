@@ -4,7 +4,7 @@
 // heights; the kit draws them. Decorative - the timer and the buttons carry the meaning.
 export function Waveform({ heights, live = false, height }: { heights: number[]; live?: boolean; height: number }) {
   return (
-    <div aria-hidden="true" className="flex items-center justify-center gap-1" style={{ height }}>
+    <div aria-hidden="true" className="font-kb flex items-center justify-center gap-1" style={{ height }}>
       {heights.map((h, i) => (
         <div
           key={i}

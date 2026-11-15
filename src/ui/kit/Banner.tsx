@@ -22,7 +22,7 @@ export function InfoBanner({ icon, title, sub, busy = false }: { icon: LucideIco
       <span className="w-[46px] h-[46px] flex-none rounded-[14px] bg-kb-card text-kb-primary flex items-center justify-center">
         <Icon icon={icon} size={22} />
       </span>
-      <span className="flex-1">
+      <span className="flex-1 min-w-0">
         <span className="block text-kb-16 font-bold">{title}</span>
         {sub && <span className="block text-kb-13 text-kb-sub">{sub}</span>}
       </span>
@@ -43,7 +43,7 @@ export function LinkBanner({ icon, title, sub, onClick }: { icon: LucideIcon; ti
       <span className="w-10 h-10 flex-none rounded-[12px] bg-kb-primary text-kb-card flex items-center justify-center">
         <Icon icon={icon} size={20} />
       </span>
-      <span className="flex-1">
+      <span className="flex-1 min-w-0">
         <span className="block text-kb-15 font-bold">{title}</span>
         {sub && <span className="block text-kb-13 text-kb-sub">{sub}</span>}
       </span>

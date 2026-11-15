@@ -90,6 +90,13 @@ describe("the other design tokens (26 §2.2 - §2.3)", () => {
     expect(pkg.dependencies["@fontsource-variable/noto-sans-devanagari"]).toBe("5.3.0");
   });
 
+  it("inside the kit a spacing step is a fixed 4 px, so a bigger text size grows the words and never the boxes (reviewer, 15 Nov 2026)", () => {
+    expect(css).toMatch(/\.font-kb\s*\{\s*--spacing:\s*4px;\s*\}/);
+    // every kit part's root carries font-kb, so the rule reaches it
+    const roots = files(__dirname, /\.tsx$/).filter((f) => !/test|icons/.test(f)).map((f) => [f, readFileSync(f, "utf8")] as const);
+    for (const [f, src] of roots) if (/export function/.test(src) && !/Logo\.tsx|ReceiptPaper\.tsx/.test(f)) expect(src, f).toMatch(/font-kb/);
+  });
+
   it("the screens of today keep their own tokens and font until they move to the new look (no screen change in KB-411)", () => {
     expect(css).toMatch(/--color-indigo:\s*#2C3E7B;/);
     expect(css).toMatch(/--font-sans:\s*"Mukta", system-ui, sans-serif;/);

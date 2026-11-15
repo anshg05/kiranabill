@@ -17,7 +17,7 @@ const LOOK: Record<BadgeKind, string> = {
 
 export function Badge({ kind, children }: { kind: BadgeKind; children: ReactNode }) {
   return (
-    <span className={`font-kb inline-flex items-center rounded-full font-bold ${LOOK[kind]}`}>
+    <span className={`font-kb whitespace-nowrap inline-flex items-center rounded-full font-bold ${LOOK[kind]}`}>
       {kind === "saved" && <Icon icon={KB_ICONS.Check} size={13} strokeWidth={2.4} />}
       {kind === "recording" && <span className="w-[9px] h-[9px] rounded-full bg-kb-err animate-kb-blink" aria-hidden="true" />}
       {kind === "paused" && <span className="w-[9px] h-[9px] rounded-full bg-kb-warn-text" aria-hidden="true" />}

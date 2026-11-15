@@ -191,6 +191,11 @@
 
 /* KB-412 (owner, 14 Nov 2026): the drawn look stays exactly, but every tappable part reaches at least 48 x 48 px (44 x 44 for an
  * icon-only button) - an invisible, centred tap area that moves nothing on screen. */
+/* Reviewer, 15 Nov 2026 (360 px + 130% text): in the design a bigger text size grows the text, never the boxes. Tailwind's spacing
+ * (w-6, w-10, gap-3, p-4 ...) is in rem, so inside every kit part (its root carries font-kb) one spacing step is a fixed 4 px - at the
+ * normal text size exactly what it was. Today's screens and the receipt keep Tailwind's rem steps. */
+.font-kb { --spacing: 4px; }
+
 .kb-hit, .kb-hit-icon { position: relative; }
 .kb-hit::before, .kb-hit-icon::before { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 /* Owner, 15 Nov 2026: never two tap areas overlapping - a container that puts controls closer declares its gap (--kb-gap-x / -y)

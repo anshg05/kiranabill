@@ -8,6 +8,7 @@ import { BottomSheet } from "./BottomSheet";
 import { InfoBanner, LinkBanner, OfflineStrip } from "./Banner";
 import { TipCard } from "./TipCard";
 import { HeroCard } from "./HeroCard";
+import { FilterChip, ChoiceChip, AddChip, RemovableChip } from "./Chip";
 import { Badge } from "./Badge";
 import { KB_ICONS } from "./icons";
 
@@ -244,3 +245,27 @@ describe("every batch-b icon keeps its size and every tappable part reaches 48 p
     }
   });
 });
+
+describe("right-side actions stay inside (reviewer, 15 Nov 2026)", () => {
+  it("list row: the words shrink and wrap, the value never shrinks or breaks", () => {
+    render(<ListRow icon={KB_ICONS.Languages} title="App language" value="English" onClick={() => {}} />);
+    has(screen.getByText("App language").parentElement!, "min-w-0");
+    has(screen.getByText("English"), "flex-none", "whitespace-nowrap");
+  });
+
+  it("top bar: the title shrinks and wraps; the badge never shrinks; every badge and chip never breaks inside", () => {
+    render(<><TopBar title="New bill" backLabel="Back" onBack={() => {}} right={<Badge kind="draft">Draft · not saved</Badge>} />
+      <FilterChip selected onClick={() => {}}>This week</FilterChip><ChoiceChip selected={false} onClick={() => {}}>Wrong price</ChoiceChip>
+      <AddChip onClick={() => {}}>Add name</AddChip><RemovableChip removeLabel="r" onRemove={() => {}}>तुअर दाल</RemovableChip></>);
+    has(screen.getByRole("heading", { name: "New bill" }), "min-w-0");
+    has(screen.getByText("Draft · not saved").parentElement!, "flex-none");
+    for (const t of ["Draft · not saved", "This week", "Wrong price", "Add name", "तुअर दाल"]) has(screen.getByText(t), "whitespace-nowrap");
+  });
+
+  it("banners: the words shrink and wrap beside the tile", () => {
+    render(<><InfoBanner icon={KB_ICONS.Cloud} title="Order saved" busy /><LinkBanner icon={KB_ICONS.Lightbulb} title="3 prices" onClick={() => {}} /></>);
+    has(screen.getByText("Order saved").parentElement!, "min-w-0");
+    has(screen.getByText("3 prices").parentElement!, "min-w-0");
+  });
+});
+

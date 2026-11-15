@@ -220,3 +220,35 @@ describe("every batch-c icon keeps its size; every tappable part has its tap are
     }
   });
 });
+
+// Reviewer, 15 Nov 2026 (360 px + 130% text): nothing on the right of a part is ever pushed outside it, and a chip never breaks inside.
+describe("right-side actions stay inside; words wrap on the left; chips never break", () => {
+  it("bill card: the bill number never breaks, the name / time column shrinks and wraps (the Cancelled chip moves under it), the amount and the print button never shrink", () => {
+    render(<BillCard title="Bill 512" meta="12:05 pm · 3 items" amount="₹640" cancelledLabel="Cancelled" onOpen={() => {}} printLabel="Print bill 512" onPrint={() => {}} />);
+    const open = screen.getByRole("button", { name: /Bill 512/ });
+    has(open, "min-w-0");
+    has(screen.getByText("Bill 512"), "whitespace-nowrap");
+    has(screen.getByText("Bill 512").parentElement!, "flex-wrap");
+    has(screen.getByText("Bill 512").parentElement!.parentElement!, "min-w-0");
+    has(screen.getByText("Cancelled"), "whitespace-nowrap");
+    has(screen.getByText("₹640"), "flex-none", "whitespace-nowrap");
+    has(screen.getByRole("button", { name: "Print bill 512" }), "flex-none");
+  });
+
+  it("bill line: the words shrink and wrap, the amount and edit button never shrink; the mark never breaks and moves to its own line when the row is full", () => {
+    render(<BillLine name="टाटा नमक" detail="1 pc × ₹30" amount="₹30" mark="your price" editLabel="Edit" onEdit={() => {}} />);
+    has(screen.getByText("टाटा नमक").parentElement!, "min-w-0");
+    has(screen.getByText("₹30", { selector: "div" }), "flex-none", "whitespace-nowrap");
+    const mark = screen.getByText("your price");
+    has(mark, "whitespace-nowrap", "flex-none");
+    has(mark.parentElement!, "flex-wrap");
+  });
+
+  it("Price needed: the name shrinks, 'Price needed' never breaks or shrinks", () => {
+    render(<PriceNeededLine name="दाने" detail="1 kg" needLabel="Price needed" inputLabel="P" placeholder="p" value="" onChange={() => {}} addLabel="Add" onAdd={() => {}} />);
+    has(screen.getByText("दाने").parentElement!, "min-w-0");
+    has(screen.getByText("Price needed"), "flex-none", "whitespace-nowrap");
+    has(screen.getByRole("button", { name: "Add" }), "flex-none", "whitespace-nowrap");
+  });
+});
+

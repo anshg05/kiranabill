@@ -353,7 +353,7 @@ function CompareRow({ part }: { part: Part }) {
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div>
           <div style={{ font: "11px system-ui", color: "#555", marginBottom: 4 }}>KB kit</div>
-          <div ref={oursRef} style={{ width: w ?? 360, outline: "1px dashed #999" }}>{part.ours()}</div>
+          <div ref={oursRef} data-kit-part={part.name} style={{ width: w ?? 360, outline: "1px dashed #999" }}>{part.ours()}</div>
         </div>
         <div>
           <div style={{ font: "11px system-ui", color: "#555", marginBottom: 4 }}>Design (cropped, same size)</div>
@@ -365,16 +365,21 @@ function CompareRow({ part }: { part: Part }) {
 }
 
 /** The real catalog words in the chosen language, for the parts that have them today (Devanagari check). */
-function LanguageSample() {
+/** The catalog's real words in the chosen language, each in the REAL kit part it belongs to (reviewer, 15 Nov 2026: Paused is the amber
+ *  Paused badge; "Price needed" is the Price needed line's own label, not a badge; the filled-price mark is the bill line's). */
+export function LanguageSample() {
   return (
     <div className="flex flex-col gap-3">
       <Button variant="primary" icon={KB_ICONS.Printer} iconSize={20}>{t("settings.testPrint")}</Button>
       <Segmented label={t("settings.paper")} value="58" onChange={noop} options={[{ value: "58", label: t("settings.paper58") }, { value: "80", label: t("settings.paper80") }]} />
       <div className="flex gap-2 flex-wrap">
         <Badge kind="saved">{t("settings.saved")}</Badge>
-        <Badge kind="draft">{t("order.paused")}</Badge>
-        <Badge kind="small">{t("need.price")}</Badge>
+        <Badge kind="paused">{t("order.paused")}</Badge>
+        <Badge kind="draft">{t("history.cancelled")}</Badge>
       </div>
+      <BillLine name="टाटा नमक" detail="1 pc × ₹30" amount="₹30" mark={t("filled.shop")} editLabel="Edit" onEdit={noop} />
+      <BillLine name="चीनी" detail="2 kg × ₹45" amount="₹90" mark={t("filled.repeat")} editLabel="Edit" onEdit={noop} />
+      <PriceNeededLine name="दाने" detail="1 kg" needLabel={t("need.price")} inputLabel={t("need.price")} placeholder="₹" value="" onChange={noop} addLabel="Add" onAdd={noop} />
       <SearchField label={t("history.search")} placeholder={t("history.search")} value="" onChange={noop} />
       <Button variant="secondary" icon={KB_ICONS.Bluetooth}>{t("settings.printerChoose")}</Button>
       <ChipGroup>
@@ -414,6 +419,61 @@ function TapAreaCheck() {
   return <p data-tap-check style={{ font: "600 12px system-ui", color: text.includes("overlapping pairs: 0") ? "#2a6" : "#b00" }}>{text}</p>;
 }
 
+/** Reviewer, 15 Nov 2026: no part's content goes outside its own card / container. For every element of every part: it must sit
+ *  inside its nearest "box" ancestor (a background, a border or clipping) within the part, and inside the part's width; and every line of
+ *  words inside its box (measured on the text itself). A scrolling row (the filter chips) scrolls by design and is skipped. */
+function ContainmentCheck() {
+  const [text, setText] = useState("checking containment…");
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const isBox = (e: Element) => {
+        const cs = getComputedStyle(e);
+        return cs.backgroundColor !== "rgba(0, 0, 0, 0)" || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0 || cs.overflow !== "visible";
+      };
+      const bad: string[] = [];
+      const parts = [...document.querySelectorAll<HTMLElement>("main [data-kit-part]")];
+      for (const part of parts) {
+        const pr = part.getBoundingClientRect();
+        for (const e of part.querySelectorAll<HTMLElement>("*")) {
+          // skipped: a sideways scroller (scrolls by design), svg shapes, words only a screen reader gets, and anything moving right now
+          // (the mic's pulse ring grows past its circle as it fades - as drawn)
+          if (e.closest("[class*='overflow-x-auto'], .sr-only") || (e instanceof SVGElement && !(e instanceof SVGSVGElement)) || e.getAnimations().length) continue;
+          const r = e.getBoundingClientRect();
+          if (!r.width || !r.height) continue;
+          let box: Element | null = e.parentElement;
+          while (box && box !== part && !isBox(box)) box = box.parentElement;
+          const name = `${part.dataset.kitPart}: ${e.tagName.toLowerCase()} "${(e.textContent ?? "").trim().slice(0, 18)}"`;
+          if (r.left < pr.left - 0.5 || r.right > pr.right + 0.5) bad.push(`${name} outside the part`);
+          else if (box && box !== part) {
+            const b = box.getBoundingClientRect();
+            if (r.left < b.left - 0.5 || r.right > b.right + 0.5 || r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5) bad.push(`${name} outside its card`);
+          }
+        }
+        // the words themselves: every line of text inside its nearest box (the invisible tap areas are not words)
+        const walk = document.createTreeWalker(part, NodeFilter.SHOW_TEXT);
+        for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+          const el = node.parentElement!;
+          if (!node.textContent?.trim() || el.closest("[class*='overflow-x-auto'], .sr-only")) continue;
+          let box: Element | null = el;
+          while (box && box !== part && !isBox(box)) box = box.parentElement;
+          if (box && box !== part && getComputedStyle(box).overflow !== "visible") continue; // clipped on purpose (the Heard card's two lines)
+          const b = (box ?? part).getBoundingClientRect();
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          for (const t of range.getClientRects())
+            if (t.left < b.left - 0.5 || t.right > b.right + 0.5 || t.top < b.top - 0.5 || t.bottom > b.bottom + 0.5) {
+              bad.push(`${part.dataset.kitPart}: words "${node.textContent.trim().slice(0, 18)}" spill`);
+              break;
+            }
+        }
+      }
+      setText(`Containment: ${parts.length} parts · outside: ${bad.length}${bad.length ? " - " + bad.slice(0, 6).join("; ") : ""}`);
+    }, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+  return <p data-contain-check style={{ font: "600 12px system-ui", color: text.includes("outside: 0") ? "#2a6" : "#b00" }}>{text}</p>;
+}
+
 export function DevKitGallery() {
   const compare = params.get("view") === "compare";
   useEffect(() => {
@@ -430,6 +490,7 @@ export function DevKitGallery() {
       <main style={{ padding: 16, maxWidth: 820 }}>
         <h1 style={{ font: "700 16px system-ui" }}>KB-412 - kit beside the approved design (D110 item 9)</h1>
         <TapAreaCheck />
+        <ContainmentCheck />
         {ALL_PARTS().slice(Number(params.get("from") ?? 0), Number(params.get("to") ?? ALL_PARTS().length)).map((p) => <CompareRow key={p.name} part={p} />)}
       </main>
     );
@@ -438,16 +499,17 @@ export function DevKitGallery() {
     // ?w= - the page width in px (headless Edge will not open a window narrower than about 500 px)
     <main className="font-kb text-kb-ink px-4 py-4 flex flex-col gap-5" style={params.get("w") ? { width: Number(params.get("w")), boxSizing: "border-box" } : undefined}>
       <TapAreaCheck />
+      <ContainmentCheck />
       <h1 className="text-kb-18 font-bold">Kit ({LANG}{params.get("w") ? `, ${params.get("w")} px` : ""}{params.get("scale") ? `, text ${params.get("scale")}%` : ""}{params.get("motion") ? ", reduced motion" : ""})</h1>
       {ALL_PARTS().map((p) => (
         <section key={p.name} className="flex flex-col gap-2">
           <h2 className="text-kb-12 font-bold text-kb-sub uppercase tracking-[.5px]">{p.name}</h2>
-          <div>{p.ours()}</div>
+          <div data-kit-part={p.name}>{p.ours()}</div>
         </section>
       ))}
       <section className="flex flex-col gap-2">
         <h2 className="text-kb-12 font-bold text-kb-sub uppercase tracking-[.5px]">Catalog words ({LANG})</h2>
-        <LanguageSample />
+        <div data-kit-part="Catalog words"><LanguageSample /></div>
       </section>
     </main>
   );

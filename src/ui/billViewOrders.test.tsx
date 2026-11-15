@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ParsedItem } from "@/domain/grammar";
 import { BillView } from "./BillingScreen";
 
-// KB-385 step 5 (owner, 10 Nov 2026): on the bill screen - a price our code filled is marked "shop price" / "price said earlier" (card and
+// KB-385 step 5 (owner, 10 Nov 2026): on the bill screen - a price our code filled is marked "your price" (owner, 15 Nov 2026; was "shop price") / "price said earlier" (card and
 // table); the V3 recorder replaces the old Tap-to-speak; Bill Banao waits while a recording is not yet in the bill (counted as pending).
 
 afterEach(cleanup);
@@ -20,9 +20,9 @@ describe("BillView with the V3 voice path", () => {
   it("marks each filled price on its own line, in the card list - and nothing on a spoken price", () => {
     render(<BillView lines={lines} onSignOut={() => {}} {...editing} />);
     const cards = within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem");
-    expect(within(cards[0]!).getByText("shop price")).toBeTruthy();
+    expect(within(cards[0]!).getByText("your price")).toBeTruthy();
     expect(within(cards[1]!).getByText("price said earlier")).toBeTruthy();
-    expect(within(cards[2]!).queryByText(/shop price|price said earlier/)).toBeNull();
+    expect(within(cards[2]!).queryByText(/your price|price said earlier/)).toBeNull();
   });
 
   it("the order recorder replaces the old Tap to speak; the bill's recordings show under the lines", () => {

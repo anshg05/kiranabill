@@ -167,7 +167,7 @@ export const MESSAGES = {
   "order.couldntRead": m("Couldn't read the order", "ऑर्डर पढ़ नहीं पाए", "Order padh nahi paaye"),
   "order.noItems": m("No items found", "कोई सामान नहीं मिला", "Koi saamaan nahi mila"),
   "order.remove": m("Remove this recording", "यह रिकॉर्डिंग हटाएं", "Yeh recording hatayein"),
-  "filled.shop": m("shop price", "दुकान का भाव", "dukaan ka bhaav"),
+  "filled.shop": m("your price", "आपका भाव", "aapka bhaav"), // owner, 15 Nov 2026 (26 §5): was "shop price"
   "filled.repeat": m("price said earlier", "पहले बोला भाव", "pehle bola bhaav"),
 
   // ---- Sync chip, its details, and the dialogs
