@@ -145,6 +145,8 @@
   --text-kb-21--line-height: normal;
   --text-kb-22: 1.375rem;
   --text-kb-22--line-height: normal;
+  --text-kb-24: 1.5rem; /* 23-ReadFailed's title (KB-413 step 3) */
+  --text-kb-24--line-height: normal;
   --text-kb-26: 1.625rem;
   --text-kb-26--line-height: normal;
   --text-kb-28: 1.75rem;

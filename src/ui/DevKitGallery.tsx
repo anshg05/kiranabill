@@ -452,7 +452,8 @@ export function ContainmentCheck() {
         for (const e of part.querySelectorAll<HTMLElement>("*")) {
           // skipped: a sideways scroller (scrolls by design), svg shapes, words only a screen reader gets, and anything moving right now
           // (the mic's pulse ring grows past its circle as it fades - as drawn)
-          if (e.closest("[class*='overflow-x-auto'], .sr-only") || (e instanceof SVGElement && !(e instanceof SVGSVGElement)) || e.getAnimations().length) continue;
+          // ... and data-clip-ok: cut on purpose (11's shimmer highlight - the file's moving background, drawn as a strip; KB-413 step 3)
+          if (e.closest("[class*='overflow-x-auto'], .sr-only, [data-clip-ok]") || (e instanceof SVGElement && !(e instanceof SVGSVGElement)) || e.getAnimations().length) continue;
           const r = e.getBoundingClientRect();
           if (!r.width || !r.height) continue;
           let box: Element | null = e.parentElement;

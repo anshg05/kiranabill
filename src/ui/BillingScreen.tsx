@@ -42,6 +42,7 @@ import { Button } from "./kit/Button";
 import { Badge } from "./kit/Badge";
 import { BillLine as KitBillLine, PriceNeededLine } from "./kit/BillLine";
 import { BottomSheet } from "./kit/BottomSheet";
+import { OfflineStrip } from "./kit/Banner";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
@@ -381,6 +382,8 @@ export function BillingScreen() {
       onSignOut={onSignOut}
       orderBar={(openAdd, noteSlot) => (
         <OrderRecorder
+          orders={orders}
+          shopName={shopName ?? ""}
           takes={takes}
           noteSlot={noteSlot}
           hasLines={bill.rows.length > 0}
@@ -396,6 +399,7 @@ export function BillingScreen() {
       onUndo={bill.undo}
       flags={bill.flags}
       pending={bill.pending + orders.blocking.length}
+      waitingRecordings={orders.waiting.length}
       onAcknowledge={(key) => (wiring.touch(), bill.acknowledge(key))}
       notAdded={bill.notAdded}
       onRetry={retry}
@@ -489,6 +493,9 @@ interface BillViewProps {
   /** KB-304: the bill's flags, placed, and the unacknowledged HIGH count. */
   flags?: readonly ShownFlag[];
   pending?: number;
+  /** KB-413 step 3 (24-Offline): how many of `pending` are recordings waiting to be read (queued or being read - not failed); when
+   *  they are ALL Bill Banao waits for, the panel says "Waiting for 1 recording" and the locked button "Bill Banao after the order arrives" */
+  waitingRecordings?: number;
   onAcknowledge?: (key: string) => void;
   /** KB-319: heard but not on the bill yet - Retry (text only) or dismiss. */
   notAdded?: readonly NotAdded[];
@@ -874,6 +881,7 @@ export function BillView({
   onUndo,
   flags = NO_FLAGS,
   pending = 0,
+  waitingRecordings = 0,
   onAcknowledge,
   notAdded = NONE_NOT_ADDED,
   onRetry,
@@ -1040,8 +1048,10 @@ export function BillView({
   // Owner, 15 Nov 2026: when everything Bill Banao waits for is one kind - lines without a price, or without a quantity - say that kind.
   const priceMissing = lines.filter((l) => needOf(l.id) === "price").length;
   const qtyMissing = lines.filter((l) => needOf(l.id) === "quantity").length;
-  const waitingFor =
-    pending > 0 && pending === priceMissing
+  const onlyRecordings = pending > 0 && pending === waitingRecordings;
+  const waitingFor = onlyRecordings
+    ? t(pending === 1 ? "need.recOne" : "need.recMany", { n: pending })
+    : pending > 0 && pending === priceMissing
       ? t(pending === 1 ? "need.priceOne" : "need.priceMany", { n: pending })
       : pending > 0 && pending === qtyMissing
         ? t(pending === 1 ? "need.qtyOne" : "need.qtyMany", { n: pending })
@@ -1051,12 +1061,14 @@ export function BillView({
   return (
     <div inert={covered} aria-hidden={covered || undefined} className="font-kb h-dvh bg-kb-bg text-kb-ink">
       <div className="mx-auto flex h-full w-full max-w-[480px] flex-col">
+        {/* KB-413 step 3 (24-Offline): no internet - the ink strip across the top says so, in place of the "Offline" chip */}
+        {syncChip?.kind === "offline" && <OfflineStrip>{t("offline.strip")}</OfflineStrip>}
         {/* 12-BillReview's top bar (owner, answer 1): no Back arrow until Home (08) exists; today's menu stays on the right. */}
         <header className="flex items-center gap-2 pt-3 pl-4 pr-3 pb-1">
           {/* KB-413 (owner, 15 Nov 2026): "New bill" as 12-BillReview draws it - replaces KB-340's shop name in this header (the name is
               on the receipt and, with KB-414, on Home). */}
           <h1 className="min-w-0 flex-1 text-kb-18 font-bold">{readOnly ? t("bill.savedLabel") : t("bill.new")}</h1>
-          <SyncChipView chip={syncChip} detail={syncDetail} />
+          <SyncChipView chip={syncChip?.kind === "offline" ? null : syncChip} detail={syncDetail} />
           {reviewMode && (
             <span data-testid="review-badge" className="flex-none whitespace-nowrap rounded-full bg-kb-muted px-[10px] py-[5px] text-kb-12 font-bold text-kb-sub">
               {t("review.badge")}
@@ -1321,7 +1333,7 @@ export function BillView({
               {!readOnly && lines.length > 0 && <div className="text-kb-13 text-kb-sub">{soFar}</div>}
               {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
               {pending > 0 && !readOnly && (
-                <p id={pendingId} data-testid="checks-pending" className="mt-[2px] text-kb-13 font-bold text-kb-warn-text">
+                <p id={pendingId} data-testid="checks-pending" className={`mt-[2px] text-kb-13 font-bold ${onlyRecordings ? "text-kb-sub" : "text-kb-warn-text"}`}>
                   {waitingFor}
                 </p>
               )}
@@ -1362,8 +1374,8 @@ export function BillView({
               </Button>
             ) : (
               // KB-307: aria-disabled, not disabled - a tap while checks are pending must still land, to take the shopkeeper to the first one.
-              <Button variant="locked" reasonId={pending > 0 ? pendingId : undefined} onClick={tapBillBanao} className="min-w-[150px] flex-1">
-                {t("bill.finalise")}
+              <Button variant="locked" reasonId={pending > 0 ? pendingId : undefined} lockIcon={!onlyRecordings} onClick={tapBillBanao} className="min-w-[150px] flex-1">
+                {onlyRecordings ? t(pending === 1 ? "bill.afterOrder" : "bill.afterOrders") : t("bill.finalise")}
               </Button>
             )}
           </div>

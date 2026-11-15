@@ -171,6 +171,9 @@ describe("screen 12: what Bill Banao waits for, in words", () => {
   });
 });
 
+/** KB-413 step 3: a bill with no recordings - 11 / 23 are tested in screens1123.test.tsx */
+const NO_ORDERS = { recordings: [], sending: new Set<string>(), offline: false, retry: async () => {}, remove: async () => {} };
+
 // Owner + reviewer, 15 Nov 2026 (step-2 fix 1): a recorder warning (mic refused, nothing recorded) sits in the bill's scrolling list, like a
 // failed recording - the sticky panel keeps "More" and Bill Banao on one row, as 12 draws it.
 describe("screen 12: the recorder's warnings are in the list, not the bottom panel", () => {
@@ -181,7 +184,7 @@ describe("screen 12: the recorder's warnings are in the list, not the bottom pan
     try {
       render(
         <BillView {...base} lines={[row("l1", "चीनी")]} pending={0} onFinalise={() => {}}
-          orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
+          orderBar={(openAdd, noteSlot) => <OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
       );
       await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Add more by voice" })));
       const warning = screen.getByText(/Mic permission denied/);
@@ -205,7 +208,7 @@ describe("screen 12: the recorder's warnings are in the list, not the bottom pan
     try {
       render(
         <BillView {...base} lines={[row("l1", "चीनी")]} pending={0} onFinalise={() => {}}
-          orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
+          orderBar={(openAdd, noteSlot) => <OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
       );
       scrolled.length = 0;
       await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Add more by voice" })));

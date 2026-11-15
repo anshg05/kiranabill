@@ -59,6 +59,17 @@ describe("useVoiceOrders (KB-385)", () => {
     expect(t.result.current.recordings.map((r) => [r.state, r.transcript])).toEqual([["appended", o.transcript]]);
   });
 
+  it("KB-413 step 3: `waiting` = the recordings waiting to be read (queued offline); a failed one blocks Bill Banao but is not waiting", async () => {
+    online = false;
+    const t = setup(async (id) => ({ kind: "failed", recordingId: id, reason: "upload" }));
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => r.state)).toEqual(["queued"]));
+    online = true;
+    await act(async () => void window.dispatchEvent(new Event("online")));
+    await waitFor(() => expect(t.result.current.blocking.map((r) => r.state)).toEqual(["failed"]));
+    expect(t.result.current.waiting).toEqual([]);
+  });
+
   it("offline at Generate: kept on the phone (queued, nothing sent, Bill Banao waits); back online it is sent and added", async () => {
     online = false;
     const t = setup(async (id) => done(id));

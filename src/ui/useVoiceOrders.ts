@@ -47,6 +47,9 @@ export interface VoiceOrders {
   generate: (audio: Blob, recordedMs: number) => Promise<void>;
   retry: (recordingId: string) => Promise<void>;
   remove: (recordingId: string) => Promise<void>;
+  /** KB-413 step 3: the ones waiting to be read (queued - offline or about to be sent - or answered and about to be added); a failed one
+   *  still blocks Bill Banao but waits for the shopkeeper, not the network (24's "Waiting for 1 recording" counts only these) */
+  waiting: LocalVoiceRecording[];
 }
 
 const isOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
@@ -159,5 +162,8 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
     };
   }, [db, shopId, billLocalId, appendIfFirst, refresh, send]);
 
-  return { recordings, blocking: recordings.filter((r) => r.state !== "appended"), sending, offline, generate, retry: send, remove };
+  return {
+    recordings, blocking: recordings.filter((r) => r.state !== "appended"), waiting: recordings.filter((r) => r.state === "queued" || r.state === "done"),
+    sending, offline, generate, retry: send, remove,
+  };
 }

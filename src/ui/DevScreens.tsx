@@ -21,6 +21,10 @@ import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
 //   screen 09, state: recording (00:42 as drawn) | paused | warning (4:36 - the 4:30 line) | discard (Back pressed: the question)
 //   screen 10, state: review (0:42 as drawn) | playing (half-way: the played part and the time) | limit (stopped at 5:00) | discard
 //   The bars on 09 are the still bars (no mic here): the drawn heights, as the file shows them under reduced motion.
+//   screen 11, state: generating (the first recording of an empty bill, 12 s in) - &motion=reduce for the reduced-motion sheet (the shot
+//                     script also runs the browser with reduced motion, so the design file's frame stops too)
+//   screen 23, state: failed (the connection: "upload") | busy | session | limit | again (Record again pressed: the question)
+//   screen 24, state: offline (the drawn bill: one typed line, the waiting recording, the strip)
 
 const params = new URLSearchParams(window.location.search);
 const noop = () => {};
@@ -54,6 +58,10 @@ const CHECK_FLAGS = [
 const heard = (transcript: string): LocalVoiceRecording =>
   ({ recordingId: "r1", shopId: "s", billLocalId: "b", bytes: new ArrayBuffer(0), mime: "audio/webm", recordedMs: 42000, createdAt: new Date().toISOString(), state: "appended", transcript, items: [{}] }) as LocalVoiceRecording;
 const orders = (transcript: string) => ({ recordings: [heard(transcript)], sending: new Set<string>(), offline: false, retry: async () => {}, remove: async () => {} });
+const NO_ORDERS = { recordings: [], sending: new Set<string>(), offline: false, retry: async () => {}, remove: async () => {} };
+/** the bill's first recording, as the voice queue holds it (11: being read; 23: failed; 24: waiting offline) */
+const firstRec = (over: Partial<LocalVoiceRecording>): LocalVoiceRecording =>
+  ({ recordingId: "r1", shopId: "s", billLocalId: "b", bytes: new ArrayBuffer(0), mime: "audio/webm", recordedMs: 42000, createdAt: new Date(Date.now() - 12_000).toISOString(), state: "queued", ...over }) as LocalVoiceRecording;
 
 function Screen12({ state }: { state: string }) {
   const lines = state === "checks" ? CHECK_LINES : DESIGN_LINES;
@@ -97,7 +105,7 @@ function Screen12({ state }: { state: string }) {
       customer={{ name: "Cash", mobile: null }}
       onCustomerName={() => null}
       onCustomerMobile={() => null}
-      orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={noop} onAddByHand={openAdd} noteSlot={noteSlot} />}
+      orderBar={(openAdd, noteSlot) => <OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines onGenerate={noop} onAddByHand={openAdd} noteSlot={noteSlot} />}
       orderEntries={(openAdd, part) => <OrderEntries orders={o} onAddByHand={openAdd} part={part} />}
     />
   );
@@ -137,10 +145,61 @@ function Screen10({ state }: { state: string }) {
   );
 }
 
+function Screen11() {
+  const [o] = useState(() => ({ ...NO_ORDERS, recordings: [firstRec({})], sending: new Set(["r1"]) }));
+  return <OrderRecorder orders={o} shopName="Gupta Kirana Store" hasLines={false} onGenerate={noop} onAddByHand={noop} />;
+}
+
+const REASON_23: Record<string, string> = { failed: "upload", again: "upload", busy: "busy", session: "session", limit: "rate_limited" };
+function Screen23({ state }: { state: string }) {
+  const [o] = useState(() => ({ ...NO_ORDERS, recordings: [firstRec({ state: "failed", reason: REASON_23[state] ?? "upload" })] }));
+  const opened = useRef(false);
+  useEffect(() => {
+    if (state !== "again" || opened.current) return;
+    opened.current = true;
+    // "Record again" - 23's buttons are Back, Retry, Type instead, Record again, Remove (in every language)
+    window.setTimeout(() => document.querySelectorAll<HTMLButtonElement>("[role='dialog'] button")[3]?.click(), 50);
+  }, [state]);
+  return <OrderRecorder orders={o} shopName="Gupta Kirana Store" hasLines={false} onGenerate={noop} onAddByHand={noop} />;
+}
+
+/** 24-Offline as drawn: one typed line (टाटा नमक 1 × ₹30), the recording waiting to be sent, no internet */
+function Screen24() {
+  const [o] = useState(() => ({ ...NO_ORDERS, offline: true, recordings: [firstRec({ recordedMs: 65_000 })] }));
+  return (
+    <BillView
+      shopName="Gupta Kirana Store"
+      lines={[row("t1", "टाटा नमक", { qty: 1, unit: "piece", rate: 3000, rateUnit: "piece", total: 3000 })]}
+      flags={[]}
+      pending={1}
+      waitingRecordings={1}
+      syncChip={{ kind: "offline", label: "Offline" }}
+      onSignOut={noop}
+      onEdit={() => null}
+      onRemove={noop}
+      onAcknowledge={noop}
+      onFinalise={noop}
+      catalog={SEED_PARSER_CATALOG}
+      onAddByHand={noop}
+      onChangeProduct={noop}
+      onOpenHistory={noop}
+      onOpenCatalog={noop}
+      onOpenSettings={noop}
+      customer={{ name: "Cash", mobile: null }}
+      onCustomerName={() => null}
+      onCustomerMobile={() => null}
+      orderBar={(openAdd, noteSlot) => <OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines onGenerate={noop} onAddByHand={openAdd} noteSlot={noteSlot} />}
+      orderEntries={(openAdd, part) => <OrderEntries orders={o} onAddByHand={openAdd} part={part} />}
+    />
+  );
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
 
-const FILES: Record<string, string> = { "09": "09-Recording.html", "10": "10-Review.html", "12": "12-BillReview.html" };
+const FILES: Record<string, string> = {
+  "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "23": "23-ReadFailed.html", "24": "24-Offline.html",
+};
 
 /** The frame: the screen alone, filling the window; the checks run on it, out of sight (the sheet reads them). */
 function Frame() {
@@ -148,8 +207,9 @@ function Frame() {
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
-    // end states, like the design frame - except 09, whose file is caught mid-pulse (the ring around the halo): ours pulses with it
-    if (params.get("screen") !== "09") document.documentElement.dataset.motion = "reduce";
+    // end states, like the design frame - except 09 (the ring mid-pulse) and 11 (the paper printing, the shimmer), which move with the
+    // file's; &motion=reduce stops them (the reduced-motion sheet)
+    if (!["09", "11"].includes(params.get("screen") ?? "") || params.get("motion") === "reduce") document.documentElement.dataset.motion = "reduce";
     // 09 / 10 are full screens in a portal on <body>: the live checks must see them too
     const tag = window.setInterval(() => {
       for (const el of document.querySelectorAll<HTMLElement>("body > div:not(#root):not([data-kit-part])")) el.dataset.kitPart = `screen ${params.get("screen")}`;
@@ -162,6 +222,9 @@ function Frame() {
         <div data-kit-part={`screen ${params.get("screen")}`}>
           {params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
+            : params.get("screen") === "11" ? <Screen11 />
+            : params.get("screen") === "23" ? <Screen23 state={params.get("state") ?? "failed"} />
+            : params.get("screen") === "24" ? <Screen24 />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>
@@ -179,6 +242,7 @@ function Sheet() {
   const w = Number(params.get("w") ?? 390);
   const scale = params.get("scale");
   const lang = params.get("lang");
+  const motion = params.get("motion");
   const ours = useRef<HTMLIFrameElement>(null);
   const [checks, setChecks] = useState("checking…");
   useEffect(() => {
@@ -199,13 +263,13 @@ function Sheet() {
     }, 300);
     return () => window.clearInterval(id);
   }, []);
-  const q = new URLSearchParams({ frame: "1", screen, state, ...(scale ? { scale } : {}), ...(lang ? { lang } : {}) });
+  const q = new URLSearchParams({ frame: "1", screen, state, ...(scale ? { scale } : {}), ...(lang ? { lang } : {}), ...(motion ? { motion } : {}) });
   const frame = { width: w, height: 844, border: "1px dashed #999", background: "white" } as const;
   return (
     <main style={{ padding: 16, font: "13px system-ui" }}>
       <h1 style={{ font: "700 16px system-ui", margin: "0 0 4px" }}>
         KB-413 screen {screen} - {state}
-        {lang ? ` - ${lang}` : ""} - {w} px{scale ? `, text ${scale}%` : ""}
+        {lang ? ` - ${lang}` : ""} - {w} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
       </h1>
       <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>

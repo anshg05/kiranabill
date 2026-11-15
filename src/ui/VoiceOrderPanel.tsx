@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import type { LocalVoiceRecording } from "@/data/db";
 import { ORDER_RECORDING, useVoiceCapture } from "./useVoiceCapture";
 import { useMicLevel } from "./micLevel";
-import { RecordOverlay, RecordingBody, ReviewBody, mmss } from "./RecordScreens";
+import { GeneratingBody, ReadFailedBody, RecordOverlay, RecordingBody, ReviewBody, mmss } from "./RecordScreens";
 import type { VoiceOrders } from "./useVoiceOrders";
 import { useT } from "./useT";
 import { HeardCard } from "./kit/HeardCard";
@@ -53,10 +53,16 @@ function WarnRow({ text, onAddByHand }: { text: string; onAddByHand?: () => void
   );
 }
 
-/** What "Discard" then does: Back = just discard; Re-record / Type instead = discard, then that (owner, answer 5). */
-type Asking = null | "back" | "rerecord" | "type";
+/** What "Discard" then does: Back = just discard; Re-record / Type instead = discard, then that (owner, answer 5); "again" = 23's
+ *  Record again: the failed recording is deleted once the new one has started (owner, 15 Nov 2026). */
+type Asking = null | "back" | "rerecord" | "type" | "again";
+
+/** The bill's recordings, as the recorder needs them for 11 / 23 (useVoiceOrders in the app). */
+export type RecorderOrders = Pick<VoiceOrders, "recordings" | "sending" | "offline" | "retry" | "remove">;
 
 export function OrderRecorder({
+  orders,
+  shopName,
   hasLines,
   disabledReason,
   onGenerate,
@@ -64,6 +70,10 @@ export function OrderRecorder({
   takes,
   noteSlot,
 }: {
+  /** KB-413 step 3: the bill's recordings - the first one of an empty bill is shown full screen while it is read (11) or failed (23) */
+  orders: RecorderOrders;
+  /** 11's paper prints it */
+  shopName: string;
   hasLines: boolean;
   /** Why it cannot record yet (the catalog is loading, no live session) - shown, and the button is disabled. */
   disabledReason?: string | null;
@@ -140,9 +150,46 @@ export function OrderRecorder({
       setTake(null);
     } else setTake(null);
   };
-  const lostMs = take ? take.ms : capture.elapsedMs;
+  // KB-413 step 3 (answer 3): full-screen 11 / 23 only for the FIRST recording of an EMPTY bill - "More" recordings, and any once a
+  // recording of this bill is in it, stay inline on 12. Shown from the voice queue's own state, so they come back when the app reopens.
+  const first = hasLines || orders.recordings.some((r) => r.state === "appended") ? null : orders.recordings.find((r) => r.state !== "appended") ?? null;
+  // being sent wins (a Retry keeps the row "failed" until its answer: 23 -> 11); queued offline = 24, on 12
+  const firstKind = !first ? null : orders.sending.has(first.recordingId) ? "gen" : first.state === "failed" || first.state === "gave_up" ? "failed" : !orders.offline ? "gen" : null;
+  // Back / "Add items by hand" leave 11 or 23 for 12 (answer 7: 11 returns to 12) - that screen only; the recording is untouched
+  const [left, setLeft] = useState<ReadonlySet<string>>(new Set());
+  const firstKey = first && firstKind ? `${first.recordingId}:${firstKind}` : null;
+  const shownFirst = first && firstKey && !left.has(firstKey) ? firstKind : null;
+  const leave = () => firstKey && setLeft((s) => new Set(s).add(firstKey));
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (shownFirst !== "gen") return;
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [shownFirst]);
+  // 23's Record again: the failed recording is deleted only once the new one is really recording - if the mic is refused it stays
+  const [replacing, setReplacing] = useState<string | null>(null);
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
+  useEffect(() => {
+    if (!replacing) return;
+    if (capture.phase === "listening") {
+      void ordersRef.current.remove(replacing);
+      setReplacing(null);
+    } else if (capture.phase === "idle" && capture.error) {
+      setReplacing(null);
+      leave(); // back to 12, where the mic warning is - the failed recording stays
+    }
+  }, [replacing, capture.phase, capture.error]); // leave() and the orders ref need no re-run
+  const recordAgain = () => {
+    setAsking(null);
+    if (!first) return;
+    setReplacing(first.recordingId);
+    setNothing(false);
+    void capture.start();
+  };
+  const lostMs = take ? take.ms : asking === "again" && first ? first.recordedMs : capture.elapsedMs;
 
-  const screens = (take || recording) && (
+  const screens = take || recording ? (
     <RecordOverlay
       screenKey={take ? "review" : "rec"}
       title={t(take ? "review.title" : "rec.title")}
@@ -178,7 +225,31 @@ export function OrderRecorder({
         />
       )}
     </RecordOverlay>
-  );
+  ) : shownFirst && first ? (
+    <RecordOverlay
+      screenKey={shownFirst}
+      title={t(shownFirst === "gen" ? "gen.title" : "bill.new")}
+      asking={asking === "again"}
+      lostLine={t("rec.discardLine", { time: mmss(lostMs) })}
+      onAsk={leave}
+      onBack={leave}
+      onKeep={() => setAsking(null)}
+      onDiscard={recordAgain}
+    >
+      {shownFirst === "gen" ? (
+        <GeneratingBody shopName={shopName} seconds={Math.max(0, Math.round((Date.now() - Date.parse(first.createdAt)) / 1000))} onByHand={() => (leave(), onAddByHand())} />
+      ) : (
+        <ReadFailedBody
+          {...(first.reason ? { reason: first.reason } : {})}
+          ms={first.recordedMs}
+          onRetry={() => void orders.retry(first.recordingId)}
+          onTypeInstead={() => (leave(), onAddByHand())}
+          onRecordAgain={() => setAsking("again")}
+          onRemove={() => void orders.remove(first.recordingId)}
+        />
+      )}
+    </RecordOverlay>
+  ) : null;
 
   // step-2 fix 1: nothing recorded, the mic errors and why it cannot record yet go in the bill's list (noteSlot), never the bottom panel
   const notes = (nothing || capture.error || disabledReason) && (
@@ -265,15 +336,11 @@ export function OrderEntries({
       );
     }
     if (r.state === "queued") {
-      // offline (24-Offline's banner); "Add by hand" meanwhile stays, as today
+      // offline: 24-Offline's card, as drawn - typing meanwhile is the list's dashed "Add item" (KB-413 step 3), the line says so
       return (
-        <li key={r.recordingId} className="flex flex-col gap-2">
-          <InfoBanner icon={KB_ICONS.Cloud} title={t("order.queued")} busy />
-          {onAddByHand && (
-            <button type="button" onClick={() => onAddByHand("")} className="kb-hit self-start whitespace-nowrap min-h-[44px] rounded-[12px] border border-kb-border bg-kb-card px-3 text-kb-14 font-bold text-kb-ink">
-              {t("byhand.button")}
-            </button>
-          )}
+        <li key={r.recordingId} className="flex flex-col gap-3">
+          <InfoBanner icon={KB_ICONS.Cloud} title={t("order.queued")} sub={t("order.queuedSub", { time: mmss(r.recordedMs) })} busy />
+          <p className="px-1 pt-1 text-kb-14 text-kb-sub">{t("order.meanwhile")}</p>
         </li>
       );
     }

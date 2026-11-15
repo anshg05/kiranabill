@@ -4,7 +4,7 @@ import { createElement } from "react";
 import {
   ArrowRight, Bluetooth, Check, ChevronDown, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ellipsis, FileText, Keyboard, Languages,
   Lightbulb, Lock, MessageCircle, Minus, Package, Plus, Printer, RefreshCw,
-  RotateCcw, Search, Share2, Smartphone, Store, WifiOff, X,
+  RotateCcw, RotateCw, Search, Share2, Smartphone, Store, WifiOff, X,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
 
@@ -73,6 +73,8 @@ export const KB_ICONS = {
   Search, Lock, ArrowRight,
   // 17-More's "Bill design" row; 12-BillReview's Heard card opens with a chevron down
   BillDesign, ChevronDown,
+  // 23-ReadFailed "Try again": one clockwise arrow round (KB-413 step 3)
+  RotateCw,
 } satisfies Record<string, LucideIcon>;
 
 /** One icon at the design's stroke (1.9 - the Saved tick draws 2.4), coloured by its text; the button or row carries the words.

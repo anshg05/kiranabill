@@ -25,11 +25,12 @@ describe("the header chip", () => {
     expect(screen.queryByTestId("sync-chip")).toBeNull();
   });
 
-  it("'Offline' is plain grey text - not a button, not a dialog - and the bill still works", () => {
+  // KB-413 step 3 (owner, 15 Nov 2026): offline is now 24's ink strip in place of the grey "Offline" chip - still plain text, never a block
+  it("offline is plain text (24's strip) - not a button, not a dialog - and the bill still works", () => {
     render(<BillView {...base} lines={lines()} syncChip={{ kind: "offline", label: "Offline" }} />);
-    const chip = screen.getByTestId("sync-chip");
-    expect(chip.textContent).toBe("Offline");
-    expect(chip.tagName).not.toBe("BUTTON");
+    expect(screen.queryByTestId("sync-chip")).toBeNull();
+    const strip = screen.getByText("No internet · billing still works");
+    expect(strip.closest("button")).toBeNull();
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(screen.getByRole("button", { name: /Add item/ })).toBeTruthy();
   });

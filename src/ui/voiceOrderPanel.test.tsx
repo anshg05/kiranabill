@@ -67,11 +67,13 @@ afterEach(() => {
 
 const wait = (ms: number) => act(async () => void (await vi.advanceTimersByTimeAsync(ms)));
 const button = (name: RegExp | string) => screen.getByRole("button", { name });
+/** KB-413 step 3: a bill with no recordings - 11 / 23 are tested in screens1123.test.tsx */
+const NO_ORDERS = { recordings: [], sending: new Set<string>(), offline: false, retry: async () => {}, remove: async () => {} };
 
 describe("OrderRecorder", () => {
   it("tap -> 09 Recording (full screen) with a timer -> Pause (time stops) -> Resume -> Stop -> 10 Review -> Generate", async () => {
     const onGenerate = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={memoryStore()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={memoryStore()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     const rec = screen.getByRole("dialog", { name: "New voice bill" });
     expect(rec.getAttribute("aria-modal")).toBe("true");
@@ -106,7 +108,7 @@ describe("OrderRecorder", () => {
   });
 
   it("09 as drawn: the tip with its bold words, the 'saved' line, the mic circle, 26 bars; Pause secondary / Stop primary (wider)", async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     const rec = screen.getByRole("dialog", { name: "New voice bill" });
     expect(within(rec).getByText("item · quantity · price").tagName).toBe("B");
@@ -126,7 +128,7 @@ describe("OrderRecorder", () => {
   it("Re-record asks 'Discard recording?' first (owner, answer 5): Keep stays on 10; Discard deletes the saved one and records again", async () => {
     const onGenerate = vi.fn();
     const takes = memoryStore();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(3_000);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -147,7 +149,7 @@ describe("OrderRecorder", () => {
     const onGenerate = vi.fn();
     const onAddByHand = vi.fn();
     const takes = memoryStore();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={onAddByHand} takes={takes} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={onGenerate} onAddByHand={onAddByHand} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(3_000);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -162,7 +164,7 @@ describe("OrderRecorder", () => {
 
   it("the 4:30 warning on 09, then the 5:00 stop goes to 10 by itself, says why - and is saved on the phone", async () => {
     const takes = memoryStore();
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(269_000);
     expect(screen.queryByText("Recording stops at 5:00")).toBeNull();
@@ -177,7 +179,7 @@ describe("OrderRecorder", () => {
   });
 
   it("the app going to the background stops it and KEEPS the recording: 10 says why", async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(4_000);
     Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
@@ -190,7 +192,7 @@ describe("OrderRecorder", () => {
 
   it("under 1 s: 'Nothing recorded' on the bill -> Re-record or Add by hand", async () => {
     const onAddByHand = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={onAddByHand} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={onAddByHand} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(500);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -203,7 +205,7 @@ describe("OrderRecorder", () => {
 
   it("no microphone permission: no recording screen - the warning card on the bill with the help line and Add by hand", async () => {
     Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn(async () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }))) } });
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     expect(screen.queryByRole("dialog")).toBeNull();
     const help = screen.getByText(/Mic permission denied/);
@@ -215,7 +217,7 @@ describe("OrderRecorder", () => {
     env.native = true;
     try {
       Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn(async () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }))) } });
-      render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+      render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
       await act(async () => void fireEvent.click(button("Record order")));
       expect(screen.getByText("Allow the microphone for Kirana Voice Bill — phone Settings → Apps → Kirana Voice Bill → Permissions")).toBeTruthy();
       expect(screen.queryByText(/browser/)).toBeNull();
@@ -225,12 +227,12 @@ describe("OrderRecorder", () => {
   });
 
   it("with lines on the bill the button says 'Add more by voice' (the same flow)", () => {
-    render(<OrderRecorder hasLines onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     expect(button("Add more by voice")).toBeTruthy();
   });
 
   it("a reason it cannot record yet (loading the catalog, no session) disables it and says why", () => {
-    render(<OrderRecorder hasLines={false} disabledReason="Loading your catalog…" onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} disabledReason="Loading your catalog…" onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     expect((button("Record order") as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Loading your catalog…")).toBeTruthy();
   });
@@ -239,7 +241,7 @@ describe("OrderRecorder", () => {
 // KB-413 step 2 (owner, 15 Nov 2026, answer 7): Back on 09 / 10 never throws a recording away by itself - it pauses and asks.
 describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
   const startRecording = async (onGenerate = vi.fn(), takes?: TakeStore) => {
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} {...(takes ? { takes } : {})} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} {...(takes ? { takes } : {})} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(6_000);
     return onGenerate;
@@ -327,14 +329,14 @@ describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
 describe("10 survives the app closing (the recording saved on Stop)", () => {
   it("Stop saves it; the app is killed and reopened: 10 comes back with the same recording, and Generate works", async () => {
     const takes = memoryStore();
-    const first = render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
+    const first = render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(6_000);
     await act(async () => void fireEvent.click(button("Stop")));
     expect(takes.peek()!.recordedMs).toBeGreaterThanOrEqual(6_000);
     first.unmount(); // the app is closed
     const onGenerate = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void (await vi.advanceTimersByTimeAsync(10)));
     const review = screen.getByRole("dialog", { name: "Check your recording" });
     expect(within(review).getByText("0:06 · saved on this phone")).toBeTruthy();
@@ -345,7 +347,7 @@ describe("10 survives the app closing (the recording saved on Stop)", () => {
 
   it("the app going to the background saves it too", async () => {
     const takes = memoryStore();
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(4_000);
     Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
@@ -356,7 +358,7 @@ describe("10 survives the app closing (the recording saved on Stop)", () => {
   });
 
   it("nothing saved (the phone refused the write): 10 never claims 'saved on this phone'", async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore(true)} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore(true)} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(6_000);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -368,7 +370,7 @@ describe("10 survives the app closing (the recording saved on Stop)", () => {
 
 describe("10 - real playback over a fixed bar pattern (owner, answer 5)", () => {
   const toReview = async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(42_000);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -424,7 +426,7 @@ describe("09 - the bars follow the REAL microphone level (owner, answer 5); stil
   it("quiet -> the bars sit low; loud -> the newest (right) bar is full; the mic level stops being read after Stop", async () => {
     vi.stubGlobal("AudioContext", FakeAudioContext);
     FakeAudioContext.closed = 0;
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     FakeAudioContext.level = 0;
     await wait(300);
@@ -441,7 +443,7 @@ describe("09 - the bars follow the REAL microphone level (owner, answer 5); stil
     vi.stubGlobal("AudioContext", FakeAudioContext);
     document.documentElement.dataset.motion = "reduce";
     try {
-      render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+      render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
       await act(async () => void fireEvent.click(button("Record order")));
       FakeAudioContext.level = 0.5;
       await wait(500);
@@ -465,7 +467,7 @@ describe("09 / 10 in Hindi (the new words)", () => {
   it("titles, chip, 'of 5:00', the saved line, the Discard question", async () => {
     setScreenLanguage("hi");
     try {
-      render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+      render(<OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
       await act(async () => void fireEvent.click(button("ऑर्डर बोलें")));
       const rec = screen.getByRole("dialog", { name: "नया वॉइस बिल" });
       expect(within(rec).getByText("रिकॉर्ड हो रहा है")).toBeTruthy();
@@ -500,10 +502,12 @@ describe("OrderEntries - each recording of the bill", () => {
     expect(screen.getByText("Reading the order… 12 s")).toBeTruthy();
   });
 
-  it("offline: 'Saved — will send when online', Add by hand meanwhile", () => {
+  // KB-413 step 3 (24-Offline, as drawn): the card says the bill comes by itself; typing meanwhile is the list's dashed "Add item"
+  it("offline: 'Order saved · will send when online' (24's card); typing meanwhile is the list's Add item, the line says so", () => {
     entries([row({ state: "queued" })], { offline: true });
-    expect(screen.getByText("Saved — will send when online")).toBeTruthy();
-    expect(button("Add by hand")).toBeTruthy();
+    expect(screen.getByText("Order saved · will send when online")).toBeTruthy();
+    expect(screen.getByText("Meanwhile, you can type items:")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Add by hand" })).toBeNull();
   });
 
   it.each([
