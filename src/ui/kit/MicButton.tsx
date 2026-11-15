@@ -6,12 +6,13 @@ import { Icon, KB_ICONS } from "./icons";
 //   recording 09-Recording: not a button (Pause / Stop are) - a 210 px pale circle, the ring 18 px in pulsing, the 132 px circle
 //             with the large shadow and a white 56 px mic at stroke 2.
 // Reduced motion: the ring stands still (26 §3).
-// KB-413 step 2: `still` - paused, nothing is being recorded, so the ring does not pulse (Paused is not drawn - asked on the sheet).
+// KB-413 step 2: `still` - paused, nothing is being recorded: the ring stays visible but does not pulse (owner, 15 Nov 2026). The design
+// draws no paused state, so it is the pulse frozen at 0.6 s (scale 1.28, opacity .27) - at rest (scale 1) it hides behind the pale circle.
 export function MicButton(props: { variant: "home"; label: string; onClick: () => void } | { variant: "recording"; still?: boolean }) {
   if (props.variant === "recording") {
     return (
       <div aria-hidden="true" className="font-kb relative w-[210px] h-[210px] flex items-center justify-center">
-        <span className={`absolute inset-[18px] rounded-full bg-kb-primary ${props.still ? "opacity-0" : "animate-kb-pulse"}`} />
+        <span className={`absolute inset-[18px] rounded-full bg-kb-primary ${props.still ? "scale-[1.28] opacity-[.27]" : "animate-kb-pulse"}`} />
         <span className="absolute inset-0 rounded-full bg-kb-primary-pale" />
         <span className="relative w-[132px] h-[132px] rounded-full bg-kb-primary shadow-kb-mic-lg flex items-center justify-center text-kb-card">
           <Icon icon={KB_ICONS.Mic} size={56} strokeWidth={2} />

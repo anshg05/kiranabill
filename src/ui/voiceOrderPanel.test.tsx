@@ -79,11 +79,17 @@ describe("OrderRecorder", () => {
     expect(within(rec).getByText("01:05")).toBeTruthy(); // 09 draws "00:42"
     expect(within(rec).getByText("of 5:00")).toBeTruthy();
     expect(within(rec).getByText("Recording")).toBeTruthy();
+    const ring = () => rec.querySelector("[class*='inset-[18px]']")!.getAttribute("class")!;
+    expect(ring()).toContain("animate-kb-pulse"); // recording: the ring pulses
     fireEvent.click(button("Pause"));
     await wait(30_000);
     expect(within(rec).getByText("Paused")).toBeTruthy();
     expect(within(rec).getByText("01:05")).toBeTruthy(); // paused time is not counted
+    expect(ring()).not.toContain("animate-kb-pulse"); // owner (15 Nov 2026): paused, the ring stands still (and stays visible - batchC)
+    expect(ring()).toContain("scale-[1.28]");
     fireEvent.click(button("Resume"));
+    await wait(0);
+    expect(ring()).toContain("animate-kb-pulse");
     await wait(5_000);
     await act(async () => void fireEvent.click(button("Stop")));
     const review = screen.getByRole("dialog", { name: "Check your recording" });

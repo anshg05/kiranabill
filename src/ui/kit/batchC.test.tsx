@@ -160,11 +160,17 @@ describe("MicButton (08-Home / 26-FirstDay; 09-Recording)", () => {
     expect(svg.getAttribute("stroke-width")).toBe("2");
   });
 
-  it("recording, still (KB-413: paused - nothing is being recorded): the ring does not pulse", () => {
+  // Owner (15 Nov 2026, step-2 approval): paused, the ring stays VISIBLE and still - the pulse frozen at 0.6 s (the sheet's moment):
+  // scale 1.28 / opacity .27, a 223 px ring showing 6 px outside the 210 pale circle. At scale 1 it would sit hidden behind the circle.
+  it("recording, still (KB-413: paused - nothing is being recorded): the ring does not pulse but stays visible outside the pale circle", () => {
     const { container } = render(<MicButton variant="recording" still />);
     const ring = container.querySelector("[class*='inset-[18px]']")!;
     expect(cls(ring)).not.toMatch(/animate-/);
-    has(ring, "opacity-0");
+    expect(cls(ring)).not.toMatch(/(^|\s)opacity-0(\s|$)/);
+    const scale = Number(/(?:^|\s)scale-\[([\d.]+)\]/.exec(cls(ring))?.[1]);
+    const opacity = Number(/(?:^|\s)opacity-\[([\d.]+)\]/.exec(cls(ring))?.[1]);
+    expect((210 - 36) * scale).toBeGreaterThan(210 + 8); // past the pale circle by more than 4 px a side
+    expect(opacity).toBeGreaterThan(0.2);
   });
 });
 
