@@ -70,6 +70,15 @@ describe("useVoiceOrders (KB-385)", () => {
     expect(t.result.current.waiting).toEqual([]);
   });
 
+  it("KB-413 fix 1: Generate on an empty bill marks the recording (24's card first); on a bill with lines it does not", async () => {
+    online = false;
+    const t = setup(async (id) => done(id));
+    await act(() => t.result.current.generate(audio(), 5_000, true));
+    await waitFor(() => expect(t.result.current.recordings.map((r) => r.emptyBill)).toEqual([true]));
+    await act(() => t.result.current.generate(audio(), 5_000, false));
+    await waitFor(() => expect(t.result.current.recordings.map((r) => r.emptyBill)).toEqual([true, undefined]));
+  });
+
   it("offline at Generate: kept on the phone (queued, nothing sent, Bill Banao waits); back online it is sent and added", async () => {
     online = false;
     const t = setup(async (id) => done(id));

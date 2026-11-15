@@ -34,7 +34,7 @@ describe("screen 12: the frame", () => {
   it("the Heard card(s) first, then the customer row (owner, answer 2), then the lines, the recordings still waiting, then the dashed Add item", () => {
     render(
       <BillView {...base} lines={[row("l1", "चीनी")]} customer={{ name: "Cash", mobile: null }} onCustomerName={() => null} onCustomerMobile={() => null}
-        catalog={SEED_PARSER_CATALOG} onAddByHand={() => {}} orderEntries={(_add, part) => (part === "heard" ? <p>HEARD</p> : <p>PENDING</p>)} />,
+        catalog={SEED_PARSER_CATALOG} onAddByHand={() => {}} orderEntries={(_add, part) => (part === "heard" ? <p>HEARD</p> : part === "pending" ? <p>PENDING</p> : null)} />,
     );
     const text = document.body.textContent!;
     const at = (s: string) => text.indexOf(s);

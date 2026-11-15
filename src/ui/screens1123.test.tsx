@@ -167,23 +167,23 @@ describe("23 Couldn't read the order: the first recording of an empty bill faile
     recorder(ordersOf([failed("upload")]));
     const d = failedScreen()!;
     expect(within(d).getByText("Couldn't read the order")).toBeTruthy();
-    expect(within(d).getByText("The recording couldn't be sent. It's safe on this phone — Retry, no need to speak again.")).toBeTruthy();
+    expect(within(d).getByText("The recording couldn't be sent. It's safe on this phone — try again, no need to speak again.")).toBeTruthy();
     expect(within(d).getByText("Recording 0:42")).toBeTruthy();
     expect(within(d).getByText("Saved on this phone")).toBeTruthy();
     const names = within(d).getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
-    expect(names).toEqual(["Back", "Retry", "Type instead", "Record again", "Remove this recording"]);
-    expect(button("Retry").className).toContain("bg-kb-primary");
+    expect(names).toEqual(["Back", "Try again", "Type instead", "Record again", "Remove this recording"]);
+    expect(button("Try again").className).toContain("bg-kb-primary");
     expect(button("Remove this recording").className).not.toContain("bg-kb-");
   });
 
   it.each([
-    ["start", "The recording couldn't be sent. It's safe on this phone — Retry, no need to speak again."],
-    ["busy", "The reading service is busy right now. Your recording is safe — Retry in a moment."],
-    ["timeout", "The reading service is busy right now. Your recording is safe — Retry in a moment."],
-    ["rate_limited", "Too many orders this hour. Your recording is safe — Retry later."],
-    ["session", "You were signed out. Sign in again, then Retry — your recording is safe."],
-    ["failed", "This order couldn't be read. Your recording is safe — Retry, no need to speak again."],
-    ["download", "This order couldn't be read. Your recording is safe — Retry, no need to speak again."],
+    ["start", "The recording couldn't be sent. It's safe on this phone — try again, no need to speak again."],
+    ["busy", "The reading service is busy right now. Your recording is safe — try again in a moment."],
+    ["timeout", "The reading service is busy right now. Your recording is safe — try again in a moment."],
+    ["rate_limited", "Too many orders this hour. Your recording is safe — try again later."],
+    ["session", "You were signed out. Sign in again, then try again — your recording is safe."],
+    ["failed", "This order couldn't be read. Your recording is safe — try again, no need to speak again."],
+    ["download", "This order couldn't be read. Your recording is safe — try again, no need to speak again."],
   ])("reason %s: one true sentence", (reason, sentence) => {
     recorder(ordersOf([failed(reason)]));
     expect(within(failedScreen()!).getByText(sentence)).toBeTruthy();
@@ -191,13 +191,13 @@ describe("23 Couldn't read the order: the first recording of an empty bill faile
 
   it("gave up (the server took too long) is 23 too", () => {
     recorder(ordersOf([failed(undefined, "gave_up")]));
-    expect(within(failedScreen()!).getByText("This order couldn't be read. Your recording is safe — Retry, no need to speak again.")).toBeTruthy();
+    expect(within(failedScreen()!).getByText("This order couldn't be read. Your recording is safe — try again, no need to speak again.")).toBeTruthy();
   });
 
   it("Retry resends the SAME recording", () => {
     const o = ordersOf([failed("upload")]);
     recorder(o);
-    fireEvent.click(button("Retry"));
+    fireEvent.click(button("Try again"));
     expect(o.retry).toHaveBeenCalledWith("r1");
     expect(o.remove).not.toHaveBeenCalled();
   });
@@ -294,7 +294,7 @@ describe("11 / 23 survive the app closing - the recording is in the phone's voic
     await settle();
     expect(within(failedScreen()!).getByText("Recording 0:42")).toBeTruthy();
     expect(await db.voiceQueue.get("r1")).toMatchObject({ state: "failed", recordedMs: 42_000 });
-    await act(async () => void fireEvent.click(button("Retry")));
+    await act(async () => void fireEvent.click(button("Try again")));
     await settle();
     expect(never).toHaveBeenCalledWith("r1", expect.any(Blob));
     expect(generating()).toBeTruthy(); // 23 -> 11 (Try again)
@@ -364,6 +364,46 @@ describe("24 Offline: the bill screen, as today's offline waiting - drawn as 24"
     render(<BillView {...(base as unknown as Parameters<typeof BillView>[0])} lines={[line] as never} pending={2} waitingRecordings={1} />);
     expect(screen.getByTestId("checks-pending").textContent).toBe("2 checks pending");
     expect(button("Bill Banao")).toBeTruthy();
+  });
+
+  it("fix 2 (owner, 16 Nov 2026): 23's button is 'Try again' as drawn; Hindi 'फिर कोशिश', Hinglish 'Phir koshish'", () => {
+    expect(say("retry.tryAgain", {}, "en")).toBe("Try again");
+    expect(say("retry.tryAgain", {}, "hi")).toBe("फिर कोशिश");
+    expect(say("retry.tryAgain", {}, "hl")).toBe("Phir koshish");
+    expect(say("retry.button", {}, "en")).toBe("Retry"); // the app's "server down" screen and the typed-order list keep their word
+  });
+
+  // fix 1 (owner, 16 Nov 2026): 24's order as drawn - the waiting card FIRST, then "Meanwhile, you can type items:", then the typed lines,
+  // then Add item - for the first recording of a bill that was empty when it was recorded; a "More" recording stays under the lines
+  const before = (a: Element, b: Element) => expect(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const bill24 = (r: LocalVoiceRecording) =>
+    render(
+      <BillView
+        {...(base as unknown as Parameters<typeof BillView>[0])}
+        lines={[line] as never}
+        pending={1}
+        waitingRecordings={1}
+        orderEntries={(openAdd, part) => <OrderEntries orders={ordersOf([r], { offline: true })} onAddByHand={openAdd} part={part} />}
+      />,
+    );
+
+  it("the first recording of an empty bill: the card FIRST, then 'Meanwhile, you can type items:', then the typed line, then Add item", () => {
+    bill24(rec({ recordedMs: 65_000, emptyBill: true }));
+    const card = screen.getByText("Order saved · will send when online");
+    const meanwhile = screen.getByText("Meanwhile, you can type items:");
+    const typed = screen.getByText("टाटा नमक");
+    const add = screen.getByRole("button", { name: /Add item/ });
+    before(card, meanwhile);
+    before(meanwhile, typed);
+    before(typed, add);
+    expect(screen.getAllByText("Order saved · will send when online")).toHaveLength(1);
+    expect(screen.getAllByText("Meanwhile, you can type items:")).toHaveLength(1);
+  });
+
+  it("a 'More' recording (the bill had lines when it was recorded) stays inline under the lines, as answered in step 1", () => {
+    bill24(rec({ recordedMs: 65_000 }));
+    before(screen.getByText("टाटा नमक"), screen.getByText("Order saved · will send when online"));
+    before(screen.getByText("Order saved · will send when online"), screen.getByText("Meanwhile, you can type items:"));
   });
 
   it("every new word in Hindi and Hinglish (the catalog)", () => {

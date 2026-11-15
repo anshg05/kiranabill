@@ -315,7 +315,7 @@ export function ReadFailedBody({ reason, ms, onRetry, onTypeInstead, onRecordAga
       </div>
       <div className="flex flex-col gap-[10px] px-5 pb-[26px] pt-[18px]">
         {/* answer 3: Retry the SAME recording (big, first); Type instead = Add by hand; Record again (asks first - owner, 15 Nov 2026) */}
-        <Button variant="primary" icon={KB_ICONS.RotateCw} iconSize={20} onClick={onRetry}>{t("retry.button")}</Button>
+        <Button variant="primary" icon={KB_ICONS.RotateCw} iconSize={20} onClick={onRetry}>{t("retry.tryAgain")}</Button>
         <div className="flex gap-[10px]">
           <Button variant="secondary" height={52} icon={KB_ICONS.Keyboard} iconSize={19} fill={false} onClick={onTypeInstead} className="flex-1">{t("review.typeInstead")}</Button>
           <Button variant="secondary" height={52} icon={KB_ICONS.Mic} iconSize={19} fill={false} onClick={onRecordAgain} className="flex-1">{t("fail.recordAgain")}</Button>

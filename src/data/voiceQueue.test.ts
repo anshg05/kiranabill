@@ -27,6 +27,19 @@ describe("the phone's voice queue", () => {
     expect(db.tables.map((t) => t.name)).toContain("voiceQueue");
   });
 
+  it("KB-413 fix 1: the first recording of a bill that was EMPTY is marked so (24 draws its card first); never a later one, never a bill with lines", async () => {
+    const db = open();
+    const first = rec("bill-1");
+    await enqueueRecording(db, { ...first, billEmpty: true });
+    const more = rec("bill-1");
+    await enqueueRecording(db, { ...more, billEmpty: true }); // the bill is still empty, but this is its second recording
+    const typedFirst = rec("bill-2");
+    await enqueueRecording(db, { ...typedFirst, billEmpty: false });
+    expect((await db.voiceQueue.get(first.recordingId))!.emptyBill).toBe(true);
+    expect((await db.voiceQueue.get(more.recordingId))!.emptyBill).toBeUndefined();
+    expect((await db.voiceQueue.get(typedFirst.recordingId))!.emptyBill).toBeUndefined();
+  });
+
   it("keeps the recording's bytes and type, and survives the app being closed and reopened", async () => {
     const name = `vq-${crypto.randomUUID()}`;
     const r = rec();

@@ -273,6 +273,22 @@ describe("tap areas: the drawn look stays, every tappable part is at least 48 px
   });
 });
 
+describe("KB-413 fix 3 (owner, 16 Nov 2026): a wrapped label keeps its icon next to the words", () => {
+  it.each([
+    ["icon first", { variant: "secondary" as const, icon: KB_ICONS.Keyboard }],
+    ["icon after the words", { variant: "primary" as const, icon: KB_ICONS.ArrowRight, iconEnd: true }],
+    ["locked (the lock)", { variant: "locked" as const }],
+  ])("%s: the icon and the words are one centred run of text (the icon flows with the first or last word)", (_n, p) => {
+    render(<Button {...p}>Add items by hand meanwhile</Button>);
+    const svg = screen.getByRole("button").querySelector("svg")!;
+    const label = svg.parentElement!;
+    expect(label.tagName).toBe("SPAN");
+    expect(label.textContent).toBe("Add items by hand meanwhile");
+    has(label, "text-center");
+    has(svg, "inline-block", "align-middle");
+  });
+});
+
 describe("icons keep their size when a label wraps (360 px + 130% text, Hindi)", () => {
   it("every icon inside a batch-a part is shrink-0", () => {
     const { container } = render(<>

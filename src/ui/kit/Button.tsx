@@ -67,6 +67,12 @@ export function Button({
 }) {
   const h = height ?? DEFAULT_HEIGHT[variant];
   const locked = variant === "locked";
+  // KB-413 fix 3 (owner, 16 Nov 2026): the icon sits IN the words' line (not a flex column of its own), so a label that wraps keeps it
+  // beside its first (or last) word instead of at the far edge; the gap is the drawn one
+  const wide = (variant === "primary" && h !== 58) || variant === "destructive";
+  const lead = locked ? (lockIcon ? KB_ICONS.Lock : undefined) : iconEnd ? undefined : icon;
+  const leadSize = locked ? 18 : iconSize;
+  const end = !locked && iconEnd ? icon : undefined;
   return (
     <button
       type={type}
@@ -77,9 +83,11 @@ export function Button({
       aria-describedby={locked ? reasonId : undefined}
       className={`font-kb kb-press kb-hit flex items-center justify-center font-bold disabled:opacity-50 ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
     >
-      {locked ? lockIcon && <Icon icon={KB_ICONS.Lock} size={18} /> : icon && !iconEnd && <Icon icon={icon} size={iconSize} />}
-      {children}
-      {icon && iconEnd && !locked && <Icon icon={icon} size={iconSize} />}
+      <span className="min-w-0 text-center">
+        {lead && <Icon icon={lead} size={leadSize} className={`inline-block align-middle ${wide ? "me-[10px]" : "me-2"}`} />}
+        {children}
+        {end && <Icon icon={end} size={iconSize} className={`inline-block align-middle ${wide ? "ms-[10px]" : "ms-2"}`} />}
+      </span>
     </button>
   );
 }

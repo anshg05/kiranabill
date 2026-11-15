@@ -13,6 +13,8 @@ export interface NewRecording {
   billLocalId: string;
   audio: Blob;
   recordedMs: number;
+  /** KB-413 fix 1: the bill had no lines when this was recorded (marked only if it is also the bill's first recording) */
+  billEmpty?: boolean;
 }
 
 /** Keeps a new recording; the same recording queued again (a double tap) stays one row with its first audio. */
@@ -22,7 +24,11 @@ export async function enqueueRecording(db: KiranaBillDB, r: NewRecording): Promi
   await db.transaction("rw", db.voiceQueue, db.recordingDraft, async () => {
     await db.recordingDraft.delete(r.shopId);
     if (await db.voiceQueue.get(r.recordingId)) return;
-    await db.voiceQueue.add({ recordingId: r.recordingId, shopId: r.shopId, billLocalId: r.billLocalId, bytes, mime: r.audio.type, recordedMs: r.recordedMs, createdAt: new Date().toISOString(), state: "queued" });
+    const first = r.billEmpty === true && (await db.voiceQueue.where("billLocalId").equals(r.billLocalId).count()) === 0;
+    await db.voiceQueue.add({
+      recordingId: r.recordingId, shopId: r.shopId, billLocalId: r.billLocalId, bytes, mime: r.audio.type, recordedMs: r.recordedMs, createdAt: new Date().toISOString(), state: "queued",
+      ...(first ? { emptyBill: true as const } : {}),
+    });
   });
 }
 

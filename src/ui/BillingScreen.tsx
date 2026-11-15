@@ -388,7 +388,7 @@ export function BillingScreen() {
           noteSlot={noteSlot}
           hasLines={bill.rows.length > 0}
           disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
-          onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms))}
+          onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms, bill.rows.length === 0))}
           onAddByHand={openAdd}
         />
       )}
@@ -481,7 +481,7 @@ interface BillViewProps {
   orderBar?: (openAdd: () => void, noteSlot: HTMLElement | null) => ReactNode;
   /** KB-385: the bill's recordings (processing, failed, "Heard: …") under the lines. */
   /** KB-413: called twice - "heard" (the Heard cards, above the lines) and "pending" (recordings not in the bill yet, under them). */
-  orderEntries?: (openAdd: (query: string) => void, part: "heard" | "pending") => ReactNode;
+  orderEntries?: (openAdd: (query: string) => void, part: "heard" | "meanwhile" | "pending") => ReactNode;
   voice?: VoiceView;
   onMicTap?: () => void;
   onMicPointerDown?: () => void;
@@ -1144,6 +1144,8 @@ export function BillView({
             )}
           </div>
 
+          {/* KB-413 fix 1: 24's "Meanwhile, you can type items:" sits just above the typed lines (its card is first, in the Heard card's place) */}
+          {orderEntries?.((query) => openAdd?.(query), "meanwhile")}
           <ul aria-label={t("bill.items")} className="flex flex-col gap-[10px]">
             {lines.map(({ item: line, displayName, id, filled }) => {
               const need = needOf(id);

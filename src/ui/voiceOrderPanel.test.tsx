@@ -513,16 +513,16 @@ describe("OrderEntries - each recording of the bill", () => {
   it.each([
     ["upload", "Couldn't send the recording"],
     ["start", "Couldn't send the recording"],
-    ["session", "Signed out — sign in again, then Retry"],
-    ["rate_limited", "Too many orders this hour — Retry later"],
+    ["session", "Signed out — sign in again, then try again"],
+    ["rate_limited", "Too many orders this hour — try again later"],
     ["timeout", "Couldn't read the order"],
     ["failed", "Couldn't read the order"],
   ])("failed '%s': %s -> Retry (the SAME recording), Add by hand, Remove", (reason, text) => {
     const r = row({ state: "failed", reason });
     const { orders, onAddByHand } = entries([r]);
     expect(screen.getByText(text)).toBeTruthy();
-    expect(button("Retry").hasAttribute("data-pending-target")).toBe(true); // a Bill Banao tap goes here first (KB-307)
-    fireEvent.click(button("Retry"));
+    expect(button("Try again").hasAttribute("data-pending-target")).toBe(true); // a Bill Banao tap goes here first (KB-307)
+    fireEvent.click(button("Try again"));
     expect(orders.retry).toHaveBeenCalledWith(r.recordingId);
     fireEvent.click(button("Add by hand"));
     expect(onAddByHand).toHaveBeenCalledWith("");
@@ -533,7 +533,7 @@ describe("OrderEntries - each recording of the bill", () => {
   it("no answer in time (gave up): 'Couldn't read the order' -> Retry / Add by hand", () => {
     entries([row({ state: "gave_up" })]);
     expect(screen.getByText("Couldn't read the order")).toBeTruthy();
-    expect(button("Retry")).toBeTruthy();
+    expect(button("Try again")).toBeTruthy();
     expect(button("Add by hand")).toBeTruthy();
   });
 

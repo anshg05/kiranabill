@@ -44,7 +44,8 @@ export interface VoiceOrders {
   /** Being sent / waited for right now. */
   sending: ReadonlySet<string>;
   offline: boolean;
-  generate: (audio: Blob, recordedMs: number) => Promise<void>;
+  /** billEmpty: the bill had no lines when this was recorded (KB-413 fix 1) */
+  generate: (audio: Blob, recordedMs: number, billEmpty?: boolean) => Promise<void>;
   retry: (recordingId: string) => Promise<void>;
   remove: (recordingId: string) => Promise<void>;
   /** KB-413 step 3: the ones waiting to be read (queued - offline or about to be sent - or answered and about to be added); a failed one
@@ -119,10 +120,10 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
   );
 
   const generate = useCallback(
-    async (audio: Blob, recordedMs: number) => {
+    async (audio: Blob, recordedMs: number, billEmpty?: boolean) => {
       if (!db || !shopId || !billLocalId) return;
       const recordingId = crypto.randomUUID(); // made ONCE per recording (one recording = one bill)
-      await enqueueRecording(db, { recordingId, shopId, billLocalId, audio, recordedMs });
+      await enqueueRecording(db, { recordingId, shopId, billLocalId, audio, recordedMs, billEmpty });
       await refresh();
       await send(recordingId);
     },

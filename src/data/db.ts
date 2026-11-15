@@ -302,6 +302,9 @@ export interface LocalVoiceRecording {
   /** done: the answer, kept until it is added to the bill */
   transcript?: string;
   items?: unknown[];
+  /** KB-413 fix 1 (owner, 16 Nov 2026): the bill's FIRST recording, made while the bill was empty - 24 draws its waiting card first, above
+   *  "Meanwhile, you can type items:" and the typed lines ("More" recordings stay under the lines). Not indexed: no version change. */
+  emptyBill?: true;
 }
 
 /**

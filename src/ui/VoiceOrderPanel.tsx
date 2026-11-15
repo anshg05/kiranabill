@@ -304,8 +304,10 @@ export function OrderEntries({
   /** Opens the add panel with these words (the transcript, or nothing). */
   onAddByHand?: (query: string) => void;
   /** KB-413: "heard" = the recordings already in the bill (their Heard cards, shown above the lines on 12); "pending" = the ones not
-   *  in the bill yet (being read, queued offline, failed - shown under the lines, owner's answer 3). Both when not given. */
-  part?: "heard" | "pending";
+   *  in the bill yet (being read, queued offline, failed - shown under the lines, owner's answer 3). Both when not given.
+   *  Fix 1 (owner, 16 Nov 2026): 24's order - the waiting card of the bill's first recording, made on an EMPTY bill, is drawn FIRST (in
+   *  the Heard card's place, where its answer will appear) and "meanwhile" is its "Meanwhile, you can type items:", just above the lines. */
+  part?: "heard" | "meanwhile" | "pending";
 }) {
   const { t } = useT();
   const reading = orders.recordings.some((r) => orders.sending.has(r.recordingId));
@@ -315,7 +317,12 @@ export function OrderEntries({
     const timer = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(timer);
   }, [reading]);
-  const shown = orders.recordings.filter((r) => (part === "heard" ? r.state === "appended" : part === "pending" ? r.state !== "appended" : true));
+  const lead = orders.recordings.find((r) => r.emptyBill && r.state === "queued" && !orders.sending.has(r.recordingId));
+  const meanwhile = <p className="px-1 pt-1 text-kb-14 text-kb-sub">{t("order.meanwhile")}</p>;
+  if (part === "meanwhile") return lead ? meanwhile : null;
+  const shown = orders.recordings.filter((r) =>
+    part === "heard" ? r.state === "appended" || r === lead : part === "pending" ? r.state !== "appended" && r !== lead : true,
+  );
   if (shown.length === 0) return null;
   const entry = (r: LocalVoiceRecording) => {
     if (r.state === "appended") {
@@ -340,7 +347,7 @@ export function OrderEntries({
       return (
         <li key={r.recordingId} className="flex flex-col gap-3">
           <InfoBanner icon={KB_ICONS.Cloud} title={t("order.queued")} sub={t("order.queuedSub", { time: mmss(r.recordedMs) })} busy />
-          <p className="px-1 pt-1 text-kb-14 text-kb-sub">{t("order.meanwhile")}</p>
+          {(r !== lead || part === undefined) && meanwhile}
         </li>
       );
     }
@@ -353,7 +360,7 @@ export function OrderEntries({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" data-pending-target onClick={() => void orders.retry(r.recordingId)} className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card">
-            {t("retry.button")}
+            {t("retry.tryAgain")}
           </button>
           {onAddByHand && (
             <button type="button" onClick={() => onAddByHand("")} className="kb-hit flex-none whitespace-nowrap min-h-[48px] rounded-[12px] border border-kb-border bg-kb-card px-4 text-kb-15 font-bold text-kb-ink">

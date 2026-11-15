@@ -165,7 +165,7 @@ function Screen23({ state }: { state: string }) {
 
 /** 24-Offline as drawn: one typed line (टाटा नमक 1 × ₹30), the recording waiting to be sent, no internet */
 function Screen24() {
-  const [o] = useState(() => ({ ...NO_ORDERS, offline: true, recordings: [firstRec({ recordedMs: 65_000 })] }));
+  const [o] = useState(() => ({ ...NO_ORDERS, offline: true, recordings: [firstRec({ recordedMs: 65_000, emptyBill: true })] })); // the first recording of an empty bill (fix 1: its card first)
   return (
     <BillView
       shopName="Gupta Kirana Store"
