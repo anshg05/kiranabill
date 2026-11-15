@@ -17,7 +17,8 @@ export function BottomSheet({
   const titleId = useId();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    box.current?.focus();
+    // a field that focused itself on opening (the hand-added line's quantity, KB-305) keeps the focus - else into the sheet
+    if (!box.current?.contains(document.activeElement)) box.current?.focus();
     return () => previous?.focus?.();
   }, []);
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Check, Loader2, Mic, Pencil, Plus, Square, TriangleAlert, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Loader2, Mic, Square } from "lucide-react";
 import type { CatalogEntry } from "@/domain/catalog";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
@@ -38,6 +38,11 @@ import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
 import { useOrderResolver } from "./useOrderResolver";
+import { Button } from "./kit/Button";
+import { Badge } from "./kit/Badge";
+import { BillLine as KitBillLine, PriceNeededLine } from "./kit/BillLine";
+import { BottomSheet } from "./kit/BottomSheet";
+import { Icon, KB_ICONS } from "./kit/icons";
 import { useFinalise } from "./useFinalise";
 import { supabase } from "@/data/supabaseClient";
 import { requestBillNumber, warmServer } from "@/data/receiptNumbers";
@@ -373,7 +378,7 @@ export function BillingScreen() {
           onAddByHand={openAdd}
         />
       )}
-      orderEntries={(openAdd) => <OrderEntries orders={orders} onAddByHand={openAdd} />}
+      orderEntries={(openAdd, part) => <OrderEntries orders={orders} onAddByHand={openAdd} part={part} />}
       onEdit={(id, field, value) => (wiring.touch(), bill.edit(id, field, value))}
       onRemove={(id) => (wiring.touch(), bill.remove(id))}
       removed={bill.removed}
@@ -459,7 +464,8 @@ interface BillViewProps {
   /** KB-385 (D101): the V3 order recorder in the bottom bar - when given, it replaces the old mic (voice / onMicTap). */
   orderBar?: (openAdd: () => void) => ReactNode;
   /** KB-385: the bill's recordings (processing, failed, "Heard: …") under the lines. */
-  orderEntries?: (openAdd: (query: string) => void) => ReactNode;
+  /** KB-413: called twice - "heard" (the Heard cards, above the lines) and "pending" (recordings not in the bill yet, under them). */
+  orderEntries?: (openAdd: (query: string) => void, part: "heard" | "pending") => ReactNode;
   voice?: VoiceView;
   onMicTap?: () => void;
   onMicPointerDown?: () => void;
@@ -521,18 +527,6 @@ interface BillViewProps {
 
 const NO_FLAGS: readonly ShownFlag[] = [];
 
-/** Whether a CSS media query matches - and keeps matching as the window changes. */
-function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (typeof window.matchMedia !== "function") return () => {};
-      const list = window.matchMedia(query);
-      list.addEventListener("change", onChange);
-      return () => list.removeEventListener("change", onChange);
-    },
-    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
-  );
-}
 const NONE_NOT_ADDED: readonly NotAdded[] = [];
 const NO_CUSTOMER: Customer = { name: CASH, mobile: null };
 
@@ -557,21 +551,21 @@ function NotAddedList({
   const { t, tx } = useT();
   if (entries.length === 0) return null;
   return (
-    <ul aria-label={t("notadded.list")}>
+    <ul aria-label={t("notadded.list")} className="flex flex-col gap-[10px]">
       {entries.map((n) => (
-        <li key={n.id} data-severity="HIGH" className="flex flex-wrap items-center gap-x-2 border-b border-line border-l-[3px] border-l-danger bg-surface px-4 py-1 text-[13px] text-danger">
-          <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+        <li key={n.id} data-severity="HIGH" className="font-kb flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] border-kb-warn-border bg-kb-warn-bg py-3 px-[14px] text-kb-14 text-kb-warn-text">
+          <Icon icon={KB_ICONS.TriangleAlert} size={17} />
           <span className="sr-only">{t("flag.mustCheck")} </span>
-          <span className="text-ink">{t("notadded.line", { text: n.transcript })}</span>
-          <span>{tx(n.message)}</span>
-          <span className="ml-auto flex items-center gap-1">
+          <span className="min-w-0 font-bold">{t("notadded.line", { text: n.transcript })}</span>
+          <span className="min-w-0">{tx(n.message)}</span>
+          <span className="flex w-full flex-wrap items-center gap-2">
             <button
               type="button"
               data-pending-target
               aria-label={t("retry.label", { text: n.transcript })}
               disabled={n.retrying}
               onClick={() => onRetry?.(n.id)}
-              className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger disabled:opacity-50"
+              className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card disabled:opacity-50"
             >
               {n.retrying ? t("retry.reading") : t("retry.button")}
             </button>
@@ -580,7 +574,7 @@ function NotAddedList({
                 type="button"
                 aria-label={t("byhand.label", { text: n.transcript })}
                 onClick={() => onAddByHand(n.transcript)}
-                className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
+                className="kb-hit flex-none whitespace-nowrap min-h-[48px] rounded-[12px] border border-kb-border bg-kb-card px-4 text-kb-15 font-bold text-kb-ink"
               >
                 {t("byhand.button")}
               </button>
@@ -589,9 +583,9 @@ function NotAddedList({
               type="button"
               aria-label={t("dismiss.label", { text: n.transcript })}
               onClick={() => onDismiss?.(n.id)}
-              className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft"
+              className="kb-hit-icon ml-auto flex size-11 shrink-0 items-center justify-center rounded-[10px] text-kb-sub"
             >
-              <X size={18} strokeWidth={1.5} aria-hidden />
+              <Icon icon={KB_ICONS.X} size={18} />
             </button>
           </span>
         </li>
@@ -606,31 +600,16 @@ function checksText(n: number, t: Translate): string {
 }
 
 /**
- * KB-307 (owner, decision 2): a line with no amount can't be on a receipt.
- * Shown like a HIGH flag but with no "Theek hai" - only a value clears it.
- */
-function AmountNeeded({ need }: { need: "price" | "quantity" }) {
-  const { t } = useT();
-  return (
-    <div data-severity="HIGH" className="flex items-center gap-x-2 py-1 text-[13px] text-danger">
-      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
-      <span className="sr-only">{t("flag.mustCheck")} </span>
-      <span>{need === "price" ? t("need.price") : t("need.quantity")}</span>
-    </div>
-  );
-}
-
-/**
  * KB-382 (D103 item 3b): a line wildly out of proportion. Shown like "Price needed" - red, an icon, the reason - with NO "Theek hai":
  * only an edit to the line clears it (billFlags re-checks an edited line). One warning per line: it replaces the line's HIGH check.
  */
 function BlockCheck({ flags }: { flags: readonly ShownFlag[] }) {
   const { t, tx } = useT();
   return (
-    <div data-severity="BLOCK" className="flex flex-wrap items-center gap-x-2 py-1 text-[13px] text-danger">
-      <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+    <div data-severity="BLOCK" className="flex items-start gap-[6px] text-kb-14 font-bold text-kb-err">
+      <Icon icon={KB_ICONS.TriangleAlert} size={17} className="mt-px" />
       <span className="sr-only">{t("flag.mustCheck")} </span>
-      <span>{tx(flags[0]!.message)}</span>
+      <span className="min-w-0">{tx(flags[0]!.message)}</span>
     </div>
   );
 }
@@ -646,13 +625,13 @@ function HighCheck({ flags, name, transcript, onAcknowledge }: { flags: readonly
   const [open, setOpen] = useState(false);
   if (flags.every((f) => f.acknowledged)) {
     return (
-      <div data-severity="HIGH" className="text-[13px] text-ink-soft">
+      <div data-severity="HIGH" className="text-kb-13 text-kb-sub">
         <button
           type="button"
           aria-expanded={open}
           aria-label={t("flag.checked", { name: name ?? t("flag.thisOrder") })}
           onClick={() => setOpen((o) => !o)}
-          className="flex size-11 shrink-0 items-center justify-center rounded-[6px] font-medium"
+          className="kb-hit-icon flex size-9 shrink-0 items-center justify-center rounded-full bg-kb-ok-pale font-bold text-kb-ok"
         >
           ✓
         </button>
@@ -672,17 +651,18 @@ function HighCheck({ flags, name, transcript, onAcknowledge }: { flags: readonly
   const sentence = tx(checkHeadline(flags));
   return (
     <div>
-      {transcript && <p className="text-[13px] text-ink-soft">{t("flag.heard", { text: transcript })}</p>}
-      <div data-severity="HIGH" className="flex flex-wrap items-center gap-x-2 text-[13px] text-danger">
-        <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />
+      {transcript && <p className="mb-2 text-kb-13 text-kb-warn-text">{t("flag.heard", { text: transcript })}</p>}
+      <div data-severity="HIGH" className="flex flex-wrap items-center gap-x-[6px] gap-y-2 text-kb-14 font-bold text-kb-warn-text">
+        <Icon icon={KB_ICONS.TriangleAlert} size={17} className="self-start mt-px" />
         <span className="sr-only">{t("flag.mustCheck")} </span>
-        <span>{sentence}</span>
+        {/* the reason keeps at least 160 px; when the row is narrower, Theek hai moves under it */}
+        <span className="min-w-0 flex-[1_1_160px]">{sentence}</span>
         <button
           type="button"
           data-pending-target
           aria-label={t("flag.okLabel", { text: `${name ? `${name}: ` : ""}${sentence}` })}
           onClick={() => onAcknowledge(flags.filter((f) => !f.acknowledged))}
-          className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger"
+          className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card"
         >
           {t("flag.okButton")}
         </button>
@@ -701,7 +681,7 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
   const [open, setOpen] = useState(false);
   const medium = severity === "MEDIUM";
   return (
-    <div data-severity={severity} className="text-[13px]">
+    <div data-severity={severity} className="text-kb-13">
       <button
         type="button"
         aria-expanded={open}
@@ -709,14 +689,14 @@ function FlagNote({ severity, name, messages }: { severity: "MEDIUM" | "LOW"; na
         onClick={() => setOpen((o) => !o)}
         className={
           medium
-            ? "min-h-11 rounded-[6px] border border-warn px-2 text-[11px] font-semibold tracking-[0.04em] text-warn"
-            : "flex size-11 shrink-0 items-center justify-center rounded-[6px]"
+            ? "kb-hit min-h-[26px] whitespace-nowrap rounded-full bg-kb-warn-bg px-[10px] text-kb-11 font-bold tracking-[0.04em] text-kb-warn-text"
+            : "kb-hit-icon flex size-7 shrink-0 items-center justify-center rounded-full"
         }
       >
-        {medium ? t("flag.review") : <span aria-hidden className="size-2 rounded-full bg-muted" />}
+        {medium ? t("flag.review") : <span aria-hidden className="size-2 rounded-full bg-kb-sub" />}
       </button>
       {open && (
-        <ul className={medium ? "text-warn" : "text-ink-soft"}>
+        <ul className={`mt-1 ${medium ? "text-kb-warn-text" : "text-kb-sub"}`}>
           {messages.map((m) => (
             <li key={m}>{tx(m)}</li>
           ))}
@@ -734,11 +714,11 @@ function FlagList({ flags, name, transcript = null, onAcknowledge }: { flags: re
   const block = flags.filter((f) => f.severity === "BLOCK");
   const high = flags.filter((f) => f.severity === "HIGH");
   return (
-    <div className="flex flex-col gap-1 py-1">
+    <div className="flex flex-col gap-2">
       {block.length > 0 && <BlockCheck flags={block} />}
       {block.length === 0 && high.length > 0 && <HighCheck flags={high} name={name} transcript={transcript} onAcknowledge={onAcknowledge} />}
       {(medium.length > 0 || low.length > 0) && (
-        <div className="flex flex-wrap items-start gap-2">
+        <div className="flex flex-wrap items-start gap-2 [--kb-gap-x:8px] [--kb-gap-y:8px]">
           {medium.length > 0 && <FlagNote severity="MEDIUM" name={name ?? "this order"} messages={medium} />}
           {low.length > 0 && <FlagNote severity="LOW" name={name ?? "this order"} messages={low} />}
         </div>
@@ -760,13 +740,6 @@ function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: 
       ))}
     </select>
   );
-}
-
-/** KB-385 (D106 item 3): a price OUR CODE filled - never spoken for this line. */
-function FilledMark({ filled }: { filled?: BillLine["filled"] }) {
-  const { t } = useT();
-  if (!filled) return null;
-  return <span className="ml-1 rounded-[4px] bg-line px-1 text-[12px] normal-case text-ink-soft">{t(filled === "repeat" ? "filled.repeat" : "filled.shop")}</span>;
 }
 
 function mmss(ms: number): string {
@@ -875,8 +848,6 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
   );
 }
 
-const label = "text-[13px] font-medium tracking-[0.02em] text-ink-soft";
-
 export function BillView({
   shopName,
   lines,
@@ -934,11 +905,6 @@ export function BillView({
   // utterance in flight, nothing typed, no saved-bill screen to leave, no panel or dialog open.
   const voiceBusy = voice.phase === "requesting" || voice.phase === "listening" || voice.phase === "transcribing" || voice.phase === "resolving";
   useUpdateGate(lines.length === 0 && notAdded.length === 0 && customer.name === CASH && customer.mobile === null && !voiceBusy && !saving && saved === null && saveError === null && addItem === null && confirm === null);
-  // Both markups are in the DOM (CSS picks one); a new line's qty editor opens
-  // only in the visible one, so exactly one input takes focus.
-  // KB-307 fix: follows the window - decided once at mount, it went stale when
-  // the window was resized (owner's real-Chrome check).
-  const wide = useMediaQuery("(min-width: 48rem)");
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
   const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
   // KB-363b: a line's own reasons and the reasons about what was said (anchored under the utterance's last line) are ONE check
@@ -966,53 +932,10 @@ export function BillView({
     for (const f of group) onAcknowledge?.(f.key);
     setAnnouncement(`${t("checks.checked")} ${checksText(pending - 1, t)}.`);
   };
-  // KB-323 (D81): a line the parser read through a learned alias says so, with one tap to undo it - visible, never blocking.
-  // KB-336 (D83): on a draft the item name is a button (a pencil marks it) that opens "Change item"; a saved bill shows plain text.
-  const nameOf = (id: string, name: string) =>
-    readOnly || !onChangeProduct || !catalog ? (
-      name
-    ) : (
-      <button type="button" aria-label={t("line.change", { name })} onClick={() => setChanging(id)} className="inline-flex min-h-11 items-center gap-1.5 text-left capitalize">
-        {name}
-        <Pencil size={13} strokeWidth={1.5} aria-hidden className="shrink-0 text-ink-soft" />
-      </button>
-    );
   const [notThis, setNotThis] = useState<ReadonlySet<string>>(new Set());
   const noteOf = (id: string) => {
     const row = lines.find((l) => l.id === id);
     return row && !readOnly && learned && !notThis.has(id) ? learnedNoteFor(row.item.spokenName, row.item.catalogId, learned) : null;
-  };
-  const hasBlock = (id: string) => lineFlags(id).length > 0 || !!needOf(id) || !!noteOf(id) || notThis.has(id);
-  const flagsBlock = (id: string, name: string) => {
-    const own = lineFlags(id);
-    const need = needOf(id);
-    const note = noteOf(id);
-    if (!hasBlock(id)) return null;
-    return (
-      <>
-        {need && <AmountNeeded need={need} />}
-        {note && (
-          <div data-testid="learned-note" className="flex flex-wrap items-center gap-2 py-1 text-[13px] text-ink-soft">
-            <span>
-              {t("learned.note", { alias: note.alias, name })}
-            </span>
-            <button
-              type="button"
-              aria-label={t("learned.notThisLabel", { name })}
-              onClick={() => {
-                setNotThis((s) => new Set(s).add(id));
-                onNotThis?.(note.alias, note.catalogId);
-              }}
-              className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
-            >
-              {t("learned.notThis")}
-            </button>
-          </div>
-        )}
-        {!note && notThis.has(id) && <p className="py-1 text-[13px] text-ink-soft">{t("learned.forgotten", { name })}</p>}
-        {own.length > 0 && <FlagList flags={own} name={name} transcript={billLevelAfter(id)[0]?.transcript ?? null} onAcknowledge={acknowledge} />}
-      </>
-    );
   };
   // 05 §2: a line with an unacknowledged HIGH flag gets a 3px DANGER left
   // border; once acknowledged, a quiet LINE one.
@@ -1020,74 +943,35 @@ export function BillView({
     const row = lines.find((l) => l.id === id);
     return row && !readOnly ? amountNeeded(row.item) : null;
   };
-  const edge = (id: string) => {
-    if (needOf(id)) return "border-l-[3px] border-l-danger";
-    const high = hasHigh(id);
-    if (high.length === 0) return "";
-    return high.some((f) => !f.acknowledged || f.severity === "BLOCK") ? "border-l-[3px] border-l-danger" : ""; // KB-363b: once checked, the line looks normal; KB-382: a BLOCK line never does
-  };
-
-  // KB-303: the editable pieces of a line. `view` keeps field ids unique -
-  // the card list and the table are both in the DOM (CSS picks one).
-  type View = "card" | "table";
-  const qtyOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    readOnly ? (
-      <span>{formatQty(line.qty)}</span>
-    ) : (
+  // KB-303: the editable pieces of a line - since KB-413 (owner, answer 9) they live in the line's edit sheet; the field ids say so.
+  const qtyOf = (id: string, line: BillLine["item"], name: string) => (
     <EditableValue
       label={t("line.quantity", { name })}
-      fieldId={`${view}-${id}-qty`}
+      fieldId={`sheet-${id}-qty`}
       text={formatQty(line.qty)}
       initial={line.qty === null ? "" : String(line.qty)}
       onCommit={(v) => onEdit(id, "qty", v)}
-      startOpen={id === focusLineId && (view === "table") === wide}
-      pendingTarget={amountNeeded(line) === "quantity"}
+      startOpen={editingAt?.id === id && editingAt.qtyOpen}
     />
-    );
-  const unitOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    readOnly ? (
-      <span>{line.unit || "—"}</span>
-    ) : (
-    <UnitPicker label={t("line.unit", { name })} fieldId={`${view}-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
   );
-  const rateOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    readOnly ? (
-      <span>{formatRate(line)}</span>
-    ) : (
-    <EditableValue label={t("line.rate", { name })} fieldId={`${view}-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
+  const unitOf = (id: string, line: BillLine["item"], name: string) => (
+    <UnitPicker label={t("line.unit", { name })} fieldId={`sheet-${id}-unit`} line={line} onPick={(u) => onEdit(id, "unit", u)} />
+  );
+  const rateOf = (id: string, line: BillLine["item"], name: string) => (
+    <EditableValue label={t("line.rate", { name })} fieldId={`sheet-${id}-rate`} text={formatRate(line)} initial={paiseText(displayRate(line)?.paise ?? null)} onCommit={(v) => onEdit(id, "rate", v)} />
   );
   // KB-337 (D85): the amount is editable on EVERY line (it reversed KB-303 decision 1). Typing one makes it a total line.
-  const amountOf = (view: View, id: string, line: BillLine["item"], name: string) =>
-    !readOnly ? (
-      <EditableValue
-        label={t("line.amount", { name })}
-        fieldId={`${view}-${id}-amount`}
-        text={formatAmount(line.total)}
-        initial={paiseText(line.total || null)}
-        onCommit={(v) => onEdit(id, "amount", v)}
-        pendingTarget={amountNeeded(line) === "price"}
-      />
-    ) : (
-      formatAmount(line.total)
-    );
-  const removeOf = (id: string, name: string) =>
-    readOnly ? null : (
-    <button type="button" aria-label={t("line.remove", { name })} onClick={() => onRemove(id)} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
-      <X size={18} strokeWidth={1.5} aria-hidden />
-    </button>
+  const amountOf = (id: string, line: BillLine["item"], name: string) => (
+    <EditableValue label={t("line.amount", { name })} fieldId={`sheet-${id}-amount`} text={formatAmount(line.total)} initial={paiseText(line.total || null)} onCommit={(v) => onEdit(id, "amount", v)} />
   );
 
   // KB-307 (owner): a Bill Banao tap while checks are pending goes to the
   // first one, in bill order - a HIGH flag's "Theek hai", a missing amount or
-  // quantity, then a not-added utterance's Retry - in the markup that's visible.
+  // quantity, then a not-added utterance's Retry.
   const itemsRef = useRef<HTMLDivElement>(null);
   const canFinalise = onFinalise !== undefined && !readOnly && !saving && lines.length > 0 && pending === 0;
-  // The target is the first one actually RENDERED (it has layout boxes): the
-  // card list and the table are both in the DOM and CSS hides one - focusing an
-  // element inside the hidden one does nothing (the owner's real-Chrome bug).
-  // Scrolled to the middle of the screen; the ring comes from index.css
-  // ([data-pending-target]:focus) because Chrome shows no :focus-visible for
-  // focus moved by a script after a tap. (jsdom has no layout: first target.)
+  // Scrolled to the middle of the screen; the ring comes from index.css ([data-pending-target]:focus) because Chrome shows no
+  // :focus-visible for focus moved by a script after a tap. (jsdom has no layout: first target.)
   const focusFirstPending = () => {
     const targets = [...(itemsRef.current?.querySelectorAll<HTMLElement>("[data-pending-target]") ?? [])];
     const target = targets.find((el) => el.getClientRects().length > 0) ?? targets[0];
@@ -1117,24 +1001,53 @@ export function BillView({
     endRef.current?.scrollIntoView?.({ block: "end" });
   }, [lines.length, notAdded.length]);
 
+  // The edit button's name is the catalog's "Edit {name}" (the same words in every language - one message, catalog.editLabel).
+  // KB-413 (owner, answer 9): the line being edited in its sheet; a line added by hand opens its sheet with the quantity ready (KB-305).
+  // `qtyOpen` is kept with it: the app clears focusLineId once the line is shown, before the sheet's editors mount.
+  const [editingAt, setEditingAt] = useState<{ id: string; qtyOpen: boolean } | null>(null);
+  const editing = editingAt?.id ?? null;
+  const setEditing = (id: string | null) => setEditingAt(id ? { id, qtyOpen: false } : null);
+  useEffect(() => {
+    if (focusLineId && !readOnly) setEditingAt({ id: focusLineId, qtyOpen: true });
+  }, [focusLineId, readOnly]);
+  const editingRow = editing && !readOnly ? lines.find((l) => l.id === editing) : undefined;
+  // The Price needed line's own field (rate or amount as today: the AMOUNT is what it asks for - D110 8.8; the sheet keeps the rate).
+  const [needDraft, setNeedDraft] = useState<Readonly<Record<string, string>>>({});
+  const [needError, setNeedError] = useState<Readonly<Record<string, string | null>>>({});
+  const commitNeed = (id: string, need: "price" | "quantity") => {
+    const error = onEdit(id, need === "price" ? "amount" : "qty", needDraft[id] ?? "");
+    setNeedError((e) => ({ ...e, [id]: error ? tx(error) : null }));
+    if (!error) setNeedDraft((d) => ({ ...d, [id]: "" }));
+  };
+  // "2 kg × ₹45" as drawn; a line with no rate shows only what it has ("5 kg").
+  const detailOf = (line: BillLine["item"]) => {
+    const qty = line.qty === null ? "—" : `${formatQty(line.qty)}${line.unit ? ` ${line.unit}` : ""}`;
+    return line.rate === null ? qty : `${qty} × ${formatRate(line)}`;
+  };
+  const pendingId = "kb-bill-pending";
+  const soFar = t(lines.length === 1 ? "bill.soFarOne" : "bill.soFarMany", { n: lines.length });
+
   return (
-    <div inert={covered} aria-hidden={covered || undefined} className="h-dvh bg-paper text-ink text-[15px]">
-      <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
-        <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 title={shopName || undefined} className="min-w-0 truncate text-[20px] font-semibold">
-              {shopName || "KiranaBill"}
-            </h1>
-            <SyncChipView chip={syncChip} detail={syncDetail} />
-            {reviewMode && (
-              <span data-testid="review-badge" className="rounded-[6px] border border-line px-2 py-0.5 text-[12px] text-ink-soft">
-                {t("review.badge")}
-              </span>
-            )}
-          </div>
+    <div inert={covered} aria-hidden={covered || undefined} className="font-kb h-dvh bg-kb-bg text-kb-ink">
+      <div className="mx-auto flex h-full w-full max-w-[480px] flex-col">
+        {/* 12-BillReview's top bar (owner, answer 1): no Back arrow until Home (08) exists; today's menu stays on the right. */}
+        <header className="flex items-center gap-2 pt-3 pl-4 pr-3 pb-1">
+          {/* KB-340: the shop's name, one line, the full name as the title. 12-BillReview draws "New bill" here - asked (step-1 sheet). */}
+          <h1 title={shopName || undefined} className="min-w-0 flex-1 truncate text-kb-18 font-bold">{shopName || "KiranaBill"}</h1>
+          <SyncChipView chip={syncChip} detail={syncDetail} />
+          {reviewMode && (
+            <span data-testid="review-badge" className="flex-none whitespace-nowrap rounded-full bg-kb-muted px-[10px] py-[5px] text-kb-12 font-bold text-kb-sub">
+              {t("review.badge")}
+            </span>
+          )}
+          {!readOnly && (
+            <span className="flex-none">
+              <Badge kind="draft">{t("bill.draftBadge")}</Badge>
+            </span>
+          )}
           <HeaderMenu
             label={t("menu.label")}
-            closeWhen={addItem !== null || changing !== null || confirm !== null || voiceBusy}
+            closeWhen={addItem !== null || changing !== null || confirm !== null || voiceBusy || editing !== null}
             items={[
               ...(onOpenHistory ? [{ key: "history", label: t("menu.history"), onSelect: onOpenHistory }] : []),
               ...(onOpenCatalog ? [{ key: "catalog", label: t("menu.catalog"), onSelect: onOpenCatalog }] : []),
@@ -1159,37 +1072,11 @@ export function BillView({
           <ConfirmDialog {...clearBillWarning(lines.length)} confirmLabel={t("menu.clear")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onClearBill?.(); }} />
         )}
 
-        {/* KB-306 (D6): the customer defaults to Cash, is editable any time and
-            never blocks or asks (hard rule 6). Mobile is optional, 10 digits. */}
-        {/* KB-308: with the receipt shown, the customer row goes - the receipt
-            prints the name, and the mobile is never on screen (D52). */}
-        {!saved?.receipt && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-1">
-          <span className={label}>{t("customer.label")}</span>
-          {onCustomerName && !readOnly ? (
-            <EditableValue kind="text" label={t("customer.name")} fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
-          ) : (
-            <span>{customer.name}</span>
-          )}
-          {readOnly && customer.mobile && <span className="tabular-nums">{formatMobile(customer.mobile)}</span>}
-          {onCustomerMobile && !readOnly && (
-            <EditableValue
-              kind="tel"
-              label={t("customer.mobile")}
-              fieldId="customer-mobile"
-              text={customer.mobile ? formatMobile(customer.mobile) : t("customer.addMobile")}
-              initial={customer.mobile ?? ""}
-              onCommit={onCustomerMobile}
-            />
-          )}
-        </div>
-        )}
-
         <div className="relative min-h-0 flex-1">
-        <div ref={itemsRef} className="h-full overflow-y-auto">
-          {/* KB-308: after Bill Banao, the receipt of the bill as stored (KB-309 shares it). */}
+        <div ref={itemsRef} className="flex h-full flex-col gap-[10px] overflow-y-auto px-4 pt-1 pb-[10px]">
+          {/* KB-308: after Bill Banao, the receipt of the bill as stored (KB-309 shares it). Screen 13's look is KB-413 step 4. */}
           {saved?.receipt ? (
-            <div className="px-4 py-4">
+            <div className="py-2">
               <Receipt receipt={saved.receipt} />
               {/* KB-408 S5: Print next to Share (inside the Android app only); the first copy after Bill Banao is the original. */}
               <PrintButton key={saved.receiptNumber} receipt={saved.receipt} firstIsOriginal />
@@ -1197,70 +1084,159 @@ export function BillView({
             </div>
           ) : (
           <>
-          {/* Mobile first: one card per line (05 §2). */}
-          <ul aria-label={t("bill.items")} className="md:hidden">
-            {lines.map(({ item: line, displayName, id, filled }) => (
-              <li key={id} className={`min-h-12 border-b border-line bg-surface px-4 py-1 ${edge(id)}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="capitalize">{nameOf(id, displayName)}</span>
-                  <span className="ml-auto font-semibold tabular-nums">{amountOf("card", id, line, displayName)}</span>
-                  {removeOf(id, displayName)}
-                </div>
-                <div className="flex flex-wrap items-center gap-1 text-[13px] text-ink-soft tabular-nums">
-                  {qtyOf("card", id, line, displayName)}
-                  {unitOf("card", id, line, displayName)}
-                  <span aria-hidden>×</span>
-                  {rateOf("card", id, line, displayName)}
-                  <FilledMark filled={filled} />
-                </div>
-                {flagsBlock(id, displayName)}
-              </li>
-            ))}
-          </ul>
+          {/* KB-385: what was heard, for every recording - the Heard cards come first (12-BillReview). */}
+          {orderEntries?.((query) => openAdd?.(query), "heard")}
 
-          {/* md and up: a table (05 §2). */}
-          <table className="hidden w-full border-collapse md:table">
-            <thead>
-              <tr className={`border-b border-line text-left ${label}`}>
-                <th className="px-4 py-2 font-medium">{t("col.item")}</th>
-                <th className="px-2 py-2 text-right font-medium">{t("col.qty")}</th>
-                <th className="px-2 py-2 font-medium">{t("col.unit")}</th>
-                <th className="px-2 py-2 text-right font-medium">{t("col.rate")}</th>
-                <th className="px-4 py-2 text-right font-medium">{t("col.amount")}</th>
-                <th className="w-11 px-1 py-2">
-                  <span className="sr-only">{t("col.remove")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map(({ item: line, displayName, id, filled }) => [
-                <tr key={id} className="h-12 border-b border-line bg-surface">
-                  <td className={`px-4 capitalize ${edge(id)}`}>
-                    {nameOf(id, displayName)}
-                    <FilledMark filled={filled} />
-                  </td>
-                  <td className="px-2 text-right tabular-nums">{qtyOf("table", id, line, displayName)}</td>
-                  <td className="px-2">{unitOf("table", id, line, displayName)}</td>
-                  <td className="px-2 text-right tabular-nums">{rateOf("table", id, line, displayName)}</td>
-                  <td className="px-4 text-right font-semibold tabular-nums">{amountOf("table", id, line, displayName)}</td>
-                  <td className="px-1">{removeOf(id, displayName)}</td>
-                </tr>,
-                hasBlock(id) && (
-                  <tr key={`${id}-flags`} className="border-b border-line bg-surface">
-                    <td colSpan={6} className={`px-4 ${edge(id)}`}>
-                      {flagsBlock(id, displayName)}
-                    </td>
-                  </tr>
-                ),
-              ])}
-            </tbody>
-          </table>
+          {/* KB-306 (D6): the customer defaults to Cash, is editable any time and never blocks or asks (hard rule 6). Mobile is optional,
+              10 digits. KB-413 (owner, answer 2): a small row under the Heard card. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-kb-14">
+            <span className="text-kb-13 font-semibold text-kb-sub">{t("customer.label")}</span>
+            {onCustomerName && !readOnly ? (
+              <EditableValue kind="text" label={t("customer.name")} fieldId="customer-name" text={customer.name} initial={customer.name} onCommit={onCustomerName} />
+            ) : (
+              <span>{customer.name}</span>
+            )}
+            {readOnly && customer.mobile && <span className="tabular-nums">{formatMobile(customer.mobile)}</span>}
+            {onCustomerMobile && !readOnly && (
+              <EditableValue
+                kind="tel"
+                label={t("customer.mobile")}
+                fieldId="customer-mobile"
+                text={customer.mobile ? formatMobile(customer.mobile) : t("customer.addMobile")}
+                initial={customer.mobile ?? ""}
+                onCommit={onCustomerMobile}
+              />
+            )}
+          </div>
+
+          <ul aria-label={t("bill.items")} className="flex flex-col gap-[10px]">
+            {lines.map(({ item: line, displayName, id, filled }) => {
+              const need = needOf(id);
+              const own = lineFlags(id);
+              const note = noteOf(id);
+              const tone = own.some((f) => f.severity === "BLOCK") ? "err" : hasHigh(id).some((f) => !f.acknowledged) ? "warn" : "normal";
+              const hasExtra = !!note || notThis.has(id) || own.length > 0;
+              const extra = hasExtra ? (
+                <>
+                  {note && (
+                    <div data-testid="learned-note" className="flex flex-wrap items-center gap-2 text-kb-13 text-kb-sub">
+                      <span>{t("learned.note", { alias: note.alias, name: displayName })}</span>
+                      <button
+                        type="button"
+                        aria-label={t("learned.notThisLabel", { name: displayName })}
+                        onClick={() => {
+                          setNotThis((s) => new Set(s).add(id));
+                          onNotThis?.(note.alias, note.catalogId);
+                        }}
+                        className="kb-hit min-h-[36px] rounded-[10px] border border-kb-border bg-kb-card px-3 text-kb-13 font-bold text-kb-ink"
+                      >
+                        {t("learned.notThis")}
+                      </button>
+                    </div>
+                  )}
+                  {!note && notThis.has(id) && <p className="text-kb-13 text-kb-sub">{t("learned.forgotten", { name: displayName })}</p>}
+                  {own.length > 0 && <FlagList flags={own} name={displayName} transcript={billLevelAfter(id)[0]?.transcript ?? null} onAcknowledge={acknowledge} />}
+                </>
+              ) : null;
+              return (
+                <li key={id}>
+                  {need && !readOnly ? (
+                    <PriceNeededLine
+                      name={displayName}
+                      detail={need === "price" ? detailOf(line) : formatAmount(line.total)}
+                      needLabel={t(need === "price" ? "need.price" : "need.quantity")}
+                      inputLabel={t(need === "price" ? "line.amount" : "line.quantity", { name: displayName })}
+                      placeholder={t(need === "price" ? "col.amount" : "col.qty")}
+                      prefix={need === "price" ? "₹" : ""}
+                      inputMode={need === "price" ? "decimal" : "numeric"}
+                      value={needDraft[id] ?? ""}
+                      onChange={(v) => setNeedDraft((d) => ({ ...d, [id]: v }))}
+                      addLabel={t("common.add")}
+                      onAdd={() => commitNeed(id, need)}
+                      error={needError[id] ?? null}
+                      pendingTarget
+                      editLabel={t("catalog.editLabel", { name: displayName })}
+                      onEdit={() => setEditing(id)}
+                    >
+                      {extra}
+                    </PriceNeededLine>
+                  ) : (
+                    <KitBillLine
+                      name={displayName}
+                      detail={detailOf(line)}
+                      amount={formatAmount(line.total)}
+                      mark={filled ? t(filled === "repeat" ? "filled.repeat" : "filled.shop") : undefined}
+                      editLabel={t("catalog.editLabel", { name: displayName })}
+                      onEdit={readOnly ? undefined : () => setEditing(id)}
+                      tone={tone}
+                    >
+                      {extra}
+                    </KitBillLine>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
           </>
           )}
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
-          {orderEntries?.((query) => openAdd?.(query))}
+          {orderEntries?.((query) => openAdd?.(query), "pending")}
+          {/* Add item (KB-305), dashed as drawn: disabled only while the shop catalog loads (the reason is a tooltip - a disabled button
+              fires no hover events, so the title sits on a wrapper). On the saved screen it starts the next bill (decision 4). */}
+          <span title={canAdd ? undefined : t("voice.loadingCatalog")}>
+            <button
+              type="button"
+              disabled={!canAdd}
+              onClick={() => openAdd!("")}
+              className="kb-hit flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-kb-border text-kb-15 font-bold text-kb-primary disabled:opacity-50"
+            >
+              <Icon icon={KB_ICONS.Plus} size={18} />
+              {t("add.title")}
+            </button>
+          </span>
           <div ref={endRef} />
         </div>
+        {editingRow && (
+          <BottomSheet backKey="kbEditLine" title={t("catalog.editLabel", { name: editingRow.displayName })} onClose={() => setEditing(null)}>
+            <div className="grid grid-cols-2 gap-3 text-kb-15">
+              {(
+                [
+                  ["col.qty", qtyOf(editingRow.id, editingRow.item, editingRow.displayName)],
+                  ["col.unit", unitOf(editingRow.id, editingRow.item, editingRow.displayName)],
+                  ["col.rate", rateOf(editingRow.id, editingRow.item, editingRow.displayName)],
+                  ["col.amount", amountOf(editingRow.id, editingRow.item, editingRow.displayName)],
+                ] as const
+              ).map(([label, editor]) => (
+                <div key={label} className="flex flex-col gap-1">
+                  <span className="text-kb-13 font-semibold text-kb-sub">{t(label)}</span>
+                  {editor}
+                </div>
+              ))}
+            </div>
+            {onChangeProduct && catalog && (
+              <Button
+                variant="secondary"
+                icon={KB_ICONS.RefreshCw}
+                onClick={() => {
+                  setChanging(editingRow.id);
+                  setEditing(null);
+                }}
+              >
+                {t("line.change", { name: editingRow.displayName })}
+              </Button>
+            )}
+            <Button
+              variant="destructive-text"
+              icon={KB_ICONS.X}
+              onClick={() => {
+                onRemove(editingRow.id);
+                setEditing(null);
+              }}
+            >
+              {t("line.remove", { name: editingRow.displayName })}
+            </Button>
+          </BottomSheet>
+        )}
         {changing && catalog && onChangeProduct && lines.some((l) => l.id === changing) && (
           <AddItemSheet
             catalog={catalog}
@@ -1295,93 +1271,76 @@ export function BillView({
         )}
         </div>
 
-        {/* Pinned: TOTAL and the actions never scroll away (05 §2). */}
-        <div className="flex items-baseline justify-between border-t border-line px-4 py-3">
-          <span className={label}>{t("bill.total")}</span>
-          <span data-testid="bill-total" className="text-[32px] font-bold tabular-nums">
-            {formatAmount(total)}
-          </span>
-        </div>
-
-        {/* KB-303: one-level undo for a removed line (owner) - never a confirm
-            dialog, which would be a question mid-bill (hard rule 6). */}
-        {saved && (
-          <div role="status" aria-label={t("bill.savedLabel")} className="flex items-center gap-2 border-t border-line bg-surface px-4 py-2 font-medium text-ok">
-            <Check size={18} strokeWidth={1.5} aria-hidden />
-            <span>
-              {t("bill.savedBefore")} <ReceiptNumberText value={saved.receiptNumber} /> {t("bill.savedAfter")}
-            </span>
+        {/* The sticky panel (12-BillReview): what the bill adds up to, what Bill Banao waits for, and the two actions. */}
+        <div className="safe-bottom flex flex-col gap-[10px] border-t border-kb-border bg-kb-card pt-[14px] px-[18px] shadow-kb-panel">
+          {/* KB-303: one-level undo for a removed line (owner) - never a confirm dialog, which would be a question mid-bill (hard rule 6). */}
+          {removed && onUndo && !readOnly && (
+            <div role="status" className="flex items-center justify-between gap-3 text-kb-14">
+              <span className="min-w-0">{t("undo.removed", { name: removed.displayName })}</span>
+              <button type="button" onClick={onUndo} className="kb-hit min-h-[40px] flex-none px-3 text-kb-15 font-bold text-kb-primary">
+                {t("undo.button")}
+              </button>
+            </div>
+          )}
+          {saved && (
+            <div role="status" aria-label={t("bill.savedLabel")} className="flex items-center gap-2 text-kb-15 font-bold text-kb-ok">
+              <Icon icon={KB_ICONS.Check} size={18} />
+              <span>
+                {t("bill.savedBefore")} <ReceiptNumberText value={saved.receiptNumber} /> {t("bill.savedAfter")}
+              </span>
+            </div>
+          )}
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              {!readOnly && lines.length > 0 && <div className="text-kb-13 text-kb-sub">{soFar}</div>}
+              {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
+              {pending > 0 && !readOnly && (
+                <p id={pendingId} data-testid="checks-pending" className="mt-[2px] text-kb-13 font-bold text-kb-warn-text">
+                  {checksText(pending, t)}
+                </p>
+              )}
+              {!readOnly && lines.length === 0 && !saving && <p className="text-kb-13 text-kb-sub">{t("reason.emptyBill")}</p>}
+              {saving && <p className="text-kb-13 text-kb-sub">{t("reason.saving")}</p>}
+              {saveError && (
+                <p role="alert" className="text-kb-13 font-bold text-kb-err">
+                  {tx(saveError)}
+                </p>
+              )}
+            </div>
+            <div className="flex-none text-right">
+              <span className="sr-only">{t("bill.total")} </span>
+              <span data-testid="bill-total" className="whitespace-nowrap text-kb-30 font-extrabold tracking-[-0.5px] tabular-nums">
+                {formatAmount(total)}
+              </span>
+            </div>
           </div>
-        )}
 
-        {removed && onUndo && !readOnly && (
-          <div role="status" className="flex items-center justify-between border-t border-line px-4 text-[13px]">
-            <span>{t("undo.removed", { name: removed.displayName })}</span>
-            <button type="button" onClick={onUndo} className="min-h-11 px-3 font-medium text-indigo">
-              {t("undo.button")}
-            </button>
+          {!orderBar && <VoiceStatus voice={voice} onAddByHand={openAdd} />}
+          <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
+            {announcement}
           </div>
-        )}
 
-        {!orderBar && (
-          <div className="border-t border-line">
-            <VoiceStatus voice={voice} onAddByHand={openAdd} />
+          <div className="flex flex-wrap gap-[10px]">
+            {orderBar ? (
+              !readOnly && orderBar(() => openAdd?.(""))
+            ) : (
+              <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
+            )}
+            {readOnly ? (
+              <Button variant="primary" height={56} onClick={onNewBill} className="min-w-[150px] flex-1">
+                {t("bill.new")}
+              </Button>
+            ) : canFinalise ? (
+              <Button variant="primary" height={56} onClick={tapBillBanao} className="min-w-[150px] flex-1">
+                {t("bill.finalise")}
+              </Button>
+            ) : (
+              // KB-307: aria-disabled, not disabled - a tap while checks are pending must still land, to take the shopkeeper to the first one.
+              <Button variant="locked" reasonId={pending > 0 ? pendingId : undefined} onClick={tapBillBanao} className="min-w-[150px] flex-1">
+                {t("bill.finalise")}
+              </Button>
+            )}
           </div>
-        )}
-        <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
-          {announcement}
-        </div>
-
-        <div className="safe-bottom grid grid-cols-2 gap-2 px-4 pt-3">
-          {/* Add item (KB-305): disabled only while the shop catalog loads; Bill
-              Banao until KB-307. The reason is a tooltip only (owner, 27 Sep
-              2026) - a disabled button fires no hover events, so the title sits
-              on a wrapper. */}
-          {orderBar ? (
-            !readOnly && <div className="col-span-2">{orderBar(() => openAdd?.(""))}</div>
-          ) : (
-            <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
-          )}
-          <span title={canAdd ? undefined : t("voice.loadingCatalog")} className={orderBar ? "col-span-2" : undefined}>
-            <button
-              type="button"
-              disabled={!canAdd}
-              onClick={() => openAdd!("")}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink disabled:opacity-50"
-            >
-              <Plus size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
-              {t("add.title")}
-            </button>
-          </span>
-          {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
-          {pending > 0 && !readOnly && (
-            <p data-testid="checks-pending" className="col-span-2 text-center text-[13px] font-medium text-danger">
-              {checksText(pending, t)}
-            </p>
-          )}
-          {!readOnly && lines.length === 0 && !saving && <p className="col-span-2 text-center text-[13px] text-ink-soft">{t("reason.emptyBill")}</p>}
-          {saving && <p className="col-span-2 text-center text-[13px] text-ink-soft">{t("reason.saving")}</p>}
-          {saveError && (
-            <p role="alert" className="col-span-2 text-center text-[13px] font-medium text-danger">
-              {tx(saveError)}
-            </p>
-          )}
-          {readOnly ? (
-            <button type="button" onClick={onNewBill} className="col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface">
-              {t("bill.new")}
-            </button>
-          ) : (
-            // KB-307: aria-disabled, not disabled - a tap while checks are pending
-            // must still land, to take the shopkeeper to the first one.
-            <button
-              type="button"
-              aria-disabled={!canFinalise}
-              onClick={tapBillBanao}
-              className={`col-span-2 min-h-11 w-full rounded-[6px] bg-ink px-3 font-semibold text-surface ${canFinalise ? "" : "opacity-50"}`}
-            >
-              {t("bill.finalise")}
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -158,6 +158,11 @@ describe("BottomSheet (25-CancelBill) - the same Back / Escape / backdrop / focu
     expect(document.activeElement).toBe(last);
   });
 
+  it("a field inside that focuses itself on opening keeps the focus (KB-413: the hand-added line's quantity editor)", () => {
+    render(<BottomSheet backKey="kbKitSheet3" title="T" onClose={() => {}}><input aria-label="Qty" autoFocus /></BottomSheet>);
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Qty" }));
+  });
+
   it("focus goes back to where it was when the sheet closes", () => {
     const behind = () => screen.getByRole("button", { name: "Behind" });
     const { rerender } = render(<button type="button">Behind</button>);

@@ -20,6 +20,9 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
 } else if (import.meta.env.DEV && window.location.pathname === "/__dev/print") {
   // DEV ONLY (KB-408 S3): the print previews - rendered, encoded, decoded back from the printer bytes, saved to eval/print-preview/.
   void import("@/ui/DevPrintPreview").then(({ DevPrintPreview }) => root.render(<DevPrintPreview />));
+} else if (import.meta.env.DEV && window.location.pathname === "/__dev/screens") {
+  // DEV ONLY (KB-413): each rebuilt screen beside its whole approved design file (the owner's full-screen review).
+  void import("@/ui/DevScreens").then(({ DevScreens }) => root.render(<DevScreens />));
 } else if (import.meta.env.DEV && window.location.pathname === "/__dev/kit") {
   // DEV ONLY (KB-412): the kit gallery and its side-by-side sheet against docs/design/ (?view=compare).
   void import("@/ui/DevKitGallery").then(({ DevKitGallery }) => root.render(<DevKitGallery />));

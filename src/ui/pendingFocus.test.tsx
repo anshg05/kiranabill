@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { useEffect } from "react";
 import { parseUtterance } from "@/domain/grammar";
@@ -51,17 +51,7 @@ function Harness({ pre, custom }: { pre: ReturnType<typeof spoken>[]; custom?: s
   );
 }
 
-const rect = { x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10, toJSON: () => ({}) } as DOMRect;
 let scrolled: Element[] = [];
-
-/** Pretend CSS shows only the TABLE (desktop) - the card list is display:none. */
-function showOnlyTable() {
-  vi.spyOn(Element.prototype, "getClientRects").mockImplementation(function (this: Element) {
-    const inTable = this.closest("table") !== null;
-    const inCards = this.closest('[aria-label="Bill items"]') !== null;
-    return (inCards && !inTable ? [] : [rect]) as unknown as DOMRectList;
-  });
-}
 
 beforeEach(() => {
   scrolled = [];
@@ -77,24 +67,24 @@ afterEach(() => {
 });
 
 describe("KB-307 fix - focus goes to the pending item that is actually on screen", () => {
-  it("mounted narrow, now desktop (only the table rendered): the tap focuses the TABLE's first 'Theek hai', scrolled into view", () => {
+  // KB-413: one layout now (the phone layout, centred - D110 8.11); the table these two checks were about is gone.
+  it("the tap focuses the first 'Theek hai' on screen, scrolled into view", () => {
     render(<Harness pre={[spoken("1 kilo besan"), spoken("2 kilo chini 5 wala")]} />);
-    showOnlyTable(); // ... and is wide now: the cards are hidden
     act(() => screen.getByRole("button", { name: "Bill Banao" }).click());
     const active = document.activeElement as HTMLElement;
     expect(active.getAttribute("aria-label")).toMatch(/^Theek hai — Chini/);
-    expect(active.closest("table")).not.toBeNull();
+    expect(active.closest('[aria-label="Bill items"]')).not.toBeNull();
     expect(scrolled).toContain(active);
   });
 
-  it("a missing amount: the table's amount field, scrolled into view", () => {
+  it("a missing amount: the Price needed line's own field, scrolled into view", () => {
     render(<Harness pre={[]} custom="kuch naya" />);
+    if (screen.queryByRole("dialog")) fireEvent.keyDown(document, { key: "Escape" }); // the hand-added line's sheet
     act(() => (document.activeElement as HTMLElement | null)?.blur());
-    showOnlyTable();
     act(() => screen.getByRole("button", { name: "Bill Banao" }).click());
     const active = document.activeElement as HTMLElement;
     expect(active.getAttribute("aria-label")).toBe("kuch naya amount");
-    expect(active.closest("table")).not.toBeNull();
+    expect(active.tagName).toBe("INPUT");
     expect(scrolled).toContain(active);
   });
 

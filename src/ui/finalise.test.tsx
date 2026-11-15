@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect, type MutableRefObject } from "react";
 import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags } from "@/domain/reviewFlags";
@@ -13,6 +13,7 @@ import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
 import { useFinalise } from "./useFinalise";
 import { countedGetNumber } from "@/data/testNumbers";
+import { billQueries, lineSheet } from "./testLineSheet";
 
 // KB-307 commit 2 (owner, 3 Oct 2026): Bill Banao. Enabled only with >=1 line
 // AND pending = 0 ("Price needed" included); tapping it while not enabled
@@ -94,7 +95,8 @@ function Harness({ pre = [], api, onMicTap = () => {} }: Props) {
 const billBanao = () => screen.getByRole("button", { name: "Bill Banao" });
 const isDisabled = (b: HTMLElement) => b.getAttribute("aria-disabled") === "true";
 const pendingText = () => screen.queryByTestId("checks-pending")?.textContent ?? null;
-const cards = () => within(screen.getByRole("list", { name: "Bill items" }));
+// KB-413: a line's editors are in its sheet (a hand-added line opens it) - billQueries looks there for editors, else everywhere.
+const cards = billQueries;
 
 async function tapBillBanao() {
   await act(async () => {
@@ -225,8 +227,8 @@ describe("KB-307 - finalise and the saved screen", () => {
   it("KB-307 commit 3: a removed voice line is kept on the saved bill (for learning); one brought back by Undo is not", async () => {
     const api: MutableRefObject<BillLines | null> = { current: null };
     render(<Harness api={api} pre={[spoken("2 kilo चिनी"), spoken("1 kilo besan"), spoken("1 kilo maida")]} />);
-    act(() => screen.getAllByRole("button", { name: "Remove Chini" })[0]!.click());
-    act(() => screen.getAllByRole("button", { name: "Remove Maida" })[0]!.click());
+    act(() => lineSheet("Chini").getByRole("button", { name: "Remove Chini" }).click()); // KB-413: in the line's sheet
+    act(() => lineSheet("Maida").getByRole("button", { name: "Remove Maida" }).click()); // KB-413: in the line's sheet
     act(() => screen.getByRole("button", { name: "Undo" }).click()); // Maida comes back
     const localId = api.current!.localId;
     await tapBillBanao();
@@ -242,7 +244,7 @@ describe("KB-307 - finalise and the saved screen", () => {
     render(<Harness pre={[spoken("1 kilo besan")]} />);
     await tapBillBanao();
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(SAVE_FAILED));
-    expect(screen.getAllByRole("button", { name: "Besan quantity" }).length).toBeGreaterThan(0);
+    expect(lineSheet("Besan").getByRole("button", { name: "Besan quantity" })).toBeTruthy(); // still editable (KB-413: in its sheet)
     expect(isDisabled(billBanao())).toBe(false);
     expect(await db.bills.count()).toBe(0);
     db.bills.hook("creating").unsubscribe(fail);

@@ -9,6 +9,7 @@ import { formatAmount, formatRate } from "./billFormat";
 import { IDLE_VOICE, NO_ITEM_FOUND, OFFLINE_REASON, type VoiceView } from "./useVoiceBilling";
 import voiceCases from "../../eval/voice-cases.json";
 import numberBenchmark from "../../eval/number-benchmark.json";
+import { lineSheet } from "./testLineSheet";
 
 // docs/07-DECISIONS.md D39: UI tests render REAL parseUtterance() output from
 // the eval fixtures - never hand-built bills.
@@ -33,12 +34,15 @@ function one(id: string): ParsedItem {
   return line;
 }
 
-/** Table body row n (row 0 is the header), as its cells' text - a unit
- * picker read as its chosen value (KB-303: the bill is always editable). */
-function dataRowCells(n: number): (string | null)[] {
-  const row = within(screen.getByRole("table")).getAllByRole("row")[n];
-  if (!row) throw new Error(`no table row ${n}`);
-  return within(row).getAllByRole("cell").map((c) => c.querySelector("select")?.value ?? c.textContent);
+/** KB-413: a line's numbers as the screen shows them - the card's detail and amount, and every editor in its sheet (the unit picker
+ *  read as its chosen value). Replaces the desktop table's row cells (the table is gone - D110 8.11). */
+function lineNumbers(name: string): { detail: string; amount: string; qty: string; unit: string; rate: string; editAmount: string } {
+  const card = within(within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem").find((c) => c.textContent!.includes(name))!);
+  const amount = card.getByText(/^(₹|—)/, { selector: "div" }).textContent!;
+  const detail = card.getByText((_, el) => el?.tagName === "SPAN" && /×|—|kg|gm|piece|packet|liter|ml/.test(el.textContent ?? "") && !el.querySelector("span")).textContent!;
+  const sheet = lineSheet(name);
+  const v = (f: string) => sheet.getByRole("button", { name: `${name} ${f}` }).textContent!;
+  return { detail, amount, qty: v("quantity"), unit: (sheet.getByRole("combobox", { name: `${name} unit` }) as HTMLSelectElement).value, rate: v("rate"), editAmount: v("amount") };
 }
 
 function nbExpected(id: string) {
@@ -47,13 +51,9 @@ function nbExpected(id: string) {
   return fixture.expected;
 }
 
-/** Both markups are in the DOM (CSS picks one per width), so every check
- * runs against both: the table (md and up) and the card list (mobile). */
+/** KB-413: one markup now - the card list (the phone layout everywhere, D110 8.11). */
 function views() {
-  return [
-    within(screen.getByRole("table")),
-    within(screen.getByRole("list", { name: "Bill items" })),
-  ];
+  return [within(screen.getByRole("list", { name: "Bill items" }))];
 }
 
 /** KB-303: the bill is always editable - lines carry ids, handlers are set. */
@@ -82,7 +82,7 @@ describe("BillView", () => {
     const expected = nbExpected("NB101");
     renderBill(parsed("NB101"));
     for (const v of views()) {
-      expect(v.getByText("₹45/kg")).toBeTruthy();
+      expect(v.getByText(/× ₹45\/kg$/)).toBeTruthy(); // the card's detail: "500 gm × ₹45/kg"
       expect(v.getAllByText(formatRupees(expected.total as number)).length).toBeGreaterThan(0);
     }
     expect(screen.getByTestId("bill-total").textContent).toBe("₹22.50");
@@ -93,14 +93,14 @@ describe("BillView", () => {
     expect([line.unit, line.rateUnit]).toEqual(["packet", "piece"]); // the case this rule exists for
     renderBill([line]);
     for (const v of views()) {
-      expect(v.queryByText("₹60/piece")).toBeNull();
+      expect(v.queryByText(/₹60\/piece/)).toBeNull();
       expect(v.getAllByText("₹60").length).toBeGreaterThan(0);
     }
   });
 
   it("VC013 '5 kg chawal 30 ka': total-only line - rate '—', amount ₹30", () => {
     renderBill(parsed("VC013"));
-    expect(dataRowCells(1)).toEqual(["chawal", "5", "kg", "—", "₹30", ""]); // KB-303: + the ✕ cell
+    expect(lineNumbers("chawal")).toEqual({ detail: "5 kg", amount: "₹30", qty: "5", unit: "kg", rate: "—", editAmount: "₹30" }); // no rate: the card shows only what it has
     expect(screen.getByTestId("bill-total").textContent).toBe("₹30");
   });
 
@@ -108,15 +108,10 @@ describe("BillView", () => {
     const line = one("VC016");
     expect(line.qty).toBeNull();
     renderBill([line]);
-    const cells = dataRowCells(1);
-    expect(cells[1]).toBe("—");
-    expect(cells).not.toContain("0");
-    // Card: qty "—" (and rate "—": a total-only line), amount ₹180.
-    // KB-303: checked value by value - the card now holds a unit picker.
-    const card = within(within(screen.getByRole("list", { name: "Bill items" })).getByRole("listitem"));
-    expect(card.getByRole("button", { name: "sabun quantity" }).textContent).toBe("—");
-    expect(card.getByRole("button", { name: "sabun rate" }).textContent).toBe("—");
-    expect(card.getByRole("button", { name: "sabun amount" }).textContent).toBe("₹180");
+    const n = lineNumbers("sabun");
+    expect(n.detail).toBe("—"); // the card: qty "—", never 0 (and no rate: a total-only line)
+    expect(Object.values(n)).not.toContain("0");
+    expect([n.qty, n.rate, n.editAmount, n.amount]).toEqual(["—", "—", "₹180", "₹180"]); // the sheet's editors and the card's amount
   });
 
   it("VC023 mixed rate/total lines: TOTAL is the sum of the parsed line totals", () => {
@@ -132,7 +127,7 @@ describe("BillView", () => {
   it("KB-302 (Q5b): a Layer 2 line shows the shop entry's name, not Gemini's spoken text", () => {
     const [item] = parsed("VC023");
     render(<BillView lines={[{ id: "l0", item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} onSignOut={() => {}} {...editing} />);
-    expect(within(screen.getByRole("table")).getByText("Toor Daal")).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Bill items" })).getByText("Toor Daal")).toBeTruthy();
     expect(screen.queryByText("तूर दाल")).toBeNull();
   });
 

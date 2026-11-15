@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { Loader2, Mic, Pause, Play, RotateCcw, Sparkles, Square, Trash2, TriangleAlert } from "lucide-react";
+import { Loader2, Pause, Play, RotateCcw, Sparkles, Square, TriangleAlert } from "lucide-react";
 import type { LocalVoiceRecording } from "@/data/db";
 import { ORDER_RECORDING, useVoiceCapture } from "./useVoiceCapture";
 import type { VoiceOrders } from "./useVoiceOrders";
 import { useT } from "./useT";
+import { HeardCard } from "./kit/HeardCard";
+import { InfoBanner } from "./kit/Banner";
+import { Icon, KB_ICONS } from "./kit/icons";
 
 // KB-385 step 5 (owner, 10 Nov 2026; D101, doc 25 §5 and §8): the V3 voice screens - ONE path for every order.
 //   OrderRecorder (the bar): tap -> a timer of recorded time -> Pause / Resume -> Stop (or 5:00, warned at 4:30) -> listen -> Re-record or
@@ -60,7 +63,7 @@ export function OrderRecorder({
 
   if (take) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full flex-col gap-2">
         {take.stopped && <p className="text-[13px] text-ink-soft">{t(take.stopped === "limit" ? "order.stoppedLimit" : "order.stoppedHidden")}</p>}
         <audio controls src={take.url} aria-label={t("order.listen")} className="w-full" />
         <div className="flex gap-2">
@@ -87,7 +90,7 @@ export function OrderRecorder({
   if (capture.phase === "listening" || capture.phase === "paused" || capture.phase === "stopping") {
     const paused = capture.phase === "paused";
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-[13px] text-ink-soft">{paused ? t("order.paused") : null}</span>
           <span className={`font-semibold tabular-nums ${paused ? "" : "text-danger"}`}>{mmss(capture.elapsedMs)}</span>
@@ -108,7 +111,7 @@ export function OrderRecorder({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${hasLines && !nothing && !capture.error && !disabledReason ? "" : "w-full"}`}>
       {(nothing || capture.error) && (
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-danger">
           <TriangleAlert size={16} strokeWidth={1.5} aria-hidden />
@@ -119,9 +122,21 @@ export function OrderRecorder({
         </div>
       )}
       {disabledReason && <p className="text-[13px] text-ink-soft">{tx(disabledReason)}</p>}
-      <button type="button" onClick={start} disabled={!!disabledReason || capture.phase === "requesting"} className={`${primary} w-full`}>
-        {capture.phase === "requesting" ? <Loader2 {...icon} className="animate-spin" /> : <Mic {...icon} />}
-        {nothing ? t("order.rerecord") : t(hasLines ? "order.recordMore" : "order.record")}
+      {/* KB-413 step 1: on 12 "More" (secondary, the mic) sits beside Bill Banao; its name still says what it does. An empty bill:
+          the full-width primary "Record order". The recording / listening states (09 / 10) are KB-413 step 2. */}
+      <button
+        type="button"
+        onClick={start}
+        aria-label={hasLines && !nothing ? t("order.recordMore") : undefined}
+        disabled={!!disabledReason || capture.phase === "requesting"}
+        className={
+          hasLines && !nothing
+            ? "font-kb kb-press kb-hit box-content flex min-h-[56px] items-center justify-center gap-2 rounded-[16px] border border-kb-border bg-kb-card px-[18px] text-kb-15 font-bold text-kb-ink disabled:opacity-50"
+            : "font-kb kb-press kb-hit flex min-h-[56px] w-full items-center justify-center gap-[10px] rounded-[16px] bg-kb-primary text-kb-16 font-bold text-kb-card shadow-kb-primary disabled:opacity-50"
+        }
+      >
+        {capture.phase === "requesting" ? <Loader2 {...icon} className="animate-spin" /> : <Icon icon={KB_ICONS.Mic} size={19} />}
+        {nothing ? t("order.rerecord") : hasLines ? t("order.more") : t("order.record")}
       </button>
     </div>
   );
@@ -137,10 +152,14 @@ const FAILED_TEXT: Record<string, Parameters<ReturnType<typeof useT>["t"]>[0]> =
 export function OrderEntries({
   orders,
   onAddByHand,
+  part,
 }: {
   orders: Pick<VoiceOrders, "recordings" | "sending" | "offline" | "retry" | "remove">;
   /** Opens the add panel with these words (the transcript, or nothing). */
   onAddByHand?: (query: string) => void;
+  /** KB-413: "heard" = the recordings already in the bill (their Heard cards, shown above the lines on 12); "pending" = the ones not
+   *  in the bill yet (being read, queued offline, failed - shown under the lines, owner's answer 3). Both when not given. */
+  part?: "heard" | "pending";
 }) {
   const { t } = useT();
   const reading = orders.recordings.some((r) => orders.sending.has(r.recordingId));
@@ -150,24 +169,24 @@ export function OrderEntries({
     const timer = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(timer);
   }, [reading]);
-  if (orders.recordings.length === 0) return null;
-
+  const shown = orders.recordings.filter((r) => (part === "heard" ? r.state === "appended" : part === "pending" ? r.state !== "appended" : true));
+  if (shown.length === 0) return null;
   const entry = (r: LocalVoiceRecording) => {
     if (r.state === "appended") {
       const empty = (r.items ?? []).length === 0;
       return (
-        <li key={r.recordingId} className={`border-b border-line bg-surface px-4 py-1 text-[13px] ${empty ? "border-l-[3px] border-l-danger" : ""}`}>
-          <span className="text-ink-soft">{t("flag.heard", { text: r.transcript ?? "" })}</span>
+        <li key={r.recordingId} className="flex flex-col gap-2">
+          <HeardCard label={t("heard.label")} text={`“${r.transcript ?? ""}”`} expandLabel={t("heard.more")} collapseLabel={t("heard.less")} />
           {empty && (
-            <span className="flex flex-wrap items-center gap-2 text-danger">
-              <TriangleAlert size={16} strokeWidth={1.5} aria-hidden />
-              {t("order.noItems")}
+            <div className="font-kb flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] border-kb-warn-border bg-kb-warn-bg py-[10px] px-[14px] text-kb-14 font-bold text-kb-warn-text">
+              <Icon icon={KB_ICONS.TriangleAlert} size={17} />
+              <span className="min-w-0 flex-1">{t("order.noItems")}</span>
               {onAddByHand && (
-                <button type="button" onClick={() => onAddByHand(r.transcript ?? "")} className={`${secondary} ml-auto`}>
+                <button type="button" onClick={() => onAddByHand(r.transcript ?? "")} className="kb-hit flex-none whitespace-nowrap min-h-[44px] rounded-[12px] border border-kb-border bg-kb-card px-3 text-kb-14 font-bold text-kb-ink">
                   {t("byhand.button")}
                 </button>
               )}
-            </span>
+            </div>
           )}
         </li>
       );
@@ -175,36 +194,50 @@ export function OrderEntries({
     if (orders.sending.has(r.recordingId)) {
       const s = Math.max(0, Math.round((Date.now() - new Date(r.createdAt).getTime()) / 1000));
       return (
-        <li key={r.recordingId} className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2 text-[13px] text-ink">
-          <Loader2 size={16} strokeWidth={1.5} aria-hidden className="animate-spin" />
-          {t("order.reading", { s })}
+        <li key={r.recordingId}>
+          <InfoBanner icon={KB_ICONS.Mic} title={t("order.reading", { s })} busy />
         </li>
       );
     }
-    const text = r.state === "queued" ? t("order.queued") : t(FAILED_TEXT[r.reason ?? ""] ?? "order.couldntRead");
-    const failed = r.state !== "queued";
-    return (
-      <li key={r.recordingId} data-severity={failed ? "HIGH" : undefined} className={`flex flex-wrap items-center gap-x-2 border-b border-line bg-surface px-4 py-1 text-[13px] ${failed ? "border-l-[3px] border-l-danger text-danger" : "text-ink"}`}>
-        {failed && <TriangleAlert size={16} strokeWidth={1.5} aria-hidden className="shrink-0" />}
-        <span>{text}</span>
-        <span className="ml-auto flex items-center gap-1">
-          {failed && (
-            <button type="button" data-pending-target onClick={() => void orders.retry(r.recordingId)} className="min-h-11 rounded-[6px] border border-danger bg-transparent px-3 font-medium text-danger">
-              {t("retry.button")}
-            </button>
-          )}
+    if (r.state === "queued") {
+      // offline (24-Offline's banner); "Add by hand" meanwhile stays, as today
+      return (
+        <li key={r.recordingId} className="flex flex-col gap-2">
+          <InfoBanner icon={KB_ICONS.Cloud} title={t("order.queued")} busy />
           {onAddByHand && (
-            <button type="button" onClick={() => onAddByHand("")} className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink">
+            <button type="button" onClick={() => onAddByHand("")} className="kb-hit self-start whitespace-nowrap min-h-[44px] rounded-[12px] border border-kb-border bg-kb-card px-3 text-kb-14 font-bold text-kb-ink">
               {t("byhand.button")}
             </button>
           )}
-          <button type="button" aria-label={t("order.remove")} onClick={() => void orders.remove(r.recordingId)} className="flex min-h-11 min-w-11 items-center justify-center text-ink-soft">
-            <Trash2 size={18} strokeWidth={1.5} aria-hidden />
+        </li>
+      );
+    }
+    // failed: Retry (the SAME recording) / Add by hand / Remove as a text button (owner, 15 Nov 2026, answer 3)
+    return (
+      <li key={r.recordingId} data-severity="HIGH" className="font-kb flex flex-col gap-[10px] rounded-[16px] border-[1.5px] border-kb-warn-border bg-kb-warn-bg py-3 px-[14px]">
+        <div className="flex items-center gap-[6px] text-kb-14 font-bold text-kb-warn-text">
+          <Icon icon={KB_ICONS.TriangleAlert} size={17} />
+          <span className="min-w-0">{t(FAILED_TEXT[r.reason ?? ""] ?? "order.couldntRead")}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" data-pending-target onClick={() => void orders.retry(r.recordingId)} className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card">
+            {t("retry.button")}
           </button>
-        </span>
+          {onAddByHand && (
+            <button type="button" onClick={() => onAddByHand("")} className="kb-hit flex-none whitespace-nowrap min-h-[48px] rounded-[12px] border border-kb-border bg-kb-card px-4 text-kb-15 font-bold text-kb-ink">
+              {t("byhand.button")}
+            </button>
+          )}
+          <button type="button" aria-label={t("order.remove")} onClick={() => void orders.remove(r.recordingId)} className="kb-hit flex-none whitespace-nowrap min-h-[48px] px-2 text-kb-15 font-bold text-kb-sub">
+            {t("col.remove")}
+          </button>
+        </div>
       </li>
     );
   };
-
-  return <ul aria-label={t("order.list")}>{orders.recordings.map(entry)}</ul>;
+  return (
+    <ul aria-label={t("order.list")} className="flex flex-col gap-[10px]">
+      {shown.map(entry)}
+    </ul>
+  );
 }

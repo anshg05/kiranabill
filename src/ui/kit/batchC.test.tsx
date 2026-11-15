@@ -58,7 +58,7 @@ describe("BillLine and PriceNeededLine (12-BillReview)", () => {
     has(screen.getByText("₹90"), "text-kb-17", "font-extrabold");
     const edit = screen.getByRole("button", { name: "Edit चीनी" });
     has(edit, "w-10", "h-10", "rounded-[10px]", "bg-kb-muted", "text-kb-sub", "kb-hit-icon");
-    has(edit.parentElement!, "bg-kb-card", "border", "border-kb-border", "rounded-[16px]", "py-3", "px-[14px]");
+    has(edit.parentElement!.parentElement!, "bg-kb-card", "border", "border-kb-border", "rounded-[16px]", "py-3", "px-[14px]"); // the card holds the line and its check rows (KB-413)
     fireEvent.click(edit);
     expect(onEdit).toHaveBeenCalledOnce();
   });
@@ -249,6 +249,38 @@ describe("right-side actions stay inside; words wrap on the left; chips never br
     has(screen.getByText("दाने").parentElement!, "min-w-0");
     has(screen.getByText("Price needed"), "flex-none", "whitespace-nowrap");
     has(screen.getByRole("button", { name: "Add" }), "flex-none", "whitespace-nowrap");
+  });
+});
+
+describe("KB-413 step 1: the line parts on the real bill screen", () => {
+  it("a line with an open check takes the Price needed pattern - warn (HIGH) or error (BLOCK) - and its check sits inside the card", () => {
+    const { rerender, container } = render(<BillLine name="चीनी" detail="2 kg" amount="₹90" editLabel="Edit चीनी" onEdit={() => {}} tone="warn"><p>the check</p></BillLine>);
+    has(container.firstElementChild!, "bg-kb-warn-bg", "border-[1.5px]", "border-kb-warn-border");
+    expect(container.firstElementChild!.textContent).toContain("the check");
+    has(screen.getByText("2 kg"), "text-kb-warn-text");
+    rerender(<BillLine name="चीनी" detail="2 kg" amount="₹90" editLabel="Edit चीनी" onEdit={() => {}} tone="err" />);
+    has(container.firstElementChild!, "bg-kb-err-pale", "border-kb-err");
+    has(screen.getByText("2 kg"), "text-kb-err");
+  });
+
+  it("Price needed: Enter adds like the button; a refused value says why under the field; the field is where Bill Banao sends focus; the edit sheet stays reachable", () => {
+    const onAdd = vi.fn();
+    const onEdit = vi.fn();
+    render(<PriceNeededLine name="दाने" detail="1 kg" needLabel="Price needed" inputLabel="दाने amount" placeholder="Amount" value="12" onChange={() => {}} addLabel="Add" onAdd={onAdd} error="Too big" pendingTarget editLabel="Edit दाने" onEdit={onEdit} />);
+    const input = screen.getByLabelText("दाने amount");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onAdd).toHaveBeenCalledOnce();
+    expect(input.hasAttribute("data-pending-target")).toBe(true);
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("alert").textContent).toBe("Too big");
+    fireEvent.click(screen.getByRole("button", { name: "Edit दाने" }));
+    expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it("a quantity needed has no ₹ and the number keyboard", () => {
+    render(<PriceNeededLine name="दाने" detail="₹150" needLabel="Quantity needed" inputLabel="दाने quantity" placeholder="Qty" value="" onChange={() => {}} addLabel="Add" onAdd={() => {}} prefix="" inputMode="numeric" />);
+    expect(screen.queryByText("₹")).toBeNull();
+    expect(screen.getByLabelText("दाने quantity").getAttribute("inputmode")).toBe("numeric");
   });
 });
 

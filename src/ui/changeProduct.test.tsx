@@ -9,6 +9,7 @@ import type { BillLine } from "@/data/voiceBilling";
 import { AddItemSheet } from "./AddItemSheet";
 import { BillView } from "./BillingScreen";
 import { useBillLines, wasEdited } from "./useBillLines";
+import { billQueries } from "./testLineSheet";
 
 // KB-336 (D83): tap a line's name -> search -> pick. The line keeps its quantity, its flags are recomputed, and a saved bill
 // has no such tap target. Real parser output (D39).
@@ -48,7 +49,8 @@ function Harness({ transcripts, saved = null }: { transcripts: string[]; saved?:
     />
   );
 }
-const table = () => within(screen.getByRole("table"));
+// KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
+const table = billQueries;
 
 describe("the hook", () => {
   it("changeProduct replaces the line's product: name and price follow the catalog, quantity stays, it counts as an edit", () => {

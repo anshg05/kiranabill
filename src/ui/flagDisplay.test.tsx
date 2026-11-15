@@ -9,6 +9,7 @@ import { checkLayer2NumberOrder, evaluateReviewFlags, type ReviewFlag } from "@/
 import type { BillLine } from "@/data/voiceBilling";
 import { BillView } from "./BillingScreen";
 import { useBillLines } from "./useBillLines";
+import { billQueries, nthLineSheet } from "./testLineSheet";
 
 // KB-304 - flag display + "Theek hai" (05-FRONTEND-SPEC.md §2 "Line flags",
 // §8 rule 5, §9; 13-DESIGN §6b). D39: every line is REAL parser output - Layer
@@ -71,13 +72,14 @@ function Harness({ utterances }: { utterances: Utterance[] }) {
   );
 }
 
-const table = () => within(screen.getByRole("table"));
+// KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
+const table = billQueries;
 const pending = () => screen.queryByTestId("checks-pending")?.textContent ?? null;
 const announcer = () => screen.getByTestId("flag-announcer").textContent;
 
 /** Type into the n-th value editor with this name (two lines may share a name). */
 function typeNth(label: string, n: number, value: string) {
-  act(() => table().getAllByRole("button", { name: label })[n]!.click());
+  act(() => nthLineSheet(label, n).getByRole("button", { name: label }).click());
   const input = table().getByRole("textbox", { name: label });
   fireEvent.change(input, { target: { value } });
   fireEvent.keyDown(input, { key: "Enter" });
@@ -96,9 +98,9 @@ describe("KB-304 - HIGH: inline sentence, icon, 'Theek hai', blocks until acknow
     expect(pending()).toBe("1 check pending");
   });
 
-  it("before Theek hai the line has the red edge (the check is loud)", () => {
+  it("before Theek hai the line's card is the warn card (the check is loud; KB-413, owner answer 8)", () => {
     render(<Harness utterances={[layer1(RT20)]} />);
-    expect(document.querySelectorAll("[class*='border-l-danger']").length).toBeGreaterThan(0);
+    expect(document.querySelectorAll("[class*='bg-kb-warn-bg']").length).toBeGreaterThan(0);
   });
 
   it("'Theek hai' (KB-363b): pending 0; the warning COLLAPSES to a tiny ✓ - the line looks normal; the detail opens on a tap", () => {
@@ -148,9 +150,8 @@ describe("KB-304 - bill-level flags: a block under the utterance's last line, wi
     ]);
     expect(ki45.flags.filter((f) => f.itemIndex === null).map((f) => f.code).sort()).toEqual(["number_dropped", "number_misaligned", "qty_dropped"]);
     render(<Harness utterances={[ki45]} />);
-    const rows = table().getAllByRole("row");
-    expect(rows[2]!.textContent).toContain("Surf Excel");
-    const block = rows[3]!;
+    // KB-413: the bill-level check sits inside the card of the utterance's last line (Surf Excel)
+    const block = within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem").find((c) => c.textContent!.includes("Surf Excel"))!;
     expect(block.textContent).toContain("Heard: “500 ग्राम जीरा और एक पैकेट सर्फ एक्सल”");
     expect(within(block).getAllByRole("button", { name: /^Theek hai/ })).toHaveLength(1);
     expect(block.textContent).toContain("Check these lines' numbers");
@@ -161,7 +162,7 @@ describe("KB-304 - bill-level flags: a block under the utterance's last line, wi
     expect(pending()).toBeNull();
     expect(table().queryByText(/Heard: “500/)).toBeNull();
     expect(table().queryByText("Check these lines' numbers")).toBeNull();
-    act(() => within(table().getAllByRole("row")[3]!).getByRole("button", { name: /^Checked/ }).click());
+    act(() => within(block).getByRole("button", { name: /^Checked/ }).click());
     expect(table().getByText(/Heard: “500/)).toBeTruthy();
     expect(table().getByText(/Couldn't match every number/)).toBeTruthy();
   });
@@ -185,7 +186,7 @@ describe("KB-304 - bill-level flags: a block under the utterance's last line, wi
       gemini({ spokenName: "Parle-G", catalogId: "52", qty: 2, unit: "piece", rate: 1000, rateUnit: "piece", total: 2000, priceType: "rate" }),
     ]);
     render(<Harness utterances={[swapped]} />);
-    const block = table().getAllByRole("row")[3]!;
+    const block = within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem").at(-1)!; // KB-413: inside the last line's card
     expect(block.textContent).toContain("Check these lines' numbers");
     expect(pending()).toBe("1 check pending");
   });

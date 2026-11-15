@@ -111,6 +111,7 @@
   --shadow-kb-segment: 0 2px 6px rgba(38, 50, 56, .10);
   --shadow-kb-knob: 0 1px 3px rgba(0, 0, 0, .2);
   --shadow-kb-hero: 0 10px 26px rgba(38, 50, 56, .07); /* 26-FirstDay's hero card */
+  --shadow-kb-panel: 0 -8px 20px rgba(38, 50, 56, .05); /* 12-BillReview's sticky bottom panel */
   --shadow-kb-mic-lg: 0 14px 30px rgba(37, 99, 217, .32); /* 09-Recording's 132 px mic */
   --shadow-kb-logo: 0 10px 24px rgba(37, 99, 217, .22); /* the logo on 05 / 08 */
   --drop-shadow-kb-receipt: 0 10px 22px rgba(38, 50, 56, .10); /* the receipt paper (13, 15) - a drop shadow, so the torn edge casts it too */

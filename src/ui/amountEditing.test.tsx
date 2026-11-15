@@ -9,6 +9,7 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import type { BillLine } from "@/data/voiceBilling";
 import { BillView } from "./BillingScreen";
 import { useBillLines, wasEdited } from "./useBillLines";
+import { billQueries } from "./testLineSheet";
 
 // KB-337 (D85): the amount can be typed on EVERY line - a voice line, an Add item line, a custom line - and the rate can
 // be cleared or typed on any line, with or without a unit or a qty. Real parser output (D39).
@@ -42,7 +43,8 @@ function Harness({ transcripts = [], hand = [] }: { transcripts?: string[]; hand
   return <BillView lines={bill.rows} onSignOut={() => {}} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} />;
 }
 
-const table = () => within(screen.getByRole("table"));
+// KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
+const table = billQueries;
 const total = () => screen.getByTestId("bill-total").textContent;
 /** What is on the screen as a check - the screen-reader announcer keeps its last sentence until the next one, so it is left out. */
 const visible = (re: RegExp) => screen.queryAllByText(re).filter((e) => !e.closest('[data-testid="flag-announcer"]'));

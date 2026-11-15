@@ -10,6 +10,7 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
 import { NO_ITEM_FOUND, type VoiceView } from "./useVoiceBilling";
+import { billQueries } from "./testLineSheet";
 
 // KB-305 (owner, 2 Oct 2026) - add an item by hand (05 S3a): a NON-modal
 // panel over the item list (TOTAL, mic and Bill Banao stay usable); type-ahead
@@ -68,8 +69,8 @@ function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api }: Props) {
 const panel = () => screen.queryByRole("region", { name: "Add item" });
 const search = () => within(panel()!).getByRole("searchbox", { name: "Search products" }) as HTMLInputElement;
 const results = () => within(within(panel()!).getByRole("list", { name: "Products" })).queryAllByRole("button").map((b) => b.textContent);
-/** jsdom has no CSS: the editor opens in the mobile card view (no matchMedia). */
-const cards = () => within(screen.getByRole("list", { name: "Bill items" }));
+/** KB-413: a hand-added line opens its edit sheet with the quantity ready; billQueries looks in the sheet for editors, else everywhere. */
+const cards = billQueries;
 
 function open() {
   act(() => screen.getByRole("button", { name: "Add item" }).click());

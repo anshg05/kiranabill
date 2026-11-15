@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
 import { parseUtterance } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
@@ -13,6 +13,7 @@ import { BillView } from "./BillingScreen";
 import { useBillLines } from "./useBillLines";
 import { COMMAND_CLEAR_HINT, COMMAND_FINISH_HINT, COMMAND_NOTHING_TO_REMOVE, runBillCommand } from "./voiceCommands";
 import { useShopName } from "./useShopName";
+import { billQueries } from "./testLineSheet";
 
 // KB-338 (D86) '—' on every line's unit, KB-339 (D86) spoken commands run on the bill, KB-340 (D86) the shop's name in the header.
 // Real parser output (D39).
@@ -45,7 +46,8 @@ function Harness({ transcripts = [], hand = [] }: { transcripts?: string[]; hand
   return <BillView lines={bill.rows} onSignOut={() => {}} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} />;
 }
 
-const table = () => within(screen.getByRole("table"));
+// KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
+const table = billQueries;
 const total = () => screen.getByTestId("bill-total").textContent;
 const unitSelect = (name: string) => table().getByRole("combobox", { name }) as HTMLSelectElement;
 

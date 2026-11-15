@@ -66,8 +66,10 @@ describe("the bill screen", () => {
     for (const id of ["menu.history", "menu.catalog", "menu.settings", "menu.clear", "menu.signout"] as const) expect(screen.getAllByText(say(id, {}, l)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(say("bill.total", {}, l)).length).toBeGreaterThan(0);
     expect(screen.getByText(say("customer.label", {}, l))).toBeTruthy();
-    const table = within(screen.getByRole("table"));
-    for (const id of ["col.item", "col.qty", "col.unit", "col.rate", "col.amount"] as const) expect(table.getByText(say(id, {}, l))).toBeTruthy();
+    // KB-413: no table headers on the phone layout (D110 8.11); a line's sheet labels its editors in the chosen language
+    fireEvent.click(screen.getByRole("button", { name: say("catalog.editLabel", { name: "Chini" }, l) }));
+    const sheet = within(screen.getByRole("dialog", { name: say("catalog.editLabel", { name: "Chini" }, l) }));
+    for (const id of ["col.qty", "col.unit", "col.rate", "col.amount"] as const) expect(sheet.getByText(say(id, {}, l))).toBeTruthy();
     expect(screen.getByRole("button", { name: "Bill Banao" })).toBeTruthy();
     expect(screen.getByText("Cash")).toBeTruthy(); // the customer default is the English word on every screen
   });
@@ -75,7 +77,8 @@ describe("the bill screen", () => {
     const seen = LANGUAGES.map((l) => {
       use(l);
       const { unmount } = render(<BillView {...base} lines={lines()} />);
-      const t = [screen.getByTestId("bill-total").textContent, within(screen.getByRole("table")).getByRole("button", { name: say("line.quantity", { name: "Chini" }, l) }).textContent];
+      fireEvent.click(screen.getByRole("button", { name: say("catalog.editLabel", { name: "Chini" }, l) })); // KB-413: the editors are in the sheet
+      const t = [screen.getByTestId("bill-total").textContent, within(screen.getByRole("dialog")).getByRole("button", { name: say("line.quantity", { name: "Chini" }, l) }).textContent];
       unmount();
       return t;
     });
@@ -96,8 +99,10 @@ describe("the bill screen", () => {
   it("a line's own controls carry the product name in the chosen language's sentence", () => {
     use("hi");
     render(<BillView {...base} lines={lines()} catalog={SEED_PARSER_CATALOG} onChangeProduct={() => {}} />);
-    expect(screen.getAllByRole("button", { name: say("line.remove", { name: "Chini" }, "hi") }).length).toBeGreaterThan(0);
-    expect(within(screen.getByRole("table")).getByRole("button", { name: say("line.change", { name: "Chini" }, "hi") })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: say("catalog.editLabel", { name: "Chini" }, "hi") })); // KB-413: the line's sheet
+    const sheet = within(screen.getByRole("dialog", { name: say("catalog.editLabel", { name: "Chini" }, "hi") }));
+    expect(sheet.getByRole("button", { name: say("line.remove", { name: "Chini" }, "hi") })).toBeTruthy();
+    expect(sheet.getByRole("button", { name: say("line.change", { name: "Chini" }, "hi") })).toBeTruthy();
   });
   it("saved strip and Undo", () => {
     use("hi");
@@ -112,7 +117,7 @@ describe("flags: the sentence is translated, the buttons that must not change do
   it.each(LANGUAGES)("in %s", (l) => {
     use(l);
     render(<BillView {...base} lines={lines()} flags={[highFlag(english)]} pending={1} onAcknowledge={() => {}} onFinalise={() => {}} />);
-    const sentence = screen.getAllByText((_, el) => el?.tagName === "SPAN" && el.textContent !== null && el.textContent.includes("5") && el.className === "").map((e) => e.textContent)[0];
+    const sentence = screen.getAllByText((_, el) => el?.tagName === "SPAN" && el.textContent !== null && el.textContent.includes("5") && !!el.closest("[data-severity='HIGH']") && !el.classList.contains("sr-only")).map((e) => e.textContent)[0];
     expect(sentence).toBeTruthy();
     if (l === "en") expect(sentence).toBe(english);
     else expect(sentence).not.toBe(english);

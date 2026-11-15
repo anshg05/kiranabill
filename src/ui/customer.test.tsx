@@ -10,6 +10,7 @@ import { parseTranscript } from "@/data/voiceApi";
 import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
 import { useOrderResolver } from "./useOrderResolver";
+import { lineSheet } from "./testLineSheet";
 
 // KB-306 (owner, 3 Oct 2026; D6, D52): the customer on the bill - "Cash" by
 // default, an optional mobile stored as 10 digits. Editable any time, before
@@ -156,11 +157,11 @@ describe("KB-306 - the customer never touches the bill's lines", () => {
     render(<Harness api={api} pre={[spoken("2 kilo chini")]} />);
     edit(nameButton(), "Customer name", "Ramesh");
     edit(mobileButton(), "Customer mobile", "9876543210");
-    act(() => screen.getAllByRole("button", { name: "Chini quantity" })[0]!.click());
-    const qty = screen.getAllByRole("textbox", { name: "Chini quantity" })[0]!;
+    act(() => lineSheet("Chini").getByRole("button", { name: "Chini quantity" }).click()); // KB-413: in the line's sheet
+    const qty = screen.getByRole("textbox", { name: "Chini quantity" });
     fireEvent.change(qty, { target: { value: "3" } });
     fireEvent.keyDown(qty, { key: "Enter" });
-    act(() => screen.getAllByRole("button", { name: "Remove Chini" })[0]!.click());
+    act(() => lineSheet("Chini").getByRole("button", { name: "Remove Chini" }).click());
     act(() => screen.getByRole("button", { name: "Undo" }).click());
     expect(api.current!.customer).toEqual({ name: "Ramesh", mobile: "9876543210" });
   });

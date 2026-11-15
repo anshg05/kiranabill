@@ -8,6 +8,7 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import type { BillLine } from "@/data/voiceBilling";
 import { BillView } from "./BillingScreen";
 import { UNDO_MS, useBillLines, wasEdited } from "./useBillLines";
+import { billQueries } from "./testLineSheet";
 
 // KB-303 - editing and removing bill lines. D39: every line is REAL
 // parseUtterance() output, built into BillLines the way the screen builds them.
@@ -40,7 +41,8 @@ function Harness({ transcripts }: { transcripts: string[] }) {
   return <BillView lines={bill.rows} onSignOut={() => {}} onEdit={bill.edit} onRemove={bill.remove} removed={bill.removed} onUndo={bill.undo} />;
 }
 
-const table = () => within(screen.getByRole("table"));
+// KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
+const table = billQueries;
 const total = () => screen.getByTestId("bill-total").textContent;
 
 /** Tap a value in the table, type, press a key. */
@@ -182,7 +184,7 @@ describe("KB-303 - removing a line, with one-level undo", () => {
     expect(status.textContent).toContain("Chini removed");
     act(() => within(status).getByRole("button", { name: "Undo" }).click());
     expect(total()).toBe("₹180");
-    expect(within(screen.getByRole("table")).getAllByRole("row")[1]!.textContent).toContain("Chini"); // back first
+    expect(within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem")[0]!.textContent).toContain("Chini"); // back first
     expect(screen.queryByRole("status")).toBeNull();
   });
 

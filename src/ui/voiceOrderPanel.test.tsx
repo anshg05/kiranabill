@@ -163,6 +163,7 @@ describe("OrderEntries - each recording of the bill", () => {
     const r = row({ state: "failed", reason });
     const { orders, onAddByHand } = entries([r]);
     expect(screen.getByText(text)).toBeTruthy();
+    expect(button("Retry").hasAttribute("data-pending-target")).toBe(true); // a Bill Banao tap goes here first (KB-307)
     fireEvent.click(button("Retry"));
     expect(orders.retry).toHaveBeenCalledWith(r.recordingId);
     fireEvent.click(button("Add by hand"));
@@ -183,14 +184,14 @@ describe("OrderEntries - each recording of the bill", () => {
       row({ state: "appended", transcript: "2 किलो चीनी 45 रुपए किलो", items: [{}] }),
       row({ state: "appended", transcript: "फुटाने 102 रुपए किलो", items: [{}] }),
     ]);
-    expect(screen.getByText("Heard: “2 किलो चीनी 45 रुपए किलो”")).toBeTruthy();
-    expect(screen.getByText("Heard: “फुटाने 102 रुपए किलो”")).toBeTruthy();
+    expect(screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Heard: “2 किलो चीनी 45 रुपए किलो”")).toBeTruthy(); // KB-413: the Heard card ("Heard:" in bold)
+    expect(screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Heard: “फुटाने 102 रुपए किलो”")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
   });
 
   it("nothing understood: the transcript and 'No items found' -> Add by hand with those words", () => {
     const { onAddByHand } = entries([row({ state: "appended", transcript: "हाँ जी बोलिए", items: [] })]);
-    expect(screen.getByText("Heard: “हाँ जी बोलिए”")).toBeTruthy();
+    expect(screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "Heard: “हाँ जी बोलिए”")).toBeTruthy();
     expect(screen.getByText("No items found")).toBeTruthy();
     fireEvent.click(button("Add by hand"));
     expect(onAddByHand).toHaveBeenCalledWith("हाँ जी बोलिए");

@@ -26,9 +26,10 @@ describe("BillView with the V3 voice path", () => {
   });
 
   it("the order recorder replaces the old Tap to speak; the bill's recordings show under the lines", () => {
-    render(<BillView lines={lines} onSignOut={() => {}} {...editing} orderBar={() => <button type="button">RECORDER</button>} orderEntries={() => <p>ENTRIES</p>} />);
+    render(<BillView lines={lines} onSignOut={() => {}} {...editing} orderBar={() => <button type="button">RECORDER</button>} orderEntries={(_add, part) => <p>ENTRIES {part}</p>} />);
     expect(screen.getByRole("button", { name: "RECORDER" })).toBeTruthy();
-    expect(screen.getByText("ENTRIES")).toBeTruthy();
+    expect(screen.getByText("ENTRIES heard")).toBeTruthy(); // KB-413: the Heard cards above the lines
+    expect(screen.getByText("ENTRIES pending")).toBeTruthy(); // the ones not in the bill yet, under them
     expect(screen.queryByText("Tap to speak")).toBeNull();
   });
 

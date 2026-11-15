@@ -261,7 +261,7 @@ function BATCH_C_PARTS(): Part[] {
       ours: () => <BillCard title="Bill 512" meta="12:05 pm · 3 items" amount="₹640" cancelledLabel="Cancelled" onOpen={noop} printLabel="Print bill 512" onPrint={noop} /> },
     { name: "C / Bill line", find: { file: "12-BillReview.html", text: "चीनी", up: 2 },
       ours: () => <BillLine name="चीनी" detail="2 kg × ₹45" amount="₹90" editLabel="Edit चीनी" onEdit={noop} /> },
-    { name: "C / Bill line with a filled-price mark (the design's words 'your price'; the app says 'shop price' today - KB-413 decides)", find: { file: "12-BillReview.html", text: "टाटा नमक", up: 2 },
+    { name: "C / Bill line with a filled-price mark ('your price' - owner, 15 Nov 2026)", find: { file: "12-BillReview.html", text: "टाटा नमक", up: 2 },
       ours: () => <BillLine name="टाटा नमक" detail="1 pc × ₹30" amount="₹30" mark="your price" editLabel="Edit टाटा नमक" onEdit={noop} /> },
     { name: "C / Price needed line (the field's words come from the screen: rate or amount, as today - D110 8.8)", find: { file: "12-BillReview.html", text: "दाने", up: 3, first: true },
       ours: () => <Stateful start="">{(v, set) => <PriceNeededLine name="दाने" detail="1 kg" needLabel="Price needed" inputLabel="Price for दाने" placeholder="Price per kg" value={v} onChange={set} addLabel="Add" onAdd={noop} />}</Stateful> },
@@ -391,11 +391,13 @@ export function LanguageSample() {
 
 /** Owner, 15 Nov 2026: no two tap areas overlap. Each kb-hit area is its ::before, centred on the control; any two controls (neither
  *  inside the other) whose areas cross by more than half a pixel are listed. Shown at the top of every gallery view. */
-function TapAreaCheck() {
+export function TapAreaCheck() {
   const [text, setText] = useState("checking tap areas…");
   useEffect(() => {
     const id = window.setTimeout(() => {
-      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0);
+      // while a modal sheet is open only what is inside it can be tapped - the rest sits under its backdrop
+      const modal = document.querySelector<HTMLElement>('[aria-modal="true"]');
+      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0 && (!modal || modal.contains(e)));
       const areas = els.map((e) => {
         const r = e.getBoundingClientRect();
         const b = getComputedStyle(e, "::before");
@@ -422,7 +424,7 @@ function TapAreaCheck() {
 /** Reviewer, 15 Nov 2026: no part's content goes outside its own card / container. For every element of every part: it must sit
  *  inside its nearest "box" ancestor (a background, a border or clipping) within the part, and inside the part's width; and every line of
  *  words inside its box (measured on the text itself). A scrolling row (the filter chips) scrolls by design and is skipped. */
-function ContainmentCheck() {
+export function ContainmentCheck() {
   const [text, setText] = useState("checking containment…");
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -446,7 +448,9 @@ function ContainmentCheck() {
           if (r.left < pr.left - 0.5 || r.right > pr.right + 0.5) bad.push(`${name} outside the part`);
           else if (box && box !== part) {
             const b = box.getBoundingClientRect();
-            if (r.left < b.left - 0.5 || r.right > b.right + 0.5 || r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5) bad.push(`${name} outside its card`);
+            // a scrolling box (the bill's list) holds lines below its visible part by design: only sideways overflow counts there
+            const scrolls = getComputedStyle(box).overflow !== "visible";
+            if (r.left < b.left - 0.5 || r.right > b.right + 0.5 || (!scrolls && (r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5))) bad.push(`${name} outside its card`);
           }
         }
         // the words themselves: every line of text inside its nearest box (the invisible tap areas are not words)
