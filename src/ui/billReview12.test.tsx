@@ -195,5 +195,26 @@ describe("screen 12: the recorder's warnings are in the list, not the bottom pan
       vi.unstubAllGlobals();
     }
   });
+  it("the warning scrolls into view as it appears, as a failed recording does (it may start below the fold at 130% text)", async () => {
+    const { OrderRecorder } = await import("./VoiceOrderPanel");
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn(async () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }))) } });
+    vi.stubGlobal("MediaRecorder", class {});
+    const scrolled: Element[] = [];
+    const spy = vi.fn(function (this: Element, opts?: ScrollIntoViewOptions) { if (opts?.block === "end") scrolled.push(this); });
+    Element.prototype.scrollIntoView = spy;
+    try {
+      render(
+        <BillView {...base} lines={[row("l1", "चीनी")]} pending={0} onFinalise={() => {}}
+          orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
+      );
+      scrolled.length = 0;
+      await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Add more by voice" })));
+      const warning = screen.getByText(/Mic permission denied/);
+      expect(scrolled.some((el) => el.contains(warning))).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
 });
 

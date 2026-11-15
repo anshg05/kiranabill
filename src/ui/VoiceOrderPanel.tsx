@@ -187,6 +187,11 @@ export function OrderRecorder({
       {disabledReason && <p className="font-kb text-kb-13 text-kb-sub">{tx(disabledReason)}</p>}
     </div>
   );
+  // the warning row is the answer to a tap - bring it into view as the list does a failed recording (05 §2)
+  const warning = nothing ? t("order.nothing") : capture.error?.message;
+  useEffect(() => {
+    if (warning && noteSlot) noteSlot.scrollIntoView?.({ block: "end" });
+  }, [warning, noteSlot]);
 
   return (
     <div className={`flex flex-col gap-2 ${hasLines ? "" : "w-full"}`}>
