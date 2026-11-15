@@ -104,6 +104,7 @@ describe("the order recorder (KB-385)", () => {
     expect(onAutoStop).toHaveBeenCalledOnce();
     expect(onAutoStop.mock.calls[0]![0]).toBeInstanceOf(Blob);
     expect(onAutoStop.mock.calls[0]![1]).toBe("limit");
+    expect(onAutoStop.mock.calls[0]![2]).toBeGreaterThanOrEqual(ORDER_RECORDING.maxMs); // KB-413: the measured length, never a stale render's
     expect(result.current.phase).toBe("idle");
   });
 

@@ -3,7 +3,7 @@
 import { createElement } from "react";
 import {
   ArrowRight, Bluetooth, Check, ChevronDown, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ellipsis, FileText, Keyboard, Languages,
-  Lightbulb, Lock, MessageCircle, Minus, Package, Play, Plus, Printer, RefreshCw,
+  Lightbulb, Lock, MessageCircle, Minus, Package, Plus, Printer, RefreshCw,
   RotateCcw, Search, Share2, Smartphone, Store, WifiOff, X,
   createLucideIcon, type LucideIcon,
 } from "lucide-react";
@@ -17,6 +17,8 @@ const Pause = createLucideIcon("kb-pause", [
 ]);
 /** 09-Recording: a filled rounded square (Stop) */
 const Square = createLucideIcon("kb-stop", [["rect", { x: "6", y: "6", width: "12", height: "12", rx: "2", ...FILLED, key: "a" }]]);
+/** 10-Review: a filled triangle (Play recording) */
+const Play = createLucideIcon("kb-play", [["path", { d: "M8 5l11 7-11 7z", fill: "currentColor", strokeWidth: 1.5, key: "a" }]]);
 /** 10-Review (and 12's "your price" chip): a single 4-point star */
 const Sparkles = createLucideIcon("kb-star", [["path", { d: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", key: "a" }]]);
 /** 17-More: the arrow pointing left, out of the door */

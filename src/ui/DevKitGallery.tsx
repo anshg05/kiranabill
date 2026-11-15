@@ -20,7 +20,7 @@ import { BillLine, PriceNeededLine } from "./kit/BillLine";
 import { HeardCard } from "./kit/HeardCard";
 import { ReceiptPaper } from "./kit/ReceiptPaper";
 import { MicButton } from "./kit/MicButton";
-import { Waveform } from "./kit/Waveform";
+import { DESIGN_BARS, Waveform } from "./kit/Waveform";
 import { Logo } from "./kit/Logo";
 import { Receipt } from "./Receipt";
 import { DEV_PRINT_BILLS } from "./devPrintBills";
@@ -250,7 +250,7 @@ function BATCH_B_PARTS(): Part[] {
   ];
 }
 
-const WAVE_09 = [10, 22, 36, 18, 48, 30, 56, 26, 40, 14, 34, 52, 20, 44, 28, 58, 24, 38, 12, 30, 46, 18, 36, 22, 50, 16];
+const WAVE_09 = DESIGN_BARS;
 const WAVE_10 = WAVE_09.slice(0, 22);
 
 function BATCH_C_PARTS(): Part[] {

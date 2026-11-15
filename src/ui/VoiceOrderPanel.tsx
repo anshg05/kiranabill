@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Loader2, Pause, Play, RotateCcw, Sparkles, Square, TriangleAlert } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { LocalVoiceRecording } from "@/data/db";
 import { ORDER_RECORDING, useVoiceCapture } from "./useVoiceCapture";
+import { useMicLevel } from "./micLevel";
+import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
 import type { VoiceOrders } from "./useVoiceOrders";
 import { useT } from "./useT";
 import { HeardCard } from "./kit/HeardCard";
@@ -9,27 +11,35 @@ import { InfoBanner } from "./kit/Banner";
 import { Icon, KB_ICONS } from "./kit/icons";
 
 // KB-385 step 5 (owner, 10 Nov 2026; D101, doc 25 §5 and §8): the V3 voice screens - ONE path for every order.
-//   OrderRecorder (the bar): tap -> a timer of recorded time -> Pause / Resume -> Stop (or 5:00, warned at 4:30) -> listen -> Re-record or
+//   OrderRecorder (the bar): tap -> 09 Recording, a timer of recorded time -> Pause / Resume -> Stop (or 5:00, warned at 4:30) -> 10 listen -> Re-record or
 //   Generate bill. "Add more by voice" inside a bill is the same flow; its lines are added to the end.
 //   OrderEntries (under the lines): each recording of the bill - being read (the processing panel), queued offline, failed, or answered
 //   with "Heard: …" (shown the moment it lands, so an ear mistake such as A47's ₹102 can be caught). Every state that is not a bill ends
 //   in Retry (the SAME recording) or Add by hand; Remove takes a recording out (Bill Banao waits for the ones not in the bill).
 
-const btn = "flex min-h-11 items-center justify-center gap-2 rounded-[6px] px-3 font-medium disabled:opacity-50";
-const primary = `${btn} bg-indigo text-surface`;
-const secondary = `${btn} border border-line bg-surface text-ink`;
 const icon = { size: 20, strokeWidth: 1.5, "aria-hidden": true } as const;
-
-function mmss(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
 
 interface Take {
   readonly audio: Blob;
   readonly ms: number;
   readonly url: string;
   readonly stopped?: "limit" | "hidden";
+}
+
+/** A one-line warning on the bill with "Add by hand" (No items found; Nothing recorded; the mic errors). */
+function WarnRow({ text, onAddByHand }: { text: string; onAddByHand?: () => void }) {
+  const { t } = useT();
+  return (
+    <div className="font-kb flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] border-kb-warn-border bg-kb-warn-bg py-[10px] px-[14px] text-kb-14 font-bold text-kb-warn-text">
+      <Icon icon={KB_ICONS.TriangleAlert} size={17} />
+      <span className="min-w-0 flex-1">{text}</span>
+      {onAddByHand && (
+        <button type="button" onClick={onAddByHand} className="kb-hit flex-none whitespace-nowrap min-h-[44px] rounded-[12px] border border-kb-border bg-kb-card px-3 text-kb-14 font-bold text-kb-ink">
+          {t("byhand.button")}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function OrderRecorder({
@@ -47,11 +57,14 @@ export function OrderRecorder({
   const { t, tx } = useT();
   const [take, setTake] = useState<Take | null>(null);
   const [nothing, setNothing] = useState(false);
+  const [asking, setAsking] = useState(false);
   const keep = (audio: Blob | null, ms: number, stopped?: Take["stopped"]) => {
     if (!audio) return setNothing(true);
     setTake({ audio, ms, url: URL.createObjectURL(audio), ...(stopped ? { stopped } : {}) });
   };
-  const capture = useVoiceCapture({ ...ORDER_RECORDING, onAutoStop: (audio, reason) => keep(audio, capture.elapsedMs, reason) });
+  const capture = useVoiceCapture({ ...ORDER_RECORDING, onAutoStop: (audio, reason, ms) => keep(audio, ms, reason) });
+  const recording = capture.phase === "listening" || capture.phase === "paused" || capture.phase === "stopping";
+  const scales = useMicLevel(capture.stream, capture.phase === "listening");
   useEffect(() => () => void (take && URL.revokeObjectURL(take.url)), [take]);
 
   const start = () => {
@@ -60,70 +73,70 @@ export function OrderRecorder({
     void capture.start();
   };
   const stop = async () => keep(await capture.stop(), capture.elapsedMs);
+  // 10's Re-record: 10 stays up until the new recording has really started (D45), then 09
+  const rerecord = async () => {
+    setNothing(false);
+    await capture.start();
+    setTake(null);
+  };
+  // Back on 09 / 10 (owner, answer 7): pause, then ask
+  const ask = () => {
+    if (capture.phase === "listening") capture.pause();
+    setAsking(true);
+  };
+  const discard = async () => {
+    setAsking(false);
+    if (take) return setTake(null);
+    await capture.stop(); // the recording so far is thrown away - the shopkeeper said Discard
+    capture.release();
+  };
 
-  if (take) {
-    return (
-      <div className="flex w-full flex-col gap-2">
-        {take.stopped && <p className="text-[13px] text-ink-soft">{t(take.stopped === "limit" ? "order.stoppedLimit" : "order.stoppedHidden")}</p>}
-        <audio controls src={take.url} aria-label={t("order.listen")} className="w-full" />
-        <div className="flex gap-2">
-          <button type="button" onClick={start} className={`${secondary} flex-1`}>
-            <RotateCcw {...icon} />
-            {t("order.rerecord")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onGenerate(take.audio, take.ms);
-              setTake(null);
-            }}
-            className={`${primary} flex-1`}
-          >
-            <Sparkles {...icon} />
-            {t("order.generate")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (capture.phase === "listening" || capture.phase === "paused" || capture.phase === "stopping") {
-    const paused = capture.phase === "paused";
-    return (
-      <div className="flex w-full flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] text-ink-soft">{paused ? t("order.paused") : null}</span>
-          <span className={`font-semibold tabular-nums ${paused ? "" : "text-danger"}`}>{mmss(capture.elapsedMs)}</span>
-        </div>
-        {capture.elapsedMs >= ORDER_RECORDING.warnAtMs && <p className="text-[13px] text-danger">{t("order.warn")}</p>}
-        <div className="flex gap-2">
-          <button type="button" onClick={paused ? capture.resume : capture.pause} className={`${secondary} flex-1`} disabled={capture.phase === "stopping"}>
-            {paused ? <Play {...icon} /> : <Pause {...icon} />}
-            {t(paused ? "order.resume" : "order.pause")}
-          </button>
-          <button type="button" onClick={() => void stop()} className={`${primary} flex-1 ${paused ? "" : "animate-pulse"}`} disabled={capture.phase === "stopping"}>
-            <Square {...icon} />
-            {t("mic.stop")}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const screens = (take || recording) && (
+    <RecordOverlay
+      screenKey={take ? "review" : "rec"}
+      title={t(take ? "review.title" : "rec.title")}
+      asking={asking}
+      onAsk={ask}
+      onKeep={() => setAsking(false)}
+      onDiscard={() => void discard()}
+    >
+      {take ? (
+        <ReviewBody
+          url={take.url}
+          ms={take.ms}
+          {...(take.stopped ? { stopped: take.stopped } : {})}
+          onGenerate={() => {
+            onGenerate(take.audio, take.ms);
+            setTake(null);
+          }}
+          onRerecord={() => void rerecord()}
+          onTypeInstead={() => {
+            setTake(null);
+            onAddByHand();
+          }}
+        />
+      ) : (
+        <RecordingBody
+          elapsedMs={capture.elapsedMs}
+          paused={capture.phase === "paused"}
+          busy={capture.phase === "stopping"}
+          scales={scales}
+          onPause={capture.pause}
+          onResume={capture.resume}
+          onStop={() => void stop()}
+        />
+      )}
+    </RecordOverlay>
+  );
 
   return (
     <div className={`flex flex-col gap-2 ${hasLines && !nothing && !capture.error && !disabledReason ? "" : "w-full"}`}>
-      {(nothing || capture.error) && (
-        <div className="flex flex-wrap items-center gap-2 text-[13px] text-danger">
-          <TriangleAlert size={16} strokeWidth={1.5} aria-hidden />
-          <span>{nothing ? t("order.nothing") : tx(capture.error!.message)}</span>
-          <button type="button" onClick={onAddByHand} className={`${secondary} ml-auto`}>
-            {t("byhand.button")}
-          </button>
-        </div>
-      )}
-      {disabledReason && <p className="text-[13px] text-ink-soft">{tx(disabledReason)}</p>}
+      {screens}
+      {/* KB-413 step 2: nothing recorded and the mic errors (permission, no mic, unsupported) stay on the bill - 12's warning row */}
+      {(nothing || capture.error) && <WarnRow text={nothing ? t("order.nothing") : tx(capture.error!.message)} onAddByHand={onAddByHand} />}
+      {disabledReason && <p className="font-kb text-kb-13 text-kb-sub">{tx(disabledReason)}</p>}
       {/* KB-413 step 1: on 12 "More" (secondary, the mic) sits beside Bill Banao; its name still says what it does. An empty bill:
-          the full-width primary "Record order". The recording / listening states (09 / 10) are KB-413 step 2. */}
+          the full-width primary "Record order". Recording and listening are full screens (09 / 10, step 2). */}
       <button
         type="button"
         onClick={start}
@@ -177,17 +190,7 @@ export function OrderEntries({
       return (
         <li key={r.recordingId} className="flex flex-col gap-2">
           <HeardCard label={t("heard.label")} text={`“${r.transcript ?? ""}”`} expandLabel={t("heard.more")} collapseLabel={t("heard.less")} />
-          {empty && (
-            <div className="font-kb flex flex-wrap items-center gap-2 rounded-[16px] border-[1.5px] border-kb-warn-border bg-kb-warn-bg py-[10px] px-[14px] text-kb-14 font-bold text-kb-warn-text">
-              <Icon icon={KB_ICONS.TriangleAlert} size={17} />
-              <span className="min-w-0 flex-1">{t("order.noItems")}</span>
-              {onAddByHand && (
-                <button type="button" onClick={() => onAddByHand(r.transcript ?? "")} className="kb-hit flex-none whitespace-nowrap min-h-[44px] rounded-[12px] border border-kb-border bg-kb-card px-3 text-kb-14 font-bold text-kb-ink">
-                  {t("byhand.button")}
-                </button>
-              )}
-            </div>
-          )}
+          {empty && <WarnRow text={t("order.noItems")} {...(onAddByHand ? { onAddByHand: () => onAddByHand(r.transcript ?? "") } : {})} />}
         </li>
       );
     }

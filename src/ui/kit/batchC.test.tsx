@@ -159,6 +159,13 @@ describe("MicButton (08-Home / 26-FirstDay; 09-Recording)", () => {
     expect(svg.getAttribute("width")).toBe("56");
     expect(svg.getAttribute("stroke-width")).toBe("2");
   });
+
+  it("recording, still (KB-413: paused - nothing is being recorded): the ring does not pulse", () => {
+    const { container } = render(<MicButton variant="recording" still />);
+    const ring = container.querySelector("[class*='inset-[18px]']")!;
+    expect(cls(ring)).not.toMatch(/animate-/);
+    has(ring, "opacity-0");
+  });
 });
 
 describe("Waveform (09-Recording live, 10-Review playback)", () => {
@@ -174,6 +181,27 @@ describe("Waveform (09-Recording live, 10-Review playback)", () => {
     has(bars[0]!, "w-[5px]", "rounded-[3px]", "bg-kb-primary", "animate-kb-bar", "origin-center");
     expect(bars.map((b) => b.style.height)).toEqual(H.map((h) => `${h}px`));
     expect(bars.map((b) => b.style.animationDelay)).toEqual(["0s", "0.11s", "0.22s", "0.33s", "0.44s", "0.55s", "0.66s", "0s"]);
+  });
+
+  it("KB-413 live with the real mic level (scales): each bar scaled, no animation; a missing scale is full height", () => {
+    const { container } = render(<Waveform heights={H} live height={64} scales={[0.35, 1, 0.5]} />);
+    const bars = [...container.firstElementChild!.children] as HTMLElement[];
+    expect(bars.slice(0, 4).map((b) => b.style.transform)).toEqual(["scaleY(0.35)", "scaleY(1)", "scaleY(0.5)", "scaleY(1)"]);
+    has(bars[0]!, "bg-kb-primary", "origin-center");
+    expect(cls(bars[0]!)).not.toMatch(/animate-/);
+    expect(bars[0]!.style.animationDelay).toBe("");
+  });
+
+  it("KB-413 playback progress: the played bars in primary (data-played), the rest in the playback colour; clamped 0 - 1", () => {
+    const { container, rerender } = render(<Waveform heights={H} height={30} progress={0.5} />);
+    const bars = () => [...container.firstElementChild!.children] as HTMLElement[];
+    expect(bars().map((b) => b.hasAttribute("data-played"))).toEqual([true, true, true, true, false, false, false, false]);
+    has(bars()[0]!, "bg-kb-primary");
+    has(bars()[4]!, "bg-kb-wave-played");
+    rerender(<Waveform heights={H} height={30} progress={7} />);
+    expect(bars().every((b) => b.hasAttribute("data-played"))).toBe(true);
+    rerender(<Waveform heights={H} height={30} progress={-1} />);
+    expect(bars().some((b) => b.hasAttribute("data-played"))).toBe(false);
   });
 
   it("playback: the played colour, no animation", () => {

@@ -75,6 +75,15 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     }
   });
 
+  it("Play (KB-413 step 2) is 10-Review's filled triangle, at the file's stroke 1.5", () => {
+    const want = design("10-Review.html", 'M8 5l11 7-11 7z"/></svg></button>');
+    const { container } = render(<Icon icon={KB_ICONS.Play} size={20} />);
+    const svg = container.querySelector("svg")!;
+    expect(shapes(svg)).toEqual(shapes(want));
+    expect(svg.firstElementChild!.getAttribute("fill")).toBe("currentColor");
+    expect(svg.firstElementChild!.getAttribute("stroke-width")).toBe("1.5");
+  });
+
   it("26 §2.4 records these exceptions", () => {
     expect(list).toMatch(/Pause and Stop[^.]*filled[^.]*09-Recording/);
     expect(list).toMatch(/Sparkles[^.]*4-point star[^.]*10-Review/);
@@ -86,6 +95,7 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     expect(list).toMatch(/Pencil[^.]*12-BillReview/);
     expect(list).toMatch(/TriangleAlert[^.]*12-BillReview/);
     expect(list).toMatch(/Ear[^.]*12-BillReview/);
+    expect(list).toMatch(/Play[^.]*filled triangle[^.]*10-Review/);
   });
 });
 

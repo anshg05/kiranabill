@@ -217,7 +217,17 @@ describe("TipCard (11-Generating warm, 22-PrinterSearch white, 09-Recording whit
     const [a, b] = [...container.children] as Element[];
     has(a!, "bg-kb-card", "border", "border-kb-border", "p-[14px]", "items-start");
     has(a!.querySelector("svg")!.parentElement!, "text-kb-amber");
-    has(b!, "py-3", "px-[14px]", "items-center");
+    has(b!, "py-3", "px-[14px]", "items-center", "gap-[10px]"); // 09: 10 apart
+    has(a!, "gap-3");
+  });
+
+  it("note (KB-413, 10-Review): the white card at 14 / 16, the primary ear 2 px down, 14 / 1.5 sub words", () => {
+    render(<TipCard variant="note">Listen once if the shop was noisy.</TipCard>);
+    const words = screen.getByText("Listen once if the shop was noisy.");
+    has(words, "text-kb-14", "text-kb-sub", "leading-[1.5]");
+    const card = words.parentElement!;
+    has(card, "bg-kb-card", "border", "border-kb-border", "rounded-[16px]", "py-[14px]", "px-4", "gap-3", "items-start");
+    has(card.querySelector("svg")!.parentElement!, "text-kb-primary", "mt-[2px]");
   });
 });
 

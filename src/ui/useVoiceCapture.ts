@@ -43,7 +43,8 @@ export interface OrderRecordingOptions {
   warnAtMs?: number;
   minMs?: number;
   /** The 5:00 limit or the app going to the background stopped the recording; the audio so far (null if under minMs). */
-  onAutoStop?: (audio: Blob | null, reason: "limit" | "hidden") => void;
+  /** recordedMs: the length the recorder measured at the stop (KB-413: a render's elapsedMs can be up to 250 ms old) */
+  onAutoStop?: (audio: Blob | null, reason: "limit" | "hidden", recordedMs: number) => void;
 }
 export const ORDER_RECORDING = { bitsPerSecond: 24_000, maxMs: 300_000, warnAtMs: 270_000, minMs: 1_000 } as const;
 
@@ -97,6 +98,8 @@ export interface VoiceCapture {
   /** KB-385: pause / resume the recording (paused time is not recorded). */
   pause: () => void;
   resume: () => void;
+  /** KB-413: the open mic (09-Recording's level meter reads it - never records from it). null when the mic is off. */
+  stream: MediaStream | null;
   /** Turns the mic off now (sign-out). */
   release: () => void;
 }
@@ -110,6 +113,7 @@ export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
   const [lastTiming, setLastTiming] = useState<CaptureTiming | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef(0);
@@ -128,6 +132,7 @@ export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
     clearReleaseTimer();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setStream(null);
     recorderRef.current = null;
   }, [clearReleaseTimer]);
 
@@ -202,6 +207,7 @@ export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
         return;
       }
       streamRef.current = stream;
+      setStream(stream);
     }
 
     const recorderAt = performance.now();
@@ -280,9 +286,9 @@ export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
     if (!recorderRef.current || recorderRef.current.state === "inactive") return;
     void stop().then((audio) => {
       if (reason === "hidden") release();
-      optionsRef.current?.onAutoStop?.(audio, reason);
+      optionsRef.current?.onAutoStop?.(audio, reason, recordedBeforeRef.current);
     });
   };
 
-  return { phase, error, elapsedMs, lastTiming, start, stop, pause, resume, release };
+  return { phase, error, elapsedMs, lastTiming, stream, start, stop, pause, resume, release };
 }

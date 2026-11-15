@@ -42,7 +42,7 @@ function look(variant: ButtonVariant, height: ButtonHeight): string {
 }
 
 export function Button({
-  variant, height, icon, iconSize = 18, iconEnd = false, fill = true, reasonId, ariaLabel, onClick, children, className = "", type = "button",
+  variant, height, icon, iconSize = 18, iconEnd = false, fill = true, reasonId, ariaLabel, disabled, onClick, children, className = "", type = "button",
 }: {
   variant: ButtonVariant;
   height?: ButtonHeight;
@@ -56,6 +56,8 @@ export function Button({
   reasonId?: string;
   /** a fuller name for screen readers when the words alone are not enough ("Change item" -> "Change item चीनी") */
   ariaLabel?: string;
+  /** a moment it cannot be used (09's Pause / Stop while the recording is being closed) */
+  disabled?: boolean;
   onClick?: () => void;
   children: ReactNode;
   className?: string;
@@ -68,9 +70,10 @@ export function Button({
       type={type}
       onClick={onClick}
       aria-label={ariaLabel}
+      disabled={disabled}
       aria-disabled={locked ? true : undefined}
       aria-describedby={locked ? reasonId : undefined}
-      className={`font-kb kb-press kb-hit flex items-center justify-center font-bold ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
+      className={`font-kb kb-press kb-hit flex items-center justify-center font-bold disabled:opacity-50 ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
     >
       {locked ? <Icon icon={KB_ICONS.Lock} size={18} /> : icon && !iconEnd && <Icon icon={icon} size={iconSize} />}
       {children}

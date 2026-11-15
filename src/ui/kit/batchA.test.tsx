@@ -83,6 +83,16 @@ describe("Button", () => {
     fireEvent.click(b);
     expect(onClick).toHaveBeenCalledOnce();
   });
+
+  it("disabled (KB-413: 09's Pause / Stop while the recording is being closed): really disabled, dimmed, no tap", () => {
+    const onClick = vi.fn();
+    render(<Button variant="primary" height={58} disabled onClick={onClick}>Stop</Button>);
+    const b = screen.getByRole("button", { name: "Stop" }) as HTMLButtonElement;
+    expect(b.disabled).toBe(true);
+    has(b, "disabled:opacity-50");
+    fireEvent.click(b);
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });
 
 describe("Badge", () => {

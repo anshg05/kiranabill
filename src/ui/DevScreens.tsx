@@ -3,9 +3,11 @@ import type { ParsedItem } from "@/domain/grammar";
 import type { LocalVoiceRecording } from "@/data/db";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { setScreenLanguage } from "./screenLanguage";
+import { useT } from "./useT";
 import type { Language } from "@/domain/messages";
 import { BillView } from "./BillingScreen";
 import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
+import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
 import type { ShownFlag } from "./useBillLines";
 import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
 
@@ -14,7 +16,11 @@ import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
 //   ?frame=1&screen=12&state=…   the screen alone, filling the window (what the frames show); the containment and tap-area checks run
 //                                 inside it and are read by the sheet
 //   default                       the sheet: our frame beside the design file's frame, 390 x 844 (or ?w= and ?scale=)
-//   state: design (the file's own sample content) | checks (HIGH, BLOCK, MEDIUM / LOW) | edit (a line's edit sheet open)
+//   screen 12, state: design (the file's own sample content) | checks (HIGH, BLOCK, MEDIUM / LOW) | edit (a line's edit sheet open)
+//                     | micdenied (the browser refuses the mic: a real Record tap, the real error row)
+//   screen 09, state: recording (00:42 as drawn) | paused | warning (4:36 - the 4:30 line) | discard (Back pressed: the question)
+//   screen 10, state: review (0:42 as drawn) | playing (half-way: the played part and the time) | limit (stopped at 5:00) | discard
+//   The bars on 09 are the still bars (no mic here): the drawn heights, as the file shows them under reduced motion.
 
 const params = new URLSearchParams(window.location.search);
 const noop = () => {};
@@ -56,6 +62,15 @@ function Screen12({ state }: { state: string }) {
   const o = orders("2 किलो चीनी 45 रुपये किलो, चावल 5 किलो 340, एक टाटा नमक, एक किलो दाने…");
   const opened = useRef(false);
   useEffect(() => {
+    if (state !== "micdenied" || opened.current) return;
+    opened.current = true;
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { getUserMedia: () => Promise.reject(Object.assign(new Error("denied"), { name: "NotAllowedError" })) },
+    });
+    window.setTimeout(() => document.querySelector<HTMLButtonElement>("button[aria-label='Add more by voice'], button[aria-label='आवाज़ से और जोड़ें'], button[aria-label='Awaaz se aur jodein']")?.click(), 50);
+  }, [state]);
+  useEffect(() => {
     // the edit sheet, open on the first line (as a tap on its edit button opens it)
     if (state !== "edit" || opened.current) return;
     opened.current = true;
@@ -88,7 +103,41 @@ function Screen12({ state }: { state: string }) {
   );
 }
 
-const FILES: Record<string, string> = { "12": "12-BillReview.html" };
+function Screen09({ state }: { state: string }) {
+  const { t } = useT();
+  const [asking, setAsking] = useState(state === "discard");
+  const paused = state === "paused" || state === "discard";
+  return (
+    <RecordOverlay screenKey="rec" title={t("rec.title")} asking={asking} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
+      <RecordingBody elapsedMs={state === "warning" ? 276_000 : 42_000} paused={paused} busy={false} scales={null} onPause={noop} onResume={noop} onStop={noop} />
+    </RecordOverlay>
+  );
+}
+
+function Screen10({ state }: { state: string }) {
+  const { t } = useT();
+  const [asking, setAsking] = useState(state === "discard");
+  const [url] = useState(() => URL.createObjectURL(new Blob([], { type: "audio/webm" })));
+  useEffect(() => {
+    if (state !== "playing") return;
+    // half-way through, playing: what the audio element reports while it plays (no sound in a frame)
+    const id = window.setTimeout(() => {
+      const a = document.querySelector("audio");
+      if (!a) return;
+      Object.defineProperty(a, "currentTime", { configurable: true, get: () => 21 });
+      a.dispatchEvent(new Event("play"));
+      a.dispatchEvent(new Event("timeupdate"));
+    }, 100);
+    return () => window.clearTimeout(id);
+  }, [state]);
+  return (
+    <RecordOverlay screenKey="review" title={t("review.title")} asking={asking} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
+      <ReviewBody url={url} ms={state === "limit" ? 300_000 : 42_000} {...(state === "limit" ? { stopped: "limit" as const } : {})} onGenerate={noop} onRerecord={noop} onTypeInstead={noop} />
+    </RecordOverlay>
+  );
+}
+
+const FILES: Record<string, string> = { "09": "09-Recording.html", "10": "10-Review.html", "12": "12-BillReview.html" };
 
 /** The frame: the screen alone, filling the window; the checks run on it, out of sight (the sheet reads them). */
 function Frame() {
@@ -102,7 +151,9 @@ function Frame() {
     <>
       <main>
         <div data-kit-part={`screen ${params.get("screen")}`}>
-          <Screen12 state={params.get("state") ?? "design"} />
+          {params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
+            : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
+            : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>
       <div style={{ position: "fixed", left: -9999, top: 0, width: 600 }}>
