@@ -849,7 +849,6 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 }
 
 export function BillView({
-  shopName,
   lines,
   onSignOut,
   orderBar,
@@ -1025,6 +1024,15 @@ export function BillView({
     return line.rate === null ? qty : `${qty} × ${formatRate(line)}`;
   };
   const pendingId = "kb-bill-pending";
+  // Owner, 15 Nov 2026: when everything Bill Banao waits for is one kind - lines without a price, or without a quantity - say that kind.
+  const priceMissing = lines.filter((l) => needOf(l.id) === "price").length;
+  const qtyMissing = lines.filter((l) => needOf(l.id) === "quantity").length;
+  const waitingFor =
+    pending > 0 && pending === priceMissing
+      ? t(pending === 1 ? "need.priceOne" : "need.priceMany", { n: pending })
+      : pending > 0 && pending === qtyMissing
+        ? t(pending === 1 ? "need.qtyOne" : "need.qtyMany", { n: pending })
+        : checksText(pending, t);
   const soFar = t(lines.length === 1 ? "bill.soFarOne" : "bill.soFarMany", { n: lines.length });
 
   return (
@@ -1032,8 +1040,9 @@ export function BillView({
       <div className="mx-auto flex h-full w-full max-w-[480px] flex-col">
         {/* 12-BillReview's top bar (owner, answer 1): no Back arrow until Home (08) exists; today's menu stays on the right. */}
         <header className="flex items-center gap-2 pt-3 pl-4 pr-3 pb-1">
-          {/* KB-340: the shop's name, one line, the full name as the title. 12-BillReview draws "New bill" here - asked (step-1 sheet). */}
-          <h1 title={shopName || undefined} className="min-w-0 flex-1 truncate text-kb-18 font-bold">{shopName || "KiranaBill"}</h1>
+          {/* KB-413 (owner, 15 Nov 2026): "New bill" as 12-BillReview draws it - replaces KB-340's shop name in this header (the name is
+              on the receipt and, with KB-414, on Home). */}
+          <h1 className="min-w-0 flex-1 text-kb-18 font-bold">{readOnly ? t("bill.savedLabel") : t("bill.new")}</h1>
           <SyncChipView chip={syncChip} detail={syncDetail} />
           {reviewMode && (
             <span data-testid="review-badge" className="flex-none whitespace-nowrap rounded-full bg-kb-muted px-[10px] py-[5px] text-kb-12 font-bold text-kb-sub">
@@ -1217,12 +1226,13 @@ export function BillView({
               <Button
                 variant="secondary"
                 icon={KB_ICONS.RefreshCw}
+                ariaLabel={t("line.change", { name: editingRow.displayName })}
                 onClick={() => {
                   setChanging(editingRow.id);
                   setEditing(null);
                 }}
               >
-                {t("line.change", { name: editingRow.displayName })}
+                {t("change.title")}
               </Button>
             )}
             <Button
@@ -1296,7 +1306,7 @@ export function BillView({
               {/* Unacknowledged HIGH flags, missing amounts (KB-307) and not-added utterances (KB-319) - what Bill Banao waits for. */}
               {pending > 0 && !readOnly && (
                 <p id={pendingId} data-testid="checks-pending" className="mt-[2px] text-kb-13 font-bold text-kb-warn-text">
-                  {checksText(pending, t)}
+                  {waitingFor}
                 </p>
               )}
               {!readOnly && lines.length === 0 && !saving && <p className="text-kb-13 text-kb-sub">{t("reason.emptyBill")}</p>}

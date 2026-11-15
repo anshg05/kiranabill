@@ -87,6 +87,11 @@ export const MESSAGES = {
   "flag.noteLabel": m("Note — {name}", "नोट — {name}", "Note — {name}"),
   "need.price": m("Price needed", "भाव चाहिए", "Bhav chahiye"),
   "need.quantity": m("Quantity needed", "मात्रा चाहिए", "Matra chahiye"),
+  // KB-413 (owner, 15 Nov 2026): the bottom panel names what Bill Banao waits for when it is all one kind (12-BillReview)
+  "need.priceOne": m("1 item needs a price", "1 सामान का भाव चाहिए", "1 saaman ka bhaav chahiye"),
+  "need.priceMany": m("{n} items need a price", "{n} सामान का भाव चाहिए", "{n} saaman ka bhaav chahiye"),
+  "need.qtyOne": m("1 item needs a quantity", "1 सामान की मात्रा चाहिए", "1 saaman ki matra chahiye"),
+  "need.qtyMany": m("{n} items need a quantity", "{n} सामान की मात्रा चाहिए", "{n} saaman ki matra chahiye"),
   "flag.missingName": m("This item's name wasn't understood.", "इस सामान का नाम समझ नहीं आया।", "Is saaman ka naam samajh nahi aaya."),
   "flag.missingRate": m("A rate was expected for this line, but none was found.", "इस लाइन का भाव नहीं मिला।", "Is line ka bhav nahi mila."),
   "flag.missingTotal": m("This line's total couldn't be computed.", "इस लाइन का कुल नहीं निकल पाया।", "Is line ka kul nahi nikal paaya."),

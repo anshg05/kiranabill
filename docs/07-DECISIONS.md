@@ -2632,6 +2632,7 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
 
 | Date | Was | Now | Why |
 |---|---|---|---|
+| 15 Nov 2026 | `KB-340`: the shop's name in the billing header | **Screen 12's title is "New bill", as `docs/design/screens/12-BillReview.html` draws it** (`KB-413` step 1) | Owner, step-1 review: the name truncated to "Gupta Ki..." at 130% text; it is on the receipt and, with `KB-414`, on Home. |
 | 10 Nov 2026 | D100 item 4: voice -> the pilot -> Phase F (hold bills, discount) -> Phase A (Android, thermal printing) | **voice (done) -> Phase A (Android, thermal printing, full redesign) -> Phase F; the pilot runs in parallel with Phase A** (D109) | Owner decision after the V3 release |
 | 4 Nov 2026 | D48 item 4: "the bill shows the shop catalog's name for a Layer 1 line, never the spoken words"; D42: "a matched line shows the shop's name" | **The bill line keeps the name that was SAID; the catalog only fills a price that was not said, when the name clearly matches one item, else Price needed** (D102) | `KB-370`'s wrong products (रिन -> Lifebuoy, वुश -> Washing Powder) and the owner's head-to-head with Ezy Parchi. Built in V3. |
 | 31 Oct 2026 | Tracker / `06` (30 Oct): "the next step is the owner's shop pilot (`KB-405`)"; `KB-369` PARKED "after the pilot starts" | **Phase V (voice accuracy, `KB-370` - `KB-374`) first; the pilot waits; `KB-369` is folded into `KB-370`** (D100) | Owner's head-to-head test against a competitor on a 40 s, 10-item order: our Whisper restarted and garbled the numbers on long audio. |

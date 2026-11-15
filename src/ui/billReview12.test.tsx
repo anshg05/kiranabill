@@ -20,9 +20,9 @@ const base = { onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
 const firstCard = () => within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem")[0]!.firstElementChild!;
 
 describe("screen 12: the frame", () => {
-  it("the title (the shop's name for now - KB-340; 12 draws 'New bill', asked), the Draft badge and the menu; NO back arrow until Home exists (owner, answer 1); the phone layout, centred, on any width (D110 8.11)", () => {
+  it("'New bill' (owner, 15 Nov 2026 - replaces KB-340's shop name here), the Draft badge and the menu; NO back arrow until Home exists (owner, answer 1); the phone layout, centred, on any width (D110 8.11)", () => {
     const { container } = render(<BillView {...base} shopName="Gupta Kirana Store" lines={[row("l1", "चीनी")]} onOpenHistory={() => {}} />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Gupta Kirana Store");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("New bill");
     expect(screen.getByRole("heading", { level: 1 }).className).toMatch(/text-kb-18/);
     expect(screen.getByText("Draft · not saved").className).toMatch(/bg-kb-muted/);
     expect(screen.getByRole("button", { name: "Menu" })).toBeTruthy();
@@ -64,6 +64,8 @@ describe("screen 12: the lines", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit चीनी" }));
     const sheet = screen.getByRole("dialog", { name: "Edit चीनी" });
     for (const name of ["चीनी quantity", "चीनी rate", "चीनी amount", "Change item चीनी", "Remove चीनी"]) expect(within(sheet).getByRole("button", { name })).toBeTruthy();
+    // owner, 15 Nov 2026: the button SAYS "Change item" (the name is in the sheet's title); its accessible name keeps the item
+    expect(within(sheet).getByRole("button", { name: "Change item चीनी" }).textContent).toBe("Change item");
     expect(within(sheet).getByRole("combobox", { name: "चीनी unit" })).toBeTruthy();
     fireEvent.click(within(sheet).getByRole("button", { name: "Remove चीनी" }));
     expect(onRemove).toHaveBeenCalledWith("l1");
@@ -143,3 +145,29 @@ describe("screen 12: the bottom panel", () => {
     expect(onFinalise).toHaveBeenCalledOnce();
   });
 });
+
+// Owner, 15 Nov 2026: when everything Bill Banao waits for is ONE kind, the panel says that kind, as 12 draws it.
+describe("screen 12: what Bill Banao waits for, in words", () => {
+  const noPrice = (id: string, name: string) => row(id, name, { qty: 1, rate: null, rateUnit: null, total: null, priceType: "default" });
+  const noQty = (id: string, name: string) => row(id, name, { qty: null, unit: "", total: null, rate: 4500, priceType: "rate" });
+  it("one line without a price: '1 item needs a price'; two: '2 items need a price'", () => {
+    const { rerender } = render(<BillView {...base} lines={[noPrice("a", "दाने")]} pending={1} onFinalise={() => {}} />);
+    expect(screen.getByTestId("checks-pending").textContent).toBe("1 item needs a price");
+    rerender(<BillView {...base} lines={[noPrice("a", "दाने"), noPrice("b", "चना")]} pending={2} onFinalise={() => {}} />);
+    expect(screen.getByTestId("checks-pending").textContent).toBe("2 items need a price");
+  });
+  it("only quantities missing: '1 item needs a quantity'", () => {
+    render(<BillView {...base} lines={[noQty("a", "दाने")]} pending={1} onFinalise={() => {}} />);
+    expect(screen.getByTestId("checks-pending").textContent).toBe("1 item needs a quantity");
+  });
+  it("mixed kinds (a price and a Theek hai): 'N checks pending'", () => {
+    render(<BillView {...base} lines={[noPrice("a", "दाने"), row("b", "चीनी")]} flags={[flag("b", "HIGH", "Check")]} pending={2} onFinalise={() => {}} />);
+    expect(screen.getByTestId("checks-pending").textContent).toBe("2 checks pending");
+  });
+  it("in Hindi and Hinglish too (the catalog)", async () => {
+    const { render: say } = await import("@/domain/messages");
+    expect([say("need.priceOne", {}, "hi"), say("need.priceMany", { n: 2 }, "hi"), say("need.priceOne", {}, "hl"), say("need.qtyOne", {}, "hi")])
+      .toEqual(["1 सामान का भाव चाहिए", "2 सामान का भाव चाहिए", "1 saaman ka bhaav chahiye", "1 सामान की मात्रा चाहिए"]);
+  });
+});
+

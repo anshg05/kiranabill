@@ -133,7 +133,7 @@ describe("KB-307 - when Bill Banao is enabled", () => {
     act(() => api.current!.addByHand(customItem("kuch naya"), "kuch naya"));
     fireEvent.keyDown(cards().getByRole("textbox", { name: "kuch naya quantity" }), { key: "Escape" });
     expect(cards().getByText("Price needed")).toBeTruthy();
-    expect(pendingText()).toBe("1 check pending");
+    expect(pendingText()).toBe("1 item needs a price"); // owner, 15 Nov 2026: one kind - said as that kind
     expect(screen.queryAllByRole("button", { name: /^Theek hai/ })).toHaveLength(0);
     await tapBillBanao();
     expect(document.activeElement?.getAttribute("aria-label")).toBe("kuch naya amount");
@@ -145,7 +145,7 @@ describe("KB-307 - when Bill Banao is enabled", () => {
   it("real 'ajwain' (Rule 5b, total 0 = no price): 'Price needed', one check, not finalisable", async () => {
     render(<Harness pre={[spoken("ajwain")]} />);
     expect(cards().getByText("Price needed")).toBeTruthy();
-    expect(pendingText()).toBe("1 check pending");
+    expect(pendingText()).toBe("1 item needs a price"); // owner, 15 Nov 2026: one kind - said as that kind
     expect(isDisabled(billBanao())).toBe(true);
     await tapBillBanao();
     expect(document.activeElement?.getAttribute("aria-label")).toBe("Ajwain amount");

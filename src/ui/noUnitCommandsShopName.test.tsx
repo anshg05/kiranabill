@@ -134,17 +134,16 @@ describe("KB-339 - what a spoken command does to the bill", () => {
   });
 });
 
-describe("KB-340 - the shop's name in the billing header", () => {
-  it("shows the name, truncated cleanly (one line, ellipsis, the full name as the title); 'KiranaBill' only when there is none", () => {
+// KB-413 (owner, 15 Nov 2026): screen 12's title is "New bill" as the design draws it - this REPLACES KB-340's shop name in this
+// header (the name truncated to "Gupta Ki..." at 130% text; it is on the receipt and, with KB-414, on Home).
+describe("KB-413 - the bill screen's title (was KB-340's shop name)", () => {
+  it("is 'New bill' whatever the shop is called; the long title still shrinks on one line", () => {
     const long = "Shri Ganesh General & Kirana Store, Sadar Bazaar, Gwalior";
-    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} shopName={long} />);
+    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} shopName={long} />);
     const h = screen.getByRole("heading", { level: 1 });
-    expect(h.textContent).toBe(long);
-    expect(h.getAttribute("title")).toBe(long);
-    expect(h.className).toContain("truncate");
+    expect(h.textContent).toBe("New bill");
+    expect(screen.queryByText(long)).toBeNull();
     expect(h.className).toContain("min-w-0");
-    rerender(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("KiranaBill");
   });
 });
 

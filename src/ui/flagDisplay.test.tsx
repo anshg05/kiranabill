@@ -213,7 +213,7 @@ describe("KB-304 - MEDIUM and LOW inform, never block; their sentence on tap", (
     act(() => dot.click());
     expect(table().getByText(/isn't in your catalog yet/)).toBeTruthy();
     // The LOW note adds no check; the one pending check is the line's missing price (KB-307 decision 2).
-    expect(pending()).toBe("1 check pending");
+    expect(pending()).toBe("1 item needs a price"); // owner, 15 Nov 2026: the only check is the missing price
     expect(table().getByText("Price needed")).toBeTruthy();
   });
 });

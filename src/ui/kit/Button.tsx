@@ -42,7 +42,7 @@ function look(variant: ButtonVariant, height: ButtonHeight): string {
 }
 
 export function Button({
-  variant, height, icon, iconSize = 18, iconEnd = false, fill = true, reasonId, onClick, children, className = "", type = "button",
+  variant, height, icon, iconSize = 18, iconEnd = false, fill = true, reasonId, ariaLabel, onClick, children, className = "", type = "button",
 }: {
   variant: ButtonVariant;
   height?: ButtonHeight;
@@ -54,6 +54,8 @@ export function Button({
   fill?: boolean;
   /** locked only: the id of the line that says why (26 §5: "It must say why on the line above"). */
   reasonId?: string;
+  /** a fuller name for screen readers when the words alone are not enough ("Change item" -> "Change item चीनी") */
+  ariaLabel?: string;
   onClick?: () => void;
   children: ReactNode;
   className?: string;
@@ -65,6 +67,7 @@ export function Button({
     <button
       type={type}
       onClick={onClick}
+      aria-label={ariaLabel}
       aria-disabled={locked ? true : undefined}
       aria-describedby={locked ? reasonId : undefined}
       className={`font-kb kb-press kb-hit flex items-center justify-center font-bold ${fill ? "w-full" : ""} ${(BORDERED.has(variant) ? BORDERED_H : H)[h]} ${look(variant, h)} ${className}`}
