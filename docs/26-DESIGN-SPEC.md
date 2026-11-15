@@ -19,7 +19,7 @@ Related: D101 (record-review-generate), D102 (names as said), D103 (units as sai
 2. **Fonts approved:** Inter, Noto Sans Devanagari, and IBM Plex Mono (receipt only), all bundled locally; Mukta goes. The dependency gate applies (exact versions, at least two weeks old).
 3. **Learning wording must be true:** "It learns your prices. After a few bills it suggests your price; approve it once, and it fills in from then on." Onboarding 3 and screen 20 use this when built. Hard rule 7 is unchanged.
 4. **Cancel keeps today's 5 reasons, one required (D79).** The design's chips are only the look.
-5. **Screen 9 says "Saved on this phone when you stop"** (true today).
+5. **Screen 9 says "Saved on this phone when you stop"** - made true by `KB-413` step 2 (owner, 15 Nov 2026): the recording is saved on the phone at Stop and at the 5:00 / background auto-stop (`src/data/recordingDraft.ts`), so 10 survives the app closing; it is deleted when discarded or re-recorded, and when Generate bill moves it into the voice queue (same write). 10 says "saved on this phone" only when the write succeeded. Back, Re-record and Type instead on 9 / 10 all ask "Discard recording?" first ("The 0:42 recording will be deleted."; Keep recording = the big button, Discard red and secondary).
 6. **Printing: 80 mm prints exactly like today's bill** (the Bill 514 table: Item / Qty / Rate / Amt); **58 mm uses the same table fitted to 32 characters**; names wrap, never cut. The two-line layout drawn on screens 18 and 21 is not used.
 7. **"Item names on bill: as spoken" = D102 / D105**; `KB-377` decides the script detail.
 8. **Price needed entry follows today's app** (rate or amount, clearly labelled).

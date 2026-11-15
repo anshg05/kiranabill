@@ -171,3 +171,29 @@ describe("screen 12: what Bill Banao waits for, in words", () => {
   });
 });
 
+// Owner + reviewer, 15 Nov 2026 (step-2 fix 1): a recorder warning (mic refused, nothing recorded) sits in the bill's scrolling list, like a
+// failed recording - the sticky panel keeps "More" and Bill Banao on one row, as 12 draws it.
+describe("screen 12: the recorder's warnings are in the list, not the bottom panel", () => {
+  it("mic refused: the warning row is in the scrolling list; More and Bill Banao share the panel's one row", async () => {
+    const { OrderRecorder } = await import("./VoiceOrderPanel");
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn(async () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }))) } });
+    vi.stubGlobal("MediaRecorder", class {});
+    try {
+      render(
+        <BillView {...base} lines={[row("l1", "चीनी")]} pending={0} onFinalise={() => {}}
+          orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={() => {}} onAddByHand={openAdd} noteSlot={noteSlot} />} />,
+      );
+      await act(async () => void fireEvent.click(screen.getByRole("button", { name: "Add more by voice" })));
+      const warning = screen.getByText(/Mic permission denied/);
+      expect(warning.closest("[class*='overflow-y-auto']")).toBeTruthy();
+      expect(warning.closest("[class*='shadow-kb-panel']")).toBeNull();
+      const more = screen.getByRole("button", { name: "Add more by voice" });
+      const banao = screen.getByRole("button", { name: "Bill Banao" });
+      expect(more.closest("[class*='flex-wrap']")).toBe(banao.closest("[class*='flex-wrap']"));
+      expect(more.parentElement!.className).not.toContain("w-full");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+

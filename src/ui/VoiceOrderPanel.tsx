@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import type { SavedTake } from "@/data/recordingDraft";
 import { Loader2 } from "lucide-react";
 import type { LocalVoiceRecording } from "@/data/db";
 import { ORDER_RECORDING, useVoiceCapture } from "./useVoiceCapture";
 import { useMicLevel } from "./micLevel";
-import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
+import { RecordOverlay, RecordingBody, ReviewBody, mmss } from "./RecordScreens";
 import type { VoiceOrders } from "./useVoiceOrders";
 import { useT } from "./useT";
 import { HeardCard } from "./kit/HeardCard";
@@ -24,6 +26,15 @@ interface Take {
   readonly ms: number;
   readonly url: string;
   readonly stopped?: "limit" | "hidden";
+  /** it is on the phone (10 says so only then) */
+  readonly saved: boolean;
+}
+
+/** Where the stopped recording is kept on the phone (src/data/recordingDraft.ts; owner, 15 Nov 2026, answer 1). */
+export interface TakeStore {
+  load: () => Promise<SavedTake | null>;
+  save: (take: SavedTake) => Promise<void>;
+  clear: () => Promise<void>;
 }
 
 /** A one-line warning on the bill with "Add by hand" (No items found; Nothing recorded; the mic errors). */
@@ -42,30 +53,61 @@ function WarnRow({ text, onAddByHand }: { text: string; onAddByHand?: () => void
   );
 }
 
+/** What "Discard" then does: Back = just discard; Re-record / Type instead = discard, then that (owner, answer 5). */
+type Asking = null | "back" | "rerecord" | "type";
+
 export function OrderRecorder({
   hasLines,
   disabledReason,
   onGenerate,
   onAddByHand,
+  takes,
+  noteSlot,
 }: {
   hasLines: boolean;
   /** Why it cannot record yet (the catalog is loading, no live session) - shown, and the button is disabled. */
   disabledReason?: string | null;
   onGenerate: (audio: Blob, recordedMs: number) => void;
   onAddByHand: () => void;
+  /** the stopped recording kept on the phone (10 survives the app closing); without it nothing is saved and 10 does not claim it */
+  takes?: TakeStore;
+  /** where its warnings go: the bill's scrolling list (12) - never the bottom panel (step-2 fix 1). Here when not given. */
+  noteSlot?: HTMLElement | null;
 }) {
   const { t, tx } = useT();
   const [take, setTake] = useState<Take | null>(null);
   const [nothing, setNothing] = useState(false);
-  const [asking, setAsking] = useState(false);
-  const keep = (audio: Blob | null, ms: number, stopped?: Take["stopped"]) => {
+  const [asking, setAsking] = useState<Asking>(null);
+  const takesRef = useRef(takes);
+  takesRef.current = takes;
+  const show = (audio: Blob, ms: number, saved: boolean, stopped?: Take["stopped"]) =>
+    setTake({ audio, ms, url: URL.createObjectURL(audio), saved, ...(stopped ? { stopped } : {}) });
+  // Stopped (Stop, 5:00, the app going to the background): saved on the phone first, then 10 - which says "saved" only if it is
+  const keep = async (audio: Blob | null, ms: number, stopped?: Take["stopped"]) => {
     if (!audio) return setNothing(true);
-    setTake({ audio, ms, url: URL.createObjectURL(audio), ...(stopped ? { stopped } : {}) });
+    let saved = false;
+    try {
+      if (takesRef.current) {
+        await takesRef.current.save({ audio, recordedMs: ms, ...(stopped ? { stopped } : {}) });
+        saved = true;
+      }
+    } catch {
+      // the phone refused the write (storage full): 10 still has the recording in memory, and does not claim it is saved
+    }
+    show(audio, ms, saved, stopped);
   };
-  const capture = useVoiceCapture({ ...ORDER_RECORDING, onAutoStop: (audio, reason, ms) => keep(audio, ms, reason) });
+  const capture = useVoiceCapture({ ...ORDER_RECORDING, onAutoStop: (audio, reason, ms) => void keep(audio, ms, reason) });
   const recording = capture.phase === "listening" || capture.phase === "paused" || capture.phase === "stopping";
   const scales = useMicLevel(capture.stream, capture.phase === "listening");
   useEffect(() => () => void (take && URL.revokeObjectURL(take.url)), [take]);
+  // The app was closed on 10: back to 10 with the recording
+  useEffect(() => {
+    let live = true;
+    void takesRef.current?.load().then((saved) => {
+      if (live && saved) show(saved.audio, saved.recordedMs, true, saved.stopped);
+    }).catch(() => {});
+    return () => void (live = false);
+  }, []);
 
   const start = () => {
     setTake(null);
@@ -73,47 +115,56 @@ export function OrderRecorder({
     void capture.start();
   };
   const stop = async () => keep(await capture.stop(), capture.elapsedMs);
-  // 10's Re-record: 10 stays up until the new recording has really started (D45), then 09
-  const rerecord = async () => {
-    setNothing(false);
-    await capture.start();
-    setTake(null);
-  };
-  // Back on 09 / 10 (owner, answer 7): pause, then ask
-  const ask = () => {
+  const forget = () => takesRef.current?.clear().catch(() => {}) ?? Promise.resolve();
+  // Back on 09 / 10 (owner, answer 7) and Re-record / Type instead on 10 (answer 5): pause, then ask
+  const ask = (kind: Exclude<Asking, null>) => {
     if (capture.phase === "listening") capture.pause();
-    setAsking(true);
+    setAsking(kind);
   };
   const discard = async () => {
-    setAsking(false);
-    if (take) return setTake(null);
-    await capture.stop(); // the recording so far is thrown away - the shopkeeper said Discard
-    capture.release();
+    const then = asking;
+    setAsking(null);
+    if (!take) {
+      await capture.stop(); // the recording so far is thrown away - the shopkeeper said Discard
+      capture.release();
+      return;
+    }
+    await forget();
+    if (then === "type") {
+      setTake(null);
+      onAddByHand();
+    } else if (then === "rerecord") {
+      // 10 stays up until the new recording has really started (D45), then 09
+      setNothing(false);
+      await capture.start();
+      setTake(null);
+    } else setTake(null);
   };
+  const lostMs = take ? take.ms : capture.elapsedMs;
 
   const screens = (take || recording) && (
     <RecordOverlay
       screenKey={take ? "review" : "rec"}
       title={t(take ? "review.title" : "rec.title")}
-      asking={asking}
-      onAsk={ask}
-      onKeep={() => setAsking(false)}
+      asking={asking !== null}
+      lostLine={t("rec.discardLine", { time: mmss(lostMs) })}
+      onAsk={() => ask("back")}
+      onKeep={() => setAsking(null)}
       onDiscard={() => void discard()}
     >
       {take ? (
         <ReviewBody
           url={take.url}
           ms={take.ms}
+          saved={take.saved}
           {...(take.stopped ? { stopped: take.stopped } : {})}
           onGenerate={() => {
+            // the voice queue takes it over - and deletes the phone's saved copy in the same write (src/data/voiceQueue.ts)
             onGenerate(take.audio, take.ms);
             setTake(null);
           }}
-          onRerecord={() => void rerecord()}
-          onTypeInstead={() => {
-            setTake(null);
-            onAddByHand();
-          }}
+          onRerecord={() => ask("rerecord")}
+          onTypeInstead={() => ask("type")}
         />
       ) : (
         <RecordingBody
@@ -129,12 +180,18 @@ export function OrderRecorder({
     </RecordOverlay>
   );
 
-  return (
-    <div className={`flex flex-col gap-2 ${hasLines && !nothing && !capture.error && !disabledReason ? "" : "w-full"}`}>
-      {screens}
-      {/* KB-413 step 2: nothing recorded and the mic errors (permission, no mic, unsupported) stay on the bill - 12's warning row */}
+  // step-2 fix 1: nothing recorded, the mic errors and why it cannot record yet go in the bill's list (noteSlot), never the bottom panel
+  const notes = (nothing || capture.error || disabledReason) && (
+    <div className="flex flex-col gap-2">
       {(nothing || capture.error) && <WarnRow text={nothing ? t("order.nothing") : tx(capture.error!.message)} onAddByHand={onAddByHand} />}
       {disabledReason && <p className="font-kb text-kb-13 text-kb-sub">{tx(disabledReason)}</p>}
+    </div>
+  );
+
+  return (
+    <div className={`flex flex-col gap-2 ${hasLines ? "" : "w-full"}`}>
+      {screens}
+      {notes && (noteSlot ? createPortal(notes, noteSlot) : notes)}
       {/* KB-413 step 1: on 12 "More" (secondary, the mic) sits beside Bill Banao; its name still says what it does. An empty bill:
           the full-width primary "Record order". Recording and listening are full screens (09 / 10, step 2). */}
       <button
@@ -143,7 +200,7 @@ export function OrderRecorder({
         aria-label={hasLines && !nothing ? t("order.recordMore") : undefined}
         disabled={!!disabledReason || capture.phase === "requesting"}
         className={
-          hasLines && !nothing
+          hasLines
             ? "font-kb kb-press kb-hit box-content flex min-h-[56px] items-center justify-center gap-2 rounded-[16px] border border-kb-border bg-kb-card px-[18px] text-kb-15 font-bold text-kb-ink disabled:opacity-50"
             : "font-kb kb-press kb-hit flex min-h-[56px] w-full items-center justify-center gap-[10px] rounded-[16px] bg-kb-primary text-kb-16 font-bold text-kb-card shadow-kb-primary disabled:opacity-50"
         }

@@ -27,14 +27,19 @@ export function mmss(ms: number): string {
 const clock = (ms: number) => mmss(ms).padStart(5, "0");
 
 const ONES = DESIGN_BARS.map(() => 1);
-const BARS_10 = DESIGN_BARS.slice(0, 22);
+/** 09's 22 px space between parts, allowed to shrink to 8 (the parts themselves never shrink) */
+const SPACE = "flex-[0_1_22px]! min-h-2";
+// 10 draws its two tallest bars (56, 58) 1 px past the player card's edge; capped at 54 so nothing leaves its card (reviewer, 15 Nov 2026)
+const BARS_10 = DESIGN_BARS.slice(0, 22).map((h) => Math.min(h, 54));
 
 /** The full screen both share: the top bar, Back asks, Tab stays inside, the Discard question on top. */
-export function RecordOverlay({ screenKey, title, asking, onAsk, onKeep, onDiscard, children }: {
+export function RecordOverlay({ screenKey, title, asking, lostLine, onAsk, onKeep, onDiscard, children }: {
   /** "rec" / "review" - focus moves to the new screen when it changes */
   screenKey: string;
   title: string;
   asking: boolean;
+  /** the question's one line: what is lost ("The 0:42 recording will be deleted.") */
+  lostLine: string;
   /** Back was pressed: pause and ask */
   onAsk: () => void;
   onKeep: () => void;
@@ -53,10 +58,11 @@ export function RecordOverlay({ screenKey, title, asking, onAsk, onKeep, onDisca
         {children}
       </div>
       {asking && (
-        <BottomSheet backKey="kbDiscardRecording" title={t("rec.discardTitle")} onClose={onKeep}>
+        // step-2 fix 4 (owner + reviewer): what is lost; the safe choice is the big first button, Discard red but secondary under it
+        <BottomSheet backKey="kbDiscardRecording" title={t("rec.discardTitle")} intro={lostLine} onClose={onKeep}>
           <div className="flex flex-col gap-[10px]">
-            <Button variant="destructive" onClick={onDiscard}>{t("discard.confirm")}</Button>
-            <Button variant="tertiary" onClick={onKeep}>{t("rec.keep")}</Button>
+            <Button variant="primary" onClick={onKeep}>{t("rec.keep")}</Button>
+            <Button variant="destructive-outline" onClick={onDiscard}>{t("discard.confirm")}</Button>
           </div>
         </BottomSheet>
       )}
@@ -82,12 +88,18 @@ export function RecordingBody({ elapsedMs, paused, busy, scales, onPause, onResu
   const warn = elapsedMs >= ORDER_RECORDING.warnAtMs;
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col items-center gap-[22px] overflow-y-auto px-6 pt-[14px]">
+      {/* 09 draws 22 px between the parts; on a short screen or large text those spaces shrink to 8 first, so nothing is cut (step-2
+          fix 2). Only if even that is not enough does the middle scroll - the buttons always stay on screen. */}
+      <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 pt-[14px] [&>*]:flex-none">
         <Badge kind={paused ? "paused" : "recording"}>{t(paused ? "order.paused" : "rec.recording")}</Badge>
-        <div className="text-[64px] font-extrabold tracking-[-2px] tabular-nums">{clock(elapsedMs)}</div>
-        <div className="-mt-4 text-kb-14 text-kb-sub">{t("rec.of", { max: mmss(ORDER_RECORDING.maxMs) })}</div>
-        <div className="flex-none"><MicButton variant="recording" still={paused} /></div>
+        <div aria-hidden="true" className={SPACE} />
+        <div className="text-[64px] leading-[normal] font-extrabold tracking-[-2px] tabular-nums">{clock(elapsedMs)}</div>
+        <div className="mt-[6px] text-kb-14 text-kb-sub">{t("rec.of", { max: mmss(ORDER_RECORDING.maxMs) })}</div>
+        <div aria-hidden="true" className={SPACE} />
+        <MicButton variant="recording" still={paused} />
+        <div aria-hidden="true" className={SPACE} />
         <Waveform heights={DESIGN_BARS} live height={64} scales={scales ?? ONES} />
+        <div aria-hidden="true" className={SPACE} />
         <div className="self-stretch">
           <TipCard variant="white-dense">
             {before}
@@ -122,9 +134,11 @@ export function RecordingBody({ elapsedMs, paused, busy, scales, onPause, onResu
 }
 
 /** 10-Review's screen (under the top bar): the recording, playable, then Generate / Re-record / Type instead. */
-export function ReviewBody({ url, ms, stopped, onGenerate, onRerecord, onTypeInstead }: {
+export function ReviewBody({ url, ms, saved, stopped, onGenerate, onRerecord, onTypeInstead }: {
   url: string;
   ms: number;
+  /** on the phone (src/data/recordingDraft.ts) - only then does 10 say so */
+  saved: boolean;
   stopped?: "limit" | "hidden";
   onGenerate: () => void;
   onRerecord: () => void;
@@ -161,7 +175,7 @@ export function ReviewBody({ url, ms, stopped, onGenerate, onRerecord, onTypeIns
           </div>
           <div className="text-center">
             <h2 className="text-kb-22 font-extrabold">{t("review.ready")}</h2>
-            <p className="mt-1 text-kb-15 text-kb-sub">{t("review.length", { time: mmss(ms) })}</p>
+            <p className="mt-1 text-kb-15 text-kb-sub">{saved ? t("review.length", { time: mmss(ms) }) : mmss(ms)}</p>
             {/* why it stopped by itself (today's words; 10 does not draw them - asked on the sheet) */}
             {stopped && <p className="mt-1 text-kb-13 font-bold text-kb-warn-text">{t(stopped === "limit" ? "order.stoppedLimit" : "order.stoppedHidden")}</p>}
           </div>

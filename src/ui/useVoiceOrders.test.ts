@@ -69,7 +69,8 @@ describe("useVoiceOrders (KB-385)", () => {
     online = true;
     await act(async () => void window.dispatchEvent(new Event("online")));
     await waitFor(() => expect(t.appended).toHaveLength(1));
-    expect(t.result.current.blocking).toEqual([]);
+    // refresh() reads the queue after onAppend - wait for it, as the test above does (raced under full-suite load, 15 Nov 2026)
+    await waitFor(() => expect(t.result.current.blocking).toEqual([]));
   });
 
   it("a failure keeps the recording (Bill Banao waits); Retry resends the SAME recording and adds it once", async () => {

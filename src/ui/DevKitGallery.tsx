@@ -395,16 +395,25 @@ export function TapAreaCheck() {
   const [text, setText] = useState("checking tap areas…");
   useEffect(() => {
     const id = window.setTimeout(() => {
-      // while a modal sheet is open only what is inside it can be tapped - the rest sits under its backdrop
-      const modal = document.querySelector<HTMLElement>('[aria-modal="true"]');
-      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0 && (!modal || modal.contains(e)));
+      // while a modal is open only what is inside the TOP one can be tapped - the rest sits under it (KB-413: 09's Discard question sits
+      // over the full screen, both modal); every control on the page, a full screen in a portal too
+      const modals = [...document.querySelectorAll<HTMLElement>('[aria-modal="true"]')];
+      const modal = modals[modals.length - 1];
+      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon, [data-kit-part] .kb-hit, [data-kit-part] .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0 && (!modal || modal.contains(e)));
       const areas = els.map((e) => {
         const r = e.getBoundingClientRect();
         const b = getComputedStyle(e, "::before");
         const w = parseFloat(b.width), h = parseFloat(b.height);
         const cx = r.left + r.width / 2, cy = r.top + r.height / 2 + window.scrollY;
-        return { e, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
-      });
+        const a = { e, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
+        // KB-413: only the part a finger can reach - a scrolling / clipping box hides what lies past its edge (Add item scrolled under the panel)
+        for (let c = e.parentElement; c && c !== document.body; c = c.parentElement) {
+          if (getComputedStyle(c).overflow === "visible") continue;
+          const k = c.getBoundingClientRect();
+          a.l = Math.max(a.l, k.left); a.r = Math.min(a.r, k.right); a.t = Math.max(a.t, k.top + window.scrollY); a.b = Math.min(a.b, k.bottom + window.scrollY);
+        }
+        return a;
+      }).filter((a) => a.r > a.l && a.b > a.t);
       const bad: string[] = [];
       for (let i = 0; i < areas.length; i++)
         for (let j = i + 1; j < areas.length; j++) {
@@ -433,7 +442,11 @@ export function ContainmentCheck() {
         return cs.backgroundColor !== "rgba(0, 0, 0, 0)" || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0 || cs.overflow !== "visible";
       };
       const bad: string[] = [];
-      const parts = [...document.querySelectorAll<HTMLElement>("main [data-kit-part]")];
+      const parts = [...document.querySelectorAll<HTMLElement>("[data-kit-part]")].filter((p) => p.getBoundingClientRect().height > 0);
+      // owner + reviewer, 15 Nov 2026: anything only PARTLY visible - cut by the edge of a scrolling or clipping box - is clipped
+      const clipped: string[] = [];
+      // ...except the bill list's own scroll edge (data-scroll-list): a list longer than the screen is cut there by design - counted apart
+      const edge: string[] = [];
       for (const part of parts) {
         const pr = part.getBoundingClientRect();
         for (const e of part.querySelectorAll<HTMLElement>("*")) {
@@ -445,6 +458,18 @@ export function ContainmentCheck() {
           let box: Element | null = e.parentElement;
           while (box && box !== part && !isBox(box)) box = box.parentElement;
           const name = `${part.dataset.kitPart}: ${e.tagName.toLowerCase()} "${(e.textContent ?? "").trim().slice(0, 18)}"`;
+          // clipping: the nearest ancestor that cuts (overflow not visible) shows only part of it - a line-clamped text (the Heard card's two
+          // lines, clipped on purpose) excepted; an element scrolled wholly out of sight is not cut
+          if (!e.closest("[class*='line-clamp']")) {
+            let cut: Element | null = e.parentElement;
+            while (cut && cut !== document.body && getComputedStyle(cut).overflow === "visible") cut = cut.parentElement;
+            if (cut && cut !== document.body) {
+              const c = cut.getBoundingClientRect();
+              const visible = r.bottom > c.top + 0.5 && r.top < c.bottom - 0.5 && r.right > c.left + 0.5 && r.left < c.right - 0.5;
+              const whole = r.top >= c.top - 0.5 && r.bottom <= c.bottom + 0.5 && r.left >= c.left - 0.5 && r.right <= c.right + 0.5;
+              if (visible && !whole && isBox(e)) (cut.hasAttribute("data-scroll-list") ? edge : clipped).push(`${name} cut by its ${cut.className.includes("overflow-y-auto") ? "scrolling box" : "box"}`);
+            }
+          }
           if (r.left < pr.left - 0.5 || r.right > pr.right + 0.5) bad.push(`${name} outside the part`);
           else if (box && box !== part) {
             const b = box.getBoundingClientRect();
@@ -471,11 +496,11 @@ export function ContainmentCheck() {
             }
         }
       }
-      setText(`Containment: ${parts.length} parts · outside: ${bad.length}${bad.length ? " - " + bad.slice(0, 6).join("; ") : ""}`);
+      setText(`Containment: ${parts.length} parts · outside: ${bad.length}${bad.length ? " - " + bad.slice(0, 6).join("; ") : ""} · clipped: ${clipped.length}${clipped.length ? " - " + clipped.slice(0, 4).join("; ") : ""}${edge.length ? ` · at the bill list's scroll edge (scrolls on): ${edge.length}` : ""}`);
     }, 2500);
     return () => window.clearTimeout(id);
   }, []);
-  return <p data-contain-check style={{ font: "600 12px system-ui", color: text.includes("outside: 0") ? "#2a6" : "#b00" }}>{text}</p>;
+  return <p data-contain-check style={{ font: "600 12px system-ui", color: text.includes("outside: 0") && text.includes("clipped: 0") ? "#2a6" : "#b00" }}>{text}</p>;
 }
 
 export function DevKitGallery() {

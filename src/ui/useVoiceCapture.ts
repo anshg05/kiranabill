@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { recordedMimeType } from "./recordingType";
+import { isNativeApp } from "@/data/nativeSignIn";
 
 // KB-302: push-to-talk capture (docs/04-VOICE-PIPELINE.md section 2 - tap to
 // start, tap to stop; no length limit). The browser picks its own recording
@@ -51,8 +52,11 @@ export const ORDER_RECORDING = { bitsPerSecond: 24_000, maxMs: 300_000, warnAtMs
 /** D45: how long the mic stays open after a recording ends. */
 export const WARM_MIC_MS = 60_000;
 
+/** KB-413 (owner, answer 6): inside the Android app there are no browser site settings - the app's own permission screen instead. */
+const APP_PERMISSION = "Allow the microphone for Kirana Voice Bill — phone Settings → Apps → Kirana Voice Bill → Permissions";
+
 function captureError(kind: CaptureErrorKind): CaptureError {
-  return { kind, message: MESSAGES[kind] };
+  return { kind, message: kind === "permission" && isNativeApp() ? APP_PERMISSION : MESSAGES[kind] };
 }
 
 function kindOf(err: unknown): CaptureErrorKind {

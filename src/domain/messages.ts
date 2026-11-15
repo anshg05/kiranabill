@@ -134,6 +134,8 @@ export const MESSAGES = {
   "voice.busy": m("Voice service busy — try again in a minute", "आवाज़ सेवा व्यस्त है — एक मिनट बाद कोशिश करें", "Awaaz service busy hai — ek minute baad koshish karein"),
   "voice.rate": m("Voice limit reached for now — try again later, or add by hand", "अभी आवाज़ की सीमा पूरी हो गई — बाद में कोशिश करें, या खुद जोड़ें", "Abhi awaaz ki seema poori ho gayi — baad mein koshish karein, ya khud jodein"),
   "voice.session": m("Session expired — sign out and sign in again", "लॉगिन ख़त्म हो गया — साइन आउट करके फिर साइन इन करें", "Login khatam ho gaya — sign out karke phir sign in karein"),
+  // KB-413 step 2 (owner, answer 6): inside the Android app the browser's site settings do not exist - say where the app's permission is
+  "voice.micDeniedApp": m("Allow the microphone for Kirana Voice Bill — phone Settings → Apps → Kirana Voice Bill → Permissions", "Kirana Voice Bill को माइक की अनुमति दें — फ़ोन की सेटिंग → ऐप्स → Kirana Voice Bill → अनुमतियाँ", "Kirana Voice Bill ko mic ki permission dein — phone ki Settings → Apps → Kirana Voice Bill → Permissions"),
   "voice.micDenied": m("Mic permission denied — allow it in the browser's site settings", "माइक की अनुमति नहीं मिली — ब्राउज़र की साइट सेटिंग में अनुमति दें", "Mic ki permission nahi mili — browser ki site settings mein allow karein"),
   "voice.noMic": m("No microphone found", "माइक नहीं मिला", "Mic nahi mila"),
   "voice.unsupported": m("Voice isn't supported in this browser", "इस ब्राउज़र में बोलना काम नहीं करता", "Is browser mein bolna kaam nahi karta"),
@@ -178,7 +180,8 @@ export const MESSAGES = {
   "rec.tipWhat": m("item · quantity · price", "सामान · मात्रा · भाव", "saaman · matra · bhaav"),
   "rec.saved": m("Saved on this phone when you stop", "रोकने पर इस फ़ोन में सेव होगा", "Rokne par is phone mein save hoga"),
   "rec.discardTitle": m("Discard recording?", "रिकॉर्डिंग हटाएँ?", "Recording hatayein?"),
-  "rec.keep": m("Keep", "रखें", "Rakhein"),
+  "rec.discardLine": m("The {time} recording will be deleted.", "{time} की रिकॉर्डिंग मिट जाएगी।", "{time} ki recording mit jaayegi."),
+  "rec.keep": m("Keep recording", "रिकॉर्डिंग रखें", "Recording rakhein"),
   "review.title": m("Check your recording", "अपनी रिकॉर्डिंग जाँचें", "Apni recording jaanchein"),
   "review.ready": m("Recording ready", "रिकॉर्डिंग तैयार है", "Recording taiyaar hai"),
   "review.length": m("{time} · saved on this phone", "{time} · इस फ़ोन में सेव", "{time} · is phone mein save"),

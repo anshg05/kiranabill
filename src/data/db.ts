@@ -304,6 +304,20 @@ export interface LocalVoiceRecording {
   items?: unknown[];
 }
 
+/**
+ * KB-413 step 2 (owner, 15 Nov 2026, answer 1): the recording just stopped (screen 10), saved on the phone so 10 survives the app closing.
+ * One per shop; device-only, never synced. Deleted when it is discarded or re-recorded, and when Generate bill moves it into voiceQueue.
+ */
+export interface LocalRecordingDraft {
+  shopId: string;
+  bytes: ArrayBuffer;
+  mime: string;
+  recordedMs: number;
+  /** it stopped by itself: the 5:00 limit, or the app going to the background */
+  stopped?: "limit" | "hidden";
+  savedAt: string;
+}
+
 export class KiranaBillDB extends Dexie {
   bills!: EntityTable<LocalBill, "localId">;
   billItems!: EntityTable<LocalBillItem, "id">;
@@ -327,6 +341,7 @@ export class KiranaBillDB extends Dexie {
   reviewCapture!: EntityTable<LocalReviewCapture, "id">;
   /** KB-385: device-only voice recordings until their bill exists. Never synced. */
   voiceQueue!: EntityTable<LocalVoiceRecording, "recordingId">;
+  recordingDraft!: EntityTable<LocalRecordingDraft, "shopId">;
 
   constructor(name: string) {
     super(name);
@@ -414,6 +429,9 @@ export class KiranaBillDB extends Dexie {
 
     // KB-385 (doc 25 §6): the phone's voice queue - a new store, additive.
     this.version(8).stores({ voiceQueue: "&recordingId, shopId, billLocalId, state" });
+
+    // KB-413 step 2 (owner, 15 Nov 2026): the stopped recording (screen 10), one per shop - a new store, additive.
+    this.version(9).stores({ recordingDraft: "&shopId" });
   }
 }
 

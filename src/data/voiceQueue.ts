@@ -18,7 +18,9 @@ export interface NewRecording {
 /** Keeps a new recording; the same recording queued again (a double tap) stays one row with its first audio. */
 export async function enqueueRecording(db: KiranaBillDB, r: NewRecording): Promise<void> {
   const bytes = await r.audio.arrayBuffer();
-  await db.transaction("rw", db.voiceQueue, async () => {
+  // KB-413: the saved copy of this recording (screen 10) is deleted in the same write - it is in the queue now, never both, never neither
+  await db.transaction("rw", db.voiceQueue, db.recordingDraft, async () => {
+    await db.recordingDraft.delete(r.shopId);
     if (await db.voiceQueue.get(r.recordingId)) return;
     await db.voiceQueue.add({ recordingId: r.recordingId, shopId: r.shopId, billLocalId: r.billLocalId, bytes, mime: r.audio.type, recordedMs: r.recordedMs, createdAt: new Date().toISOString(), state: "queued" });
   });

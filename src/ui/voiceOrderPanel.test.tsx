@@ -2,7 +2,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { LocalVoiceRecording } from "@/data/db";
-import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
+import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
+
+const env = vi.hoisted(() => ({ native: false }));
+vi.mock("@/data/nativeSignIn", () => ({ isNativeApp: () => env.native }));
+
+/** the phone's saved recording, in memory (src/data/recordingDraft.ts in the app) - one per shop, like the real one */
+function memoryStore(failSave = false) {
+  let saved: { audio: Blob; recordedMs: number; stopped?: "limit" | "hidden" } | null = null;
+  const store: TakeStore & { peek: () => typeof saved } = {
+    load: async () => saved,
+    save: async (t) => {
+      if (failSave) throw new Error("storage full");
+      saved = t;
+    },
+    clear: async () => void (saved = null),
+    peek: () => saved,
+  };
+  return store;
+}
 import { setScreenLanguage } from "./screenLanguage";
 
 // KB-385 step 5 (owner, 10 Nov 2026; D101, doc 25 §5 and §8): the order recorder and the bill's recordings. Tap -> timer -> Pause /
@@ -53,7 +71,7 @@ const button = (name: RegExp | string) => screen.getByRole("button", { name });
 describe("OrderRecorder", () => {
   it("tap -> 09 Recording (full screen) with a timer -> Pause (time stops) -> Resume -> Stop -> 10 Review -> Generate", async () => {
     const onGenerate = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={memoryStore()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     const rec = screen.getByRole("dialog", { name: "New voice bill" });
     expect(rec.getAttribute("aria-modal")).toBe("true");
@@ -93,35 +111,52 @@ describe("OrderRecorder", () => {
     expect(button("Stop").className).toContain("flex-[1.4]");
     expect(button("Stop").className).toContain("bg-kb-primary");
     expect(button("Back").closest("header")!.textContent).toContain("New voice bill");
+    // step-2 fix 2: the 22 px spaces shrink (to 8) before anything is cut - never a fixed gap
+    const spaces = rec.querySelectorAll("[class*='flex-[0_1_22px]']");
+    expect(spaces.length).toBe(4);
+    expect(rec.querySelector("[class*='gap-[22px]']")).toBeNull();
   });
 
-  it("Re-record throws the take away and records again; nothing is generated", async () => {
+  it("Re-record asks 'Discard recording?' first (owner, answer 5): Keep stays on 10; Discard deletes the saved one and records again", async () => {
     const onGenerate = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} />);
+    const takes = memoryStore();
+    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(3_000);
     await act(async () => void fireEvent.click(button("Stop")));
-    await act(async () => void fireEvent.click(button("Re-record")));
+    fireEvent.click(button("Re-record"));
+    const ask = screen.getByRole("dialog", { name: "Discard recording?" });
+    fireEvent.click(within(ask).getByRole("button", { name: "Keep recording" }));
+    expect(screen.getByRole("dialog", { name: "Check your recording" })).toBeTruthy();
+    expect(takes.peek()).not.toBeNull();
+    fireEvent.click(button("Re-record"));
+    await act(async () => void fireEvent.click(within(screen.getByRole("dialog", { name: "Discard recording?" })).getByRole("button", { name: "Discard" })));
     expect(screen.getByRole("dialog", { name: "New voice bill" })).toBeTruthy();
+    expect(takes.peek()).toBeNull();
     expect(button("Pause")).toBeTruthy();
     expect(onGenerate).not.toHaveBeenCalled();
   });
 
-  it("Type instead: the recording is not used - the add panel opens, nothing is generated", async () => {
+  it("Type instead asks 'Discard recording?' first (owner, answer 5); Discard: the saved one is deleted, the add panel opens, nothing is generated", async () => {
     const onGenerate = vi.fn();
     const onAddByHand = vi.fn();
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={onAddByHand} />);
+    const takes = memoryStore();
+    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={onAddByHand} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(3_000);
     await act(async () => void fireEvent.click(button("Stop")));
     fireEvent.click(button("Type instead"));
+    expect(onAddByHand).not.toHaveBeenCalled();
+    await act(async () => void fireEvent.click(within(screen.getByRole("dialog", { name: "Discard recording?" })).getByRole("button", { name: "Discard" })));
+    expect(takes.peek()).toBeNull();
     expect(onAddByHand).toHaveBeenCalledOnce();
     expect(onGenerate).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("the 4:30 warning on 09, then the 5:00 stop goes to 10 by itself and says why", async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+  it("the 4:30 warning on 09, then the 5:00 stop goes to 10 by itself, says why - and is saved on the phone", async () => {
+    const takes = memoryStore();
+    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(269_000);
     expect(screen.queryByText("Recording stops at 5:00")).toBeNull();
@@ -131,6 +166,7 @@ describe("OrderRecorder", () => {
     const review = screen.getByRole("dialog", { name: "Check your recording" });
     expect(within(review).getByText("Stopped at 5:00")).toBeTruthy();
     expect(within(review).getByText("5:00 · saved on this phone")).toBeTruthy();
+    expect(takes.peek()).toMatchObject({ stopped: "limit" });
     expect(button("Generate bill")).toBeTruthy();
   });
 
@@ -169,6 +205,19 @@ describe("OrderRecorder", () => {
     expect(button("Add by hand")).toBeTruthy();
   });
 
+  it("no permission INSIDE THE ANDROID APP (owner, answer 6): where to allow it - the phone's Settings -> Apps -> Kirana Voice Bill -> Permissions", async () => {
+    env.native = true;
+    try {
+      Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: vi.fn(async () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }))) } });
+      render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+      await act(async () => void fireEvent.click(button("Record order")));
+      expect(screen.getByText("Allow the microphone for Kirana Voice Bill — phone Settings → Apps → Kirana Voice Bill → Permissions")).toBeTruthy();
+      expect(screen.queryByText(/browser/)).toBeNull();
+    } finally {
+      env.native = false;
+    }
+  });
+
   it("with lines on the bill the button says 'Add more by voice' (the same flow)", () => {
     render(<OrderRecorder hasLines onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
     expect(button("Add more by voice")).toBeTruthy();
@@ -183,8 +232,8 @@ describe("OrderRecorder", () => {
 
 // KB-413 step 2 (owner, 15 Nov 2026, answer 7): Back on 09 / 10 never throws a recording away by itself - it pauses and asks.
 describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
-  const startRecording = async (onGenerate = vi.fn()) => {
-    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} />);
+  const startRecording = async (onGenerate = vi.fn(), takes?: TakeStore) => {
+    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} {...(takes ? { takes } : {})} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(6_000);
     return onGenerate;
@@ -195,11 +244,19 @@ describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
     await startRecording();
     fireEvent.click(button("Back"));
     expect(sheet()).toBeTruthy();
+    // owner, 15 Nov 2026 (fix 4): what is lost, the safe choice big and first, Discard red but secondary under it
+    expect(within(sheet()).getByText("The 0:06 recording will be deleted.")).toBeTruthy();
+    const [keepBtn, discardBtn] = within(sheet()).getAllByRole("button");
+    expect(keepBtn!.textContent).toBe("Keep recording");
+    expect(keepBtn!.className).toContain("bg-kb-primary");
+    expect(discardBtn!.textContent).toBe("Discard");
+    expect(discardBtn!.className).toContain("text-kb-err");
+    expect(discardBtn!.className).not.toContain("bg-kb-err");
     await wait(20_000);
     const rec = screen.getByRole("dialog", { name: "New voice bill" });
     expect(within(rec).getByText("00:06")).toBeTruthy();
     expect(within(rec).getByText("Paused")).toBeTruthy();
-    fireEvent.click(within(sheet()).getByRole("button", { name: "Keep" }));
+    fireEvent.click(within(sheet()).getByRole("button", { name: "Keep recording" }));
     expect(screen.queryByRole("dialog", { name: "Discard recording?" })).toBeNull();
     expect(button("Resume")).toBeTruthy();
   });
@@ -224,7 +281,7 @@ describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
     expect(sheet()).toBeTruthy();
     expect(screen.getByRole("dialog", { name: "New voice bill" })).toBeTruthy();
     expect(button("Resume")).toBeTruthy();
-    window.history.back();
+    window.history.back(); // the second Back closes the question = Keep
     await act(() => new Promise((r) => setTimeout(r, 60)));
     expect(screen.queryByRole("dialog", { name: "Discard recording?" })).toBeNull();
     expect(screen.getByRole("dialog", { name: "New voice bill" })).toBeTruthy();
@@ -243,22 +300,69 @@ describe("09 / 10 - Back asks 'Discard recording?' (Keep / Discard)", () => {
     expect(button("Resume")).toBeTruthy();
   });
 
-  it("10: Back asks; Keep stays on 10 with the recording; Discard drops it - nothing is generated", async () => {
-    const onGenerate = await startRecording();
+  it("10: Back asks; Keep stays on 10 with the recording; Discard drops it and deletes the saved one - nothing is generated", async () => {
+    const takes = memoryStore();
+    const onGenerate = await startRecording(vi.fn(), takes);
     await act(async () => void fireEvent.click(button("Stop")));
+    expect(takes.peek()).not.toBeNull();
     fireEvent.click(button("Back"));
-    fireEvent.click(within(sheet()).getByRole("button", { name: "Keep" }));
+    expect(within(sheet()).getByText("The 0:06 recording will be deleted.")).toBeTruthy();
+    fireEvent.click(within(sheet()).getByRole("button", { name: "Keep recording" }));
     expect(screen.getByRole("dialog", { name: "Check your recording" })).toBeTruthy();
     fireEvent.click(button("Back"));
     await act(async () => void fireEvent.click(within(sheet()).getByRole("button", { name: "Discard" })));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(onGenerate).not.toHaveBeenCalled();
+    expect(takes.peek()).toBeNull();
+  });
+});
+
+// Owner, 15 Nov 2026 (answer 1): the stopped recording is saved on the phone, so 10 survives the app closing.
+describe("10 survives the app closing (the recording saved on Stop)", () => {
+  it("Stop saves it; the app is killed and reopened: 10 comes back with the same recording, and Generate works", async () => {
+    const takes = memoryStore();
+    const first = render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
+    await act(async () => void fireEvent.click(button("Record order")));
+    await wait(6_000);
+    await act(async () => void fireEvent.click(button("Stop")));
+    expect(takes.peek()!.recordedMs).toBeGreaterThanOrEqual(6_000);
+    first.unmount(); // the app is closed
+    const onGenerate = vi.fn();
+    render(<OrderRecorder hasLines={false} onGenerate={onGenerate} onAddByHand={vi.fn()} takes={takes} />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(10)));
+    const review = screen.getByRole("dialog", { name: "Check your recording" });
+    expect(within(review).getByText("0:06 · saved on this phone")).toBeTruthy();
+    await act(async () => void fireEvent.click(button("Generate bill")));
+    expect(onGenerate).toHaveBeenCalledOnce();
+    expect(onGenerate.mock.calls[0]![0]).toBeInstanceOf(Blob);
+  });
+
+  it("the app going to the background saves it too", async () => {
+    const takes = memoryStore();
+    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={takes} />);
+    await act(async () => void fireEvent.click(button("Record order")));
+    await wait(4_000);
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+    await act(async () => void document.dispatchEvent(new Event("visibilitychange")));
+    await wait(10);
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+    expect(takes.peek()).toMatchObject({ stopped: "hidden" });
+  });
+
+  it("nothing saved (the phone refused the write): 10 never claims 'saved on this phone'", async () => {
+    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore(true)} />);
+    await act(async () => void fireEvent.click(button("Record order")));
+    await wait(6_000);
+    await act(async () => void fireEvent.click(button("Stop")));
+    const review = screen.getByRole("dialog", { name: "Check your recording" });
+    expect(within(review).getAllByText("0:06")).toHaveLength(2); // under "Recording ready" (no claim) and the player's end time
+    expect(within(review).queryByText(/saved on this phone/)).toBeNull();
   });
 });
 
 describe("10 - real playback over a fixed bar pattern (owner, answer 5)", () => {
   const toReview = async () => {
-    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} />);
+    render(<OrderRecorder hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} takes={memoryStore()} />);
     await act(async () => void fireEvent.click(button("Record order")));
     await wait(42_000);
     await act(async () => void fireEvent.click(button("Stop")));
@@ -345,6 +449,13 @@ describe("09 - the bars follow the REAL microphone level (owner, answer 5); stil
 });
 
 describe("09 / 10 in Hindi (the new words)", () => {
+  it("the app's mic help in Hindi and Hinglish (the catalog)", async () => {
+    const { render: say } = await import("@/domain/messages");
+    expect(say("voice.micDeniedApp", {}, "hi")).toBe("Kirana Voice Bill को माइक की अनुमति दें — फ़ोन की सेटिंग → ऐप्स → Kirana Voice Bill → अनुमतियाँ");
+    expect(say("voice.micDeniedApp", {}, "hl")).toBe("Kirana Voice Bill ko mic ki permission dein — phone ki Settings → Apps → Kirana Voice Bill → Permissions");
+    expect(say("rec.discardLine", { time: "0:42" }, "hl")).toBe("0:42 ki recording mit jaayegi.");
+  });
+
   it("titles, chip, 'of 5:00', the saved line, the Discard question", async () => {
     setScreenLanguage("hi");
     try {
@@ -355,7 +466,9 @@ describe("09 / 10 in Hindi (the new words)", () => {
       expect(within(rec).getByText("5:00 में से")).toBeTruthy();
       expect(within(rec).getByText("रोकने पर इस फ़ोन में सेव होगा")).toBeTruthy();
       fireEvent.keyDown(document, { key: "Escape" });
-      expect(screen.getByRole("dialog", { name: "रिकॉर्डिंग हटाएँ?" })).toBeTruthy();
+      const ask = screen.getByRole("dialog", { name: "रिकॉर्डिंग हटाएँ?" });
+      expect(within(ask).getByText("0:00 की रिकॉर्डिंग मिट जाएगी।")).toBeTruthy();
+      expect(within(ask).getByRole("button", { name: "रिकॉर्डिंग रखें" })).toBeTruthy();
     } finally {
       setScreenLanguage("en");
     }

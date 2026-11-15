@@ -97,7 +97,7 @@ function Screen12({ state }: { state: string }) {
       customer={{ name: "Cash", mobile: null }}
       onCustomerName={() => null}
       onCustomerMobile={() => null}
-      orderBar={(openAdd) => <OrderRecorder hasLines onGenerate={noop} onAddByHand={openAdd} />}
+      orderBar={(openAdd, noteSlot) => <OrderRecorder hasLines onGenerate={noop} onAddByHand={openAdd} noteSlot={noteSlot} />}
       orderEntries={(openAdd, part) => <OrderEntries orders={o} onAddByHand={openAdd} part={part} />}
     />
   );
@@ -108,7 +108,7 @@ function Screen09({ state }: { state: string }) {
   const [asking, setAsking] = useState(state === "discard");
   const paused = state === "paused" || state === "discard";
   return (
-    <RecordOverlay screenKey="rec" title={t("rec.title")} asking={asking} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
+    <RecordOverlay screenKey="rec" title={t("rec.title")} asking={asking} lostLine={t("rec.discardLine", { time: state === "warning" ? "4:36" : "0:42" })} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
       <RecordingBody elapsedMs={state === "warning" ? 276_000 : 42_000} paused={paused} busy={false} scales={null} onPause={noop} onResume={noop} onStop={noop} />
     </RecordOverlay>
   );
@@ -131,11 +131,14 @@ function Screen10({ state }: { state: string }) {
     return () => window.clearTimeout(id);
   }, [state]);
   return (
-    <RecordOverlay screenKey="review" title={t("review.title")} asking={asking} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
-      <ReviewBody url={url} ms={state === "limit" ? 300_000 : 42_000} {...(state === "limit" ? { stopped: "limit" as const } : {})} onGenerate={noop} onRerecord={noop} onTypeInstead={noop} />
+    <RecordOverlay screenKey="review" title={t("review.title")} asking={asking} lostLine={t("rec.discardLine", { time: state === "limit" ? "5:00" : "0:42" })} onAsk={() => setAsking(true)} onKeep={() => setAsking(false)} onDiscard={noop}>
+      <ReviewBody url={url} saved ms={state === "limit" ? 300_000 : 42_000} {...(state === "limit" ? { stopped: "limit" as const } : {})} onGenerate={noop} onRerecord={noop} onTypeInstead={noop} />
     </RecordOverlay>
   );
 }
+
+/** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
+const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
 
 const FILES: Record<string, string> = { "09": "09-Recording.html", "10": "10-Review.html", "12": "12-BillReview.html" };
 
@@ -145,7 +148,13 @@ function Frame() {
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
-    document.documentElement.dataset.motion = "reduce"; // end states, like the design frame
+    // end states, like the design frame - except 09, whose file is caught mid-pulse (the ring around the halo): ours pulses with it
+    if (params.get("screen") !== "09") document.documentElement.dataset.motion = "reduce";
+    // 09 / 10 are full screens in a portal on <body>: the live checks must see them too
+    const tag = window.setInterval(() => {
+      for (const el of document.querySelectorAll<HTMLElement>("body > div:not(#root):not([data-kit-part])")) el.dataset.kitPart = `screen ${params.get("screen")}`;
+    }, 100);
+    window.setTimeout(() => window.clearInterval(tag), 2000);
   }, [lang]);
   return (
     <>
@@ -179,6 +188,12 @@ function Sheet() {
       const con = d?.querySelector("[data-contain-check]")?.textContent ?? "";
       if (tap && !tap.startsWith("checking") && con && !con.startsWith("checking")) {
         setChecks(`${con} · ${tap}`);
+        // both frames' animations stopped at the same moment (0.6 s in), so a pulse (09's ring) is compared like for like
+        for (const f of document.querySelectorAll("iframe"))
+          for (const a of f.contentDocument?.getAnimations() ?? []) {
+            a.pause();
+            a.currentTime = 600;
+          }
         window.clearInterval(id);
       }
     }, 300);
@@ -192,7 +207,7 @@ function Sheet() {
         KB-413 screen {screen} - {state}
         {lang ? ` - ${lang}` : ""} - {w} px{scale ? `, text ${scale}%` : ""}
       </h1>
-      <p style={{ margin: "0 0 10px", color: checks.includes("outside: 0") && checks.includes("overlapping pairs: 0") ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>
+      <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div>
           <div style={{ color: "#555", marginBottom: 4 }}>The app (real screen, sample data)</div>

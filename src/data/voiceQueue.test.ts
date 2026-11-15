@@ -20,10 +20,10 @@ const SHOP = "shop-1";
 const rec = (billLocalId = "bill-1", bytes = [1, 2, 3]) => ({ recordingId: crypto.randomUUID(), shopId: SHOP, billLocalId, audio: new Blob([new Uint8Array(bytes)], { type: "audio/webm;codecs=opus" }), recordedMs: 42_000 });
 
 describe("the phone's voice queue", () => {
-  it("is version 8 of the phone database, additive", async () => {
+  it("is part of the phone database (v8, additive; v9 added the saved recording, KB-413)", async () => {
     const db = open();
     await db.open();
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
     expect(db.tables.map((t) => t.name)).toContain("voiceQueue");
   });
 

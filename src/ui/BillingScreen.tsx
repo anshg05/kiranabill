@@ -64,7 +64,8 @@ import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import { markRecordingBilled, submitRecording, type VoiceJobOutcome } from "@/data/voiceJob";
 import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
-import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
+import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
+import { clearRecordingDraft, loadRecordingDraft, saveRecordingDraft } from "@/data/recordingDraft";
 import { runBillCommand } from "./voiceCommands";
 import { useShopName } from "./useShopName";
 import type { Customer } from "./useBillLines";
@@ -364,14 +365,24 @@ export function BillingScreen() {
   // KB-340 (D86): the shop's name in the header; re-read when Settings closes, so a rename shows at once.
   const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, `${settingsOpen}:${catalogPulls}`);
   const sync = useSyncChip(localDb);
+  // KB-413 step 2 (owner, answer 1): the stopped recording on this phone, so 10 survives the app closing
+  const takes = useMemo<TakeStore | undefined>(
+    () =>
+      localDb && shop?.id
+        ? { load: () => loadRecordingDraft(localDb, shop.id), save: (tk) => saveRecordingDraft(localDb, { ...tk, shopId: shop.id }), clear: () => clearRecordingDraft(localDb, shop.id) }
+        : undefined,
+    [localDb, shop?.id],
+  );
   return (
     <>
     <BillView
       shopName={shopName}
       lines={bill.rows}
       onSignOut={onSignOut}
-      orderBar={(openAdd) => (
+      orderBar={(openAdd, noteSlot) => (
         <OrderRecorder
+          takes={takes}
+          noteSlot={noteSlot}
           hasLines={bill.rows.length > 0}
           disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
           onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms))}
@@ -462,7 +473,8 @@ interface BillViewProps {
   lines: readonly (BillLine & { readonly id: string })[];
   onSignOut: () => void;
   /** KB-385 (D101): the V3 order recorder in the bottom bar - when given, it replaces the old mic (voice / onMicTap). */
-  orderBar?: (openAdd: () => void) => ReactNode;
+  /** noteSlot: where the recorder's warnings go - the bill's scrolling list (KB-413 step-2 fix 1), never the bottom panel */
+  orderBar?: (openAdd: () => void, noteSlot: HTMLElement | null) => ReactNode;
   /** KB-385: the bill's recordings (processing, failed, "Heard: …") under the lines. */
   /** KB-413: called twice - "heard" (the Heard cards, above the lines) and "pending" (recordings not in the bill yet, under them). */
   orderEntries?: (openAdd: (query: string) => void, part: "heard" | "pending") => ReactNode;
@@ -1024,6 +1036,7 @@ export function BillView({
     return line.rate === null ? qty : `${qty} × ${formatRate(line)}`;
   };
   const pendingId = "kb-bill-pending";
+  const [noteSlot, setNoteSlot] = useState<HTMLElement | null>(null);
   // Owner, 15 Nov 2026: when everything Bill Banao waits for is one kind - lines without a price, or without a quantity - say that kind.
   const priceMissing = lines.filter((l) => needOf(l.id) === "price").length;
   const qtyMissing = lines.filter((l) => needOf(l.id) === "quantity").length;
@@ -1082,7 +1095,8 @@ export function BillView({
         )}
 
         <div className="relative min-h-0 flex-1">
-        <div ref={itemsRef} className="flex h-full flex-col gap-[10px] overflow-y-auto px-4 pt-1 pb-[10px]">
+        {/* data-scroll-list: the bill list scrolls by design - the dev sheets count what its edge cuts apart from real clipping */}
+        <div ref={itemsRef} data-scroll-list className="flex h-full flex-col gap-[10px] overflow-y-auto px-4 pt-1 pb-[10px]">
           {/* KB-308: after Bill Banao, the receipt of the bill as stored (KB-309 shares it). Screen 13's look is KB-413 step 4. */}
           {saved?.receipt ? (
             <div className="py-2">
@@ -1190,6 +1204,8 @@ export function BillView({
           )}
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
           {orderEntries?.((query) => openAdd?.(query), "pending")}
+          {/* the recorder's warnings (mic refused, nothing recorded, still loading) - in the list like a failed recording (step-2 fix 1) */}
+          <div ref={setNoteSlot} className="empty:hidden" />
           {/* Add item (KB-305), dashed as drawn: disabled only while the shop catalog loads (the reason is a tooltip - a disabled button
               fires no hover events, so the title sits on a wrapper). On the saved screen it starts the next bill (decision 4). */}
           <span title={canAdd ? undefined : t("voice.loadingCatalog")}>
@@ -1332,7 +1348,7 @@ export function BillView({
 
           <div className="flex flex-wrap gap-[10px]">
             {orderBar ? (
-              !readOnly && orderBar(() => openAdd?.(""))
+              !readOnly && orderBar(() => openAdd?.(""), noteSlot)
             ) : (
               <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
             )}
