@@ -100,7 +100,7 @@ describe("the SMS link: iOS wants '&body=', Android '?body='", () => {
 });
 
 describe("the SMS sheet's 'Copy message'", () => {
-  const fakeShare = (): ReceiptShare => ({ ready: true, smsText: "SHARMA KIRANA\nTOTAL Rs.90", downloadImage() {}, downloadPdf() {}, whatsApp() {}, storedMobile: async () => null, sendSms() {} });
+  const fakeShare = (): ReceiptShare => ({ ready: true, smsText: "SHARMA KIRANA\nTOTAL Rs.90", downloadImage() {}, shareImage() {}, downloadPdf() {}, whatsApp() {}, storedMobile: async () => null, sendSms() {} });
   it("copies the text, says 'Copied', and is there when the clipboard exists", async () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });

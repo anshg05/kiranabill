@@ -59,7 +59,7 @@ describe("layoutReceipt - the share image's drawing steps (D57 layout)", () => {
       expect(all, v).toContain(v);
     }
     const name = texts(layoutReceipt(r, measure, 384).ops).find((t) => t.text === "SHARMA KIRANA")!;
-    expect([name.align, name.weight]).toEqual(["center", 600]);
+    expect([name.align, name.weight]).toEqual(["center", 700]); // KB-413 step 4 (owner, 16 Nov 2026): design 13 draws bold at 700
   });
 
   it("the long Hindi name wraps inside its column, on word boundaries, and joins back exactly", () => {
@@ -85,7 +85,7 @@ describe("layoutReceipt - the share image's drawing steps (D57 layout)", () => {
     expect([row("qty").length, row("rate").length, row("amount").length]).toEqual([4, 4, 4]);
     expect(row("qty").every((t) => t.align === "left")).toBe(true);
     expect(row("rate").every((t) => t.align === "right")).toBe(true);
-    expect(row("amount").every((t) => t.align === "right" && t.weight === 600)).toBe(true);
+    expect(row("amount").every((t) => t.align === "right" && t.weight === 700)).toBe(true); // KB-413 step 4: 700, as design 13
     expect(Math.max(...row("qty").map(right))).toBeLessThan(Math.min(...row("rate").map(left)));
     expect(Math.max(...row("rate").map(right))).toBeLessThan(Math.min(...row("amount").map(left)));
   });
@@ -119,7 +119,7 @@ describe("layoutReceipt - a reprint", () => {
     const t = texts(layoutReceipt(r, measure).ops);
     const reprint = t.filter((x) => x.role === "reprint");
     expect(reprint).toHaveLength(1);
-    expect(reprint[0]).toMatchObject({ text: "REPRINT", align: "center", weight: 600 });
+    expect(reprint[0]).toMatchObject({ text: "REPRINT", align: "center", weight: 700 }); // KB-413 step 4: the share style's bold is 700 (owner)
     const at = (role: string) => t.findIndex((x) => x.role === role);
     expect(at("date-time")).toBeLessThan(at("reprint"));
     expect(at("reprint")).toBeLessThan(at("bill-no-label"));
@@ -269,12 +269,14 @@ describe("layoutReceipt - the print style (whole dots)", () => {
     expect(SCREEN_STYLE.snap).toBe(false);
   });
 
-  it("SCREEN_STYLE is today's receipt, value for value (Receipt.tsx's sizes at 14 px) - printing changes must never move the screen or the share image", () => {
-    const base = { size: 14, weight: 400 };
-    const bold = { size: 14, weight: 600 };
+  // KB-413 step 4 (owner, 16 Nov 2026 - "update that one pin"): the screen and the share image moved to design 13's receipt look on
+  // purpose; this pin still stops a PRINTING change from moving them.
+  it("SCREEN_STYLE is design 13's receipt, value for value (Receipt.tsx's sizes at 320 px) - printing changes must never move the screen or the share image", () => {
+    const base = { size: 12, weight: 400 };
+    const bold = { size: 12, weight: 700 };
     expect(SCREEN_STYLE).toEqual({
-      title: { size: 19.6, weight: 600 }, small: { size: 11.9, weight: 400 }, label: base, number: bold, header: bold, name: base, cell: base, amount: bold,
-      total: { size: 16.1, weight: 600 }, leading: 1.375, titleLeading: 1.25, top: 20, gap: 8, colGap: 8, rowPad: 4, afterTotal: 12, minItem: 0, snap: false,
+      title: { size: 15, weight: 700, tracking: 0.5 }, small: { size: 11, weight: 400 }, label: base, number: bold, header: bold, name: base, cell: base, amount: bold,
+      total: { size: 16, weight: 700 }, leading: 1.3, titleLeading: 1.3, top: 14, bottom: 8, gap: 6, colGap: 8, rowPad: 5, afterTotal: 4, minItem: 0, snap: false,
     });
   });
 });

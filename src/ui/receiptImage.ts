@@ -9,8 +9,9 @@ import type { RenderReceiptFiles } from "./useReceiptShare";
 // (canvas); checked in a real browser, the layout itself is unit-tested.
 // KB-408 S3: the printer's image (receiptPrint.ts) is painted by the same paintReceipt.
 
-const WIDTH = 384;
-const SCALE = 2;
+// KB-413 step 4: laid out at 13's 320 px paper, painted at 2.4x - the same 768 px wide image as before (Q4)
+const WIDTH = 320;
+const SCALE = 2.4;
 const FAMILY = `"IBM Plex Mono", Mukta, monospace`;
 export const cssFont = (f: FontSpec) => `${f.weight} ${f.size}px ${FAMILY}`;
 
@@ -39,6 +40,8 @@ export interface ReceiptPalette {
   readonly dash: readonly number[];
   /** Line widths: dashed, the dark header rule, the light row rule. */
   readonly widths: { readonly dashed: number; readonly dark: number; readonly light: number };
+  /** 13's darker grey (KB-413 step 4): qty, rate and the rule under the header. None (the printer) = ink / inkSoft, as before. */
+  readonly strong?: string;
   /** Whole-dot painting (the printer): text and rules sit exactly on the dot grid. */
   readonly snap: boolean;
   readonly border: boolean;
@@ -57,14 +60,15 @@ export function paintReceipt(ctx: CanvasRenderingContext2D, layout: ReceiptLayou
   for (const op of layout.ops) {
     if (op.kind === "text") {
       ctx.font = cssFont(op);
-      ctx.fillStyle = op.muted ? p.inkSoft : p.ink;
+      ctx.letterSpacing = `${op.tracking ?? 0}px`;
+      ctx.fillStyle = op.muted ? p.inkSoft : p.strong && (op.role === "qty" || op.role === "rate") ? p.strong : p.ink;
       ctx.textAlign = op.align;
       // The glyph sits in the middle of its line box, as in CSS (leading-snug).
       ctx.fillText(op.text, op.x, p.snap ? op.y + Math.round(op.size * 0.1875) : op.y + op.size * 0.1875);
     } else {
       ctx.beginPath();
       ctx.setLineDash(op.style === "dashed" ? [...p.dash] : op.style === "light" && p.lightDash ? [...p.lightDash] : []);
-      ctx.strokeStyle = op.style === "dashed" ? p.muted : op.style === "dark" ? p.inkSoft : p.line;
+      ctx.strokeStyle = op.style === "dashed" ? p.muted : op.style === "dark" ? (p.strong ?? p.inkSoft) : p.line;
       ctx.lineWidth = p.widths[op.style];
       // an odd whole width is centred on a half dot, an even one on a whole dot: the line covers whole dots exactly
       const y = p.snap ? op.y + (p.widths[op.style] % 2) / 2 : op.y + 0.5;
@@ -76,32 +80,36 @@ export function paintReceipt(ctx: CanvasRenderingContext2D, layout: ReceiptLayou
   ctx.setLineDash([]);
 }
 
+/** KB-413 step 4 (owner, 16 Nov 2026): the share image / PDF in design 13's receipt colours, on plain white - no border, no torn edge. */
+export const SHARE_PALETTE: ReceiptPalette = {
+  ink: "#263238", // --color-kb-ink
+  inkSoft: "#6B7580", // --color-kb-receipt-sub: date, phone, thanks
+  line: "#ECE8E1", // --color-kb-receipt-row
+  muted: "#C9C2B8", // --color-kb-receipt-rule: the dashed rules
+  strong: "#4B5560", // --color-kb-receipt-strong
+  lightDash: null,
+  dash: [3, 3],
+  widths: { dashed: 1, dark: 2, light: 1 },
+  snap: false,
+  border: false,
+};
+
 export const renderReceiptFiles: RenderReceiptFiles = async (receipt) => {
-  await loadFonts(receipt);
+  await loadFonts(receipt, [400, 700]);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("no 2d canvas");
   const measure = (text: string, font: FontSpec) => {
     ctx.font = cssFont(font);
+    ctx.letterSpacing = `${font.tracking ?? 0}px`;
     return ctx.measureText(text).width;
   };
   const layout = layoutReceipt(receipt, measure, WIDTH);
   canvas.width = WIDTH * SCALE;
   canvas.height = layout.height * SCALE;
 
-  const token = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
   ctx.scale(SCALE, SCALE);
-  paintReceipt(ctx, layout, {
-    ink: token("--color-ink", "#1A1A1F"),
-    inkSoft: token("--color-ink-soft", "#5A5A66"),
-    line: token("--color-line", "#E4E0D6"),
-    muted: token("--color-muted", "#9A9689"),
-    lightDash: null,
-    dash: [3, 3],
-    widths: { dashed: 1, dark: 1.5, light: 1 },
-    snap: false,
-    border: true,
-  });
+  paintReceipt(ctx, layout, SHARE_PALETTE);
 
   const png = await toBlob(canvas, "image/png");
   const jpeg = await toBlob(canvas, "image/jpeg", 0.92);

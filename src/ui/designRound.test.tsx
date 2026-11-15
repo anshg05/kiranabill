@@ -173,7 +173,7 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
 // ---------------------------------------------------------------------------------------------------------------- #15
 describe("#15 - every disabled button says why, in one short line", () => {
   const fakeShare = (ready: boolean): ReceiptShare => ({
-    ready, smsText: "x", downloadImage() {}, downloadPdf() {}, whatsApp() {}, storedMobile: async () => null, sendSms() {},
+    ready, smsText: "x", downloadImage() {}, shareImage() {}, downloadPdf() {}, whatsApp() {}, storedMobile: async () => null, sendSms() {},
   });
 
   it("Share: while the receipt files are being prepared", () => {

@@ -27,6 +27,8 @@ export interface ReceiptShare {
   /** The SMS body (the preview shows exactly this). */
   readonly smsText: string;
   downloadImage(): void;
+  /** KB-413 step 4 (13's Share tile): the phone's share sheet with the PNG, in the tap; where files cannot be shared, the download. */
+  shareImage(): void;
   downloadPdf(): void;
   whatsApp(): void;
   /** The stored bill's mobile, for the SMS field - read when the sheet opens. */
@@ -108,6 +110,19 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
     smsText: sms,
     downloadImage: once("image", () => {
       if (ready) download(ready.png);
+    }),
+    shareImage: once("share", () => {
+      if (!ready) return;
+      const data = { files: [ready.png] };
+      if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
+        // In the tap, nothing awaited before it.
+        navigator.share(data).catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return; // the share sheet was cancelled
+          console.warn("[share] failed:", err instanceof Error ? err.name : err);
+        });
+        return;
+      }
+      download(ready.png);
     }),
     downloadPdf: once("pdf", () => {
       if (ready) download(ready.pdf);

@@ -12,6 +12,7 @@ import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { subscribeBillsPull } from "@/data/billsPullStatus";
 import { CancelBillSheet } from "./CancelBillSheet";
 import { Receipt, ReceiptNumberText } from "./Receipt";
+import { ReceiptPaper } from "./kit/ReceiptPaper";
 import { ShareBar } from "./ShareBar";
 import { PrintButton } from "./PrintButton";
 import { useBackEntry } from "./useBackEntry";
@@ -333,7 +334,14 @@ function BillDetail({
           <h2 className="text-[20px] font-semibold">{receipt ? inject(t("history.billNo", { n: mark("n") }), { n: <ReceiptNumberText value={receipt.receiptNumber} /> }) : t("bill.savedBefore")}</h2>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-          {receipt && <Receipt receipt={receipt} />}
+          {/* KB-413 step 4: the receipt in 13's look, on 15-BillDetail's 340 px paper (no torn edge) - the rest of this screen is 15's own step */}
+          {receipt && (
+            <div className="flex justify-center">
+              <ReceiptPaper width={340}>
+                <Receipt receipt={receipt} />
+              </ReceiptPaper>
+            </div>
+          )}
           {c && (
             <section aria-label={t("history.cancellation")} className="mx-auto mt-4 w-full max-w-[384px] rounded-[6px] border border-line bg-surface px-4 py-3 text-[13px]">
               <p className="font-semibold">{t("history.cancelledReason", { reason: tx(REASON_LABEL[c.reason]) })}</p>

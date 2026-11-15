@@ -115,6 +115,7 @@
   --shadow-kb-panel: 0 -8px 20px rgba(38, 50, 56, .05); /* 12-BillReview's sticky bottom panel */
   --shadow-kb-mic-lg: 0 14px 30px rgba(37, 99, 217, .32); /* 09-Recording's 132 px mic */
   --shadow-kb-logo: 0 10px 24px rgba(37, 99, 217, .22); /* the logo on 05 / 08 */
+  --shadow-kb-ok: 0 10px 24px rgba(46, 125, 82, .30); /* 13-BillSaved's tick (KB-413 step 4) */
   --drop-shadow-kb-receipt: 0 10px 22px rgba(38, 50, 56, .10); /* the receipt paper (13, 15) - a drop shadow, so the torn edge casts it too */
 
   /* 26 §2.2 text sizes in rem (the design's px / 16), so a phone's bigger text setting grows the text, not the boxes. */

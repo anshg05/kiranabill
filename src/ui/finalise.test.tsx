@@ -163,7 +163,7 @@ describe("KB-307 - when Bill Banao is enabled", () => {
 });
 
 describe("KB-307 - finalise and the saved screen", () => {
-  it("saves one bill; the screen shows its receipt number, read-only, with New bill", async () => {
+  it("saves one bill; the screen shows its receipt number, read-only, with Start a new bill (13)", async () => {
     render(<Harness pre={[spoken("1 kilo besan")]} />);
     await tapBillBanao();
     await waitFor(() => expect(screen.getByRole("status", { name: "Bill saved" }).textContent).toContain("Bill 1 saved"));
@@ -172,7 +172,7 @@ describe("KB-307 - finalise and the saved screen", () => {
     expect(screen.queryAllByRole("button", { name: "Remove Besan" })).toHaveLength(0);
     expect(screen.queryByRole("button", { name: "Customer name" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Bill Banao" })).toBeNull();
-    expect(screen.getByRole("button", { name: "New bill" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start a new bill" })).toBeTruthy();
   });
 
   it("New bill: an empty bill, customer back to Cash, a new bill id", async () => {
@@ -183,34 +183,26 @@ describe("KB-307 - finalise and the saved screen", () => {
     });
     const firstId = api.current!.localId;
     await tapBillBanao();
-    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
-    act(() => screen.getByRole("button", { name: "New bill" }).click());
+    await waitFor(() => screen.getByRole("button", { name: "Start a new bill" }));
+    act(() => screen.getByRole("button", { name: "Start a new bill" }).click());
     expect(api.current!.rows).toHaveLength(0);
     expect(api.current!.customer).toEqual({ name: "Cash", mobile: null });
     expect(api.current!.localId).not.toBe(firstId);
     expect(isDisabled(billBanao())).toBe(true);
   });
 
-  it("the mic on the saved screen starts the next bill and records (owner, decision 4)", async () => {
+  // KB-413 step 4 (owner, 16 Nov 2026): the saved bill is 13-BillSaved - its one way on is "Start a new bill" (the owner's answer: no Add
+  // item there; and, as on today's screen with the order bar, no mic): decision 4's shortcuts are replaced by that one button.
+  it("13 has no mic and no Add item: Start a new bill is the way to the next bill (owner, 16 Nov 2026)", async () => {
     const api: MutableRefObject<BillLines | null> = { current: null };
-    const onMicTap = vi.fn();
-    render(<Harness api={api} pre={[spoken("1 kilo besan")]} onMicTap={onMicTap} />);
+    render(<Harness api={api} pre={[spoken("1 kilo besan")]} onMicTap={vi.fn()} />);
     await tapBillBanao();
-    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
-    act(() => screen.getByRole("button", { name: /Tap to speak/ }).click());
-    expect(onMicTap).toHaveBeenCalledTimes(1);
+    await waitFor(() => screen.getByRole("button", { name: "Start a new bill" }));
+    expect(screen.queryByRole("button", { name: /Tap to speak/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add item" })).toBeNull();
+    act(() => screen.getByRole("button", { name: "Start a new bill" }).click());
     expect(api.current!.rows).toHaveLength(0);
     expect(screen.queryByRole("status", { name: "Bill saved" })).toBeNull();
-  });
-
-  it("Add item on the saved screen starts the next bill with the add panel open", async () => {
-    const api: MutableRefObject<BillLines | null> = { current: null };
-    render(<Harness api={api} pre={[spoken("1 kilo besan")]} />);
-    await tapBillBanao();
-    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
-    act(() => screen.getByRole("button", { name: "Add item" }).click());
-    expect(api.current!.rows).toHaveLength(0);
-    expect(screen.getByRole("region", { name: "Add item" })).toBeTruthy();
   });
 
   it("double tap on Bill Banao -> exactly one bill", async () => {
@@ -219,7 +211,7 @@ describe("KB-307 - finalise and the saved screen", () => {
       billBanao().click();
       billBanao().click();
     });
-    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
+    await waitFor(() => screen.getByRole("button", { name: "Start a new bill" }));
     expect(await db.bills.count()).toBe(1);
     expect((await db.bills.toArray())[0]!.receiptNumber).toBe("1"); // one tap, one number
   });
@@ -232,7 +224,7 @@ describe("KB-307 - finalise and the saved screen", () => {
     act(() => screen.getByRole("button", { name: "Undo" }).click()); // Maida comes back
     const localId = api.current!.localId;
     await tapBillBanao();
-    await waitFor(() => screen.getByRole("button", { name: "New bill" }));
+    await waitFor(() => screen.getByRole("button", { name: "Start a new bill" }));
     expect((await db.bills.get(localId))?.discardedLines).toEqual([{ spokenName: "चिनी", shopProductId: "27", source: "fastpath" }]);
   });
 

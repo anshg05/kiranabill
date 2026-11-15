@@ -1,11 +1,21 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 // KB-412 batch c (26 §5 receipt), the FRAME only, as drawn on 13-BillSaved / 15-BillDetail: the paper's width and its drop shadow
 // (a drop shadow, so the torn edge casts it too), and on 13 the zig-zag torn bottom edge (10 px, 28 teeth). The receipt inside is
 // today's Receipt.tsx, passed in by the screen and unchanged (D110: the receipt keeps today's content).
-export function ReceiptPaper({ width, torn = false, children }: { width: number; torn?: boolean; children: ReactNode }) {
+// KB-413 step 4: never wider than the phone (a 320 px phone keeps its gutters); `print` = 13's print-out (26 §3: max-height 0 -> 520 px
+// in 1.2 s, on this element as the file draws it, so the shadow is never clipped). Once it has run the 520 px cap comes off - a long
+// bill is never cut. Reduced motion: no animation, the receipt simply there.
+export function ReceiptPaper({ width, torn = false, print = false, children }: { width: number; torn?: boolean; print?: boolean; children: ReactNode }) {
+  const [printed, setPrinted] = useState(false);
+  const printing = print && !printed;
   return (
-    <div className="drop-shadow-kb-receipt" style={{ width }}>
+    <div
+      data-receipt-print={print || undefined}
+      onAnimationEnd={print ? () => setPrinted(true) : undefined}
+      className={`drop-shadow-kb-receipt ${printing ? "overflow-hidden animate-kb-print-saved" : ""}`}
+      style={{ width, maxWidth: "100%" }}
+    >
       {children}
       {torn && (
         <svg width="100%" height="10" viewBox="0 0 280 10" preserveAspectRatio="none" aria-hidden="true" className="block text-kb-card">

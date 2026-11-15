@@ -18,10 +18,9 @@ import { useAuth } from "@/providers/AuthProvider";
 import { usePersistentStorage } from "./usePersistentStorage";
 import { useUpdateGate } from "@/pwa/updateGate";
 import { useShop } from "@/providers/ShopProvider";
-import { Receipt, ReceiptNumberText } from "./Receipt";
+import { ReceiptNumberText } from "./Receipt";
+import { BillSavedScreen } from "./BillSavedScreen";
 import { useReceiptShare, type ReceiptShare } from "./useReceiptShare";
-import { ShareBar } from "./ShareBar";
-import { PrintButton } from "./PrintButton";
 import { HistoryScreen } from "./HistoryScreen";
 import { reissueState } from "./reissueDraft";
 import { useMetricsWiring } from "./useMetricsWiring";
@@ -1058,6 +1057,9 @@ export function BillView({
         : checksText(pending, t);
   const soFar = t(lines.length === 1 ? "bill.soFarOne" : "bill.soFarMany", { n: lines.length });
 
+  // KB-413 step 4: a saved bill with its receipt is 13-BillSaved, a screen of its own (owner: no top bar, no Add item there)
+  if (saved?.receipt) return <BillSavedScreen receipt={saved.receipt} receiptNumber={saved.receiptNumber} share={share ?? null} onNewBill={onNewBill} />;
+
   return (
     <div inert={covered} aria-hidden={covered || undefined} className="font-kb h-dvh bg-kb-bg text-kb-ink">
       <div className="mx-auto flex h-full w-full max-w-[480px] flex-col">
@@ -1109,15 +1111,6 @@ export function BillView({
         <div className="relative min-h-0 flex-1">
         {/* data-scroll-list: the bill list scrolls by design - the dev sheets count what its edge cuts apart from real clipping */}
         <div ref={itemsRef} data-scroll-list className="flex h-full flex-col gap-[10px] overflow-y-auto px-4 pt-1 pb-[10px]">
-          {/* KB-308: after Bill Banao, the receipt of the bill as stored (KB-309 shares it). Screen 13's look is KB-413 step 4. */}
-          {saved?.receipt ? (
-            <div className="py-2">
-              <Receipt receipt={saved.receipt} />
-              {/* KB-408 S5: Print next to Share (inside the Android app only); the first copy after Bill Banao is the original. */}
-              <PrintButton key={saved.receiptNumber} receipt={saved.receipt} firstIsOriginal />
-              {share && <ShareBar share={share} />}
-            </div>
-          ) : (
           <>
           {/* KB-385: what was heard, for every recording - the Heard cards come first (12-BillReview). */}
           {orderEntries?.((query) => openAdd?.(query), "heard")}
@@ -1215,7 +1208,6 @@ export function BillView({
             })}
           </ul>
           </>
-          )}
           <NotAddedList entries={notAdded} onRetry={onRetry} onDismiss={onDismiss} onAddByHand={openAdd} />
           {orderEntries?.((query) => openAdd?.(query), "pending")}
           {/* the recorder's warnings (mic refused, nothing recorded, still loading) - in the list like a failed recording (step-2 fix 1) */}

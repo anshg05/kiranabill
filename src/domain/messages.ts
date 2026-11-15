@@ -36,6 +36,10 @@ export const MESSAGES = {
   "bill.savedAfter": m("saved", "सेव हो गया", "save ho gaya"),
   "bill.savedLabel": m("Bill saved", "बिल सेव हुआ", "Bill save hua"),
   "bill.new": m("New bill", "नया बिल", "Naya bill"),
+  // KB-413 step 4 (13 Bill saved, owner 16 Nov 2026): the line under "Bill 515 saved" - the receipt's own items, customer and time
+  "saved.subOne": m("1 item · {customer} · {time}", "1 सामान · {customer} · {time}", "1 saamaan · {customer} · {time}"),
+  "saved.subMany": m("{n} items · {customer} · {time}", "{n} सामान · {customer} · {time}", "{n} saamaan · {customer} · {time}"),
+  "saved.startNew": m("Start a new bill", "नया बिल शुरू करें", "Naya bill shuru karein"),
   "bill.items": m("Bill items", "बिल का सामान", "Bill ka saaman"),
   // KB-413 step 1 (owner, 15 Nov 2026: new words in all 3 languages, reviewed on the sheets)
   "bill.draftBadge": m("Draft · not saved", "ड्राफ़्ट · सेव नहीं", "Draft · save nahi"),
@@ -256,6 +260,8 @@ export const MESSAGES = {
 
   // ---- Share
   "share.image": m("Image", "तस्वीर", "Image"),
+  /** KB-413 step 4: 13's tile - the phone's share sheet with the bill image (downloads it where the phone cannot share files) */
+  "share.share": m("Share", "शेयर करें", "Share karein"),
   "share.pdf": same("PDF"),
   "share.whatsapp": same("WhatsApp"),
   "share.sms": same("SMS"),
@@ -325,6 +331,7 @@ export const MESSAGES = {
   // ---- Settings
   // ---- KB-408 (D111): printing to a Bluetooth thermal printer - inside the Android app only; printing never blocks a bill
   "print.print": m("Print", "प्रिंट करें", "Print karein"),
+  "print.bill": m("Print bill", "बिल प्रिंट करें", "Bill print karein"),
   "print.printing": m("Printing… {percent}%", "प्रिंट हो रहा है… {percent}%", "Print ho raha hai… {percent}%"),
   "print.done": m("Printed", "प्रिंट हो गया", "Print ho gaya"),
   "print.noPrinter": m("No printer chosen — choose one in Settings → Printer.", "कोई प्रिंटर नहीं चुना — सेटिंग्स → प्रिंटर में चुनें।", "Koi printer nahi chuna — Settings → Printer mein chunein."),

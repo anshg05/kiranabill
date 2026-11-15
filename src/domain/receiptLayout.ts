@@ -14,6 +14,8 @@ export const RECEIPT_PADDING = 16;
 export interface FontSpec {
   readonly size: number;
   readonly weight: 400 | 600 | 700;
+  /** Letter spacing in px (13's shop name, .5); none = 0. */
+  readonly tracking?: number;
 }
 export type Measure = (text: string, font: FontSpec) => number;
 
@@ -60,6 +62,8 @@ export interface ReceiptStyle {
   /** The shop name's own line spacing. */
   readonly titleLeading: number;
   readonly top: number;
+  /** Under the thanks line; none = the same as `top` (the printer). */
+  readonly bottom?: number;
   /** Around the dashed rules. */
   readonly gap: number;
   /** Between two table columns - at least this much between Qty, Rate and Amt on every row. */
@@ -76,26 +80,28 @@ export interface ReceiptStyle {
   readonly snap: boolean;
 }
 
-// Receipt.tsx's sizes at its 14 px base (1.4em, 0.85em, 1.15em; leading-snug).
-const BASE: FontSpec = { size: 14, weight: 400 };
-const BOLD: FontSpec = { size: 14, weight: 600 };
+// KB-413 step 4 (owner, 16 Nov 2026): design 13's receipt (13-BillSaved / 26 §5), as Receipt.tsx draws it at 320 px: the shop name
+// 15 / 700 tracked .5, small lines 11, rows 12 (amounts and the bill number bold), TOTAL 16 / 700; padding 14 top, 8 bottom.
+const BASE: FontSpec = { size: 12, weight: 400 };
+const BOLD: FontSpec = { size: 12, weight: 700 };
 export const SCREEN_STYLE: ReceiptStyle = {
-  title: { size: 19.6, weight: 600 },
-  small: { size: 11.9, weight: 400 },
+  title: { size: 15, weight: 700, tracking: 0.5 },
+  small: { size: 11, weight: 400 },
   label: BASE,
   number: BOLD,
   header: BOLD,
   name: BASE,
   cell: BASE,
   amount: BOLD,
-  total: { size: 16.1, weight: 600 },
-  leading: 1.375,
-  titleLeading: 1.25,
-  top: 20,
-  gap: 8,
+  total: { size: 16, weight: 700 },
+  leading: 1.3,
+  titleLeading: 1.3,
+  top: 14,
+  bottom: 8,
+  gap: 6,
   colGap: 8,
-  rowPad: 4,
-  afterTotal: 12,
+  rowPad: 5,
+  afterTotal: 4,
   minItem: 0,
   snap: false,
 };
@@ -315,5 +321,5 @@ export function layoutReceipt(r: Receipt, measure: Measure, width = 384, padding
   y += S.afterTotal;
   paragraph(plain(r.thanks, S.small, "thanks"), "center", S.leading, true);
 
-  return { width, height: Math.ceil(y + S.top), ops };
+  return { width, height: Math.ceil(y + (S.bottom ?? S.top)), ops };
 }

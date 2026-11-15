@@ -85,7 +85,7 @@ async function saveBill(mobile: string | null = MOBILE) {
     screen.getByRole("button", { name: "Bill Banao" }).click();
   });
   await waitFor(() => screen.getByRole("article", { name: "Receipt" }));
-  await waitFor(() => expect(screen.getByRole("button", { name: "Image" }).getAttribute("aria-disabled")).toBe("false"));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Share" }).getAttribute("aria-disabled")).toBe("false"));
 }
 
 /** Anchor clicks (downloads, sms:) - captured, never navigated. */
@@ -110,17 +110,30 @@ async function openSms() {
 }
 
 describe("KB-309 - four buttons on the saved screen (D58, the legacy behaviour)", () => {
-  it("Image, PDF, WhatsApp, SMS; the PNG and PDF rendered once, when the receipt is shown", async () => {
+  it("13's tiles: WhatsApp, PDF, Share, SMS; the PNG and PDF rendered once, when the receipt is shown", async () => {
     await saveBill();
     expect(renderFiles).toHaveBeenCalledTimes(1);
     expect((renderFiles.mock.calls[0]![0] as Receipt).receiptNumber).toBe("1");
-    for (const name of ["Image", "PDF", "WhatsApp", "SMS"]) expect(button(name)).toBeTruthy();
+    for (const name of ["WhatsApp", "PDF", "Share", "SMS"]) expect(button(name)).toBeTruthy();
   });
 
-  it("Image always DOWNLOADS the PNG - no share sheet, even where files can be shared", async () => {
+  // KB-413 step 4 (owner, 16 Nov 2026): "Share (phone share sheet with the bill image)" takes the place of Image - nothing removed:
+  // where the phone cannot share files, Share downloads the PNG as Image did.
+  it("Share: the phone's share sheet with the ready PNG, IN the tap - no download", async () => {
     const clicked = captureAnchors();
     await saveBill();
-    fireEvent.click(button("Image"));
+    fireEvent.click(button("Share"));
+    expect(share).toHaveBeenCalledTimes(1);
+    const file = (share.mock.calls[0]![0] as { files: File[] }).files[0]!;
+    expect([file.name, file.type]).toEqual(["Bill-1.png", "image/png"]);
+    expect(clicked).toEqual([]);
+  });
+
+  it("Share where files cannot be shared: DOWNLOADS the PNG (today's Image)", async () => {
+    canShare.mockReturnValue(false);
+    const clicked = captureAnchors();
+    await saveBill();
+    fireEvent.click(button("Share"));
     expect(share).not.toHaveBeenCalled();
     expect(clicked.map((a) => [a.download, a.href])).toEqual([["Bill-1.png", "blob:receipt"]]);
   });
@@ -254,11 +267,12 @@ describe("KB-309 - the mobile in the page", () => {
 });
 
 describe("KB-342 - a double tap never shares twice; the SMS sheet is brought to the shopkeeper", () => {
-  it("Image / PDF tapped twice quickly download once each; the other button is not blocked by the first", async () => {
+  it("Share (downloading) / PDF tapped twice quickly download once each; the other button is not blocked by the first", async () => {
+    canShare.mockReturnValue(false);
     const clicked = captureAnchors();
     await saveBill();
-    fireEvent.click(button("Image"));
-    fireEvent.click(button("Image"));
+    fireEvent.click(button("Share"));
+    fireEvent.click(button("Share"));
     fireEvent.click(button("PDF"));
     fireEvent.click(button("PDF"));
     expect(clicked.map((a) => a.download)).toEqual(["Bill-1.png", "Bill-1.pdf"]);

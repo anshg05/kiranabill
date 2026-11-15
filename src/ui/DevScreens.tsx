@@ -10,6 +10,18 @@ import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
 import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
 import type { ShownFlag } from "./useBillLines";
 import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
+import { Capacitor } from "@capacitor/core";
+import { KiranaBillDB } from "@/data/db";
+import { finaliseBill } from "@/data/finalise";
+import { cancelBillLocal } from "@/data/cancelBill";
+import { buildReceipt, type ReceiptItem } from "@/domain/receipt";
+import type { FinalLine } from "@/domain/finalBill";
+import type { Paise } from "@/domain/money";
+import { DEV_PRINT_BILLS } from "./devPrintBills";
+import { BillSavedScreen } from "./BillSavedScreen";
+import { HistoryScreen } from "./HistoryScreen";
+import { renderReceiptFiles } from "./receiptImage";
+import type { ReceiptShare } from "./useReceiptShare";
 
 // DEV ONLY (KB-413, /__dev/screens): each rebuilt screen, the REAL component with sample data, full-size beside its whole approved
 // screen file (docs/design/screens/NN-*.html) - the owner's review of a full screen (D110 item 9).
@@ -25,6 +37,10 @@ import { ContainmentCheck, TapAreaCheck } from "./DevKitGallery";
 //                     script also runs the browser with reduced motion, so the design file's frame stops too)
 //   screen 23, state: failed (the connection: "upload") | busy | session | limit | again (Record again pressed: the question)
 //   screen 24, state: offline (the drawn bill: one typed line, the waiting recording, the strip)
+//   screen 13, state: saved (the file's Bill 515: 4 items, ₹610) | long (the owner's real Bill 514, 38 lines) - the frame shows "Print bill"
+//                     as the Android app does (the web has no printer); &t= freezes both frames at that many ms (default 600)
+//   screen 15, state: history | cancelled - TODAY's History bill detail (its own redesign is a later step) with the receipt in 13's look:
+//                     the real HistoryScreen on a dev database (the bill saved by the real finaliseBill, cancelled by the real cancelBillLocal)
 
 const params = new URLSearchParams(window.location.search);
 const noop = () => {};
@@ -194,11 +210,71 @@ function Screen24() {
   );
 }
 
+// 13 and History draw "Print bill" only inside the Android app - the sheet shows the app's screen (dev frame only; printing is never run)
+if (params.get("frame") && ["13", "15"].includes(params.get("screen") ?? "")) {
+  try {
+    Object.defineProperty(Capacitor, "isNativePlatform", { value: () => true, configurable: true });
+  } catch {
+    // left as the web: the sheet then shows no Print button
+  }
+}
+
+/** 13-BillSaved's own sample: Bill 515, चीनी 2 kg × ₹45, चावल 5 kg ₹340 (rate —), टाटा नमक 1 pc ₹30, दाने 1 kg ₹150 - ₹610, Cash, 1:18 pm */
+const SAMPLE_13: readonly [string, number, string, number | null, number][] = [["चीनी", 2, "kg", 45, 90], ["चावल", 5, "kg", null, 340], ["टाटा नमक", 1, "piece", 30, 30], ["दाने", 1, "kg", 150, 150]];
+const receipt13 = () => {
+  const items = SAMPLE_13.map(([name, qty, unit, rate, total]): ReceiptItem => ({ displayName: name, qty, unit, ratePaise: rate === null ? null : ((rate * 100) as Paise), rateUnit: rate === null ? null : unit, totalPaise: (total * 100) as Paise }));
+  const at = "2026-11-11T07:48:00.000Z";
+  return buildReceipt({ receiptNumber: "515", customerName: "Cash", totalPaise: items.reduce((s, i) => s + i.totalPaise, 0) as Paise, finalizedAt: at, createdAt: at, status: "final" }, items, { name: "Gupta Kirana Store", phone: null, logoUrl: null, billLanguage: "en" });
+};
+const READY_SHARE: ReceiptShare = { ready: true, smsText: "", downloadImage: noop, shareImage: noop, downloadPdf: noop, whatsApp: noop, storedMobile: async () => null, sendSms: noop };
+
+function Screen13({ state }: { state: string }) {
+  const r = state === "long" ? DEV_PRINT_BILLS.bill514 : receipt13();
+  return <BillSavedScreen receipt={r} receiptNumber={r.receiptNumber} share={READY_SHARE} onNewBill={noop} />;
+}
+
+/** TODAY's History bill detail on a dev database: Bill 515 saved by the real finaliseBill (and, for "cancelled", cancelled by the real
+ *  cancelBillLocal); the list opens the bill as a tap does. */
+function Screen15({ state }: { state: string }) {
+  const [db, setDb] = useState<KiranaBillDB | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const name = "kb-dev-sheet-15";
+      await new KiranaBillDB(name).delete();
+      const d = new KiranaBillDB(name);
+      const shopId = "11111111-1111-4111-8111-111111111111";
+      const deviceId = "22222222-2222-4222-8222-222222222222";
+      await d.shops.put({ id: shopId, syncStatus: "synced", name: "Gupta Kirana Store", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: null, updatedAt: "2026-11-11T00:00:00.000Z" });
+      const lines = SAMPLE_13.map(([name, qty, unit, rate, total], i): FinalLine => {
+        const it = item(name, { qty, unit, rate: rate === null ? null : rate * 100, rateUnit: rate === null ? null : unit, total: total * 100, priceType: rate === null ? "total" : "rate" });
+        return { id: `l${i}`, utteranceId: 1, item: it, original: it, displayName: name, source: "voice" };
+      });
+      const localId = crypto.randomUUID();
+      await finaliseBill(d, { localId, shopId, deviceId, startedAt: "2026-11-11T07:47:00.000Z", customer: { name: "Cash", mobile: null }, lines, flags: [], serverNumber: "515", now: new Date("2026-11-11T07:48:00.000Z") });
+      if (state === "cancelled") await cancelBillLocal(d, { shopId, billLocalId: localId, reason: "wrong_price", deviceId, replacementLocalId: null });
+      setDb(d);
+    })();
+  }, [state]);
+  useEffect(() => {
+    if (!db) return;
+    const id = window.setInterval(() => {
+      const row = [...document.querySelectorAll("button")].find((b) => /515/.test(b.textContent ?? "") && b.closest("li"));
+      if (row) {
+        row.click();
+        window.clearInterval(id);
+      }
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [db]);
+  return db ? <HistoryScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" render={renderReceiptFiles} deviceId="22222222-2222-4222-8222-222222222222" onClose={noop} /> : null;
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
 
 const FILES: Record<string, string> = {
-  "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "23": "23-ReadFailed.html", "24": "24-Offline.html",
+  "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
 /** The frame: the screen alone, filling the window; the checks run on it, out of sight (the sheet reads them). */
@@ -209,7 +285,7 @@ function Frame() {
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
     // end states, like the design frame - except 09 (the ring mid-pulse) and 11 (the paper printing, the shimmer), which move with the
     // file's; &motion=reduce stops them (the reduced-motion sheet)
-    if (!["09", "11"].includes(params.get("screen") ?? "") || params.get("motion") === "reduce") document.documentElement.dataset.motion = "reduce";
+    if (!["09", "11", "13"].includes(params.get("screen") ?? "") || params.get("motion") === "reduce") document.documentElement.dataset.motion = "reduce";
     // 09 / 10 are full screens in a portal on <body>: the live checks must see them too
     const tag = window.setInterval(() => {
       for (const el of document.querySelectorAll<HTMLElement>("body > div:not(#root):not([data-kit-part])")) el.dataset.kitPart = `screen ${params.get("screen")}`;
@@ -225,6 +301,8 @@ function Frame() {
             : params.get("screen") === "11" ? <Screen11 />
             : params.get("screen") === "23" ? <Screen23 state={params.get("state") ?? "failed"} />
             : params.get("screen") === "24" ? <Screen24 />
+            : params.get("screen") === "13" ? <Screen13 state={params.get("state") ?? "saved"} />
+            : params.get("screen") === "15" ? <Screen15 state={params.get("state") ?? "history"} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>
@@ -256,7 +334,7 @@ function Sheet() {
         for (const f of document.querySelectorAll("iframe"))
           for (const a of f.contentDocument?.getAnimations() ?? []) {
             a.pause();
-            a.currentTime = 600;
+            a.currentTime = Number(params.get("t") ?? 600);
           }
         window.clearInterval(id);
       }
