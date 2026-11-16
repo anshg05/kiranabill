@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { SavedTake } from "@/data/recordingDraft";
 import { Loader2 } from "lucide-react";
@@ -127,11 +127,21 @@ export function OrderRecorder({
     setNothing(false);
     void capture.start();
   };
-  useEffect(() => {
+  // KB-414 bug B (owner's phone check, 16 Nov 2026): Home's mic shows 09 while the mic is still opening (1-2 s) - never the bill in
+  // between. A layout effect, so 09 is in the first frame after the tap. 12's own Record order still waits on its button.
+  const [homeStart, setHomeStart] = useState(false);
+  const starting = homeStart && capture.phase === "requesting";
+  useLayoutEffect(() => {
     // not over 11 / 23 (the first recording of an empty bill is being read or failed - its own screen decides what is next)
-    if (startSignal && !disabledReason && capture.phase !== "requesting" && !recording && !take && !firstKind) start();
+    if (startSignal && !disabledReason && capture.phase !== "requesting" && !recording && !take && !firstKind) {
+      setHomeStart(true);
+      start();
+    }
     // only a new tap on Home's mic
   }, [startSignal]);
+  useEffect(() => {
+    if (capture.phase !== "requesting") setHomeStart(false);
+  }, [capture.phase]);
   const stop = async () => keep(await capture.stop(), capture.elapsedMs);
   const forget = () => takesRef.current?.clear().catch(() => {}) ?? Promise.resolve();
   // Back on 09 / 10 (owner, answer 7) and Re-record / Type instead on 10 (answer 5): pause, then ask
@@ -197,13 +207,13 @@ export function OrderRecorder({
   };
   const lostMs = take ? take.ms : asking === "again" && first ? first.recordedMs : capture.elapsedMs;
 
-  const screens = take || recording ? (
+  const screens = take || recording || starting ? (
     <RecordOverlay
       screenKey={take ? "review" : "rec"}
       title={t(take ? "review.title" : "rec.title")}
       asking={asking !== null}
       lostLine={t("rec.discardLine", { time: mmss(lostMs) })}
-      onAsk={() => ask("back")}
+      onAsk={() => !starting && ask("back")} // Back waits the moment the mic is opening (a Discard then would race it)
       onKeep={() => setAsking(null)}
       onDiscard={() => void discard()}
     >
@@ -225,7 +235,7 @@ export function OrderRecorder({
         <RecordingBody
           elapsedMs={capture.elapsedMs}
           paused={capture.phase === "paused"}
-          busy={capture.phase === "stopping"}
+          busy={capture.phase === "stopping" || starting}
           scales={scales}
           onPause={capture.pause}
           onResume={capture.resume}

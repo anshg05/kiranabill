@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it } from "vitest";
 import { KiranaBillDB } from "./db";
-import { audioOf, blockingForBill, clearBilled, enqueueRecording, markAppended, recordingsForBill, removeRecording, saveOutcome, unsentRecordings } from "./voiceQueue";
+import { audioOf, blockingForBill, clearBilled, enqueueRecording, markAppended, recordingsForBill, removeRecording, requeue, saveOutcome, unsentRecordings } from "./voiceQueue";
 
 // KB-385 step 3 (owner, 10 Nov 2026; doc 25 §6; D33 - a phone database change, additive): the recording is kept ON THE PHONE until its
 // bill exists. Retry resends the same recording; offline, it waits here and is sent when the phone is back online; it is added to its
@@ -93,6 +93,22 @@ describe("the phone's voice queue", () => {
     await enqueueRecording(db, b);
     await saveOutcome(db, b.recordingId, { kind: "gave_up", recordingId: b.recordingId });
     expect((await unsentRecordings(db, SHOP)).map((r) => r.recordingId)).toEqual([a.recordingId]);
+  });
+
+  it("KB-414 bug A: requeue - a failed or given-up recording goes back to waiting (no reason); an answered one or one in its bill never moves", async () => {
+    const db = open();
+    const rows = [rec(), rec(), rec(), rec()];
+    for (const r of rows) await enqueueRecording(db, r);
+    const [failed, gaveUp, answered, added] = rows.map((r) => r.recordingId) as [string, string, string, string];
+    await saveOutcome(db, failed, { kind: "failed", recordingId: failed, reason: "upload", network: true });
+    await saveOutcome(db, gaveUp, { kind: "gave_up", recordingId: gaveUp });
+    await saveOutcome(db, answered, { kind: "done", recordingId: answered, transcript: "x", items: [] });
+    await saveOutcome(db, added, { kind: "done", recordingId: added, transcript: "y", items: [] });
+    await markAppended(db, added);
+    for (const id of [failed, gaveUp, answered, added, "missing"]) await requeue(db, id);
+    const state = async (id: string) => [(await db.voiceQueue.get(id))!.state, (await db.voiceQueue.get(id))!.reason];
+    expect(await Promise.all([failed, gaveUp, answered, added].map(state))).toEqual([["queued", undefined], ["queued", undefined], ["done", undefined], ["appended", undefined]]);
+    expect((await unsentRecordings(db, SHOP)).map((r) => r.recordingId).sort()).toEqual([failed, gaveUp].sort()); // sent when back online
   });
 
   it("after Bill Banao: the bill's recordings are deleted from the phone (their ids returned to mark billed); another bill's stay", async () => {

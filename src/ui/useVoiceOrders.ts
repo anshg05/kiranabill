@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { KiranaBillDB, LocalMeta, LocalVoiceRecording } from "@/data/db";
 import type { BillLine } from "@/data/voiceBilling";
-import type { VoiceJobOutcome } from "@/data/voiceJob";
-import { audioOf, enqueueRecording, markAppended, recordingsForBill, removeRecording, saveOutcome, unsentRecordings } from "@/data/voiceQueue";
+import { fetchFailed, type VoiceJobOutcome } from "@/data/voiceJob";
+import { audioOf, enqueueRecording, markAppended, recordingsForBill, removeRecording, requeue, saveOutcome, unsentRecordings } from "@/data/voiceQueue";
 import { aiAnswerBill } from "@/domain/aiAnswerBill";
 import type { ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
@@ -56,6 +56,22 @@ export interface VoiceOrders {
 
 const isOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
 
+/** KB-414 bug A (owner + reviewer, 16 Nov 2026): the phone's offline signal can come a moment after the request failed - a network
+ *  failure waits this long (or for the "offline" event) before it counts as a real failure. */
+export const OFFLINE_LAG_MS = 2000;
+const offlineSoon = (ms: number) =>
+  new Promise<boolean>((resolve) => {
+    if (!isOnline()) return resolve(true);
+    const finish = (offline: boolean) => {
+      clearTimeout(timer);
+      window.removeEventListener("offline", onOffline);
+      resolve(offline);
+    };
+    const onOffline = () => finish(true);
+    const timer = setTimeout(() => finish(!isOnline()), ms);
+    window.addEventListener("offline", onOffline);
+  });
+
 export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppend }: UseVoiceOrdersOptions): VoiceOrders {
   const [recordings, setRecordings] = useState<LocalVoiceRecording[]>([]);
   const [sending, setSending] = useState<ReadonlySet<string>>(new Set());
@@ -96,7 +112,9 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
       if (!db || inFlight.current.has(recordingId)) return;
       if (!isOnline()) {
         setOffline(true);
-        return; // it stays queued; sent when the phone is back online
+        await requeue(db, recordingId); // Try again while offline: it waits (24) - a new one is queued already
+        await refresh();
+        return; // sent when the phone is back online
       }
       inFlight.current.add(recordingId); // before any await: a second tap meanwhile is ignored
       setSending(new Set(inFlight.current));
@@ -106,8 +124,17 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
         let outcome: VoiceJobOutcome;
         try {
           outcome = await latest.current.submit(recordingId, audioOf(row));
-        } catch {
-          outcome = { kind: "failed", recordingId, reason: "start" };
+        } catch (err) {
+          outcome = { kind: "failed", recordingId, reason: "start", ...(fetchFailed(err) ? { network: true as const } : {}) };
+        }
+        // KB-414 bug A: it failed because the phone is offline (now, or a moment later for a network failure) - not a failure: it
+        // waits (24) and goes by itself when the phone is back online. A real failure while online is still 23.
+        const offlineNow =
+          outcome.kind !== "done" && (!isOnline() || (outcome.kind === "failed" && outcome.network === true && (await offlineSoon(OFFLINE_LAG_MS))));
+        if (offlineNow) {
+          setOffline(true);
+          await requeue(db, recordingId);
+          return;
         }
         await saveOutcome(db, recordingId, outcome);
         await appendIfFirst(recordingId);

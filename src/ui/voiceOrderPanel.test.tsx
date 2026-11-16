@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import type { LocalVoiceRecording } from "@/data/db";
 import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
 
@@ -81,6 +83,66 @@ describe("KB-414 step 1 - Home's mic (startSignal)", () => {
     await act(async () => {});
     expect(recording()).toBeNull();
     await act(async () => void rerender(recorder(1)));
+    expect(recording()).toBeTruthy();
+  });
+
+  // KB-414 bug B (owner's phone check, 16 Nov 2026): the mic takes 1-2 s to open - Home's mic must show 09 at once, never the bill
+  // (12) in between. Pause / Stop wait until the mic is live; a tap on 12's own Record order is unchanged (09 once it records).
+  const micOpening = () => {
+    let open!: () => void;
+    const track = { readyState: "live", stop: vi.fn() };
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementation(() => new Promise((r) => (open = () => r({ getTracks: () => [track] } as never))));
+    return () => open();
+  };
+
+  it("bug B: 09 while the mic is still opening (before it records) - in the SAME render as the tap, Pause and Stop disabled until it is live", async () => {
+    const open = micOpening();
+    const { rerender } = render(recorder(0));
+    act(() => void rerender(recorder(1))); // no await: what the first frame after the tap shows
+    const rec = recording()!;
+    expect(rec).toBeTruthy();
+    expect(within(rec).getByText("00:00")).toBeTruthy();
+    expect((within(rec).getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(rec).getByRole("button", { name: "Pause" }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => void open());
+    expect((within(recording()!).getByRole("button", { name: "Stop" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("bug B: 09 is in the frame the tap commits - before any passive effect runs (outside act, as the phone paints)", async () => {
+    micOpening();
+    const host = document.body.appendChild(document.createElement("div"));
+    const g = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const before = g.IS_REACT_ACT_ENVIRONMENT;
+    g.IS_REACT_ACT_ENVIRONMENT = false;
+    const root = createRoot(host);
+    try {
+      flushSync(() => root.render(recorder(0)));
+      flushSync(() => root.render(recorder(1))); // commits and runs layout effects; passive ones wait for after the paint
+      expect(recording()).toBeTruthy(); // 09 is drawn in a portal on the page, not inside the host
+    } finally {
+      flushSync(() => root.unmount());
+      host.remove();
+      g.IS_REACT_ACT_ENVIRONMENT = before;
+    }
+  });
+
+  it("bug B: the mic refused while 09 waits for it -> 09 goes, the bill shows the warning (Add by hand)", async () => {
+    vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementation(async () => {
+      throw Object.assign(new Error("denied"), { name: "NotAllowedError" });
+    });
+    const { rerender } = render(recorder(0));
+    await act(async () => void rerender(recorder(1)));
+    expect(recording()).toBeNull();
+    expect(screen.getByRole("button", { name: /Add by hand/i })).toBeTruthy();
+  });
+
+  it("bug B: 12's own Record order is unchanged - the button waits (spinner), 09 only once it records", async () => {
+    const open = micOpening();
+    render(recorder(0));
+    act(() => void fireEvent.click(button("Record order")));
+    expect(recording()).toBeNull();
+    expect((button("Record order") as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => void open());
     expect(recording()).toBeTruthy();
   });
 

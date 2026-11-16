@@ -5,7 +5,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { KiranaBillDB } from "@/data/db";
 import type { VoiceJobOutcome } from "@/data/voiceJob";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
-import { useVoiceOrders, type AppendedOrder } from "./useVoiceOrders";
+import { OFFLINE_LAG_MS, useVoiceOrders, type AppendedOrder } from "./useVoiceOrders";
 
 // KB-385 step 4 (owner, 10 Nov 2026; doc 25 §5, §6, §8): Generate -> the phone's queue -> sent (or kept until online) -> the answer ->
 // the bill (src/domain/aiAnswerBill) added ONCE, with the transcript ("Heard: ...") and which prices our code filled. Retry resends the
@@ -113,6 +113,85 @@ describe("useVoiceOrders (KB-385)", () => {
     await act(() => t.result.current.remove(t.result.current.recordings[0]!.recordingId));
     await waitFor(() => expect(t.result.current.recordings).toEqual([]));
     expect(t.appended).toEqual([]);
+  });
+
+  // KB-414 bug A (owner + reviewer, 16 Nov 2026): a recording that failed BECAUSE the phone is offline is not a failure - it waits (24)
+  // and goes by itself when the phone is back online. A real failure while online is still 23.
+  const netFail = (id: string): VoiceJobOutcome => ({ kind: "failed", recordingId: id, reason: "upload", network: true });
+
+  it("KB-414 bug A: the send fails and the phone says offline -> it stays waiting (queued, not failed); back online it is sent by itself and added", async () => {
+    let calls = 0;
+    const t = setup(async (id) => {
+      calls++;
+      if (calls > 1) return done(id);
+      online = false; // the network went while sending (the phone already says so when the request fails)
+      return netFail(id);
+    });
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => [r.state, r.reason])).toEqual([["queued", undefined]]));
+    expect(t.result.current.offline).toBe(true);
+    online = true;
+    await act(async () => void window.dispatchEvent(new Event("online")));
+    await waitFor(() => expect(t.appended).toHaveLength(1)); // no Try again needed
+    expect(t.submit).toHaveBeenCalledTimes(2);
+  });
+
+  it("KB-414 bug A, the lag: the offline event comes a moment AFTER the request failed -> still waiting, not 23", async () => {
+    const t = setup(async (id) => {
+      setTimeout(() => ((online = false), window.dispatchEvent(new Event("offline"))), 150);
+      return netFail(id);
+    });
+    const started = Date.now();
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => r.state)).toEqual(["queued"]));
+    expect(t.result.current.blocking.map((r) => r.state)).toEqual(["queued"]);
+    expect(Date.now() - started).toBeLessThan(OFFLINE_LAG_MS - 500); // the event settles it at once - no waiting out the 2 s
+  });
+
+  it("KB-414 bug A, the lag without an event: navigator.onLine turns false a moment later -> re-checked after OFFLINE_LAG_MS, still waiting", async () => {
+    expect(OFFLINE_LAG_MS).toBe(2000);
+    const t = setup(async (id) => {
+      setTimeout(() => void (online = false), 300);
+      return netFail(id);
+    });
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => r.state)).toEqual(["queued"]), { timeout: 4000 });
+  }, 8000);
+
+  it("KB-414 bug A: a network error while the phone stays online is a real failure (23, after the short wait); a server's answer is 23 at once", async () => {
+    const started = Date.now();
+    const t = setup(async (id) => netFail(id));
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.blocking.map((r) => [r.state, r.reason])).toEqual([["failed", "upload"]]), { timeout: 4000 });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(OFFLINE_LAG_MS - 50);
+    expect(t.result.current.waiting).toEqual([]);
+
+    const quick = Date.now();
+    const u = setup(async (id) => ({ kind: "failed", recordingId: id, reason: "timeout" }));
+    await act(() => u.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(u.result.current.blocking.map((r) => r.state)).toEqual(["failed", "failed"]));
+    expect(Date.now() - quick).toBeLessThan(1000); // no wait: the server answered
+  }, 10000);
+
+  it("KB-414 bug A: gave up while the phone is offline -> waiting too", async () => {
+    const t = setup(async (id) => ((online = false), { kind: "gave_up", recordingId: id }));
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => r.state)).toEqual(["queued"]));
+  });
+
+  it("KB-414 bug A: Try again on a failed recording while offline -> it waits (queued) and goes by itself when back online", async () => {
+    let fail = true;
+    const t = setup(async (id) => (fail ? { kind: "failed", recordingId: id, reason: "timeout" } : done(id)));
+    await act(() => t.result.current.generate(audio(), 5_000));
+    await waitFor(() => expect(t.result.current.blocking.map((r) => r.state)).toEqual(["failed"]));
+    online = false;
+    fail = false;
+    await act(() => t.result.current.retry(t.result.current.recordings[0]!.recordingId));
+    await waitFor(() => expect(t.result.current.waiting.map((r) => [r.state, r.reason])).toEqual([["queued", undefined]]));
+    expect(t.submit).toHaveBeenCalledOnce();
+    online = true;
+    await act(async () => void window.dispatchEvent(new Event("online")));
+    await waitFor(() => expect(t.appended).toHaveLength(1));
   });
 
   it("nothing understood (0 lines): no lines added, the recording no longer blocks, the transcript stays to show 'No items found'", async () => {

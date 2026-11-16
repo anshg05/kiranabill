@@ -49,6 +49,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- KB-414 bug A (phone check, 16 Nov 2026): without it the WebView keeps navigator.onLine true and never fires "offline" - the
+         app never knew it was offline (no strip, recordings failed instead of waiting). A normal permission: no prompt. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- KB-406 S1 (D111): the microphone for voice orders, asked the first time the web page records -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

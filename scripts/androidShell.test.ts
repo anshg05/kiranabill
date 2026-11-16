@@ -30,10 +30,11 @@ describe("the Android shell (D111)", () => {
     expect(vars).toMatch(/targetSdkVersion = 36\b/);
   });
 
-  it("asks only for what it needs: the internet, the microphone and Bluetooth printers (KB-408)", () => {
+  it("asks only for what it needs: the internet and whether it is there, the microphone and Bluetooth printers (KB-408)", () => {
     expect(permissions.sort()).toEqual([
       "android.permission.ACCESS_COARSE_LOCATION",
       "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_NETWORK_STATE",
       "android.permission.BLUETOOTH",
       "android.permission.BLUETOOTH_ADMIN",
       "android.permission.BLUETOOTH_CONNECT",
@@ -42,6 +43,10 @@ describe("the Android shell (D111)", () => {
       "android.permission.MODIFY_AUDIO_SETTINGS",
       "android.permission.RECORD_AUDIO",
     ]);
+  });
+
+  it("KB-414 bug A (phone check, 16 Nov 2026): ACCESS_NETWORK_STATE, with no max SDK - without it the WebView keeps navigator.onLine true and never fires offline", () => {
+    expect(manifest).toMatch(/<uses-permission android:name="android\.permission\.ACCESS_NETWORK_STATE" \/>/);
   });
 
   it("Bluetooth (KB-408): the scan never derives location; the old-Android permissions and location stop at SDK 30", () => {

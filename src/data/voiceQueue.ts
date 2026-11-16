@@ -51,6 +51,15 @@ export async function saveOutcome(db: KiranaBillDB, recordingId: string, outcome
   });
 }
 
+/** KB-414 bug A (owner + reviewer, 16 Nov 2026): sent while the phone is offline - not a failure: back to waiting ("queued"), sent by
+ *  itself when the phone is back online. Only a failed or given-up recording moves back; an answered one, or one in its bill, never. */
+export async function requeue(db: KiranaBillDB, recordingId: string): Promise<void> {
+  await db.transaction("rw", db.voiceQueue, async () => {
+    const row = await db.voiceQueue.get(recordingId);
+    if (row && (row.state === "failed" || row.state === "gave_up")) await db.voiceQueue.update(recordingId, { state: "queued", reason: undefined });
+  });
+}
+
 /** True only the FIRST time - the caller adds the lines only then. */
 export async function markAppended(db: KiranaBillDB, recordingId: string): Promise<boolean> {
   return db.transaction("rw", db.voiceQueue, async () => {

@@ -105,6 +105,17 @@ describe("submitRecording (KB-384a step 4)", () => {
     }
   });
 
+  it("KB-414 bug A: a failure because fetch itself failed (no network) is marked network - as Storage, PostgREST and fetch report it", async () => {
+    const offline = new TypeError("Failed to fetch");
+    // Storage wraps it (StorageUnknownError.originalError); PostgREST flattens it into its message; /voice-run's fetch throws it
+    expect(await fake({ upload: { message: "Failed to fetch", originalError: offline } as never }).run()).toEqual({ kind: "failed", recordingId: REC, reason: "upload", network: true });
+    expect(await fake({ insert: { code: "", message: "TypeError: Failed to fetch" } }).run()).toEqual({ kind: "failed", recordingId: REC, reason: "start", network: true });
+    expect(await fake({ post: offline }).run()).toEqual({ kind: "failed", recordingId: REC, reason: "start", network: true });
+    // the server answered (an error status, a refusal): not a network failure
+    expect(await fake({ upload: { message: "Payload too large", statusCode: "413" } }).run()).toEqual({ kind: "failed", recordingId: REC, reason: "upload" });
+    expect(await fake({ post: new Response(null, { status: 500 }) }).run()).toEqual({ kind: "failed", recordingId: REC, reason: "start" });
+  });
+
   it("a check that fails on the way (a network blip) is not the end: it keeps watching", async () => {
     const f = fake({ rows: [Q, new Error("Failed to fetch"), { status: "done", attempts: 1, transcript: "x", items: [], error: null }] });
     expect((await f.run()).kind).toBe("done");

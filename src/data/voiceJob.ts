@@ -17,8 +17,9 @@ export const GIVE_UP_MS = 75_000;
 
 export type VoiceJobOutcome =
   | { kind: "done"; recordingId: string; transcript: string; items: ParsedItem[] }
-  /** reason: "upload" | "session" (sign in, then Retry) | "start" | the server's kind (rate_limited, download, timeout, busy, failed) */
-  | { kind: "failed"; recordingId: string; reason: string }
+  /** reason: "upload" | "session" (sign in, then Retry) | "start" | the server's kind (rate_limited, download, timeout, busy, failed)
+   *  network: fetch itself failed (no answer from the server) - KB-414 bug A: if the phone is offline, it waits instead (useVoiceOrders) */
+  | { kind: "failed"; recordingId: string; reason: string; network?: true }
   | { kind: "gave_up"; recordingId: string };
 
 export type NextStep = "retry" | "add_by_hand";
@@ -45,14 +46,14 @@ export async function submitRecording(opts: SubmitRecordingOptions): Promise<Voi
   const { client, shopId, recordingId, audio } = opts;
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = opts.now ?? (() => Date.now());
-  const failed = (reason: string): VoiceJobOutcome => ({ kind: "failed", recordingId, reason });
+  const failed = (reason: string, err?: unknown): VoiceJobOutcome => ({ kind: "failed", recordingId, reason, ...(fetchFailed(err) ? { network: true as const } : {}) });
   // The bucket allows bare audio types ("audio/webm;codecs=opus" -> "audio/webm").
   const mime = audio.type.split(";")[0]!.trim() || "audio/webm";
 
   const up = await client.storage.from("recordings").upload(`${shopId}/${recordingId}`, audio, { contentType: mime, upsert: false });
-  if (up.error && !isAlreadyThere(up.error)) return failed(isLoginRefused(up.error) ? "session" : "upload");
+  if (up.error && !isAlreadyThere(up.error)) return failed(isLoginRefused(up.error) ? "session" : "upload", up.error);
   const row = await client.from("voice_recordings").insert({ recording_id: recordingId, shop_id: shopId, mime });
-  if (row.error && row.error.code !== "23505") return failed("start");
+  if (row.error && row.error.code !== "23505") return failed("start", row.error);
   // Retry: a recording already done is answered at once (no /voice-run, no Gemini); an earlier FAILED attempt is not this run's
   // answer - only a failure from a newer attempt counts (the worker claims again, attempts + 1).
   let before: RowState | null = null;
@@ -70,8 +71,8 @@ export async function submitRecording(opts: SubmitRecordingOptions): Promise<Voi
       body: JSON.stringify({ recordingId }),
     });
     if (!res.ok) return failed("start");
-  } catch {
-    return failed("start");
+  } catch (err) {
+    return failed("start", err);
   }
 
   const started = now();
@@ -111,6 +112,15 @@ export async function markRecordingBilled(client: SupabaseClient, recordingId: s
 /** KB-385: the upload was refused for the LOGIN (expired or invalid session; Storage answers 401 / 403, or names the JWT) - sign in, then Retry. */
 function isLoginRefused(error: { message?: string; statusCode?: string | number }): boolean {
   return ["401", "403"].includes(String(error.statusCode)) || /jwt|unauthori[sz]ed/i.test(error.message ?? "");
+}
+
+/** KB-414 bug A: fetch itself failed (no network, DNS) - a TypeError, as fetch throws it, inside Storage's error (originalError) or in
+ *  PostgREST's message ("TypeError: Failed to fetch"). Anything the server answered is not this. */
+export function fetchFailed(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  if (typeof err !== "object" || err === null) return false;
+  const e = err as { originalError?: unknown; message?: unknown };
+  return e.originalError instanceof TypeError || (typeof e.message === "string" && e.message.startsWith("TypeError:"));
 }
 
 /** Storage answers 409 / "already exists" for a second upload of the same recording (Retry): it is there, which is what we need. */
