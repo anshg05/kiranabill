@@ -56,7 +56,7 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
   const greeting = t(hour < 12 ? "home.morning" : hour < 17 ? "home.afternoon" : "home.evening");
 
   return (
-    <section aria-label={t("nav.home")} className="font-kb fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-[var(--kb-tab-bottom,0px)] z-20 overflow-y-auto bg-kb-bg text-kb-ink">
+    <section data-scroll-page aria-label={t("nav.home")} className="font-kb fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-[var(--kb-tab-bottom,0px)] z-20 overflow-y-auto bg-kb-bg text-kb-ink">
       <div className="mx-auto flex w-full max-w-[480px] flex-col gap-[14px] px-[18px] pt-[18px] pb-[10px]">
         <header className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">

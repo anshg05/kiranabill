@@ -406,21 +406,31 @@ export function TapAreaCheck() {
         const b = getComputedStyle(e, "::before");
         const w = parseFloat(b.width), h = parseFloat(b.height);
         const cx = r.left + r.width / 2, cy = r.top + r.height / 2 + window.scrollY;
-        const a = { e, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
+        // KB-414: a page that scrolls as a whole (Home, 13 / 15 on a short screen, a tall sheet) - its controls are measured on the whole
+        // page against each other (like the window's own scroll); against anything outside it (the nav) only where they can be seen
+        const page = e.closest<HTMLElement>("[data-scroll-page]");
+        const scrollPage = page && /auto|scroll/.test(getComputedStyle(page).overflowY) ? page : null;
+        const a = { e, page: scrollPage, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
+        const seen = { ...a };
         // KB-413: only the part a finger can reach - a scrolling / clipping box hides what lies past its edge (Add item scrolled under the panel)
         for (let c = e.parentElement; c && c !== document.body; c = c.parentElement) {
-          // a page that scrolls as a whole (15 / 13 on a short screen, KB-414) is measured whole, like the window's own scroll
-          if (getComputedStyle(c).overflow === "visible" || (c.hasAttribute("data-scroll-page") && /auto|scroll/.test(getComputedStyle(c).overflowY))) continue;
+          if (getComputedStyle(c).overflow === "visible") continue;
           const k = c.getBoundingClientRect();
-          a.l = Math.max(a.l, k.left); a.r = Math.min(a.r, k.right); a.t = Math.max(a.t, k.top + window.scrollY); a.b = Math.min(a.b, k.bottom + window.scrollY);
+          const cut = (x: { l: number; r: number; t: number; b: number }) => {
+            x.l = Math.max(x.l, k.left); x.r = Math.min(x.r, k.right); x.t = Math.max(x.t, k.top + window.scrollY); x.b = Math.min(x.b, k.bottom + window.scrollY);
+          };
+          cut(seen);
+          if (c !== scrollPage) cut(a); // the whole area: never cut by its own scrolling page
         }
-        return a;
+        return { ...a, seen };
       }).filter((a) => a.r > a.l && a.b > a.t);
       const bad: string[] = [];
       for (let i = 0; i < areas.length; i++)
         for (let j = i + 1; j < areas.length; j++) {
-          const a = areas[i]!, c = areas[j]!;
-          if (a.e.contains(c.e) || c.e.contains(a.e)) continue;
+          const one = areas[i]!, two = areas[j]!;
+          if (one.e.contains(two.e) || two.e.contains(one.e)) continue;
+          // on the same scrolling page: the whole areas; otherwise what can be seen of each
+          const [a, c] = one.page && one.page === two.page ? [one, two] : [one.seen, two.seen];
           const x = Math.min(a.r, c.r) - Math.max(a.l, c.l), y = Math.min(a.b, c.b) - Math.max(a.t, c.t);
           if (x > 0.5 && y > 0.5) bad.push(`${(a.e.getAttribute("aria-label") ?? a.e.textContent ?? "").trim().slice(0, 24)} / ${(c.e.getAttribute("aria-label") ?? c.e.textContent ?? "").trim().slice(0, 24)}`);
         }

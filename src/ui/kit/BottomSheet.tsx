@@ -35,6 +35,7 @@ export function BottomSheet({
       <div
         ref={box}
         role="dialog"
+        data-scroll-page
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}

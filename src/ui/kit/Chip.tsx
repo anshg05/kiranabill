@@ -31,7 +31,8 @@ export function FilterChipRow({ children, className = "" }: { children: ReactNod
 }
 
 /** 25-CancelBill: a one-of choice drawn as the choice chip - a label holding its radio (the reasons: one required, a radiogroup). */
-export const CHOICE_RADIO = "font-kb kb-hit cursor-pointer whitespace-nowrap inline-flex items-center min-h-[40px] px-[14px] rounded-full text-kb-14 font-semibold border border-kb-border bg-kb-card text-kb-ink has-checked:border-transparent has-checked:bg-kb-primary-pale has-checked:text-kb-primary has-focus-visible:outline-2 has-focus-visible:outline-kb-primary";
+// KB-414 (17 Nov 2026): a reason too long for a small phone at a big text size wraps inside its chip, never wider than the sheet
+export const CHOICE_RADIO = "font-kb kb-hit cursor-pointer max-w-full inline-flex items-center min-h-[40px] px-[14px] rounded-full text-kb-14 font-semibold border border-kb-border bg-kb-card text-kb-ink has-checked:border-transparent has-checked:bg-kb-primary-pale has-checked:text-kb-primary has-focus-visible:outline-2 has-focus-visible:outline-kb-primary";
 
 export function ChoiceChip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
   return (
