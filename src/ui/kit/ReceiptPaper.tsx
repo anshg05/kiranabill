@@ -17,7 +17,9 @@ export function ReceiptPaper({ width, torn = false, print = false, children }: {
       className={`drop-shadow-kb-receipt ${printing ? "overflow-hidden animate-kb-print-saved" : ""}`}
       style={{ width, maxWidth: "100%" }}
     >
-      {children}
+      {/* KB-414 (owner, 17 Nov 2026): at a big text size the receipt's columns can be wider than a small phone - they scroll sideways
+          inside the paper, never cut or spilling off the screen */}
+      <div data-receipt-scroll className="overflow-x-auto">{children}</div>
       {torn && (
         <svg width="100%" height="10" viewBox="0 0 280 10" preserveAspectRatio="none" aria-hidden="true" className="block text-kb-card">
           <path

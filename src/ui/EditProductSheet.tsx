@@ -5,6 +5,7 @@ import type { LocalShopProduct } from "@/data/db";
 import { checkAliases, checkName, lostNameNote, productPatch, type OtherProduct, type ProductPatch } from "@/domain/catalogEdit";
 import { nameKey } from "@/domain/catalogImport";
 import { useBackEntry } from "./useBackEntry";
+import { useHidesNav } from "./AppTabs";
 import { useDiscardGuard } from "./useDiscardGuard";
 import { useT } from "./useT";
 
@@ -52,6 +53,7 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
   const canWrite = online && !busy;
   const guard = useDiscardGuard(name !== product.displayName || aliasesTouched, onClose);
   useBackEntry("kbEditProduct", guard.requestClose, guard.canClose);
+  useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
 
   const run = async (write: () => Promise<CatalogWriteResult>, clashName: string) => {
     setBusy(true);
@@ -67,7 +69,7 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
   };
 
   return (
-    <section aria-label={t("product.editTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("product.editTitle")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">

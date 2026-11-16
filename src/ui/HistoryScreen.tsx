@@ -22,6 +22,7 @@ import { MetaLine } from "./MetaLine";
 import { ShareBar } from "./ShareBar";
 import { PrintButton } from "./PrintButton";
 import { useBackEntry } from "./useBackEntry";
+import { useHidesNav } from "./AppTabs";
 import { useBrowserOnline } from "./useBrowserOnline";
 import { inject, mark } from "./inject";
 import { useT } from "./useT";
@@ -199,7 +200,7 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
           {typed && <p className="mt-[6px] px-1 text-kb-13 text-kb-sub">{scope}</p>}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-[10px] pb-3">
+        <div data-scroll-list className="min-h-0 flex-1 overflow-y-auto px-4 pt-[10px] pb-3">
           {loadingFromServer && <p className="px-1 pb-2 text-kb-13 text-kb-sub">{t(online ? "history.loadingServer" : "history.needInternet")}</p>}
           {rows !== null && rows.length === 0 && pullDone === true && (
             <div className="px-1 py-6 text-center">
@@ -331,6 +332,7 @@ function BillDetail({
   }, [localDb, localId, version]);
   const saved = useMemo(() => (receipt ? { localId, receiptNumber: receipt.receiptNumber, receipt } : null), [localId, receipt]);
   const share = useReceiptShare({ localDb, saved, render });
+  useHidesNav();
 
   const cancel = async (reason: CancelReason, withReplacement: boolean): Promise<string | null> => {
     if (!deviceId) return "Couldn't cancel the bill — try again";
@@ -355,8 +357,10 @@ function BillDetail({
     : null;
   const link = "kb-hit flex min-h-11 items-center text-left text-kb-14 font-bold text-kb-primary";
   return (
-    <section aria-label={t("bill.savedBefore")} className="font-kb fixed inset-0 z-30 flex flex-col bg-kb-bg text-kb-ink">
-      <div inert={covered || cancelling} aria-hidden={covered || cancelling || undefined} className="mx-auto flex h-full w-full max-w-[480px] flex-col">
+    // KB-414 step 2 phone check (owner, 17 Nov 2026): no nav on 15 (useHidesNav), below the offline strip; the footer stays at the bottom
+    // with the receipt scrolling above it - on a screen too short for both the whole page scrolls (the receipt keeps a minimum height)
+    <section aria-label={t("bill.savedBefore")} className="font-kb fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-kb-bg text-kb-ink">
+      <div inert={covered || cancelling} aria-hidden={covered || cancelling || undefined} data-scroll-page className="mx-auto flex h-full w-full max-w-[480px] flex-col overflow-y-auto">
         {/* KB-414 step 2: 15's top bar - Back, "Bill 514", Saved (a cancelled bill: Cancelled) - and the line under it */}
         <TopBar
           title={receipt ? t("history.billNo", { n: receipt.receiptNumber }) : t("bill.savedBefore")}
@@ -365,7 +369,7 @@ function BillDetail({
           right={bill && (bill.status === "cancelled" ? <Badge kind="cancelled">{t("history.cancelled")}</Badge> : <Badge kind="saved">{t("settings.saved")}</Badge>)}
         />
         {detailMeta && <p className="px-5 pb-2 text-kb-14 text-kb-sub">{detailMeta}</p>}
-        <div data-scroll-list className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto px-5 pt-1 pb-2">
+        <div data-scroll-list className="flex min-h-[min(220px,40dvh)] flex-1 flex-col items-center gap-3 overflow-y-auto px-5 pt-1 pb-2">
           {/* a cancelled bill says so first, above its receipt (today's details: the reason, the day, the replacement, the sync note) */}
           {c && (
             <section aria-label={t("history.cancellation")} className="flex w-full max-w-[340px] flex-col gap-[2px] rounded-[16px] border border-kb-border bg-kb-card px-4 py-3 text-kb-14">
@@ -392,14 +396,14 @@ function BillDetail({
           )}
           {/* 15's 340 px paper, no torn edge; the whole receipt ("Show all N items" is parked, SG-32) */}
           {receipt && (
-            <div className="h-fit">
+            <div className="h-fit w-full max-w-[340px]">
               <ReceiptPaper width={340}>
                 <Receipt receipt={receipt} />
               </ReceiptPaper>
             </div>
           )}
         </div>
-        <div className="safe-bottom flex flex-col gap-[10px] px-[18px] pt-3 pb-[22px]">
+        <div data-detail-footer className="flex flex-none flex-col gap-[10px] px-[18px] pt-3 pb-[max(22px,env(safe-area-inset-bottom))]">
           {/* KB-408 S5: a copy printed from a saved bill is always a reprint ("Reprint", in the Android app only) */}
           {receipt && <PrintButton receipt={receipt} firstIsOriginal={false} />}
           {share && <ShareBar share={share} look="tiles" />}

@@ -18,7 +18,7 @@ import { cancelBillLocal } from "@/data/cancelBill";
 import { buildReceipt, type ReceiptItem } from "@/domain/receipt";
 import type { FinalLine } from "@/domain/finalBill";
 import type { Paise } from "@/domain/money";
-import { DEV_PRINT_BILLS } from "./devPrintBills";
+import { BILL_514, DEV_PRINT_BILLS } from "./devPrintBills";
 import { BillSavedScreen } from "./BillSavedScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { renderReceiptFiles } from "./receiptImage";
@@ -249,8 +249,10 @@ function Screen15({ state, onReady, sheet25 = false }: { state: string; onReady:
       const shopId = "11111111-1111-4111-8111-111111111111";
       const deviceId = "22222222-2222-4222-8222-222222222222";
       await d.shops.put({ id: shopId, syncStatus: "synced", name: "Gupta Kirana Store", phone: null, address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: null, updatedAt: "2026-11-11T00:00:00.000Z" });
-      const lines = SAMPLE_13.map(([name, qty, unit, rate, total], i): FinalLine => {
-        const it = item(name, { qty, unit, rate: rate === null ? null : rate * 100, rateUnit: rate === null ? null : unit, total: total * 100, priceType: rate === null ? "total" : "rate" });
+      // "long": the owner's real Bill 514 (38 lines) - the receipt scrolls above the footer (KB-414 step 2 phone check)
+      const sample = state === "long" ? BILL_514.map(([name, qty, unit, rate, total, rateUnit]) => [name, qty, unit, rate, total, rateUnit ?? unit] as const) : SAMPLE_13.map(([name, qty, unit, rate, total]) => [name, qty, unit, rate, total, unit] as const);
+      const lines = sample.map(([name, qty, unit, rate, total, rateUnit], i): FinalLine => {
+        const it = item(name, { qty, unit: unit ?? undefined, rate: rate === null ? null : rate * 100, rateUnit: rate === null ? null : rateUnit, total: total * 100, priceType: rate === null ? "total" : "rate" });
         return { id: `l${i}`, utteranceId: 1, item: it, original: it, displayName: name, source: "voice" };
       });
       const localId = crypto.randomUUID();
@@ -279,7 +281,13 @@ function Screen15({ state, onReady, sheet25 = false }: { state: string; onReady:
     }, 100);
     return () => window.clearInterval(id);
   }, [db]);
-  return db ? <HistoryScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" render={renderReceiptFiles} deviceId="22222222-2222-4222-8222-222222222222" onClose={noop} /> : null;
+  // KB-414 step 2 phone check (owner, 17 Nov 2026): inside the REAL tab frame, as the app draws it - the nav was missing here, so the
+  // checks passed while the phone's nav covered 15's footer
+  return db ? (
+    <TabFrame tab="bills" onTab={noop} offline={params.get("offline") === "1"}>
+      <HistoryScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" render={renderReceiptFiles} deviceId="22222222-2222-4222-8222-222222222222" onClose={noop} />
+    </TabFrame>
+  ) : null;
 }
 
 /** KB-414 step 1: 08-Home on a dev database (fake-indexeddb, as 15): 08's two recent bills, today, with their item counts. */
@@ -343,7 +351,81 @@ function Screen14({ state, onReady }: { state: string; onReady: () => void }) {
 }
 
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
-const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
+const SHEET_OK = (c: string) =>
+  /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c) &&
+  /covered: 0\b/.test(c) && /unreachable: 0\b/.test(c) && !/Reach: 0 checked/.test(c);
+
+/**
+ * KB-414 step 2 phone check (owner + reviewer, 17 Nov 2026): the nav covered 15's "Cancel bill" on the phone while every check passed.
+ * Every control and every piece of words on the screen must be REACHABLE and UNCOVERED: at its centre the topmost thing must be itself
+ * (or inside it) - not the nav, a fixed footer, the offline strip or anything else. One that is off screen or covered right now is
+ * scrolled into view (centred, as far as its scrolling boxes go) and looked at again; still covered = "covered", still off screen =
+ * "unreachable". Scroll positions are put back after each. While a modal is open only what is inside the top one counts (the rest is
+ * under it by design); inert, screen-reader-only and moving things are skipped.
+ */
+function ReachCheck() {
+  const [text, setText] = useState("checking reach…");
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const modals = [...document.querySelectorAll<HTMLElement>('[aria-modal="true"]')];
+      const modal = modals[modals.length - 1];
+      // every box that clips: a finger scrolls only an auto / scroll one - scrollIntoView moves a hidden one too, and that is no reach
+      const scrollers = [...document.querySelectorAll<HTMLElement>("*")].filter((e) => getComputedStyle(e).overflow !== "visible");
+      const saved = () => ({ x: window.scrollX, y: window.scrollY, at: scrollers.map((e) => [e.scrollLeft, e.scrollTop] as const) });
+      const restore = (p: ReturnType<typeof saved>) => {
+        scrollers.forEach((e, i) => ((e.scrollLeft = p.at[i]![0]), (e.scrollTop = p.at[i]![1])));
+        window.scrollTo(p.x, p.y);
+      };
+      const words = (e: Element) => [...e.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
+      const cands = [...document.querySelectorAll<HTMLElement>("[data-kit-part] *")].filter((e) => {
+        if (!(e instanceof HTMLElement) || e.closest("[inert], .sr-only, [aria-hidden='true'], [data-clip-ok]") || e.getAnimations().length) return false;
+        if (modal && !modal.contains(e)) return false;
+        const r = e.getBoundingClientRect();
+        if (!r.width || !r.height || getComputedStyle(e).visibility === "hidden") return false;
+        return e.matches("button, a[href], input, select, textarea, [role='button'], [role='radio'], label") || words(e);
+      });
+      const name = (e: Element) => `${e.tagName.toLowerCase()} "${(e.getAttribute("aria-label") ?? e.textContent ?? "").trim().slice(0, 20)}"`;
+      // at the centre the topmost thing is the element, inside it, or holds it (an icon inside a button); a neighbour's tap area (its
+      // ::before) reaching over it is the tap-area check's business, not cover
+      const clear = (e: HTMLElement) => {
+        const r = e.getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2;
+        if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return "off";
+        // hidden by a clipping / scrolling box (outside it, or the box squeezed to nothing) is out of sight, whatever is on top there
+        for (let c = e.parentElement; c && c !== document.body; c = c.parentElement) {
+          if (getComputedStyle(c).overflow === "visible") continue;
+          const k = c.getBoundingClientRect();
+          if (x < k.left - 0.5 || x > k.right + 0.5 || y < k.top - 0.5 || y > k.bottom + 0.5) return "off";
+        }
+        const top = document.elementFromPoint(x, y);
+        if (!top || e.contains(top) || top.contains(e)) return "ok";
+        const t = top.getBoundingClientRect();
+        if (x < t.left || x > t.right || y < t.top || y > t.bottom) return "ok";
+        return `under ${name(top)}`;
+      };
+      const covered: string[] = [];
+      const unreachable: string[] = [];
+      for (const e of cands) {
+        let seen = clear(e);
+        if (seen === "ok") continue;
+        const before = saved();
+        e.scrollIntoView({ block: "center", inline: "nearest" });
+        // reached only if every box that moved is one a finger can scroll that way
+        const byHand = scrollers.every((c, i) => {
+          const cs = getComputedStyle(c);
+          return (c.scrollTop === before.at[i]![1] || /auto|scroll/.test(cs.overflowY)) && (c.scrollLeft === before.at[i]![0] || /auto|scroll/.test(cs.overflowX));
+        });
+        seen = byHand ? clear(e) : "off";
+        restore(before);
+        if (seen === "off") unreachable.push(name(e));
+        else if (seen !== "ok") covered.push(`${name(e)} ${seen}`);
+      }
+      setText(`Reach: ${cands.length} checked · covered: ${covered.length}${covered.length ? " - " + covered.slice(0, 4).join("; ") : ""} · unreachable: ${unreachable.length}${unreachable.length ? " - " + unreachable.slice(0, 4).join("; ") : ""}`);
+    }, 3200);
+    return () => window.clearTimeout(id);
+  }, []);
+  return <p data-reach-check style={{ font: "600 12px system-ui" }}>{text}</p>;
+}
 
 const FILES: Record<string, string> = {
   "08": "08-Home.html", "14": "14-BillsList.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
@@ -389,6 +471,7 @@ function Frame() {
         <div style={{ position: "fixed", left: -9999, top: 0, width: 600 }}>
           <TapAreaCheck />
           <ContainmentCheck />
+          <ReachCheck />
         </div>
       )}
     </>
@@ -399,6 +482,8 @@ function Sheet() {
   const screen = params.get("screen") ?? "12";
   const state = params.get("state") ?? "design";
   const w = Number(params.get("w") ?? 390);
+  // KB-414 (owner, 17 Nov 2026): the page's height - in the app the page is the screen minus the status bar and the system bar
+  const h = Number(params.get("h") ?? 844);
   const scale = params.get("scale");
   const lang = params.get("lang");
   const motion = params.get("motion");
@@ -409,8 +494,9 @@ function Sheet() {
       const d = ours.current?.contentDocument;
       const tap = d?.querySelector("[data-tap-check]")?.textContent ?? "";
       const con = d?.querySelector("[data-contain-check]")?.textContent ?? "";
-      if (tap && !tap.startsWith("checking") && con && !con.startsWith("checking")) {
-        setChecks(`${con} · ${tap}`);
+      const reach = d?.querySelector("[data-reach-check]")?.textContent ?? "";
+      if (tap && !tap.startsWith("checking") && con && !con.startsWith("checking") && reach && !reach.startsWith("checking")) {
+        setChecks(`${con} · ${tap} · ${reach}`);
         // both frames' animations stopped at the same moment (0.6 s in), so a pulse (09's ring) is compared like for like
         for (const f of document.querySelectorAll("iframe"))
           for (const a of f.contentDocument?.getAnimations() ?? []) {
@@ -422,13 +508,14 @@ function Sheet() {
     }, 300);
     return () => window.clearInterval(id);
   }, []);
-  const q = new URLSearchParams({ frame: "1", screen, state, ...(scale ? { scale } : {}), ...(lang ? { lang } : {}), ...(motion ? { motion } : {}) });
-  const frame = { width: w, height: 844, border: "1px dashed #999", background: "white" } as const;
+  const offline = params.get("offline");
+  const q = new URLSearchParams({ frame: "1", screen, state, ...(scale ? { scale } : {}), ...(lang ? { lang } : {}), ...(motion ? { motion } : {}), ...(offline ? { offline } : {}) });
+  const frame = { width: w, height: h, border: "1px dashed #999", background: "white" } as const;
   return (
     <main style={{ padding: 16, font: "13px system-ui" }}>
       <h1 style={{ font: "700 16px system-ui", margin: "0 0 4px" }}>
         {["08", "14", "15", "16", "17", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
-        {lang ? ` - ${lang}` : ""} - {w} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
+        {lang ? ` - ${lang}` : ""} - {w} x {h} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
       </h1>
       <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>

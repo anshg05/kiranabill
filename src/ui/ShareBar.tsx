@@ -40,6 +40,7 @@ export function ShareBar({ share, look }: { share: ReceiptShare; look?: "tiles" 
         </button>
       </div>
       {!share.ready && <p className="mt-2 text-center text-[13px] text-ink-soft">{t("reason.preparing")}</p>}
+      {share.notice && <p role="status" className="mt-2 text-center text-[13px] text-ink-soft">{t(share.notice)}</p>}
       {smsOpen && <SmsSheet share={share} onClose={() => setSmsOpen(false)} />}
     </div>
   );
@@ -93,6 +94,11 @@ function ShareTiles({ share, smsOpen, onSms, onCloseSms }: { share: ReceiptShare
         {tile("sms", t("share.sms"), MessageSquareText, onSms, { expanded: smsOpen })}
       </div>
       {!share.ready && <p className="mt-2 text-center text-kb-13 text-kb-sub">{t("reason.preparing")}</p>}
+      {share.notice && (
+        <p role="status" className={`mt-2 text-center text-kb-13 ${share.notice === "share.failed" ? "text-kb-err" : "text-kb-ok"}`}>
+          {t(share.notice)}
+        </p>
+      )}
       {smsOpen && <SmsSheet share={share} onClose={onCloseSms} />}
     </div>
   );

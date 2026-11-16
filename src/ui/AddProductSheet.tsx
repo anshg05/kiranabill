@@ -4,6 +4,7 @@ import type { CatalogWriteResult } from "@/data/catalogEdit";
 import { checkNewProduct, type NewProduct, type OtherProduct } from "@/domain/catalogEdit";
 import { normalizeUnit } from "@/domain/catalogImport";
 import { useBackEntry } from "./useBackEntry";
+import { useHidesNav } from "./AppTabs";
 import { useDiscardGuard } from "./useDiscardGuard";
 import { OFFLINE_NOTE, SAVE_FAILED_TEXT } from "./EditProductSheet";
 import { useT } from "./useT";
@@ -31,6 +32,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
   const [price, setPrice] = useState("");
   const guard = useDiscardGuard(name.trim() !== "" || unit.trim() !== "" || price.trim() !== "", onClose);
   useBackEntry("kbAddProduct", guard.requestClose, guard.canClose);
+  useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,7 +56,7 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
 
   const field = "min-h-11 rounded-[6px] border border-line bg-surface px-3";
   return (
-    <section aria-label={t("product.addTitle")} className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("product.addTitle")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">

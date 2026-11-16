@@ -5,9 +5,9 @@ import type { Paise } from "@/domain/money";
 // from his printed copy (S6, 13-14 Nov 2026): 38 lines, total Rs 2,216 - item names and prices only, no customer. Its lines cover the
 // cases that matter on paper: long names, "—" rates, a per-kg rate on a gram quantity (₹500/kg), a line with no quantity.
 
-type Line = readonly [name: string, qty: number | null, unit: string | null, rateRupees: number | null, totalRupees: number, rateUnit?: string];
+export type Line = readonly [name: string, qty: number | null, unit: string | null, rateRupees: number | null, totalRupees: number, rateUnit?: string];
 
-const BILL_514: readonly Line[] = [
+export const BILL_514: readonly Line[] = [
   ["चावल", 5, "kg", 68, 340], ["शक्कर", 3, "kg", 58, 174], ["उड़द मोगर", 0.5, "kg", 130, 65], ["मसूर सैगी", 0.5, "kg", 80, 40], ["मूंग दाल", 0.5, "kg", 100, 50],
   ["तूर दाल", 1, "kg", 150, 150], ["दाने", 1, "kg", 150, 150], ["चना दाल", 0.5, "kg", 90, 45], ["टाटा नमक", 1, "piece", 30, 30], ["गरम मसाला", 100, "gm", null, 56],
   ["पतला पोहा", 1, "kg", 60, 60], ["चावल", 2, "kg", 40, 80], ["जाड़ा पोहा पैकेट", 1, "kg", 55, 55], ["बेसन पैकेट", 0.5, "kg", null, 55], ["चाय पत्ती मार्वल", 0.25, "kg", null, 55],

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BottomNav } from "./kit/BottomNav";
 import { OfflineStrip } from "./kit/Banner";
 import { KB_ICONS } from "./kit/icons";
@@ -29,6 +29,23 @@ export function BillBack({ onBack }: { onBack: () => void }) {
   return null;
 }
 
+/** KB-414 step 2 phone check (owner, 17 Nov 2026): the frame counts the inner pages and sheets open over its tab screen. */
+const NavCover = createContext<(delta: 1 | -1) => void>(() => {});
+
+/**
+ * An inner page or sheet over a tab screen (15, 25, Items' Add / Edit / Import / Ready catalog, a dialog): the nav is hidden while it is
+ * open (26 §6 - inner pages have Back, no nav). It cannot simply sit above the nav: it is drawn inside its tab screen's fixed layer (z 20),
+ * under the nav (z 25) whatever its own z - on the phone 15's "Cancel bill" was under the nav. A layout effect: the nav goes in the same
+ * commit the page appears, never one painted frame over it. Outside a tab frame (the bill, 12) it does nothing.
+ */
+export function useHidesNav(): void {
+  const cover = useContext(NavCover);
+  useLayoutEffect(() => {
+    cover(1);
+    return () => cover(-1);
+  }, [cover]);
+}
+
 /**
  * The tab screens' frame: the nav fixed at the bottom and, offline, 24's ink strip at the top (Q3), both z 25 - above the tab screens
  * (z 20) and below their inner screens and sheets (z 30 / 40). The screens keep clear of both through --kb-tab-top / --kb-tab-bottom,
@@ -39,6 +56,9 @@ export function TabFrame({ tab, onTab, offline, children }: { tab: Tab; onTab: (
   const top = useRef<HTMLDivElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const [inset, setInset] = useState({ top: 0, bottom: 0 });
+  const [covers, setCovers] = useState(0);
+  const cover = useCallback((delta: 1 | -1) => setCovers((n) => n + delta), []);
+  const showNav = covers === 0;
   useLayoutEffect(() => {
     const measure = () => setInset({ top: top.current?.offsetHeight ?? 0, bottom: bottom.current?.offsetHeight ?? 0 });
     measure();
@@ -47,22 +67,24 @@ export function TabFrame({ tab, onTab, offline, children }: { tab: Tab; onTab: (
     if (top.current) ro.observe(top.current);
     if (bottom.current) ro.observe(bottom.current);
     return () => ro.disconnect();
-  }, [offline]);
+  }, [offline, showNav]);
   const item = (key: Exclude<Tab, "bill">, label: string, icon: (typeof KB_ICONS)[keyof typeof KB_ICONS]) => ({ key, label, icon, active: tab === key, onClick: () => onTab(key) });
   return (
     <div style={{ "--kb-tab-top": `${inset.top}px`, "--kb-tab-bottom": `${inset.bottom}px` } as CSSProperties}>
-      {children}
+      <NavCover.Provider value={cover}>{children}</NavCover.Provider>
       {offline && (
         <div ref={top} className="fixed inset-x-0 top-0 z-[25] mx-auto max-w-[480px]">
           <OfflineStrip>{t("offline.strip")}</OfflineStrip>
         </div>
       )}
-      <div ref={bottom} className="fixed inset-x-0 bottom-0 z-[25] mx-auto max-w-[480px]">
-        <BottomNav
-          label={t("nav.label")}
-          items={[item("home", t("nav.home"), KB_ICONS.Home), item("bills", t("history.billsLabel"), KB_ICONS.ReceiptText), item("items", t("nav.items"), KB_ICONS.Package), item("more", t("order.more"), KB_ICONS.MoreHorizontal)]}
-        />
-      </div>
+      {showNav && (
+        <div ref={bottom} className="fixed inset-x-0 bottom-0 z-[25] mx-auto max-w-[480px]">
+          <BottomNav
+            label={t("nav.label")}
+            items={[item("home", t("nav.home"), KB_ICONS.Home), item("bills", t("history.billsLabel"), KB_ICONS.ReceiptText), item("items", t("nav.items"), KB_ICONS.Package), item("more", t("order.more"), KB_ICONS.MoreHorizontal)]}
+          />
+        </div>
+      )}
     </div>
   );
 }

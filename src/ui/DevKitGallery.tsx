@@ -409,7 +409,8 @@ export function TapAreaCheck() {
         const a = { e, l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2, small: Math.min(w, h) };
         // KB-413: only the part a finger can reach - a scrolling / clipping box hides what lies past its edge (Add item scrolled under the panel)
         for (let c = e.parentElement; c && c !== document.body; c = c.parentElement) {
-          if (getComputedStyle(c).overflow === "visible") continue;
+          // a page that scrolls as a whole (15 / 13 on a short screen, KB-414) is measured whole, like the window's own scroll
+          if (getComputedStyle(c).overflow === "visible" || (c.hasAttribute("data-scroll-page") && /auto|scroll/.test(getComputedStyle(c).overflowY))) continue;
           const k = c.getBoundingClientRect();
           a.l = Math.max(a.l, k.left); a.r = Math.min(a.r, k.right); a.t = Math.max(a.t, k.top + window.scrollY); a.b = Math.min(a.b, k.bottom + window.scrollY);
         }
@@ -470,7 +471,9 @@ export function ContainmentCheck() {
               const c = cut.getBoundingClientRect();
               const visible = r.bottom > c.top + 0.5 && r.top < c.bottom - 0.5 && r.right > c.left + 0.5 && r.left < c.right - 0.5;
               const whole = r.top >= c.top - 0.5 && r.bottom <= c.bottom + 0.5 && r.left >= c.left - 0.5 && r.right <= c.right + 0.5;
-              if (visible && !whole && isBox(e)) (cut.hasAttribute("data-scroll-list") ? edge : clipped).push(`${name} cut by its ${cut.className.includes("overflow-y-auto") ? "scrolling box" : "box"}`);
+              // ...and a page that scrolls as a whole on a short screen (15, KB-414): cut at its edge by design, reached by scrolling (ReachCheck)
+              const scrolls = /auto|scroll/.test(getComputedStyle(cut).overflowY); // a box marked as scrolling that cannot scroll is real clipping
+              if (visible && !whole && isBox(e)) ((cut.hasAttribute("data-scroll-list") || cut.hasAttribute("data-scroll-page")) && scrolls ? edge : clipped).push(`${name} cut by its ${cut.className.includes("overflow-y-auto") ? "scrolling box" : "box"}`);
             }
           }
           if (r.left < pr.left - 0.5 || r.right > pr.right + 0.5) bad.push(`${name} outside the part`);
@@ -499,7 +502,7 @@ export function ContainmentCheck() {
             }
         }
       }
-      setText(`Containment: ${parts.length} parts · outside: ${bad.length}${bad.length ? " - " + bad.slice(0, 6).join("; ") : ""} · clipped: ${clipped.length}${clipped.length ? " - " + clipped.slice(0, 4).join("; ") : ""}${edge.length ? ` · at the bill list's scroll edge (scrolls on): ${edge.length}` : ""}`);
+      setText(`Containment: ${parts.length} parts · outside: ${bad.length}${bad.length ? " - " + bad.slice(0, 6).join("; ") : ""} · clipped: ${clipped.length}${clipped.length ? " - " + clipped.slice(0, 4).join("; ") : ""}${edge.length ? ` · at a scroll edge (scrolls on): ${edge.length}` : ""}`);
     }, 2500);
     return () => window.clearTimeout(id);
   }, []);

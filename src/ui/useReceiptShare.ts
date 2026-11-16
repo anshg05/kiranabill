@@ -5,6 +5,8 @@ import { whenIdle } from "./idle";
 import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
+import { isNativeApp } from "@/data/nativeSignIn";
+import { WHATSAPP, savePdf, shareFile } from "@/data/nativeFileShare";
 import type { SavedBill } from "./useFinalise";
 
 // KB-309 commit 3 (owner, 4 Oct 2026 - the legacy behaviour, D58):
@@ -19,11 +21,21 @@ import type { SavedBill } from "./useFinalise";
 // The mobile is read from the stored bill at tap / open time - never from the
 // draft or the receipt model - and is never rendered (D52).
 
+// KB-414 step 2 phone check (owner, 17 Nov 2026): in the ANDROID APP the WebView has no share sheet and drops downloads - Share, PDF and
+// WhatsApp go through our FileShare plugin there: Share = the share sheet with the image; PDF = saved to Downloads ("Saved to
+// Downloads"; Android 7-9: the share sheet); WhatsApp = the image straight to WhatsApp (the share sheet if it is missing). A failure
+// says so. The browser is unchanged.
+
+/** A short note under the share buttons (a message key). */
+export type ShareNotice = "share.savedDownloads" | "share.failed";
+
 export type RenderReceiptFiles = (receipt: Receipt) => Promise<{ png: Blob; pdf: Blob }>;
 
 export interface ReceiptShare {
   /** The PNG and PDF are ready. */
   readonly ready: boolean;
+  /** The app's note after Share / PDF / WhatsApp ("Saved to Downloads", or the failure) - null until there is one. */
+  readonly notice?: ShareNotice | null;
   /** The SMS body (the preview shows exactly this). */
   readonly smsText: string;
   downloadImage(): void;
@@ -59,6 +71,7 @@ function download(file: File): void {
 
 export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBillDB | null; saved: SavedBill | null; render: RenderReceiptFiles }): ReceiptShare | null {
   const [files, setFiles] = useState<Files | null>(null);
+  const [notice, setNotice] = useState<ShareNotice | null>(null);
   const lastRun = useRef<Record<string, number>>({});
   // KB-342: a double tap must not download twice or open two share sheets - the same button's repeats within 1.5 s are ignored (another button is not).
   const once =
@@ -105,14 +118,26 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
   const storedMobile = async () => (localDb ? ((await localDb.bills.get(saved.localId))?.customerMobile ?? null) : null);
   const sms = smsText(receipt);
 
+  const inApp = isNativeApp();
+  const failed = (err: unknown) => {
+    console.warn("[share] app share failed:", err instanceof Error ? err.message : err);
+    setNotice("share.failed");
+  };
+  const viaApp = (job: () => Promise<ShareNotice | null>) => {
+    setNotice(null);
+    job().then(setNotice, failed);
+  };
+
   return {
     ready: ready !== null,
+    notice,
     smsText: sms,
     downloadImage: once("image", () => {
       if (ready) download(ready.png);
     }),
     shareImage: once("share", () => {
       if (!ready) return;
+      if (inApp) return viaApp(async () => (await shareFile(ready.png), null));
       const data = { files: [ready.png] };
       if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
         // In the tap, nothing awaited before it.
@@ -125,9 +150,14 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
       download(ready.png);
     }),
     downloadPdf: once("pdf", () => {
+      if (ready && inApp) return viaApp(async () => ((await savePdf(ready.pdf)) === "saved" ? "share.savedDownloads" : null));
       if (ready) download(ready.pdf);
     }),
     whatsApp: once("whatsapp", () => {
+      if (inApp) {
+        if (ready) viaApp(async () => (await shareFile(ready.png, WHATSAPP), null));
+        return;
+      }
       const data = ready ? { files: [ready.png] } : null;
       if (data && typeof navigator.canShare === "function" && navigator.canShare(data)) {
         // In the tap, nothing awaited before it.

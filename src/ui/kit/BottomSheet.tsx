@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useBackEntry } from "../useBackEntry";
+import { useHidesNav } from "../AppTabs";
 import { trapTab } from "./trapTab";
 
 // KB-412 batch b (26 §5 bottom sheet), as drawn on 25-CancelBill: the page's warm background, radius 28 on top, 10 / 20 / 26
@@ -15,6 +16,7 @@ export function BottomSheet({
   backKey, title, intro, onClose, children, position = "fixed",
 }: { backKey: string; title: string; intro?: string; onClose: () => void; children: ReactNode; position?: "fixed" | "static" }) {
   useBackEntry(backKey, onClose);
+  useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const box = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -25,7 +27,7 @@ export function BottomSheet({
   }, []);
   return (
     <div
-      className={`${position === "fixed" ? "fixed inset-0 z-40" : ""} flex flex-col justify-end bg-kb-ink/45 animate-kb-fade`}
+      className={`${position === "fixed" ? "fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-40" : ""} flex flex-col justify-end bg-kb-ink/45 animate-kb-fade`}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -37,7 +39,7 @@ export function BottomSheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={(e) => trapTab(e, box.current)}
-        className="font-kb bg-kb-bg rounded-t-[28px] pt-[10px] px-5 pb-[max(26px,env(safe-area-inset-bottom))] flex flex-col gap-4 text-kb-ink animate-kb-sheet outline-none max-h-[100dvh] overflow-y-auto"
+        className="font-kb bg-kb-bg rounded-t-[28px] pt-[10px] px-5 pb-[max(26px,env(safe-area-inset-bottom))] flex flex-col gap-4 text-kb-ink animate-kb-sheet outline-none max-h-full overflow-y-auto"
       >
         <div aria-hidden="true" className="self-center w-[44px] h-[5px] rounded-[3px] bg-kb-handle" />
         <div className="flex flex-col gap-[6px]">

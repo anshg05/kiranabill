@@ -119,7 +119,8 @@ describe("BottomSheet (25-CancelBill) - the same Back / Escape / backdrop / focu
     expect(d.getAttribute("aria-modal")).toBe("true");
     has(d, "bg-kb-bg", "rounded-t-[28px]", "animate-kb-sheet", "font-kb");
     has(screen.getByRole("heading", { name: "Cancel Bill 514?" }), "text-kb-22", "font-extrabold");
-    has(d.parentElement!, "bg-kb-ink/45", "animate-kb-fade", "fixed", "inset-0");
+    // the backdrop covers the screen below the offline strip (KB-414 phone check, 17 Nov 2026)
+    has(d.parentElement!, "bg-kb-ink/45", "animate-kb-fade", "fixed", "inset-x-0", "bottom-0", "top-[var(--kb-tab-top,0px)]");
     has(d.querySelector("[aria-hidden='true']")!, "w-[44px]", "h-[5px]", "bg-kb-handle");
   });
 

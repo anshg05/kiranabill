@@ -15,6 +15,7 @@ import {
 } from "@/domain/catalogImport";
 import { formatRupees } from "@/domain/money";
 import { useBackEntry } from "./useBackEntry";
+import { useHidesNav } from "./AppTabs";
 
 // KB-314 (owner, 10 Oct 2026; docs/07-DECISIONS.md D68): import products from a spreadsheet or CSV, over the Catalog.
 //   pick a file -> the columns it found (changeable) -> a PREVIEW of what will be added, what is already in the shop
@@ -58,6 +59,7 @@ function downloadSample(): void {
 
 export function CatalogImportSheet({ existing, online, run, onClose }: CatalogImportSheetProps) {
   useBackEntry("kbImport", onClose);
+  useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const [stage, setStage] = useState<Stage>({ kind: "pick", error: null });
   const fileInput = useRef<HTMLInputElement>(null);
   const known = useMemo(() => existing.map((p) => ({ displayName: p.displayName, unit: p.unit, pricePaise: p.pricePaise, aliases: p.aliases, isActive: p.isActive })), [existing]);
@@ -91,7 +93,7 @@ export function CatalogImportSheet({ existing, online, run, onClose }: CatalogIm
 
   const busy = stage.kind === "running" || stage.kind === "reading";
   return (
-    <section aria-label="Import products" className="fixed inset-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label="Import products" className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label="Back" aria-disabled={busy} onClick={busy ? undefined : onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft aria-disabled:opacity-50">

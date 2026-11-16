@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { SyncChip, Unsynced } from "./syncChip";
 import { useBackEntry } from "./useBackEntry";
+import { useHidesNav } from "./AppTabs";
 import { useT } from "./useT";
 
 // KB-313 (05 §7, 16 §2): the header chip, and the two inline confirmations (sign out with unsynced bills,
@@ -68,6 +69,7 @@ function timeOf(iso: string): string {
  */
 function Overlay({ label, role, onClose, children }: { label: string; role: "dialog" | "alertdialog"; onClose: () => void; children: ReactNode }) {
   useBackEntry("kbDialog", onClose);
+  useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;

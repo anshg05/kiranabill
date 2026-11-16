@@ -339,7 +339,9 @@ describe("25 Cancel bill, as drawn", () => {
 
   it("taller than a short phone (a big text size): the sheet scrolls inside the screen - its title and buttons always reachable", async () => {
     const { el } = await openSheet();
-    expect(cls(el)).toContain("max-h-[100dvh]");
+    // KB-414 (phone check, 17 Nov 2026): the whole height left under the offline strip (the backdrop starts below it)
+    expect(cls(el)).toContain("max-h-full");
+    expect(cls(el.parentElement)).toContain("top-[var(--kb-tab-top,0px)]");
     expect(cls(el)).toContain("overflow-y-auto");
   });
 

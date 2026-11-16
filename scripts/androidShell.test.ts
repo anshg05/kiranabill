@@ -71,6 +71,28 @@ describe("the Android shell (D111)", () => {
     expect(read("android/build.gradle")).toMatch(/ext\.kotlin_version = '2\.2\.20'/);
   });
 
+  it("KB-414 (phone check, 17 Nov 2026): MainActivity registers our FileShare plugin - Share / PDF / WhatsApp, the WebView has no share sheet", () => {
+    const dir = "android/app/src/main/java/com/kiranavoicebill/app";
+    // a real call, on its own line (never commented out), before super
+    expect(read(`${dir}/MainActivity.kt`)).toMatch(/^ *registerPlugin\(FileSharePlugin::class\.java\)[\s\S]*super\.onCreate/m);
+    const plugin = read(`${dir}/FileSharePlugin.kt`);
+    expect(plugin).toContain('name = "FileShare"');
+    // through the app's own FileProvider (declared in the manifest), files in the cache - no storage permission asked
+    expect(plugin).toContain('"${context.packageName}.fileprovider"');
+    expect(manifest).toMatch(/android:authorities="\$\{applicationId\}\.fileprovider"/);
+    expect(read("android/app/src/main/res/xml/file_paths.xml")).toMatch(/<cache-path [^>]*path="\."/);
+    expect(plugin).toContain("FLAG_GRANT_READ_URI_PERMISSION");
+    // PDF into Downloads through MediaStore on Android 10+ (no permission); older Android answers saved=false (the share sheet instead)
+    expect(plugin).toContain("MediaStore.Downloads.EXTERNAL_CONTENT_URI");
+    expect(plugin).toMatch(/SDK_INT < Build\.VERSION_CODES\.Q[\s\S]*"saved", false/);
+    // WhatsApp missing: the share sheet, never an error
+    expect(plugin).toMatch(/catch \(e: ActivityNotFoundException\) \{\s*false\s*\}/);
+    expect(plugin).toContain("Intent.createChooser");
+    // a name from the page is a file name only, never a path out of the cache folder
+    expect(plugin).toContain("substringAfterLast('/')");
+    expect(permissions).not.toContain("android.permission.WRITE_EXTERNAL_STORAGE");
+  });
+
   it("keeps the shop's data out of Android's cloud and adb backups", () => {
     // the phone holds bills, customer names and the sign-in session; the server is the copy that is backed up (D75)
     expect(manifest).toMatch(/android:allowBackup="false"/);
