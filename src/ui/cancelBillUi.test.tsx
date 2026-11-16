@@ -50,11 +50,11 @@ interface Opts {
 }
 async function open({ billInProgress = false, onReissue = vi.fn<(billLocalId: string, replacementLocalId: string) => void>() }: Opts = {}) {
   render(<HistoryScreen localDb={db} shopId={shopId} deviceId={deviceId} render={renderFiles} billInProgress={billInProgress} onReissue={onReissue} onClose={() => {}} />);
-  await screen.findByRole("region", { name: "History" });
+  await screen.findByRole("region", { name: "Bills" });
   await screen.findByRole("list", { name: "Bills" });
   return { onReissue };
 }
-const rowFor = (number: string) => within(screen.getByRole("list", { name: "Bills" })).getAllByRole("button").find((b) => b.querySelector(".font-medium")?.textContent === `Bill ${number}`)!; // the title - not the row text: "Bill 2" + "12:39 PM" read "Bill 212:39", which contains "1"
+const rowFor = (number: string) => within(screen.getByRole("list", { name: "Bills" })).getAllByRole("button").find((b) => b.querySelector("[data-bill-title] > span")?.textContent === `Bill ${number}`)!; // the title - not the row text: "Bill 2" + "12:39 PM" read "Bill 212:39", which contains "1"
 async function openBill(number: string) {
   fireEvent.click(rowFor(number));
   return within(await screen.findByRole("region", { name: "Bill" }));
@@ -92,16 +92,16 @@ describe("the bill detail - Cancel bill", () => {
     await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     expect(sheet.getByRole("heading").textContent).toBe(`Cancel Bill ${a.number}?`);
     expect(sheet.getAllByRole("radio").map((r) => (r as HTMLInputElement).labels![0]!.textContent)).toEqual(["Wrong item", "Wrong price", "Wrong quantity", "Customer cancelled", "Other"]);
     expect(sheet.queryByRole("textbox")).toBeNull(); // nothing to type
-    const both = [sheet.getByRole("button", { name: "Cancel and make a new bill" }), sheet.getByRole("button", { name: "Cancel only" })];
+    const both = [sheet.getByRole("button", { name: "Cancel & make corrected bill" }), sheet.getByRole("button", { name: "Cancel only" })];
     for (const b of both) expect(b.getAttribute("aria-disabled")).toBe("true");
     tap(both[1]!);
     expect((await db.bills.get(a.localId))!.status).toBe("final"); // a disabled button does nothing
-    tap(sheet.getByRole("button", { name: "Keep the bill" }));
-    await waitFor(() => expect(screen.queryByRole("region", { name: "Cancel bill" })).toBeNull());
+    tap(sheet.getByRole("button", { name: /^Keep Bill / }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect((await db.bills.get(a.localId))!.status).toBe("final");
     expect(await db.billCancellations.count()).toBe(0);
   });
@@ -111,10 +111,10 @@ describe("the bill detail - Cancel bill", () => {
     const { onReissue } = await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     tap(sheet.getByRole("radio", { name: "Wrong price" }));
     tap(sheet.getByRole("button", { name: "Cancel only" }));
-    await waitFor(() => expect(screen.queryByRole("region", { name: "Cancel bill" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     const row = (await db.billCancellations.get(a.localId))!;
     expect(row).toMatchObject({ reason: "wrong_price", replacementLocalId: null, syncStatus: "pending", deviceId });
     expect((await db.bills.get(a.localId))!.status).toBe("cancelled");
@@ -132,18 +132,18 @@ describe("the bill detail - Cancel bill", () => {
     await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     tap(sheet.getByRole("radio", { name: "Wrong item" }));
     tap(sheet.getByRole("button", { name: "Cancel only" }));
-    await waitFor(() => expect(screen.queryByRole("region", { name: "Cancel bill" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await new Promise((r) => setTimeout(r, 150)); // the closed sheet takes its history entry off on the next tick - in a browser that is what used to close everything
     expect(screen.getByRole("region", { name: "Bill" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "History" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Bills" })).toBeTruthy();
     expect(await within(screen.getByRole("region", { name: "Bill" })).findByTestId("receipt-cancelled")).toBeTruthy();
     // Back goes to History (one step), then closes it - never skips a level.
     fireEvent.click(within(screen.getByRole("region", { name: "Bill" })).getByRole("button", { name: "Back" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Bill" })).toBeNull());
-    expect(screen.getByRole("region", { name: "History" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Bills" })).toBeTruthy();
   });
 
   it("the cancelled receipt carries CANCELLED and the share buttons stay (always with that mark)", async () => {
@@ -152,7 +152,7 @@ describe("the bill detail - Cancel bill", () => {
     await open();
     const detail = await openBill(a.number);
     expect((await detail.findByTestId("receipt-cancelled")).textContent).toBe("CANCELLED");
-    expect(detail.getAllByRole("button").filter((b) => /whatsapp|sms|image|pdf/i.test(b.textContent ?? "")).length).toBeGreaterThanOrEqual(4);
+    expect(detail.getAllByRole("button").filter((b) => /whatsapp|sms|share|pdf/i.test(b.textContent ?? "")).length).toBeGreaterThanOrEqual(4);
     expect(detail.getByTestId("receipt-number").textContent).toBe(a.number); // the number stays on the list
   });
 
@@ -170,7 +170,7 @@ describe("the bill detail - Cancel bill", () => {
     await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     tap(sheet.getByRole("radio", { name: "Customer cancelled" }));
     tap(sheet.getByRole("button", { name: "Cancel only" }));
     await waitFor(async () => expect((await db.bills.get(a.localId))!.status).toBe("cancelled"));
@@ -181,7 +181,7 @@ describe("the bill detail - Cancel bill", () => {
     await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     await cancelBillLocal(db, { shopId, billLocalId: a.localId, reason: "other", deviceId: "phone-b", replacementLocalId: null }); // another cycle applied it
     tap(sheet.getByRole("radio", { name: "Wrong item" }));
     tap(sheet.getByRole("button", { name: "Cancel only" }));
@@ -196,9 +196,9 @@ describe("Cancel and make a new bill - the reissue", () => {
     const { onReissue } = await open();
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     tap(sheet.getByRole("radio", { name: "Wrong quantity" }));
-    tap(sheet.getByRole("button", { name: "Cancel and make a new bill" }));
+    tap(sheet.getByRole("button", { name: "Cancel & make corrected bill" }));
     await waitFor(() => expect(onReissue).toHaveBeenCalledOnce());
     const [billId, replacementId] = onReissue.mock.calls[0]!;
     expect(billId).toBe(a.localId);
@@ -212,9 +212,9 @@ describe("Cancel and make a new bill - the reissue", () => {
     await open({ billInProgress: true });
     const detail = await openBill(a.number);
     tap(await detail.findByRole("button", { name: "Cancel bill" }));
-    const sheet = within(await screen.findByRole("region", { name: "Cancel bill" }));
+    const sheet = within(await screen.findByRole("dialog", { name: /^Cancel Bill / }));
     tap(sheet.getByRole("radio", { name: "Other" }));
-    const reissue = sheet.getByRole("button", { name: "Cancel and make a new bill" });
+    const reissue = sheet.getByRole("button", { name: "Cancel & make corrected bill" });
     expect(reissue.getAttribute("aria-disabled")).toBe("true");
     expect(sheet.getByText("A bill is in progress — finish it or clear it first to make the new bill.")).toBeTruthy();
     tap(reissue);

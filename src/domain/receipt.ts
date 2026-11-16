@@ -96,6 +96,9 @@ export function formatDateTime(iso: string): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} | ${h % 12 || 12}:${pad2(d.getMinutes())} ${h < 12 ? "AM" : "PM"}`;
 }
 
+/** KB-414: the time as the tab screens draw it - "1:02 pm" (Home's Recent bills, 14 Bills, 15 Bill detail). */
+export const shortTime = (iso: string): string => (formatDateTime(iso).split(" | ")[1] ?? "").toLowerCase();
+
 /** A 10-digit number as "98765 43210"; anything else as stored. */
 function formatPhone(phone: string | null): string | null {
   if (!phone) return null;

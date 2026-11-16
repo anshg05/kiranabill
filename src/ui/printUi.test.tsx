@@ -73,14 +73,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const printBtn = () => screen.getByRole("button", { name: "Print" });
+const printBtn = () => screen.getByRole("button", { name: /^(Print bill|Reprint)$/ }); // KB-414 step 2: 13 "Print bill", 15 "Reprint"
 const settle = () => act(async () => {});
 
 describe("PrintButton", () => {
   it("is not there in a browser or the PWA", () => {
     env.native = false;
     render(<PrintButton receipt={receipt} firstIsOriginal />);
-    expect(screen.queryByRole("button", { name: "Print" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Print bill" })).toBeNull();
   });
 
   it("no printer chosen: one sentence pointing to Settings; nothing is opened", async () => {
@@ -108,7 +108,7 @@ describe("PrintButton", () => {
     expect(screen.getByRole("status").textContent).toBe("Printed");
     expect(classic.t.sent.slice(0, 2)).toEqual([0x1b, 0x40]);
     expect(rendered.calls).toHaveLength(1);
-    expect(printBtn().getAttribute("aria-disabled")).toBe("false");
+    expect(printBtn().getAttribute("aria-disabled")).not.toBe("true");
   });
 
   it("Compatible mode OFF: the image goes as GS v 0 raster; ON: the same image as ESC * bit image - never both", async () => {
@@ -150,6 +150,7 @@ describe("PrintButton", () => {
   it("from History every copy says REPRINT", async () => {
     choose(BT58);
     render(<PrintButton receipt={receipt} firstIsOriginal={false} />);
+    expect(screen.getByRole("button", { name: "Reprint" })).toBeTruthy(); // 15-BillDetail's words
     fireEvent.click(printBtn());
     await settle();
     expect(rendered.calls[0]!.receipt.reprint).toBe("REPRINT");
@@ -180,14 +181,14 @@ describe("PrintButton", () => {
     fireEvent.click(printBtn());
     await settle();
     expect(screen.getByRole("alert").textContent).toBe(text);
-    expect(printBtn().getAttribute("aria-disabled")).toBe("false");
+    expect(printBtn().getAttribute("aria-disabled")).not.toBe("true");
   });
 
   it("speaks the screen language (Hindi)", async () => {
     const { setScreenLanguage } = await import("./screenLanguage");
     setScreenLanguage("hi");
     render(<PrintButton receipt={receipt} firstIsOriginal />);
-    expect(screen.getByRole("button", { name: "प्रिंट करें" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "बिल प्रिंट करें" })).toBeTruthy();
     setScreenLanguage("en");
   });
 });

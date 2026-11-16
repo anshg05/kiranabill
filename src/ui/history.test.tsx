@@ -71,7 +71,7 @@ const dateKey = (daysAgo: number) => {
 
 async function open(onClose = () => {}) {
   render(<HistoryScreen localDb={db} shopId={shopId} render={renderFiles} onClose={onClose} />);
-  await screen.findByRole("region", { name: "History" });
+  await screen.findByRole("region", { name: "Bills" });
 }
 const bills = () => screen.queryByRole("list", { name: "Bills" });
 const rowTexts = () => within(bills()!).getAllByRole("button").map((b) => b.textContent ?? "");
@@ -208,13 +208,18 @@ describe("KB-310 - S6 bill detail", () => {
     fireEvent.click(within(bills()!).getAllByRole("button")[0]!);
     const receipt = await screen.findByRole("article", { name: "Receipt" });
     expect(within(receipt).getByTestId("receipt-number").textContent).toBe("1");
-    for (const name of ["Image", "PDF", "WhatsApp", "SMS"]) expect(screen.getByRole("button", { name })).toBeTruthy();
+    for (const name of ["WhatsApp", "PDF", "Share", "SMS"]) expect(screen.getByRole("button", { name })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Bill Banao" })).toBeNull(); // read-only
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     await waitFor(() => expect(screen.queryByRole("article", { name: "Receipt" })).toBeNull());
     expect(bills()).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull(); // KB-414 step 2: the Bills tab has no back arrow - Android Back goes Home
+    await act(async () => void (await new Promise((r) => setTimeout(r, 30)))); // the closed detail takes its history entry off on the next tick
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 
   it("KB-414 step 1: opened from Home's Recent bills (openBill) - that bill's detail on top; Back: the list, then Home", async () => {
@@ -223,11 +228,19 @@ describe("KB-310 - S6 bill detail", () => {
     render(<HistoryScreen localDb={db} shopId={shopId} render={renderFiles} openBill={id} onClose={onClose} />);
     const receipt = await screen.findByRole("article", { name: "Receipt" });
     expect(within(receipt).getByTestId("receipt-number").textContent).toBe("1");
-    fireEvent.click(screen.getAllByRole("button", { name: "Back" }).at(-1)!);
+    // Android Back (the phone's path): the detail first, then the list - never straight Home
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => setTimeout(r, 50));
+    });
     await waitFor(() => expect(screen.queryByRole("article", { name: "Receipt" })).toBeNull());
     expect(onClose).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.getByRole("list", { name: "Bills" })).toBeTruthy();
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it("Android back closes the detail first, then History", async () => {

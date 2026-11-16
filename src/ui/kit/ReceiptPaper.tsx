@@ -11,6 +11,7 @@ export function ReceiptPaper({ width, torn = false, print = false, children }: {
   const printing = print && !printed;
   return (
     <div
+      data-receipt-paper
       data-receipt-print={print || undefined}
       onAnimationEnd={print ? () => setPrinted(true) : undefined}
       className={`drop-shadow-kb-receipt ${printing ? "overflow-hidden animate-kb-print-saved" : ""}`}

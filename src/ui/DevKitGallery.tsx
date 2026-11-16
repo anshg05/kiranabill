@@ -399,7 +399,8 @@ export function TapAreaCheck() {
       // over the full screen, both modal); every control on the page, a full screen in a portal too
       const modals = [...document.querySelectorAll<HTMLElement>('[aria-modal="true"]')];
       const modal = modals[modals.length - 1];
-      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon, [data-kit-part] .kb-hit, [data-kit-part] .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0 && (!modal || modal.contains(e)));
+      const els = [...document.querySelectorAll<HTMLElement>("main .kb-hit, main .kb-hit-icon, [data-kit-part] .kb-hit, [data-kit-part] .kb-hit-icon")].filter((e) => e.getBoundingClientRect().width > 0 && (!modal || modal.contains(e)) && !e.closest("[inert]"));
+      // an inert control cannot be tapped (KB-414 step 2: the Bills list under an open bill's detail - covered, out of reach)
       const areas = els.map((e) => {
         const r = e.getBoundingClientRect();
         const b = getComputedStyle(e, "::before");

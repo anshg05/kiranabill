@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { ParsedItem } from "@/domain/grammar";
 import type { LocalVoiceRecording } from "@/data/db";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
-import { setScreenLanguage } from "./screenLanguage";
+import { getScreenLanguage, setScreenLanguage } from "./screenLanguage";
 import { useT } from "./useT";
-import type { Language } from "@/domain/messages";
+import { render as say, type Language } from "@/domain/messages";
 import { BillView } from "./BillingScreen";
 import { OrderEntries, OrderRecorder } from "./VoiceOrderPanel";
 import { RecordOverlay, RecordingBody, ReviewBody } from "./RecordScreens";
@@ -236,7 +236,7 @@ function Screen13({ state }: { state: string }) {
 
 /** TODAY's History bill detail on a dev database: Bill 515 saved by the real finaliseBill (and, for "cancelled", cancelled by the real
  *  cancelBillLocal); the list opens the bill as a tap does. */
-function Screen15({ state, onReady }: { state: string; onReady: () => void }) {
+function Screen15({ state, onReady, sheet25 = false }: { state: string; onReady: () => void; sheet25?: boolean }) {
   const [db, setDb] = useState<KiranaBillDB | null>(null);
   useEffect(() => {
     void (async () => {
@@ -256,6 +256,12 @@ function Screen15({ state, onReady }: { state: string; onReady: () => void }) {
       const localId = crypto.randomUUID();
       await finaliseBill(d, { localId, shopId, deviceId, startedAt: "2026-11-11T07:47:00.000Z", customer: { name: "Cash", mobile: null }, lines, flags: [], serverNumber: "515", now: new Date("2026-11-11T07:48:00.000Z") });
       if (state === "cancelled") await cancelBillLocal(d, { shopId, billLocalId: localId, reason: "wrong_price", deviceId, replacementLocalId: null });
+      // KB-414 step 2: a replaced bill - 515 cancelled for a corrected 516, which exists (the detail of 515 says "Replaced by Bill 516")
+      if (state === "replaced") {
+        const replacementLocalId = crypto.randomUUID();
+        await cancelBillLocal(d, { shopId, billLocalId: localId, reason: "wrong_item", deviceId, replacementLocalId });
+        await finaliseBill(d, { localId: replacementLocalId, shopId, deviceId, startedAt: "2026-11-11T07:50:00.000Z", customer: { name: "Cash", mobile: null }, lines: lines.slice(0, 2), flags: [], serverNumber: "516", now: new Date("2026-11-11T07:51:00.000Z") });
+      }
       setDb(d);
     })();
   }, [state]);
@@ -266,7 +272,9 @@ function Screen15({ state, onReady }: { state: string; onReady: () => void }) {
       if (row) {
         row.click();
         window.clearInterval(id);
-        window.setTimeout(onReady, 1500); // the detail has loaded its receipt: now the checks may look
+        // 25: the cancel sheet over the detail, as a tap on "Cancel bill" opens it
+        if (sheet25) window.setTimeout(() => [...document.querySelectorAll("button")].find((b) => b.textContent === say("history.cancelButton", {}, getScreenLanguage()))?.click(), 1000);
+        window.setTimeout(onReady, sheet25 ? 2200 : 1500); // the detail has loaded its receipt: now the checks may look
       }
     }, 100);
     return () => window.clearInterval(id);
@@ -304,11 +312,41 @@ function Screen08({ state, onReady }: { state: string; onReady: () => void }) {
   ) : null;
 }
 
+/** KB-414 step 2: 14-BillsList on a dev database (fake-indexeddb, as 08): 14's five bills today - 512 cancelled, 515 not yet synced. */
+function Screen14({ state, onReady }: { state: string; onReady: () => void }) {
+  const [db, setDb] = useState<KiranaBillDB | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
+      Dexie.dependencies.indexedDB = new IDBFactory();
+      Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+      const d = new KiranaBillDB("kb-dev-sheet-14");
+      const shopId = "11111111-1111-4111-8111-111111111111";
+      await d.syncState.put({ tableName: `bills:${shopId}`, lastSyncedAt: null, cursor: JSON.stringify({ phase: "done", before: null }), pendingCount: 0 });
+      const BILLS = [[515, 4, 61000, 13, 18, "pending", "final", "Cash"], [514, 38, 221600, 13, 2, "synced", "final", "Cash"], [513, 7, 121500, 12, 40, "synced", "final", "Ramesh Kumar"], [512, 3, 64000, 12, 5, "synced", "cancelled", "Cash"], [511, 5, 38600, 11, 48, "synced", "final", "Cash"]] as const;
+      for (const [n, items, total, h, m, sync, status, customer] of BILLS) {
+        const t = new Date();
+        t.setHours(h, m, 0, 0);
+        const localId = crypto.randomUUID();
+        await d.bills.add({ localId, shopId, status, syncStatus: sync, receiptNumber: String(n), receiptNumberSource: "block", customerName: customer, customerMobile: null, subtotalPaise: total, totalPaise: total, schemaVersion: 1, deviceId: "d", createdAt: t.toISOString(), finalizedAt: t.toISOString(), syncedAt: null });
+        for (let i = 0; i < items; i++) await d.billItems.add({ billLocalId: localId, shopId, lineNo: i + 1, shopProductId: null, displayName: `x${i}` } as never);
+      }
+      setDb(d);
+      window.setTimeout(onReady, 1200);
+    })();
+  }, [state]);
+  return db ? (
+    <TabFrame tab="bills" onTab={noop} offline={false}>
+      <HistoryScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" render={renderReceiptFiles} deviceId="d" onClose={noop} />
+    </TabFrame>
+  ) : null;
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
 
 const FILES: Record<string, string> = {
-  "08": "08-Home.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "08": "08-Home.html", "14": "14-BillsList.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
   "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
@@ -316,7 +354,7 @@ const FILES: Record<string, string> = {
 function Frame() {
   const lang = params.get("lang");
   // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
-  const [ready, setReady] = useState(!["15", "08"].includes(params.get("screen") ?? ""));
+  const [ready, setReady] = useState(!["15", "08", "14", "25"].includes(params.get("screen") ?? ""));
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -333,7 +371,7 @@ function Frame() {
     <>
       <main>
         {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
-        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
+        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
           {params.get("screen") === "08" ? <Screen08 state={params.get("state") ?? "home"} onReady={() => setReady(true)} />
             : params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
@@ -342,6 +380,8 @@ function Frame() {
             : params.get("screen") === "24" ? <Screen24 />
             : params.get("screen") === "13" ? <Screen13 state={params.get("state") ?? "saved"} />
             : params.get("screen") === "15" ? <Screen15 state={params.get("state") ?? "history"} onReady={() => setReady(true)} />
+            : params.get("screen") === "25" ? <Screen15 state="history" sheet25 onReady={() => setReady(true)} />
+            : params.get("screen") === "14" ? <Screen14 state={params.get("state") ?? "list"} onReady={() => setReady(true)} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Printer } from "lucide-react";
 import { Button } from "./kit/Button";
 import { KB_ICONS } from "./kit/icons";
 import type { Receipt } from "@/domain/receipt";
@@ -11,12 +10,12 @@ import { useT } from "./useT";
 // A reprint is marked (owner, D110 item 8.10): after Bill Banao the first finished copy is the original, every later one says
 // REPRINT; from History every copy does.
 
-/** look "primary": 13-BillSaved's "Print bill" (KB-413 step 4); History keeps today's look until its own screen (15). */
-export function PrintButton(props: { receipt: Receipt; firstIsOriginal: boolean; look?: "primary" }) {
+/** 13-BillSaved's "Print bill" (KB-413 step 4) and 15-BillDetail's "Reprint" (KB-414 step 2): the primary button, the printer icon. */
+export function PrintButton(props: { receipt: Receipt; firstIsOriginal: boolean }) {
   return isNativeApp() ? <PrintButtonInApp {...props} /> : null;
 }
 
-function PrintButtonInApp({ receipt, firstIsOriginal, look }: { receipt: Receipt; firstIsOriginal: boolean; look?: "primary" }) {
+function PrintButtonInApp({ receipt, firstIsOriginal }: { receipt: Receipt; firstIsOriginal: boolean }) {
   const { t } = useT();
   const { state, print } = usePrint();
   const [printedOnce, setPrintedOnce] = useState(false);
@@ -28,26 +27,11 @@ function PrintButtonInApp({ receipt, firstIsOriginal, look }: { receipt: Receipt
       if (ok) setPrintedOnce(true);
     });
   };
-  if (look === "primary")
-    return (
-      <div>
-        <Button variant="primary" icon={KB_ICONS.Printer} iconSize={20} disabled={busy} onClick={onPrint}>
-          {t("print.bill")}
-        </Button>
-        <PrintStatus state={state} />
-      </div>
-    );
   return (
-    <div className="mx-auto mt-3 w-full max-w-[384px]">
-      <button
-        type="button"
-        aria-disabled={busy}
-        onClick={onPrint}
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink aria-disabled:opacity-50"
-      >
-        <Printer size={20} strokeWidth={1.5} aria-hidden className="text-ink-soft" />
-        {t("print.print")}
-      </button>
+    <div>
+      <Button variant="primary" icon={KB_ICONS.Printer} iconSize={20} ariaDisabled={busy} onClick={onPrint}>
+        {t(firstIsOriginal ? "print.bill" : "print.reprint")}
+      </Button>
       <PrintStatus state={state} />
     </div>
   );

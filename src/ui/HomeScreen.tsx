@@ -1,13 +1,14 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { KiranaBillDB } from "@/data/db";
-import { loadRecentRows, type HistoryRow } from "@/data/history";
+import { countItems, loadRecentRows, type HistoryRow } from "@/data/history";
 import { subscribeBillsPull } from "@/data/billsPullStatus";
 import { formatRupees } from "@/domain/money";
-import { formatDateTime } from "@/domain/receipt";
+import { shortTime } from "@/domain/receipt";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { Logo } from "./kit/Logo";
 import { MicButton } from "./kit/MicButton";
 import { InstallHint } from "./InstallHint";
+import { MetaLine } from "./MetaLine";
 import { ReceiptNumberText } from "./Receipt";
 import { inject, mark } from "./inject";
 import { useT } from "./useT";
@@ -41,7 +42,10 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
   useEffect(() => {
     let live = true;
     loadRecentRows(localDb, shopId, 2)
-      .then((rows) => Promise.all(rows.map(async (r) => ({ ...r, items: await localDb.billItems.where("billLocalId").equals(r.localId).count() }))))
+      .then(async (rows) => {
+        const items = await countItems(localDb, rows.map((r) => r.localId));
+        return rows.map((r) => ({ ...r, items: items.get(r.localId) ?? 0 }));
+      })
       .then((rows) => live && setRecent(rows))
       .catch((err: unknown) => console.warn("[home] recent bills failed:", err instanceof Error ? err.message : err));
     return () => {
@@ -93,7 +97,7 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
             </div>
             <ul aria-label={t("home.recent")} className="flex flex-col rounded-[18px] border border-kb-border bg-kb-card">
               {recent.map((b, i) => {
-                const time = (formatDateTime(b.at).split(" | ")[1] ?? "").toLowerCase(); // "1:02 PM" -> "1:02 pm", as drawn
+                const time = shortTime(b.at);
                 return (
                   <li key={b.localId}>
                     {i > 0 && <div aria-hidden="true" className="mx-[14px] h-px bg-kb-border" />}
@@ -105,14 +109,7 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
                         <span className="flex min-w-0 flex-col gap-[2px]">
                           <span className="text-kb-15 font-bold">{inject(t("history.billNo", { n: mark("n") }), { n: <ReceiptNumberText value={b.receiptNumber} /> })}</span>
                           {/* "38 items" and "1:02 pm" never break inside; a narrow screen wraps only at the " · " between them (owner, 16 Nov 2026) */}
-                          <span data-meta className="text-kb-13 text-kb-sub">
-                            {(b.items === 1 ? t("home.metaOne", { time }) : t("home.metaMany", { n: b.items, time })).split(" · ").map((part, j) => (
-                              <Fragment key={j}>
-                                {j > 0 && " · "}
-                                <span className="whitespace-nowrap">{part}</span>
-                              </Fragment>
-                            ))}
-                          </span>
+                          <MetaLine className="text-kb-13 text-kb-sub" text={b.items === 1 ? t("home.metaOne", { time }) : t("home.metaMany", { n: b.items, time })} />
                         </span>
                       </span>
                       <span className={`flex flex-none items-center gap-1 whitespace-nowrap text-kb-16 font-extrabold tabular-nums ${b.cancelled ? "text-kb-sub line-through" : ""}`}>

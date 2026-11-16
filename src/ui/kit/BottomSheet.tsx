@@ -7,6 +7,8 @@ import { trapTab } from "./trapTab";
 // 45%. It slides up (kb-sheet) as the backdrop fades in (kb-fade).
 // Behaviour = today's sheets and dialogs (KB-342): Android Back and Escape close the top one (useBackEntry), a tap on the backdrop
 // closes it, focus moves into the sheet, Tab stays inside, focus goes back where it was on close.
+// The drawn 26 px at the bottom - more where the phone's home bar needs it (iPhone, gesture bar).
+// Taller than the screen (a short phone, a big text size): it scrolls inside the screen, its top never out of reach (KB-414 step 2).
 // position "static" only for a preview (the dev gallery's side-by-side); a real sheet covers the screen.
 
 export function BottomSheet({
@@ -35,7 +37,7 @@ export function BottomSheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={(e) => trapTab(e, box.current)}
-        className="font-kb bg-kb-bg rounded-t-[28px] pt-[10px] px-5 pb-[26px] flex flex-col gap-4 text-kb-ink animate-kb-sheet outline-none"
+        className="font-kb bg-kb-bg rounded-t-[28px] pt-[10px] px-5 pb-[max(26px,env(safe-area-inset-bottom))] flex flex-col gap-4 text-kb-ink animate-kb-sheet outline-none max-h-[100dvh] overflow-y-auto"
       >
         <div aria-hidden="true" className="self-center w-[44px] h-[5px] rounded-[3px] bg-kb-handle" />
         <div className="flex flex-col gap-[6px]">

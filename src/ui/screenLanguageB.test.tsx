@@ -189,7 +189,7 @@ describe("History and Cancel", () => {
     const { number } = await saveBill();
     use(l);
     history();
-    expect(screen.getByRole("heading", { name: T("menu.history", l) })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: T("history.billsLabel", l) })).toBeTruthy();
     expect(screen.getByRole("searchbox", { name: T("history.search", l) })).toBeTruthy();
     expect(screen.getByPlaceholderText(T("history.placeholder", l))).toBeTruthy();
     expect(await screen.findByText(T("history.today", l))).toBeTruthy();
@@ -212,11 +212,12 @@ describe("History and Cancel", () => {
     fireEvent.click((await within(await screen.findByRole("list", { name: T("history.billsLabel", l) })).findAllByRole("button"))[0]!);
     const cancelButton = await screen.findByRole("button", { name: T("history.cancelButton", l) });
     fireEvent.click(cancelButton);
-    const sheet = within(await screen.findByRole("region", { name: T("history.cancelButton", l) }));
+    const sheet = within(await screen.findByRole("dialog", { name: T("cancel.title", l, { n: number }) }));
     expect(sheet.getByRole("heading").textContent).toBe(T("cancel.title", l, { n: number }));
     expect(sheet.getByText(T("cancel.note", l))).toBeTruthy();
     for (const id of ["cancel.wrongItem", "cancel.wrongPrice", "cancel.wrongQuantity", "cancel.customerCancelled", "cancel.other"] as const) expect(sheet.getByText(T(id, l))).toBeTruthy();
-    for (const id of ["cancel.andNew", "cancel.only", "cancel.keep"] as const) expect(sheet.getByRole("button", { name: T(id, l) })).toBeTruthy();
+    for (const id of ["cancel.andNew", "cancel.only"] as const) expect(sheet.getByRole("button", { name: T(id, l) })).toBeTruthy();
+    expect(sheet.getByRole("button", { name: T("cancel.keep", l, { n: number }) })).toBeTruthy();
     fireEvent.click(sheet.getByText(T("cancel.wrongPrice", l)));
     fireEvent.click(sheet.getByRole("button", { name: T("cancel.only", l) }));
     const info = within(await screen.findByLabelText(T("history.cancellation", l)));
@@ -232,7 +233,7 @@ describe("History and Cancel", () => {
     use("hl");
     history();
     const list = await screen.findByRole("list", { name: T("history.billsLabel", "hl") });
-    fireEvent.click(within(list).getAllByRole("button").find((x) => x.querySelector(".font-medium")?.textContent?.endsWith(` ${a.number}`))!); // the title, not the row text (a time like 12:39 holds "1")
+    fireEvent.click(within(list).getAllByRole("button").find((x) => x.querySelector("[data-bill-title] > span")?.textContent?.endsWith(` ${a.number}`))!); // the title, not the row text (a time like 12:39 holds "1")
     expect(await screen.findByRole("button", { name: T("history.replacedBy", "hl", { n: b.number }) })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: T("history.replacedBy", "hl", { n: b.number }) }));
     expect(await screen.findByRole("button", { name: T("history.replaces", "hl", { n: a.number }) })).toBeTruthy();

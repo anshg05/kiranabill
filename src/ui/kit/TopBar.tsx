@@ -10,7 +10,7 @@ export function TopBar({ title, backLabel, onBack, right }: { title: string; bac
       <button type="button" aria-label={backLabel} onClick={onBack} className="kb-hit-icon w-11 h-11 flex-none flex items-center justify-center text-kb-ink">
         <Icon icon={KB_ICONS.ChevronLeft} size={24} />
       </button>
-      <h1 className="flex-1 min-w-0 text-kb-18 font-bold">{title}</h1>
+      <h1 className="flex-1 min-w-0 text-kb-18 font-bold [overflow-wrap:anywhere]">{title}</h1>
       {right && <div className="flex-none mr-2">{right}</div>}
     </header>
   );

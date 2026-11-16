@@ -40,6 +40,15 @@ export async function loadRecentRows(localDb: KiranaBillDB, shopId: string, limi
   return bills.map(row).sort(byNewest);
 }
 
+/** KB-414: each bill's item count ("38 items" on Home and 14) - one index count per bill, in one read transaction (never anyOf, see
+ *  the top of this file). shortcut: 200 counts per page; measure on the phone at 40,000 bills before the pilot widens (KB-405). */
+export async function countItems(localDb: KiranaBillDB, localIds: readonly string[]): Promise<ReadonlyMap<string, number>> {
+  const counts = await localDb.transaction("r", localDb.billItems, () =>
+    Promise.all(localIds.map((id) => localDb.billItems.where("billLocalId").equals(id).count())),
+  );
+  return new Map(localIds.map((id, i) => [id, counts[i]!]));
+}
+
 /**
  * D61: the search rows (device-only billSearch table) - bills finalised since
  * `since` (ISO), or all of this shop's when null. ONE range query on

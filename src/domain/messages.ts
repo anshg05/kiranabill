@@ -52,6 +52,11 @@ export const MESSAGES = {
   "home.seeAll": m("See all", "सब देखें", "Sab dekhein"),
   "home.metaOne": m("1 item · {time}", "1 सामान · {time}", "1 saamaan · {time}"),
   "home.metaMany": m("{n} items · {time}", "{n} सामान · {time}", "{n} saamaan · {time}"),
+  // KB-414 step 2: 14's bill card and 15's line under the title, as drawn ("1:18 pm · 4 items", "10 Nov 2026 · 1:02 pm · 38 items · Cash")
+  "bills.metaOne": m("{time} · 1 item", "{time} · 1 सामान", "{time} · 1 saamaan"),
+  "bills.metaMany": m("{time} · {n} items", "{time} · {n} सामान", "{time} · {n} saamaan"),
+  "detail.metaOne": m("{date} · {time} · 1 item · {customer}", "{date} · {time} · 1 सामान · {customer}", "{date} · {time} · 1 saamaan · {customer}"),
+  "detail.metaMany": m("{date} · {time} · {n} items · {customer}", "{date} · {time} · {n} सामान · {customer}", "{date} · {time} · {n} saamaan · {customer}"),
   // KB-413 step 4 (13 Bill saved, owner 16 Nov 2026): the line under "Bill 515 saved" - the receipt's own items, customer and time
   "saved.subOne": m("1 item · {customer} · {time}", "1 सामान · {customer} · {time}", "1 saamaan · {customer} · {time}"),
   "saved.subMany": m("{n} items · {customer} · {time}", "{n} सामान · {customer} · {time}", "{n} saamaan · {customer} · {time}"),
@@ -87,7 +92,6 @@ export const MESSAGES = {
 
   // ---- Menu
   "menu.label": m("Menu", "मेन्यू", "Menu"),
-  "menu.history": m("History", "पुराने बिल", "Purane bill"),
   "menu.catalog": m("Catalog", "सामान की सूची", "Saaman ki list"),
   "menu.settings": m("Settings", "सेटिंग", "Settings"),
   "menu.clear": m("Clear bill", "बिल हटाएं", "Bill hatayein"),
@@ -346,8 +350,9 @@ export const MESSAGES = {
 
   // ---- Settings
   // ---- KB-408 (D111): printing to a Bluetooth thermal printer - inside the Android app only; printing never blocks a bill
-  "print.print": m("Print", "प्रिंट करें", "Print karein"),
   "print.bill": m("Print bill", "बिल प्रिंट करें", "Bill print karein"),
+  // KB-414 step 2: 15-BillDetail's button - every copy from a saved bill prints REPRINT
+  "print.reprint": m("Reprint", "दोबारा प्रिंट करें", "Dobara print karein"),
   "print.printing": m("Printing… {percent}%", "प्रिंट हो रहा है… {percent}%", "Print ho raha hai… {percent}%"),
   "print.done": m("Printed", "प्रिंट हो गया", "Print ho gaya"),
   "print.noPrinter": m("No printer chosen — choose one in Settings → Printer.", "कोई प्रिंटर नहीं चुना — सेटिंग्स → प्रिंटर में चुनें।", "Koi printer nahi chuna — Settings → Printer mein chunein."),
@@ -440,9 +445,12 @@ export const MESSAGES = {
   "cancel.customerCancelled": m("Customer cancelled", "ग्राहक ने मना किया", "Grahak ne mana kiya"),
   "cancel.other": m("Other", "कुछ और", "Kuch aur"),
   "cancel.inProgress": m("A bill is in progress — finish it or clear it first to make the new bill.", "एक बिल बन रहा है — नया बिल बनाने के लिए पहले उसे पूरा करें या हटा दें।", "Ek bill ban raha hai — naya bill banane ke liye pehle use poora karein ya hata dein."),
-  "cancel.andNew": m("Cancel and make a new bill", "रद्द करें और नया बिल बनाएं", "Radd karein aur naya bill banayein"),
+  "cancel.andNew": m("Cancel & make corrected bill", "रद्द करें और सही बिल बनाएं", "Radd karein aur sahi bill banayein"),
   "cancel.only": m("Cancel only", "सिर्फ़ रद्द करें", "Sirf radd karein"),
-  "cancel.keep": m("Keep the bill", "बिल रहने दें", "Bill rehne dein"),
+  "cancel.keep": m("Keep Bill {n}", "बिल नं. {n} रहने दें", "Bill no. {n} rehne dein"),
+  // KB-414 step 2: 25-CancelBill's card - hard rule 2 (a saved bill is never edited) in the shopkeeper's words
+  "cancel.whyNotTitle": m("Why not just edit?", "सीधे बदल क्यों नहीं सकते?", "Seedhe badal kyon nahi sakte?"),
+  "cancel.whyNotEdit": m("Saved bills are never changed quietly — your records always match what the customer got.", "सेव हुए बिल चुपचाप कभी नहीं बदलते — आपका हिसाब हमेशा वही रहता है जो ग्राहक को मिला।", "Save hue bill chupchaap kabhi nahi badalte — aapka hisaab hamesha wahi rehta hai jo grahak ko mila."),
   "cancel.failed": m("Couldn't cancel the bill — try again", "बिल रद्द नहीं हो पाया — फिर कोशिश करें", "Bill radd nahi ho paaya — phir koshish karein"),
   "cancel.notSaved": m("Only a saved bill can be cancelled", "सिर्फ़ सेव हुआ बिल ही रद्द हो सकता है", "Sirf save hua bill hi radd ho sakta hai"),
   "cancel.already": m("This bill is already cancelled", "यह बिल पहले ही रद्द हो चुका है", "Yeh bill pehle hi radd ho chuka hai"),

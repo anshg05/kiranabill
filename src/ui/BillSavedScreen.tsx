@@ -40,7 +40,7 @@ export function BillSavedScreen({ receipt, receiptNumber, share, onNewBill }: { 
           </div>
         </div>
         <div className="safe-bottom flex flex-col gap-[10px] px-[18px] pt-[14px] pb-6">
-          <PrintButton key={receiptNumber} receipt={receipt} firstIsOriginal look="primary" />
+          <PrintButton key={receiptNumber} receipt={receipt} firstIsOriginal />
           {share && <ShareBar share={share} look="tiles" />}
           <button type="button" onClick={onNewBill} className="kb-hit kb-press flex min-h-[46px] items-center justify-center text-kb-15 font-bold text-kb-primary">
             {t("saved.startNew")}

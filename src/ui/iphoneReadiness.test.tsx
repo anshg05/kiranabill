@@ -193,7 +193,9 @@ describe("the notch and the home bar", () => {
   });
   it("the bottom bars keep clear of the home indicator: safe-bottom is defined and used", () => {
     expect(read("src/index.css")).toMatch(/\.safe-bottom\s*\{[^}]*env\(safe-area-inset-bottom\)/);
-    for (const f of ["src/ui/BillingScreen.tsx", "src/ui/CancelBillSheet.tsx", "src/ui/AddProductSheet.tsx", "src/ui/EditProductSheet.tsx"]) expect(read(f), f).toContain("safe-bottom");
+    for (const f of ["src/ui/BillingScreen.tsx", "src/ui/AddProductSheet.tsx", "src/ui/EditProductSheet.tsx"]) expect(read(f), f).toContain("safe-bottom");
+    // KB-414 step 2: the cancel sheet is the kit's bottom sheet now - it keeps 25's drawn 26 px, more over a home bar
+    expect(read("src/ui/kit/BottomSheet.tsx")).toContain("pb-[max(26px,env(safe-area-inset-bottom))]");
   });
   it("the sides keep clear of a landscape notch", () => {
     expect(read("src/index.css")).toMatch(/safe-area-inset-left/);
