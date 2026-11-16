@@ -66,6 +66,10 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     ["Ear", "12-BillReview.html", "Heard:</b>", false],
     // KB-414 step 1 (16 Nov 2026)
     ["Profile", "08-Home.html", '<path d="M4 21c1.5-4', false],
+    ["Keyboard", "08-Home.html", "Type items</a>", false],
+    ["Keyboard", "10-Review.html", '<path d="M7 10h.01', false],
+    ["Keyboard", "23-ReadFailed.html", '<path d="M7 10h.01', false],
+    ["Keyboard", "11-Generating.html", '<path d="M7 10h.01', false],
   ] as const)("%s is the drawing of %s", (name, file, before, filled) => {
     const want = design(file, before);
     const { container } = render(<Icon icon={KB_ICONS[name]} size={20} />);
@@ -109,6 +113,7 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     expect(list).toMatch(/Play[^.]*filled triangle[^.]*10-Review/);
     expect(list).toMatch(/Profile[^.]*08-Home/);
     expect(list).toMatch(/Twinkle[^.]*08-Home/);
+    expect(list).toMatch(/Keyboard is the files' own[^.]*08-Home[^.]*10-Review[^.]*23-ReadFailed[^.]*11-Generating/);
   });
 });
 

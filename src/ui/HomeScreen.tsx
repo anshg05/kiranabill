@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { KiranaBillDB } from "@/data/db";
 import { loadRecentRows, type HistoryRow } from "@/data/history";
 import { subscribeBillsPull } from "@/data/billsPullStatus";
@@ -104,7 +104,15 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
                         </span>
                         <span className="flex min-w-0 flex-col gap-[2px]">
                           <span className="text-kb-15 font-bold">{inject(t("history.billNo", { n: mark("n") }), { n: <ReceiptNumberText value={b.receiptNumber} /> })}</span>
-                          <span className="text-kb-13 text-kb-sub">{b.items === 1 ? t("home.metaOne", { time }) : t("home.metaMany", { n: b.items, time })}</span>
+                          {/* "38 items" and "1:02 pm" never break inside; a narrow screen wraps only at the " · " between them (owner, 16 Nov 2026) */}
+                          <span data-meta className="text-kb-13 text-kb-sub">
+                            {(b.items === 1 ? t("home.metaOne", { time }) : t("home.metaMany", { n: b.items, time })).split(" · ").map((part, j) => (
+                              <Fragment key={j}>
+                                {j > 0 && " · "}
+                                <span className="whitespace-nowrap">{part}</span>
+                              </Fragment>
+                            ))}
+                          </span>
                         </span>
                       </span>
                       <span className={`flex flex-none items-center gap-1 whitespace-nowrap text-kb-16 font-extrabold tabular-nums ${b.cancelled ? "text-kb-sub line-through" : ""}`}>

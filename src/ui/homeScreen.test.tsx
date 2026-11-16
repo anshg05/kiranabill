@@ -101,6 +101,23 @@ describe("08 Home", () => {
     expect(p.onSeeAll).toHaveBeenCalledOnce();
   });
 
+  it("'38 items' and '1:02 pm' never break inside (360 + 130%: owner, 16 Nov 2026) - the line wraps only between them, in every language", async () => {
+    for (const id of ["home.metaOne", "home.metaMany"] as const) for (const l of ["en", "hi", "hl"] as const) expect(say(id, { n: 3, time: "x" }, l)).toContain(" · ");
+    const b = bill(514, at(13, 2), { totalPaise: 221600 });
+    await db.bills.add(b);
+    await items(b, 38);
+    home();
+    const meta = await waitFor(() => {
+      const m = document.querySelector("[data-meta]");
+      if (!m) throw new Error("not yet");
+      return m;
+    });
+    expect(meta.textContent).toBe("38 items · 1:02 pm");
+    const parts = [...meta.children];
+    expect(parts.map((p) => p.textContent)).toEqual(["38 items", "1:02 pm"]);
+    for (const p of parts) expect(p.className).toContain("whitespace-nowrap");
+  });
+
   it("no saved bills yet: no Recent bills section (the record card is the one action)", async () => {
     home();
     await act(async () => void (await new Promise((r) => setTimeout(r, 50))));

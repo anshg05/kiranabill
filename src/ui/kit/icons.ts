@@ -2,7 +2,7 @@
 // MoreHorizontal -> Ellipsis, CircleHelp -> CircleQuestionMark, Phone (smartphone) -> Smartphone); the drawings are the same.
 import { createElement } from "react";
 import {
-  ArrowRight, Bluetooth, Check, ChevronDown, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ellipsis, FileText, Keyboard, Languages,
+  ArrowRight, Bluetooth, Check, ChevronDown, ChevronLeft, ChevronRight, CircleQuestionMark, Cloud, Ellipsis, FileText, Languages,
   Lightbulb, Lock, MessageCircle, Minus, Package, Plus, Printer, RefreshCw,
   RotateCcw, RotateCw, Search, Share2, Smartphone, Store, WifiOff, X,
   createLucideIcon, type LucideIcon,
@@ -64,6 +64,11 @@ const Ear = createLucideIcon("kb-ear", [
   ["path", { d: "M10 10a2 2 0 0 1 4 0c0 1.5-2 2-2 4", key: "b" }],
 ]);
 
+/** 08-Home "Type items", 10 / 23 "Type instead", 11 "Add items by hand" (owner, 16 Nov 2026): a wide key board, three keys and a space bar */
+const Keyboard = createLucideIcon("kb-keyboard", [
+  ["rect", { x: "3", y: "6", width: "18", height: "12", rx: "2", key: "a" }],
+  ["path", { d: "M7 10h.01M11 10h.01M15 10h.01M7 14h10", key: "b" }],
+]);
 /** 08-Home "Shop profile": a head and shoulders (KB-414 step 1) */
 const Profile = createLucideIcon("kb-profile", [
   ["circle", { cx: "12", cy: "8", r: "4", key: "a" }],
