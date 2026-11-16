@@ -173,7 +173,6 @@ function Harness({ transcript, offline = false }: { transcript: string; offline?
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       removed={bill.removed}

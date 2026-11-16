@@ -39,7 +39,6 @@ function Harness({ transcripts, saved = null }: { transcripts: string[]; saved?:
       flags={bill.flags}
       pending={bill.pending}
       onAcknowledge={bill.acknowledge}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       catalog={SEED_PARSER_CATALOG}

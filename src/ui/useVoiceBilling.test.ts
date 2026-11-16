@@ -98,12 +98,12 @@ describe("KB-339 (D86): spoken commands, before parsing", () => {
   it("'sab hatao' reaches the screen as clearAll (the screen only hints) and is never parsed or 'Not added'", async () => {
     reply(200, { transcript: "sab hatao" });
     const h = hooks();
-    h.onCommand.mockReturnValue("To clear the whole bill, use the menu → Clear bill");
+    h.onCommand.mockReturnValue("To clear the whole bill, tap Clear bill under the items");
     const { result } = open(h);
     await speak(result);
     expect(h.onCommand).toHaveBeenCalledWith("clearAll");
     expect(h.onTranscript).not.toHaveBeenCalled();
-    expect(result.current.view.notice).toBe("To clear the whole bill, use the menu → Clear bill");
+    expect(result.current.view.notice).toBe("To clear the whole bill, tap Clear bill under the items");
   });
 
   it("a sentence that merely contains the word ('chini aur bas') is an ORDER: parsed, one turn, no command", async () => {

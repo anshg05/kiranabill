@@ -40,7 +40,6 @@ function Harness({ pre = [], api }: { pre?: ReturnType<typeof spoken>[]; api?: M
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       onUndo={bill.undo}

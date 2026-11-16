@@ -181,15 +181,15 @@ Replaces the predecessor's four blank fields, which never matched the catalog.
 ### Implementation notes — "—" on every line, spoken commands, the shop name (`KB-338`/`KB-339`/`KB-340`, 18 Oct 2026; D86)
 
 - **Unit picker:** every line offers **"—"** (no unit) first, for every product. It changes no number; a line with no unit shows its qty as a plain number ("1", "2") and its rate as a plain number. The product's own unit never changes - only the line's.
-- **Spoken commands** (before the parser): the whole utterance only - "bas" / "ho gaya" / "bill banao": the line **"Tap Bill Banao to finish"** (never finalises by voice); "hatao" / "undo": the last added line is removed with the usual Undo strip, or **"Nothing to remove"**; "sab hatao": **"To clear the whole bill, use the menu → Clear bill"**. The answer sits under the transcript as a quiet status line, not a failure (no "Add by hand"). A command is not a turn and never a "Not added" entry.
+- **Spoken commands** (before the parser): the whole utterance only - "bas" / "ho gaya" / "bill banao": the line **"Tap Bill Banao to finish"** (never finalises by voice); "hatao" / "undo": the last added line is removed with the usual Undo strip, or **"Nothing to remove"**; "sab hatao": **"To clear the whole bill, tap Clear bill under the items"** (`KB-414` step 1: the ≡ menu is gone). The answer sits under the transcript as a quiet status line, not a failure (no "Add by hand"). A command is not a turn and never a "Not added" entry.
 - **Header:** the shop's name (one line, ellipsis, full name as the title) instead of "KiranaBill"; it follows a rename from Settings.
 
 ### Implementation notes — layers, dialogs and the ≡ menu (`KB-342`, 19 Oct 2026; `21` Part 5)
 
-- **The ≡ menu** (`ui/HeaderMenu.tsx`, was a native `<details>`): closes on a tap outside it, on choosing an item, on **Escape** and **Android Back**, and whenever a panel, sheet, dialog or the mic opens (`closeWhen`); it never opens above an open panel; `aria-expanded` is true only while the list shows; focus returns to ≡ on Escape, Back and a choice - not after an outside tap (that tap's own target keeps the focus).
+- **The ≡ menu - REMOVED by `KB-414` step 1 (16 Nov 2026):** the bottom nav (Home, Bills, Items, More - `ui/AppTabs.tsx`) replaces it; Clear bill is a text button under the bill's items, Sign out is on More (with the same unsynced warning). Was (`ui/HeaderMenu.tsx`, was a native `<details>`): closes on a tap outside it, on choosing an item, on **Escape** and **Android Back**, and whenever a panel, sheet, dialog or the mic opens (`closeWhen`); it never opens above an open panel; `aria-expanded` is true only while the list shows; focus returns to ≡ on Escape, Back and a choice - not after an outside tap (that tap's own target keeps the focus).
 - **Escape closes the top layer only**, for every full-screen layer and sheet (`useBackEntry`, the same stack as Back). An inline editor's Escape cancels just that edit.
 - **Dialogs** ("Sign out?", "Clear this bill?", the sync detail) are modal in fact: Back, Escape and a tap on the dim area cancel; focus starts on Cancel and Tab stays inside; `aria-modal`.
-- **Behind a full-screen layer** (History, Catalog, Settings) the bill is `inert` and `aria-hidden`.
+- **Behind a full-screen layer** (History, Catalog, Settings - since `KB-414` the Home, Bills, Items and More tabs) the bill is `inert` and `aria-hidden`.
 - **Share:** the same button's repeats within 1.5 s are ignored; the SMS sheet scrolls into view and takes the focus. **Sign in:** one tap starts one Google sign-in ("Opening Google…"). Every 44 px control keeps its size (`shrink-0`).
 
 ### Implementation notes — amounts, discard, reasons, Understanding (`KB-343`, 19 Oct 2026; D88)
@@ -240,7 +240,7 @@ Either way, base products can be pulled in later from Catalog → "Add from read
 
 ### Implementation notes — Catalog (`KB-311`, 8 Oct 2026; D62)
 
-- **Opens from the ≡ menu**, over the bill in progress; Back / Android back closes "Ready catalog", then Catalog.
+- **Opens as the Items tab** (`KB-414`; was the ≡ menu), over the bill in progress; Back / Android back closes "Ready catalog", then Catalog (to Home).
 - **Rows:** this shop's active products — name, "Used N times" / "Not used yet", price per unit. Most used first,
   then by name. **Search** is the Add item index (aliases, fuzzy); filters All · Custom · Learned · From base
   catalog. A filter with nothing in it says "No products of this kind."
@@ -304,7 +304,7 @@ Each row shows a sync chip when not yet synced. Never alarming; just information
 
 ### Implementation notes — History (`KB-310`, 7 Oct 2026; D60)
 
-- **Opens from the ≡ menu**, over the bill in progress (which stays as it is); Back / Android back closes S6, then
+- **Opens as the Bills tab** (`KB-414`; was the ≡ menu; Home's Recent bills open a bill's S6 on it), over the bill in progress (which stays as it is); Back / Android back closes S6, then
   S5, back to billing (`ui/useBackEntry.ts`, shared with the Add item panel).
 - **This phone's bills** — the bills saved here, plus the shop's bills pulled from the server (`KB-324`, D63): a cleared
   phone, a new phone or a new draft address gets its History back, newest first. Until the first pull has finished
@@ -409,7 +409,7 @@ Shop details, receipt language, developer mode.
 
 ### Implementation notes — Settings (`KB-312`, 8 Oct 2026; D64)
 
-- **Opens from the ≡ menu**, over the bill in progress; Back / Android back closes it.
+- **Opens as the More tab** (`KB-414`; was the ≡ menu; Sync and Sign out under it), over the bill in progress; Back / Android back closes it (to Home).
 - **Shop details: name and phone only** (owner, Q1). They print on every receipt. Name: required, 60 characters. Phone:
   optional, **an Indian mobile — 10 digits starting 6-9** (the customer-mobile rule); a **leading 0 is refused** ("Enter
   the 10-digit mobile number without a leading 0 …") because the shared parser would read the landline `0712-2345678`

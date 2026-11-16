@@ -5,7 +5,7 @@ import type { BillCommand } from "@/domain/commands";
 // tap, gated by the pending checks) and none clears the bill.
 
 export const COMMAND_FINISH_HINT = "Tap Bill Banao to finish";
-export const COMMAND_CLEAR_HINT = "To clear the whole bill, use the menu → Clear bill";
+export const COMMAND_CLEAR_HINT = "To clear the whole bill, tap Clear bill under the items";
 export const COMMAND_NOTHING_TO_REMOVE = "Nothing to remove";
 
 /** Returns the one-line answer to show, or null when the bill's own Undo strip already says it. */

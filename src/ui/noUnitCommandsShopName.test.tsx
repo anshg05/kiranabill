@@ -43,7 +43,7 @@ function Harness({ transcripts = [], hand = [] }: { transcripts?: string[]; hand
     }
     // once, on mount
   }, []);
-  return <BillView lines={bill.rows} onSignOut={() => {}} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} />;
+  return <BillView lines={bill.rows} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} />;
 }
 
 // KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.
@@ -121,14 +121,14 @@ describe("KB-339 - what a spoken command does to the bill", () => {
     expect(COMMAND_NOTHING_TO_REMOVE).toBe("Nothing to remove");
   });
 
-  it("'bas' / 'ho gaya' never finalise: only the hint; 'sab hatao' never clears: only the hint to use the menu", () => {
+  it("'bas' / 'ho gaya' never finalise: only the hint; 'sab hatao' never clears: only the hint to tap Clear bill", () => {
     const { result } = renderHook(() => useBillLines(catalog));
     const v = voice("2 kilo chini");
     act(() => result.current.add(v.lines, v.flags));
     expect(runBillCommand("finalize", result.current.rows, result.current.remove)).toBe(COMMAND_FINISH_HINT);
     expect(runBillCommand("clearAll", result.current.rows, result.current.remove)).toBe(COMMAND_CLEAR_HINT);
     expect(COMMAND_FINISH_HINT).toBe("Tap Bill Banao to finish");
-    expect(COMMAND_CLEAR_HINT).toBe("To clear the whole bill, use the menu → Clear bill");
+    expect(COMMAND_CLEAR_HINT).toBe("To clear the whole bill, tap Clear bill under the items");
     expect(result.current.rows).toHaveLength(1);
     expect(result.current.removed).toBeNull();
   });
@@ -139,7 +139,7 @@ describe("KB-339 - what a spoken command does to the bill", () => {
 describe("KB-413 - the bill screen's title (was KB-340's shop name)", () => {
   it("is 'New bill' whatever the shop is called; the long title still shrinks on one line", () => {
     const long = "Shri Ganesh General & Kirana Store, Sadar Bazaar, Gwalior";
-    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} shopName={long} />);
+    render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} shopName={long} />);
     const h = screen.getByRole("heading", { level: 1 });
     expect(h.textContent).toBe("New bill");
     expect(screen.queryByText(long)).toBeNull();

@@ -7,7 +7,6 @@ import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import type { FinalLine } from "@/domain/finalBill";
 import { KiranaBillDB, type LocalBill } from "@/data/db";
 import { finaliseBill } from "@/data/testNumbers";
-import { BillView } from "./BillingScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { loadRecentRows } from "@/data/history";
 import { emitBillsPull } from "@/data/billsPullStatus";
@@ -21,7 +20,6 @@ vi.mock("@/data/history", async (original) => {
   return { ...actual, loadRecentRows: vi.fn(actual.loadRecentRows) };
 });
 import type { RenderReceiptFiles } from "./useReceiptShare";
-import { chooseMenu } from "./menuTestUtil";
 
 // KB-310 (owner, 7 Oct 2026): S5 History and S6 bill detail, with REAL
 // finalised bills (D39). Opens on the newest rows, then searches the last 90
@@ -80,12 +78,6 @@ const rowTexts = () => within(bills()!).getAllByRole("button").map((b) => b.text
 const search = (q: string) => fireEvent.change(screen.getByRole("searchbox", { name: "Search bills" }), { target: { value: q } });
 
 describe("KB-310 - S5 History", () => {
-  it("the ≡ menu has History", () => {
-    const onOpenHistory = vi.fn();
-    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onOpenHistory={onOpenHistory} />);
-    chooseMenu("History");
-    expect(onOpenHistory).toHaveBeenCalledTimes(1);
-  });
 
   it("no bills: says so - and that History is this phone's bills (owner, Q1)", async () => {
     await open();
@@ -223,6 +215,19 @@ describe("KB-310 - S6 bill detail", () => {
     expect(bills()).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("KB-414 step 1: opened from Home's Recent bills (openBill) - that bill's detail on top; Back: the list, then Home", async () => {
+    const onClose = vi.fn();
+    const id = await save(0, "2 kilo chini");
+    render(<HistoryScreen localDb={db} shopId={shopId} render={renderFiles} openBill={id} onClose={onClose} />);
+    const receipt = await screen.findByRole("article", { name: "Receipt" });
+    expect(within(receipt).getByTestId("receipt-number").textContent).toBe("1");
+    fireEvent.click(screen.getAllByRole("button", { name: "Back" }).at(-1)!);
+    await waitFor(() => expect(screen.queryByRole("article", { name: "Receipt" })).toBeNull());
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("Android back closes the detail first, then History", async () => {

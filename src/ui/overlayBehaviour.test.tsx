@@ -116,7 +116,7 @@ describe("a confirmation dialog is modal in fact", () => {
 });
 
 describe("the bill behind a full-screen overlay", () => {
-  const view = (covered?: boolean) => <BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} covered={covered} />;
+  const view = (covered?: boolean) => <BillView lines={[]} onEdit={() => null} onRemove={() => {}} covered={covered} />;
   it("is inert and hidden from a screen reader while covered - and normal when not", () => {
     const { container, rerender } = render(view(true));
     const root = container.firstElementChild as HTMLElement;

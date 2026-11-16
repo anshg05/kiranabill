@@ -1,6 +1,6 @@
 import { aliasKeyOf } from "@/domain/aliasEvidence";
 import { deriveShopAliases } from "@/data/aliasEvidence";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { liveQuery } from "dexie";
 import { ArrowLeft } from "lucide-react";
 import type { DeviceDB } from "@/data/device";
@@ -58,10 +58,12 @@ interface SettingsScreenProps {
   deviceDb?: DeviceDB;
   /** KB-404: asks the server about this phone's bills ("no bill lost or corrupted"). Absent = no button. */
   reconcile?: () => Promise<ReconcileResult>;
+  /** KB-414 step 1: under the page, as the More tab - Sync and Sign out (from the ≡ menu); step 4 gives More its own look */
+  footer?: ReactNode;
   onClose: () => void;
 }
 
-export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile, onClose }: SettingsScreenProps) {
+export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile, footer, onClose }: SettingsScreenProps) {
   useBackEntry("kbSettings", onClose);
   const online = useBrowserOnline();
   const { t, tx, lang } = useT();
@@ -109,7 +111,7 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
   };
 
   return (
-    <section aria-label={t("menu.settings")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("menu.settings")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-[var(--kb-tab-bottom,0px)] z-20 flex flex-col bg-paper text-ink text-[15px]">
       <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">
           <button type="button" aria-label={t("settings.back")} onClick={onClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
@@ -227,6 +229,7 @@ export function SettingsScreen({ localDb, shopId, deviceId, deviceDb, reconcile,
                 {t("settings.privacy")}
               </a>
               <p className="text-[13px] text-ink-soft">Version {BUILD_ID}</p>
+              {footer}
             </>
           )}
         </div>

@@ -60,7 +60,6 @@ function Harness({ mobile }: { mobile: string | null }) {
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       flags={bill.flags}

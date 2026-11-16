@@ -36,6 +36,22 @@ export const MESSAGES = {
   "bill.savedAfter": m("saved", "सेव हो गया", "save ho gaya"),
   "bill.savedLabel": m("Bill saved", "बिल सेव हुआ", "Bill save hua"),
   "bill.new": m("New bill", "नया बिल", "Naya bill"),
+  // KB-414 step 1 (owner, 16 Nov 2026): the bottom nav that replaces the ≡ menu, and 08-Home
+  "nav.label": m("Main", "मुख्य", "Main"),
+  "nav.home": m("Home", "होम", "Home"),
+  "nav.items": m("Items", "सामान", "Saamaan"),
+  // nav "Bills" = history.billsLabel, nav "More" = order.more (one English text, one entry: the catalog test)
+  "home.morning": m("Good morning", "सुप्रभात", "Good morning"),
+  "home.afternoon": m("Good afternoon", "नमस्ते", "Good afternoon"),
+  "home.evening": m("Good evening", "शुभ संध्या", "Good evening"),
+  "home.profile": m("Shop profile", "दुकान की जानकारी", "Dukaan ki jaankari"),
+  "home.ready": m("Ready for the next order", "अगले ऑर्डर के लिए तैयार", "Agle order ke liye taiyaar"),
+  "home.tapToRecord": m("Tap to record · pause any time", "बोलने के लिए दबाएं · कभी भी रोकें", "Bolne ke liye dabayein · kabhi bhi rokein"),
+  "home.typeItems": m("Type items", "सामान टाइप करें", "Saamaan type karein"),
+  "home.recent": m("Recent bills", "हाल के बिल", "Haal ke bills"),
+  "home.seeAll": m("See all", "सब देखें", "Sab dekhein"),
+  "home.metaOne": m("1 item · {time}", "1 सामान · {time}", "1 saamaan · {time}"),
+  "home.metaMany": m("{n} items · {time}", "{n} सामान · {time}", "{n} saamaan · {time}"),
   // KB-413 step 4 (13 Bill saved, owner 16 Nov 2026): the line under "Bill 515 saved" - the receipt's own items, customer and time
   "saved.subOne": m("1 item · {customer} · {time}", "1 सामान · {customer} · {time}", "1 saamaan · {customer} · {time}"),
   "saved.subMany": m("{n} items · {customer} · {time}", "{n} सामान · {customer} · {time}", "{n} saamaan · {customer} · {time}"),
@@ -537,7 +553,8 @@ export const MESSAGES = {
 
   // ---- Spoken commands (KB-339, D86): the one-line answers; "Bill Banao" stays exactly as it is
   "cmd.finish": m("Tap Bill Banao to finish", "खत्म करने के लिए Bill Banao दबाएं", "Khatam karne ke liye Bill Banao dabayein"),
-  "cmd.clear": m("To clear the whole bill, use the menu → Clear bill", "पूरा बिल हटाने के लिए मेन्यू → बिल हटाएं दबाएं", "Poora bill hatane ke liye Menu → Bill hatayein dabayein"),
+  // KB-414 step 1: the ≡ menu is gone - Clear bill is the text button under the items
+  "cmd.clear": m("To clear the whole bill, tap Clear bill under the items", "पूरा बिल हटाने के लिए सामान के नीचे बिल हटाएं दबाएं", "Poora bill hatane ke liye saamaan ke neeche Bill hatayein dabayein"),
   "cmd.nothing": m("Nothing to remove", "हटाने के लिए कुछ नहीं है", "Hatane ke liye kuch nahi hai"),
 } as const satisfies Record<string, Entry>;
 

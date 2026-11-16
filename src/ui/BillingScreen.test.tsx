@@ -61,14 +61,14 @@ const editing = { onEdit: () => null, onRemove: () => {} };
 
 function renderBill(lines: ParsedItem[]) {
   // Layer 1 lines, as the screen builds them (KB-302: BillLine).
-  render(<BillView lines={lines.map((item, i) => ({ id: `l${i}`, item, displayName: item.spokenName, source: "fastpath" as const }))} onSignOut={() => {}} {...editing} />);
+  render(<BillView lines={lines.map((item, i) => ({ id: `l${i}`, item, displayName: item.spokenName, source: "fastpath" as const }))} {...editing} />);
 }
 
 describe("BillView", () => {
   it("KB-404 (S2): the Review mode badge shows only while review capture is on", () => {
-    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} {...editing} />);
+    const { rerender } = render(<BillView lines={[]} {...editing} />);
     expect(screen.queryByTestId("review-badge")).toBeNull();
-    rerender(<BillView lines={[]} onSignOut={() => {}} {...editing} reviewMode />);
+    rerender(<BillView lines={[]} {...editing} reviewMode />);
     expect(screen.getByTestId("review-badge").textContent).toBe("Review mode");
   });
 
@@ -126,7 +126,7 @@ describe("BillView", () => {
 
   it("KB-302 (Q5b): a Layer 2 line shows the shop entry's name, not Gemini's spoken text", () => {
     const [item] = parsed("VC023");
-    render(<BillView lines={[{ id: "l0", item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} onSignOut={() => {}} {...editing} />);
+    render(<BillView lines={[{ id: "l0", item: { ...item!, spokenName: "तूर दाल" }, displayName: "Toor Daal", source: "voice" }]} {...editing} />);
     expect(within(screen.getByRole("list", { name: "Bill items" })).getByText("Toor Daal")).toBeTruthy();
     expect(screen.queryByText("तूर दाल")).toBeNull();
   });
@@ -143,7 +143,7 @@ describe("BillView", () => {
 describe("BillView voice states", () => {
   const view = (v: Partial<VoiceView>): VoiceView => ({ ...IDLE_VOICE, ...v });
   const renderVoice = (v: Partial<VoiceView>, onMicTap = vi.fn()) => {
-    render(<BillView lines={[]} onSignOut={() => {}} voice={view(v)} onMicTap={onMicTap} {...editing} />);
+    render(<BillView lines={[]} voice={view(v)} onMicTap={onMicTap} {...editing} />);
     return onMicTap;
   };
   const mic = () => screen.getAllByRole("button").find((b) => b.className.includes("bg-indigo")) as HTMLButtonElement;

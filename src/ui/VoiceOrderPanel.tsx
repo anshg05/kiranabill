@@ -69,6 +69,7 @@ export function OrderRecorder({
   onAddByHand,
   takes,
   noteSlot,
+  startSignal,
 }: {
   /** KB-413 step 3: the bill's recordings - the first one of an empty bill is shown full screen while it is read (11) or failed (23) */
   orders: RecorderOrders;
@@ -83,6 +84,8 @@ export function OrderRecorder({
   takes?: TakeStore;
   /** where its warnings go: the bill's scrolling list (12) - never the bottom panel (step-2 fix 1). Here when not given. */
   noteSlot?: HTMLElement | null;
+  /** KB-414 step 1: Home's mic - each new value starts recording (09), as tapping Record order does; nothing while it cannot record */
+  startSignal?: number;
 }) {
   const { t, tx } = useT();
   const [take, setTake] = useState<Take | null>(null);
@@ -124,6 +127,11 @@ export function OrderRecorder({
     setNothing(false);
     void capture.start();
   };
+  useEffect(() => {
+    // not over 11 / 23 (the first recording of an empty bill is being read or failed - its own screen decides what is next)
+    if (startSignal && !disabledReason && capture.phase !== "requesting" && !recording && !take && !firstKind) start();
+    // only a new tap on Home's mic
+  }, [startSignal]);
   const stop = async () => keep(await capture.stop(), capture.elapsedMs);
   const forget = () => takesRef.current?.clear().catch(() => {}) ?? Promise.resolve();
   // Back on 09 / 10 (owner, answer 7) and Re-record / Type instead on 10 (answer 5): pause, then ask

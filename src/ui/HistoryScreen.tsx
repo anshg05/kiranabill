@@ -56,10 +56,12 @@ interface HistoryScreenProps {
   billInProgress?: boolean;
   /** KB-325: the bill was cancelled for a replacement - the billing screen builds its draft from the stored bill. */
   onReissue?: (billLocalId: string, replacementLocalId: string) => void;
+  /** KB-414 step 1: Home's Recent bills - Bills opens with this bill's detail on top (Back: the list, then Home) */
+  openBill?: string;
   onClose: () => void;
 }
 
-export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgress = false, onReissue, onClose }: HistoryScreenProps) {
+export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgress = false, onReissue, openBill, onClose }: HistoryScreenProps) {
   useBackEntry("kbHistory", onClose);
   const { t, tx } = useT();
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
@@ -69,7 +71,7 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
   const [query, setQuery] = useState("");
   const [shown, setShown] = useState(PAGE);
   // KB-325: opened bills, stacked - "Replaced by Bill 143" opens that bill over this one.
-  const [openIds, setOpenIds] = useState<readonly string[]>([]);
+  const [openIds, setOpenIds] = useState<readonly string[]>(openBill ? [openBill] : []);
   const [syncOf, setSyncOf] = useState<ReadonlyMap<string, SyncStatus>>(new Map());
   // KB-324: bills pulled from the server land while this is open - re-read; and say so while the first pull runs.
   const [pulled, setPulled] = useState(0);
@@ -159,7 +161,7 @@ export function HistoryScreen({ localDb, shopId, render, deviceId, billInProgres
   const scope = t(all ? "history.scopeAll" : recent ? "history.scopeRecent" : "history.scopeLoading");
 
   return (
-    <section aria-label={t("menu.history")} className="fixed inset-0 z-20 flex flex-col bg-paper text-ink text-[15px]">
+    <section aria-label={t("menu.history")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-[var(--kb-tab-bottom,0px)] z-20 flex flex-col bg-paper text-ink text-[15px]">
       {/* Under an open bill: hidden from screen readers and out of the tab order. */}
       <div inert={openIds.length > 0} aria-hidden={openIds.length > 0 || undefined} className="mx-auto flex h-full w-full max-w-[720px] flex-col">
         <header className="flex items-center gap-2 border-b border-line px-2 py-2">

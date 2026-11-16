@@ -19,7 +19,7 @@ const ls = lines();
 const catalogId = ls[0]!.item.catalogId!;
 const spoken = ls[0]!.item.spokenName;
 const learned = (confidence: number, id = catalogId) => ({ [spoken.toLowerCase()]: { alias: spoken, catalogId: id, confidence } });
-const base = { lines: ls, onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
+const base = { lines: ls, onEdit: () => null, onRemove: () => {} };
 
 describe("the first-use note", () => {
   it("shows the learned phrase, the product, and a Not this button - in both markups", () => {

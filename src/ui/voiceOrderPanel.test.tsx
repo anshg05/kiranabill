@@ -70,6 +70,37 @@ const button = (name: RegExp | string) => screen.getByRole("button", { name });
 /** KB-413 step 3: a bill with no recordings - 11 / 23 are tested in screens1123.test.tsx */
 const NO_ORDERS = { recordings: [], sending: new Set<string>(), offline: false, retry: async () => {}, remove: async () => {} };
 
+describe("KB-414 step 1 - Home's mic (startSignal)", () => {
+  const recorder = (startSignal: number, over: Partial<Parameters<typeof OrderRecorder>[0]> = {}) => (
+    <OrderRecorder orders={NO_ORDERS} shopName="Gupta Kirana Store" hasLines={false} onGenerate={vi.fn()} onAddByHand={vi.fn()} startSignal={startSignal} {...over} />
+  );
+  const recording = () => screen.queryByRole("dialog", { name: "New voice bill" });
+
+  it("each new value starts recording (09), as tapping Record order does; the first render does not", async () => {
+    const { rerender } = render(recorder(0));
+    await act(async () => {});
+    expect(recording()).toBeNull();
+    await act(async () => void rerender(recorder(1)));
+    expect(recording()).toBeTruthy();
+  });
+
+  it("nothing while it cannot record (the catalog is loading) - 12 shows why", async () => {
+    const { rerender } = render(recorder(0, { disabledReason: "Loading your catalog…" }));
+    await act(async () => void rerender(recorder(1, { disabledReason: "Loading your catalog…" })));
+    expect(recording()).toBeNull();
+    expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it("not over 23: the bill's first recording failed - its own screen offers Try again / Record again", async () => {
+    const failed = { recordingId: "r1", shopId: "s", billLocalId: "b", bytes: new ArrayBuffer(0), mime: "audio/webm", recordedMs: 42_000, createdAt: new Date().toISOString(), state: "failed" as const, reason: "upload", emptyBill: true as const };
+    const orders = { ...NO_ORDERS, recordings: [failed] };
+    const { rerender } = render(recorder(0, { orders }));
+    await act(async () => void rerender(recorder(1, { orders })));
+    expect(recording()).toBeNull();
+    expect(screen.getByRole("dialog", { name: "New bill" })).toBeTruthy();
+  });
+});
+
 describe("OrderRecorder", () => {
   it("tap -> 09 Recording (full screen) with a timer -> Pause (time stops) -> Resume -> Stop -> 10 Review -> Generate", async () => {
     const onGenerate = vi.fn();

@@ -90,7 +90,7 @@ export function numberChunks(receiptNumber: string): string[] {
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /** "15-08-2026 | 6:56 PM", in the device's time zone (05 §6; legacy's " | ", D57). */
-function formatDateTime(iso: string): string {
+export function formatDateTime(iso: string): string {
   const d = new Date(iso);
   const h = d.getHours();
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} | ${h % 12 || 12}:${pad2(d.getMinutes())} ${h < 12 ? "AM" : "PM"}`;

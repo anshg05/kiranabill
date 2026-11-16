@@ -23,6 +23,8 @@ import { BillSavedScreen } from "./BillSavedScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { renderReceiptFiles } from "./receiptImage";
 import type { ReceiptShare } from "./useReceiptShare";
+import { HomeScreen } from "./HomeScreen";
+import { TabFrame } from "./AppTabs";
 
 // DEV ONLY (KB-413, /__dev/screens): each rebuilt screen, the REAL component with sample data, full-size beside its whole approved
 // screen file (docs/design/screens/NN-*.html) - the owner's review of a full screen (D110 item 9).
@@ -38,6 +40,8 @@ import type { ReceiptShare } from "./useReceiptShare";
 //                     script also runs the browser with reduced motion, so the design file's frame stops too)
 //   screen 23, state: failed (the connection: "upload") | busy | session | limit | again (Record again pressed: the question)
 //   screen 24, state: offline (the drawn bill: one typed line, the waiting recording, the strip)
+//   screen 08, state: home (08's Recent bills: Bill 514, 38 items, 1:02 pm, ₹2,216; Bill 513, 7 items, 12:40 pm, ₹1,215 - "Good morning")
+//                     | offline (the same, offline: the ink strip on top) | empty (no bills yet: no Recent bills) - KB-414 step 1
 //   screen 13, state: saved (the file's Bill 515: 4 items, ₹610) | long (the owner's real Bill 514, 38 lines) - the frame shows "Print bill"
 //                     as the Android app does (the web has no printer); &t= freezes both frames at that many ms (default 600)
 //   screen 15, state: history | cancelled - TODAY's History bill detail (its own redesign is a later step) with the receipt in 13's look:
@@ -108,7 +112,6 @@ function Screen12({ state }: { state: string }) {
       lines={lines}
       flags={flags}
       pending={pending}
-      onSignOut={noop}
       onEdit={() => null}
       onRemove={noop}
       onAcknowledge={noop}
@@ -116,9 +119,8 @@ function Screen12({ state }: { state: string }) {
       catalog={SEED_PARSER_CATALOG}
       onAddByHand={noop}
       onChangeProduct={noop}
-      onOpenHistory={noop}
-      onOpenCatalog={noop}
-      onOpenSettings={noop}
+      onBack={noop}
+      onClearBill={noop}
       customer={{ name: "Cash", mobile: null }}
       onCustomerName={() => null}
       onCustomerMobile={() => null}
@@ -191,7 +193,6 @@ function Screen24() {
       pending={1}
       waitingRecordings={1}
       syncChip={{ kind: "offline", label: "Offline" }}
-      onSignOut={noop}
       onEdit={() => null}
       onRemove={noop}
       onAcknowledge={noop}
@@ -199,9 +200,8 @@ function Screen24() {
       catalog={SEED_PARSER_CATALOG}
       onAddByHand={noop}
       onChangeProduct={noop}
-      onOpenHistory={noop}
-      onOpenCatalog={noop}
-      onOpenSettings={noop}
+      onBack={noop}
+      onClearBill={noop}
       customer={{ name: "Cash", mobile: null }}
       onCustomerName={() => null}
       onCustomerMobile={() => null}
@@ -274,11 +274,41 @@ function Screen15({ state, onReady }: { state: string; onReady: () => void }) {
   return db ? <HistoryScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" render={renderReceiptFiles} deviceId="22222222-2222-4222-8222-222222222222" onClose={noop} /> : null;
 }
 
+/** KB-414 step 1: 08-Home on a dev database (fake-indexeddb, as 15): 08's two recent bills, today, with their item counts. */
+function Screen08({ state, onReady }: { state: string; onReady: () => void }) {
+  const [db, setDb] = useState<KiranaBillDB | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
+      Dexie.dependencies.indexedDB = new IDBFactory();
+      Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+      const d = new KiranaBillDB("kb-dev-sheet-08");
+      const shopId = "11111111-1111-4111-8111-111111111111";
+      if (state !== "empty") {
+        for (const [n, items, total, h, m] of [[514, 38, 221600, 13, 2], [513, 7, 121500, 12, 40]] as const) {
+          const t = new Date();
+          t.setHours(h, m, 0, 0);
+          const localId = crypto.randomUUID();
+          await d.bills.add({ localId, shopId, status: "final", syncStatus: "synced", receiptNumber: String(n), receiptNumberSource: "block", customerName: "Cash", customerMobile: null, subtotalPaise: total, totalPaise: total, schemaVersion: 1, deviceId: "d", createdAt: t.toISOString(), finalizedAt: t.toISOString(), syncedAt: null });
+          for (let i = 0; i < items; i++) await d.billItems.add({ billLocalId: localId, shopId, lineNo: i + 1, shopProductId: null, displayName: `x${i}` } as never);
+        }
+      }
+      setDb(d);
+      window.setTimeout(onReady, 800);
+    })();
+  }, [state]);
+  return db ? (
+    <TabFrame tab="home" onTab={noop} offline={state === "offline"}>
+      <HomeScreen localDb={db} shopId="11111111-1111-4111-8111-111111111111" shopName="Gupta Kirana Store" now={() => new Date(2026, 10, 16, 9, 30)} onRecord={noop} onType={noop} onOpenBill={noop} onSeeAll={noop} onProfile={noop} />
+    </TabFrame>
+  ) : null;
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) => /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c);
 
 const FILES: Record<string, string> = {
-  "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "08": "08-Home.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
   "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
@@ -286,7 +316,7 @@ const FILES: Record<string, string> = {
 function Frame() {
   const lang = params.get("lang");
   // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
-  const [ready, setReady] = useState(params.get("screen") !== "15");
+  const [ready, setReady] = useState(!["15", "08"].includes(params.get("screen") ?? ""));
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -303,8 +333,9 @@ function Frame() {
     <>
       <main>
         {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
-        <div data-kit-part={`screen ${params.get("screen")}`} style={params.get("screen") === "15" ? { minHeight: "100dvh" } : undefined}>
-          {params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
+        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
+          {params.get("screen") === "08" ? <Screen08 state={params.get("state") ?? "home"} onReady={() => setReady(true)} />
+            : params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
             : params.get("screen") === "11" ? <Screen11 />
             : params.get("screen") === "23" ? <Screen23 state={params.get("state") ?? "failed"} />
@@ -356,7 +387,7 @@ function Sheet() {
   return (
     <main style={{ padding: 16, font: "13px system-ui" }}>
       <h1 style={{ font: "700 16px system-ui", margin: "0 0 4px" }}>
-        KB-413 screen {screen} - {state}
+        {["08", "14", "15", "16", "17", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
         {lang ? ` - ${lang}` : ""} - {w} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
       </h1>
       <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>

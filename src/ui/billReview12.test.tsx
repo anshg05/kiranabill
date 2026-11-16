@@ -16,17 +16,23 @@ const item = (spokenName: string, over: Partial<ParsedItem> = {}): ParsedItem =>
 const row = (id: string, name: string, over: Partial<ParsedItem> = {}, filled?: "shop_price" | "repeat") => ({ id, item: item(name, over), displayName: name, source: "voice" as const, ...(filled ? { filled } : {}) });
 const flag = (lineId: string, severity: ShownFlag["severity"], message: string, acknowledged = false): ShownFlag =>
   ({ id: `${lineId}-${severity}`, code: "unusual_rate", severity, message, itemIndex: 0, lineId, utteranceId: 1, anchorLineId: lineId, transcript: "", key: `${lineId}-${severity}`, acknowledged }) as ShownFlag;
-const base = { onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
+const base = { onEdit: () => null, onRemove: () => {} };
 const firstCard = () => within(screen.getByRole("list", { name: "Bill items" })).getAllByRole("listitem")[0]!.firstElementChild!;
 
 describe("screen 12: the frame", () => {
-  it("'New bill' (owner, 15 Nov 2026 - replaces KB-340's shop name here), the Draft badge and the menu; NO back arrow until Home exists (owner, answer 1); the phone layout, centred, on any width (D110 8.11)", () => {
-    const { container } = render(<BillView {...base} shopName="Gupta Kirana Store" lines={[row("l1", "चीनी")]} onOpenHistory={() => {}} />);
+  it("'New bill' (owner, 15 Nov 2026 - replaces KB-340's shop name here), the Draft badge, the Back arrow to Home (KB-414 step 1, answer 1) and NO ≡ menu; the phone layout, centred, on any width (D110 8.11)", () => {
+    const onBack = vi.fn();
+    const { container } = render(<BillView {...base} shopName="Gupta Kirana Store" lines={[row("l1", "चीनी")]} onBack={onBack} />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("New bill");
     expect(screen.getByRole("heading", { level: 1 }).className).toMatch(/text-kb-18/);
     expect(screen.getByText("Draft · not saved").className).toMatch(/bg-kb-muted/);
-    expect(screen.getByRole("button", { name: "Menu" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Menu" })).toBeNull();
+    // TopBar's back button as drawn: 44 px, the 24 px chevron
+    const back = screen.getByRole("button", { name: "Back" });
+    expect(back.className).toMatch(/h-11 w-11/);
+    expect(back.querySelector("svg")!.getAttribute("width")).toBe("24");
+    fireEvent.click(back);
+    expect(onBack).toHaveBeenCalledOnce();
     expect(screen.queryByRole("table")).toBeNull();
     expect(container.querySelector("[class*='max-w-[480px]']")).toBeTruthy();
   });

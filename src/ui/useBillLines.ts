@@ -21,7 +21,7 @@ import { amountNeeded, visibleFlags, type FinalFlag, type FinalLine } from "@/do
 import type { LearnDiscarded } from "@/domain/learning";
 import type { BillLine } from "@/data/voiceBilling";
 import type { KiranaBillDB, LocalMeta } from "@/data/db";
-import { DRAFT_SAVE_DELAY_MS, clearDraft, draftRow, loadDraft, saveDraft } from "./billDraftStore";
+import { DRAFT_SAVE_DELAY_MS, clearDraft, draftRow, holdsRecording, isWorthSaving, loadDraft, saveDraft } from "./billDraftStore";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
 // utterance it came from, and what was spoken), editing, removing with a
@@ -230,6 +230,8 @@ export interface BillLines {
   reset: () => void;
   /** KB-313: the saved draft (if any) has been looked at - false only while it loads. */
   readonly ready: boolean;
+  /** KB-414 Q1: set (with `ready`) when the bill found on the phone at start holds something - the app opens on it, not on Home. */
+  readonly resumed: boolean;
   discardDraft: () => Promise<void>;
   clearBill: () => Promise<void>;
   /** KB-413 bug 2: this bill's draft row as it is now, for Generate / Stop to write in the SAME transaction as the recording (null: no
@@ -280,6 +282,8 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
   const shopId = persist?.shopId ?? null;
   // ready: the saved draft (if any) has been looked at. Without a database there is nothing to wait for.
   const [ready, setReady] = useState(persist === undefined);
+  // KB-414 Q1: the bill found on the phone at start holds lines, a customer, a not-added order, a recording or 10's take
+  const [resumed, setResumed] = useState(false);
   // After Bill Banao until the next bill: the saved bill's draft must not come back.
   const frozen = useRef(false);
   const latest = useRef(state);
@@ -291,12 +295,18 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     void (async () => {
       try {
         const stored = await loadDraft(db, shopId);
-        if (!stored || !live) return;
+        if (!live) return;
+        if (!stored) {
+          if (await holdsRecording(db, shopId, "")) setResumed(true); // 10's take kept before its draft was (KB-413 bug 2)
+          return;
+        }
         if (await db.bills.get(stored.localId)) {
           await clearDraft(db, shopId); // finalised meanwhile (a crash right after Bill Banao) - never re-finalise it
           return;
         }
         dispatch({ type: "restore", state: stored });
+        // KB-414 Q1: the app opens on this bill only when it holds something - a draft left empty (its recording removed) opens Home
+        if (live && (isWorthSaving(stored) || (await holdsRecording(db, shopId, stored.localId)))) setResumed(true);
       } catch (err) {
         console.warn("[billDraft] restore failed:", err instanceof Error ? err.message : err);
       } finally {
@@ -454,6 +464,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     startedAt: state.startedAt,
     reset,
     ready,
+    resumed,
     discardDraft,
     draftRow: row,
     clearBill,

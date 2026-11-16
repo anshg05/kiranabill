@@ -11,7 +11,7 @@ import { setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
 import type { ShownFlag } from "./useBillLines";
 import type { VoiceView } from "./useVoiceBilling";
-import { chooseMenu } from "./menuTestUtil";
+import { SignOutButton } from "./OfflineUi";
 
 vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signInWithGoogle: () => Promise.resolve() }) }));
 
@@ -32,7 +32,7 @@ afterEach(() => {
 
 const lines = (t = "2 kilo chini"): (BillLine & { id: string })[] =>
   parseUtterance(t, SEED_PARSER_CATALOG)!.map((item, i) => ({ id: `l${i}`, item, displayName: SEED_PARSER_CATALOG.byId.get(item.catalogId!)!.displayName, source: "fastpath" as const }));
-const base = { lines: [] as (BillLine & { id: string })[], onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
+const base = { lines: [] as (BillLine & { id: string })[], onEdit: () => null, onRemove: () => {} };
 const voice = (over: Partial<VoiceView> = {}): VoiceView => ({ phase: "idle", transcript: null, message: null, elapsedMs: 0, disabledReason: null, ...over });
 const highFlag = (message: string, code = "duplicate_line"): ShownFlag =>
   ({ id: "f1", code, severity: "HIGH", message, itemIndex: null, lineId: null, utteranceId: 1, anchorLineId: "l0", transcript: "do kilo chini", key: "k1", acknowledged: false }) as ShownFlag;
@@ -59,11 +59,12 @@ describe("the mic and the recording text", () => {
 });
 
 describe("the bill screen", () => {
-  it.each(LANGUAGES)("menu, headings, total, customer - in %s; Bill Banao never changes", (l) => {
+  it.each(LANGUAGES)("Back, Clear bill, headings, total, customer - in %s; Bill Banao never changes", (l) => {
     use(l);
-    render(<BillView {...base} lines={lines()} onFinalise={() => {}} onOpenCatalog={() => {}} onOpenSettings={() => {}} onOpenHistory={() => {}} onClearBill={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: say("menu.label", {}, l) })); // KB-342: the items exist while the menu is open
-    for (const id of ["menu.history", "menu.catalog", "menu.settings", "menu.clear", "menu.signout"] as const) expect(screen.getAllByText(say(id, {}, l)).length).toBeGreaterThan(0);
+    render(<BillView {...base} lines={lines()} onFinalise={() => {}} onBack={() => {}} onClearBill={() => {}} />);
+    // KB-414 step 1: the ≡ menu is gone - Back (to Home) and Clear bill are on the bill; the rest is the bottom nav (appTabs.test)
+    expect(screen.getByRole("button", { name: say("settings.back", {}, l) })).toBeTruthy();
+    expect(screen.getByRole("button", { name: say("menu.clear", {}, l) })).toBeTruthy();
     expect(screen.getAllByText(say("bill.total", {}, l)).length).toBeGreaterThan(0);
     expect(screen.getByText(say("customer.label", {}, l))).toBeTruthy();
     // KB-413: no table headers on the phone layout (D110 8.11); a line's sheet labels its editors in the chosen language
@@ -147,8 +148,8 @@ describe("sync chip and dialogs", () => {
   });
   it("the sign-out warning - title, line and buttons", () => {
     use("hi");
-    render(<BillView {...base} unsynced={{ pending: 2, conflict: 0 }} />);
-    chooseMenu(say("menu.signout", {}, "hi"));
+    render(<SignOutButton onSignOut={() => {}} billInProgress={false} unsynced={{ pending: 2, conflict: 0 }} />); // KB-414: on More
+    fireEvent.click(screen.getByRole("button", { name: say("menu.signout", {}, "hi") }));
     const dialog = screen.getByRole("alertdialog", { name: say("signout.title", {}, "hi") });
     expect(dialog.textContent).toContain(say("signout.pending.many", { n: 2 }, "hi"));
     expect(within(dialog).getByRole("button", { name: say("signout.anyway", {}, "hi") })).toBeTruthy();

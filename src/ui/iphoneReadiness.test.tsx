@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import "fake-indexeddb/auto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,8 @@ import { useVoiceCapture } from "./useVoiceCapture";
 import { BillView } from "./BillingScreen";
 import { ShareBar } from "./ShareBar";
 import { InstallHint } from "./InstallHint";
+import { HomeScreen } from "./HomeScreen";
+import { KiranaBillDB } from "@/data/db";
 import { setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
 import type { ReceiptShare } from "./useReceiptShare";
@@ -165,11 +168,12 @@ describe("the install hint (Safari has no install prompt - Share, then Add to Ho
     render(<InstallHint eligible />);
     expect(screen.getByRole("note").textContent).toContain("Share dabayein");
   });
-  it("the billing screen shows it on an empty bill only", () => {
+  it("KB-414 Q14: it moved from the bill to Home - Home shows it, the bill screen never does", () => {
     onIphone();
-    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} />);
+    const { unmount } = render(<HomeScreen localDb={new KiranaBillDB(`ios-${crypto.randomUUID()}`)} shopId="s" onRecord={() => {}} onType={() => {}} onOpenBill={() => {}} onSeeAll={() => {}} onProfile={() => {}} />);
     expect(screen.getByRole("note")).toBeTruthy();
-    rerender(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} saved={{ receiptNumber: "1" }} />);
+    unmount();
+    render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} />);
     expect(screen.queryByRole("note")).toBeNull();
   });
 });

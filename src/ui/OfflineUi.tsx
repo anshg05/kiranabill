@@ -149,3 +149,35 @@ export function ConfirmDialog({ title, lines, confirmLabel, onCancel, onConfirm 
     </Overlay>
   );
 }
+
+/**
+ * KB-414 step 1: Sign out on More (the ≡ menu is gone) - the same rule as before (16 §2): never a silent sign-out over bills that
+ * haven't reached the server; with any, it asks first with the counts (and says the bill in progress stays). Sign out is 17's red,
+ * bordered button (step 4 gives the page its look).
+ */
+export function SignOutButton({ unsynced, billInProgress, onSignOut }: { unsynced?: Unsynced; billInProgress: boolean; onSignOut: () => void }) {
+  const { t } = useT();
+  const [asking, setAsking] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => (unsynced && unsynced.pending + unsynced.conflict > 0 ? setAsking(true) : onSignOut())}
+        className="font-kb kb-hit mt-6 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-kb-border bg-kb-card text-kb-15 font-bold text-kb-err"
+      >
+        {t("menu.signout")}
+      </button>
+      {asking && unsynced && (
+        <ConfirmDialog
+          {...signOutWarning(unsynced, billInProgress)}
+          confirmLabel={t("signout.anyway")}
+          onCancel={() => setAsking(false)}
+          onConfirm={() => {
+            setAsking(false);
+            onSignOut();
+          }}
+        />
+      )}
+    </>
+  );
+}

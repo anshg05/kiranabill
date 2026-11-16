@@ -35,7 +35,12 @@ flowchart TD
     style Billing fill:#2C3E7B,color:#fff
 ```
 
-**S3 Billing is home.** Every other screen is a detour that returns to it. The app opens on S3 and
+**Superseded by `KB-414` step 1 (owner + reviewer, 16 Nov 2026; `26` §6):** the app opens on **Home (08)** with the bottom nav
+(Home · Bills = S5 · Items = S4 · More = S7) - **unless the bill on the phone holds something** (lines, a customer, a not-added order,
+a recording not yet in it, or 10's saved recording): then it opens on that bill (S3 = 12), as before, so 10 / 11 / 23 / 24 come back
+after a full close. Home's mic records (09), "Type items" opens S3 with Add item. 12's Back arrow and Android Back go to Home (the
+bill is kept); Back on Bills / Items / More goes to Home; Back on Home leaves the app (to the background). The tabs open OVER the
+bill, which stays as it is. Was: S3 Billing is home. Every other screen is a detour that returns to it. The app opens on S3 and
 the back action from anywhere returns to S3, never to a blank state.
 
 ---
@@ -141,7 +146,7 @@ product and asks for a customer name.
 
 ### Spoken commands (`KB-339`, D86)
 
-After the transcript lands (step 2) and before any parsing: if the **whole** utterance is a command - "bas" / "ho gaya" / "bill banao" (never an item: "Tap Bill Banao to finish"), "hatao" / "undo" (the last added line is removed, Undo brings it back; "Nothing to remove" on an empty bill), "sab hatao" (not a command: "use the menu → Clear bill") - it is answered on the spot and the flow ends there: no parse, no turn in `KB-404`'s numbers, no "Not added" entry. A sentence that merely contains the word ("chini aur bas") is an order and continues as in this section.
+After the transcript lands (step 2) and before any parsing: if the **whole** utterance is a command - "bas" / "ho gaya" / "bill banao" (never an item: "Tap Bill Banao to finish"), "hatao" / "undo" (the last added line is removed, Undo brings it back; "Nothing to remove" on an empty bill), "sab hatao" (not a command: "tap Clear bill under the items" - `KB-414`) - it is answered on the spot and the flow ends there: no parse, no turn in `KB-404`'s numbers, no "Not added" entry. A sentence that merely contains the word ("chini aur bas") is an order and continues as in this section.
 
 ## 4. Finalising a bill
 

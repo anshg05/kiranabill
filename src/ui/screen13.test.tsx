@@ -41,7 +41,7 @@ const shareOf = (over: Partial<ReceiptShare> = {}): ReceiptShare => ({
 function saved(over: { share?: ReceiptShare; onNewBill?: () => void; cancelled?: boolean } = {}) {
   const r = over.cancelled ? { ...receipt, cancelled: "CANCELLED" } : receipt;
   return render(
-    <BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onNewBill={over.onNewBill ?? (() => {})}
+    <BillView lines={[]} onEdit={() => null} onRemove={() => {}} onNewBill={over.onNewBill ?? (() => {})}
       saved={{ localId: "b515", receiptNumber: "515", receipt: r } as never} share={over.share ?? shareOf()} />,
   );
 }
@@ -167,13 +167,13 @@ describe("13 Bill saved, as drawn", () => {
 
   it("one item: '1 item · …'", () => {
     const one = { ...receipt, rows: receipt.rows.slice(0, 1) };
-    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} saved={{ localId: "b", receiptNumber: "515", receipt: one } as never} share={shareOf()} />);
+    render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} saved={{ localId: "b", receiptNumber: "515", receipt: one } as never} share={shareOf()} />);
     expect(screen.getByText("1 item · Cash · 1:18 pm")).toBeTruthy();
   });
 
   it("a named customer is said by name", () => {
     const named = { ...receipt, customer: "Ramesh" };
-    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} saved={{ localId: "b", receiptNumber: "515", receipt: named } as never} share={shareOf()} />);
+    render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} saved={{ localId: "b", receiptNumber: "515", receipt: named } as never} share={shareOf()} />);
     expect(screen.getByText("3 items · Ramesh · 1:18 pm")).toBeTruthy();
   });
 });

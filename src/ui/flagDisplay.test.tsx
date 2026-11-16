@@ -60,7 +60,6 @@ function Harness({ utterances }: { utterances: Utterance[] }) {
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       removed={bill.removed}

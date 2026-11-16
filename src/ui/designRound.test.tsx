@@ -206,13 +206,13 @@ describe("#15 - every disabled button says why, in one short line", () => {
   });
 
   it("Bill Banao on an empty bill: 'Add an item first'", () => {
-    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onFinalise={() => {}} />);
+    const { rerender } = render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} onFinalise={() => {}} />);
     expect(screen.getByText("Add an item first")).toBeTruthy();
     const items = parseUtterance("2 kilo chini", SEED_PARSER_CATALOG)!;
     rerender(
       <BillView
         lines={items.map((item, i) => ({ id: `l${i}`, item, displayName: "Chini", source: "fastpath" as const, utteranceId: 1, original: item }))}
-        onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onFinalise={() => {}}
+        onEdit={() => null} onRemove={() => {}} onFinalise={() => {}}
       />,
     );
     expect(screen.queryByText("Add an item first")).toBeNull();
@@ -223,7 +223,7 @@ describe("#15 - every disabled button says why, in one short line", () => {
     render(
       <BillView
         lines={items.map((item, i) => ({ id: `l${i}`, item, displayName: "Chini", source: "fastpath" as const, utteranceId: 1, original: item }))}
-        onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onFinalise={() => {}} saving
+        onEdit={() => null} onRemove={() => {}} onFinalise={() => {}} saving
       />,
     );
     expect(screen.getByText("Saving the bill…")).toBeTruthy();
@@ -258,7 +258,7 @@ describe("#15 - Settings Save says 'No changes to save yet' until the shop's det
 // ---------------------------------------------------------------------------------------------------------------- #16
 describe("#16 - after the recording stops: 'Understanding…' until the result or the error arrives", () => {
   const view = (phase: "listening" | "transcribing" | "resolving") => (
-    <BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onMicTap={() => {}} voice={{ ...IDLE_VOICE, phase, transcript: phase === "listening" ? null : "do kilo chini" }} />
+    <BillView lines={[]} onEdit={() => null} onRemove={() => {}} onMicTap={() => {}} voice={{ ...IDLE_VOICE, phase, transcript: phase === "listening" ? null : "do kilo chini" }} />
   );
   it("listening still says Listening…; transcribing and resolving say Understanding…, on the line and on the mic", () => {
     const { rerender } = render(view("listening"));

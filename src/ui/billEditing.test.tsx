@@ -38,7 +38,7 @@ function Harness({ transcripts }: { transcripts: string[] }) {
     }
     // once, on mount
   }, []);
-  return <BillView lines={bill.rows} onSignOut={() => {}} onEdit={bill.edit} onRemove={bill.remove} removed={bill.removed} onUndo={bill.undo} />;
+  return <BillView lines={bill.rows} onEdit={bill.edit} onRemove={bill.remove} removed={bill.removed} onUndo={bill.undo} />;
 }
 
 // KB-413 step 1: the desktop table is gone (D110 8.11) and a line's editors live in its edit sheet - billQueries finds them there.

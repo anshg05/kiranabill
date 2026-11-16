@@ -55,10 +55,10 @@ import { coldPhases, markCold } from "./coldMarks";
 import { AddItemSheet } from "./AddItemSheet";
 import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
-import { HeaderMenu } from "./HeaderMenu";
-import { InstallHint } from "./InstallHint";
-import { SyncChipView, ConfirmDialog, signOutWarning, clearBillWarning } from "./OfflineUi";
-import type { SyncChip, Unsynced } from "./syncChip";
+import { SyncChipView, ConfirmDialog, SignOutButton, clearBillWarning } from "./OfflineUi";
+import { BillBack, TabFrame, useStartTab } from "./AppTabs";
+import { HomeScreen } from "./HomeScreen";
+import type { SyncChip } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import { markRecordingBilled, submitRecording, type VoiceJobOutcome } from "@/data/voiceJob";
@@ -346,7 +346,7 @@ export function BillingScreen() {
           if (!stored) return;
           onNewBill();
           startFrom(reissueState(stored, items, replacementLocalId, new Date().toISOString()));
-          setHistoryOpen(false);
+          setTab("bill");
         })
         .catch((err: unknown) => console.warn("[reissue] could not build the new bill:", err instanceof Error ? err.message : err));
     },
@@ -358,12 +358,15 @@ export function BillingScreen() {
     // KB-404 (D80): the review capture (heard / billed pairs) is cleared when the shopkeeper signs out.
     void clearThenSignOut(localDb ?? null, shop?.id ?? null, signOut);
   };
-  // KB-310: History opens over the bill - the bill in progress stays as it is.
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [catalogOpen, setCatalogOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  // KB-340 (D86): the shop's name in the header; re-read when Settings closes, so a rename shows at once.
-  const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, `${settingsOpen}:${catalogPulls}`);
+  // KB-414 step 1 (owner + reviewer, 16 Nov 2026): the tabs replace the ≡ menu - Home, Bills (History), Items (Catalog) and More
+  // (Settings) open over the bill, which stays as it is (KB-310); the app opens on Home unless the bill holds something (Q1).
+  const [tab, setTab] = useStartTab(bill.ready, bill.resumed);
+  const goHome = useCallback(() => setTab("home"), [setTab]);
+  const [openBill, setOpenBill] = useState<string | undefined>(undefined); // Home's Recent bills -> that bill's detail on Bills
+  const [recordSignal, setRecordSignal] = useState(0);
+  const [addSignal, setAddSignal] = useState(0);
+  // KB-340 (D86): the shop's name (on Home); re-read when More (Settings) closes, so a rename shows at once.
+  const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, `${tab === "more"}:${catalogPulls}`);
   const sync = useSyncChip(localDb);
   // KB-413 step 2 (owner, answer 1): the stopped recording on this phone, so 10 survives the app closing - with the bill's draft in the
   // same write (bug 2: after a full close the take comes back on the SAME bill)
@@ -377,16 +380,19 @@ export function BillingScreen() {
   );
   return (
     <>
+    {tab === "bill" && <BillBack onBack={goHome} />}
     <BillView
       shopName={shopName}
       lines={bill.rows}
-      onSignOut={onSignOut}
+      onBack={goHome}
+      addSignal={addSignal}
       orderBar={(openAdd, noteSlot) => (
         <OrderRecorder
           orders={orders}
           shopName={shopName ?? ""}
           takes={takes}
           noteSlot={noteSlot}
+          startSignal={recordSignal}
           hasLines={bill.rows.length > 0}
           disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
           onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms, bill.rows.length === 0, bill.draftRow()))}
@@ -422,48 +428,81 @@ export function BillingScreen() {
       saveError={finaliser.error}
       onNewBill={onNewBill}
       share={share}
-      onOpenHistory={localDb && shop ? () => setHistoryOpen(true) : undefined}
-      onOpenCatalog={localDb && shop && deviceId ? () => setCatalogOpen(true) : undefined}
-      onOpenSettings={localDb && shop && deviceId ? () => setSettingsOpen(true) : undefined}
       syncChip={sync.chip}
       syncDetail={sync.detail}
-      unsynced={sync.unsynced}
       onClearBill={() => {
         // KB-385: a cleared bill takes its recordings off the phone too (not billed - the server deletes them 7 days after upload)
         if (localDb && bill.ready) void settleBilledRecordings(localDb, bill.localId).catch(() => {});
         void bill.clearBill();
       }}
-      covered={historyOpen || catalogOpen || settingsOpen}
+      covered={tab !== "bill"}
     />
-    {historyOpen && localDb && shop && (
-      <HistoryScreen
-        localDb={localDb}
-        shopId={shop.id}
-        deviceId={deviceId ?? undefined}
-        billInProgress={billInProgress}
-        onReissue={onReissue}
-        render={renderReceiptFiles}
-        onClose={() => setHistoryOpen(false)}
-      />
-    )}
-    {settingsOpen && localDb && shop && deviceId && (
-      <SettingsScreen localDb={localDb} shopId={shop.id} deviceId={deviceId} deviceDb={deviceDb} reconcile={() => reconcileBills(supabase, localDb, shop.id)} onClose={() => setSettingsOpen(false)} />
-    )}
-    {catalogOpen && localDb && shop && deviceId && (
-      <CatalogScreen
-        localDb={localDb}
-        shopId={shop.id}
-        save={(id, pricePaise) => saveProductPrice(supabase, localDb, shop.id, id, pricePaise)}
-        add={(base) => addFromReadyCatalog(supabase, localDb, shop.id, deviceId, base)}
-        importRows={(rows, onProgress) => importProducts(supabase, localDb, shop.id, deviceId, rows, onProgress)}
-        saveDetails={(id, patch) => saveProductDetails(supabase, localDb, shop.id, id, patch)}
-        setActive={(id, active) => setProductActive(supabase, localDb, shop.id, id, active)}
-        create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
-        ignoreSuggestion={(id) => ignorePriceSuggestionFor(localDb, shop.id, id, deviceId, Date.now())}
-        removeAlias={(alias, id) => removeLearnedAlias(localDb, shop.id, deviceId, alias, id)}
-        onChanged={() => reloadCatalog()}
-        onClose={() => setCatalogOpen(false)}
-      />
+    {tab !== "bill" && (
+      <TabFrame tab={tab ?? "home"} onTab={(next) => (setOpenBill(undefined), setTab(next))} offline={sync.chip?.kind === "offline"}>
+        {(tab === null || tab === "home") && (
+          // until the draft has been looked at (tab null): Home's page, empty - never a flash of the bill
+          localDb && shop && tab === "home" ? (
+            <HomeScreen
+              localDb={localDb}
+              shopId={shop.id}
+              shopName={shopName}
+              onRecord={() => (setTab("bill"), setRecordSignal((n) => n + 1))}
+              onType={() => (setTab("bill"), setAddSignal((n) => n + 1))}
+              onOpenBill={(id) => (setOpenBill(id), setTab("bills"))}
+              onSeeAll={() => setTab("bills")}
+              onProfile={() => setTab("more")}
+            />
+          ) : (
+            <div className="fixed inset-0 z-20 bg-kb-bg" />
+          )
+        )}
+        {tab === "bills" && localDb && shop && (
+          <HistoryScreen
+            localDb={localDb}
+            shopId={shop.id}
+            deviceId={deviceId ?? undefined}
+            billInProgress={billInProgress}
+            onReissue={onReissue}
+            render={renderReceiptFiles}
+            openBill={openBill}
+            onClose={goHome}
+          />
+        )}
+        {tab === "more" && localDb && shop && deviceId && (
+          <SettingsScreen
+            localDb={localDb}
+            shopId={shop.id}
+            deviceId={deviceId}
+            deviceDb={deviceDb}
+            reconcile={() => reconcileBills(supabase, localDb, shop.id)}
+            footer={
+              <>
+                <div className="mt-6">
+                  <SyncChipView chip={sync.chip} detail={sync.detail} />
+                </div>
+                <SignOutButton unsynced={sync.unsynced} billInProgress={billInProgress} onSignOut={onSignOut} />
+              </>
+            }
+            onClose={goHome}
+          />
+        )}
+        {tab === "items" && localDb && shop && deviceId && (
+          <CatalogScreen
+            localDb={localDb}
+            shopId={shop.id}
+            save={(id, pricePaise) => saveProductPrice(supabase, localDb, shop.id, id, pricePaise)}
+            add={(base) => addFromReadyCatalog(supabase, localDb, shop.id, deviceId, base)}
+            importRows={(rows, onProgress) => importProducts(supabase, localDb, shop.id, deviceId, rows, onProgress)}
+            saveDetails={(id, patch) => saveProductDetails(supabase, localDb, shop.id, id, patch)}
+            setActive={(id, active) => setProductActive(supabase, localDb, shop.id, id, active)}
+            create={(product) => addCustomProduct(supabase, localDb, shop.id, deviceId, product)}
+            ignoreSuggestion={(id) => ignorePriceSuggestionFor(localDb, shop.id, id, deviceId, Date.now())}
+            removeAlias={(alias, id) => removeLearnedAlias(localDb, shop.id, deviceId, alias, id)}
+            onChanged={() => reloadCatalog()}
+            onClose={goHome}
+          />
+        )}
+      </TabFrame>
     )}
     </>
   );
@@ -476,7 +515,10 @@ interface BillViewProps {
   shopName?: string;
   /** KB-303: the bill is always editable - every line has a stable id. */
   lines: readonly (BillLine & { readonly id: string })[];
-  onSignOut: () => void;
+  /** KB-414 step 1: 12's Back arrow (and Android Back, AppTabs' BillBack) - to Home; the bill is kept. */
+  onBack?: () => void;
+  /** KB-414 step 1: Home's "Type items" - each new value opens Add item (empty search). */
+  addSignal?: number;
   /** KB-385 (D101): the V3 order recorder in the bottom bar - when given, it replaces the old mic (voice / onMicTap). */
   /** noteSlot: where the recorder's warnings go - the bill's scrolling list (KB-413 step-2 fix 1), never the bottom panel */
   orderBar?: (openAdd: () => void, noteSlot: HTMLElement | null) => ReactNode;
@@ -526,22 +568,14 @@ interface BillViewProps {
   onNewBill?: () => void;
   /** KB-309: share the saved receipt (image, PDF, WhatsApp). */
   share?: ReceiptShare | null;
-  /** KB-310: the ≡ menu's History. */
-  onOpenHistory?: () => void;
-  /** KB-311: the ≡ menu's Catalog. */
-  onOpenCatalog?: () => void;
-  /** KB-312: the ≡ menu's Settings. */
-  onOpenSettings?: () => void;
   /** KB-313: the header chip (05 §7) and what its detail says. A status only - it never blocks billing. */
   /** KB-404 (D80): the review capture is on - a visible badge while it is. */
   reviewMode?: boolean;
   syncChip?: SyncChip | null;
   syncDetail?: { readonly pending: number; readonly conflict: number; readonly lastAttemptAt: string | null };
-  /** KB-313: bills that haven't reached the server (pending) or never will on their own (conflict) - the sign-out warning. */
-  unsynced?: Unsynced;
-  /** KB-313: "Clear bill" in the ≡ menu - offered only while the bill has lines. */
+  /** KB-313 + KB-414 Q2: "Clear bill" - a text button under the lines (the ≡ menu is gone), offered only while the bill has lines. */
   onClearBill?: () => void;
-  /** KB-342: a full-screen overlay (History, Catalog, Settings) is open over this screen - nothing behind it may be reached by keyboard or screen reader. */
+  /** KB-342: a full-screen overlay (a tab screen: Home, Bills, Items, More) is open over this screen - nothing behind it may be reached by keyboard or screen reader. */
   covered?: boolean;
 }
 
@@ -870,7 +904,8 @@ function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; on
 
 export function BillView({
   lines,
-  onSignOut,
+  onBack,
+  addSignal,
   orderBar,
   orderEntries,
   voice = IDLE_VOICE,
@@ -903,13 +938,9 @@ export function BillView({
   saveError = null,
   onNewBill,
   share = null,
-  onOpenHistory,
-  onOpenCatalog,
-  onOpenSettings,
   syncChip = null,
   syncDetail,
   reviewMode,
-  unsynced,
   onClearBill,
   covered,
 }: BillViewProps) {
@@ -919,7 +950,7 @@ export function BillView({
   // KB-305: the add-item panel, and what its search starts with.
   const [addItem, setAddItem] = useState<{ query: string } | null>(null);
   const [changing, setChanging] = useState<string | null>(null); // KB-336: the line whose product is being changed
-  const [confirm, setConfirm] = useState<"signout" | "clear" | null>(null);
+  const [confirm, setConfirm] = useState<"clear" | null>(null);
   const canAdd = catalog !== null && onAddByHand !== undefined;
   // KB-401 (D67): a waiting app update may reload the page only while NOTHING here would be lost: an empty bill, no
   // utterance in flight, nothing typed, no saved-bill screen to leave, no panel or dialog open.
@@ -1011,6 +1042,11 @@ export function BillView({
 
   // The one way into the Add item panel (button, voice failure, Not-added entry); on the saved screen it starts the next bill first.
   const openAdd = canAdd ? (query: string) => (readOnly ? nextBillThen(() => setAddItem({ query }))() : setAddItem({ query })) : undefined;
+  // KB-414 step 1: Home's "Type items" - 12 opens with Add item open (once per tap; nothing when the catalog is still loading)
+  useEffect(() => {
+    if (addSignal) openAdd?.("");
+    // only a new tap
+  }, [addSignal]);
 
   // Unpriced lines add nothing - they're "—", not ₹0 (13-DESIGN.md §6c).
   const total = sumPaise(lines.flatMap((l) => (l.item.total === null ? [] : [l.item.total])));
@@ -1067,11 +1103,19 @@ export function BillView({
       <div className="mx-auto flex h-full w-full max-w-[480px] flex-col">
         {/* KB-413 step 3 (24-Offline): no internet - the ink strip across the top says so, in place of the "Offline" chip */}
         {syncChip?.kind === "offline" && <OfflineStrip>{t("offline.strip")}</OfflineStrip>}
-        {/* 12-BillReview's top bar (owner, answer 1): no Back arrow until Home (08) exists; today's menu stays on the right. */}
-        <header className="flex items-center gap-2 pt-3 pl-4 pr-3 pb-1">
-          {/* KB-413 (owner, 15 Nov 2026): "New bill" as 12-BillReview draws it - replaces KB-340's shop name in this header (the name is
-              on the receipt and, with KB-414, on Home). */}
-          <h1 className="min-w-0 flex-1 text-kb-18 font-bold">{readOnly ? t("bill.savedLabel") : t("bill.new")}</h1>
+        {/* 12-BillReview's top bar: the Back arrow to Home (KB-414 step 1, answer 1 of the KB-413 plan) - the ≡ menu is gone (its items are
+            the bottom nav, Clear bill under the lines, Sign out on More). */}
+        <header className={`flex items-center gap-2 pt-3 pr-3 pb-1 ${onBack ? "pl-3" : "pl-4"}`}>
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            {onBack && (
+              <button type="button" aria-label={t("settings.back")} onClick={onBack} className="kb-hit-icon flex h-11 w-11 flex-none items-center justify-center text-kb-ink">
+                <Icon icon={KB_ICONS.ChevronLeft} size={24} />
+              </button>
+            )}
+            {/* KB-413 (owner, 15 Nov 2026): "New bill" as 12-BillReview draws it - replaces KB-340's shop name in this header (the name is
+                on the receipt and on Home). */}
+            <h1 className="min-w-0 flex-1 text-kb-18 font-bold">{readOnly ? t("bill.savedLabel") : t("bill.new")}</h1>
+          </div>
           <SyncChipView chip={syncChip?.kind === "offline" ? null : syncChip} detail={syncDetail} />
           {reviewMode && (
             <span data-testid="review-badge" className="flex-none whitespace-nowrap rounded-full bg-kb-muted px-[10px] py-[5px] text-kb-12 font-bold text-kb-sub">
@@ -1083,29 +1127,8 @@ export function BillView({
               <Badge kind="draft">{t("bill.draftBadge")}</Badge>
             </span>
           )}
-          <HeaderMenu
-            label={t("menu.label")}
-            closeWhen={addItem !== null || changing !== null || confirm !== null || voiceBusy || editing !== null}
-            items={[
-              ...(onOpenHistory ? [{ key: "history", label: t("menu.history"), onSelect: onOpenHistory }] : []),
-              ...(onOpenCatalog ? [{ key: "catalog", label: t("menu.catalog"), onSelect: onOpenCatalog }] : []),
-              ...(onOpenSettings ? [{ key: "settings", label: t("menu.settings"), onSelect: onOpenSettings }] : []),
-              ...(onClearBill && lines.length > 0 && !saved ? [{ key: "clear", label: t("menu.clear"), onSelect: () => setConfirm("clear" as const) }] : []),
-              {
-                key: "signout",
-                label: t("menu.signout"),
-                // 16 §2: never a silent sign-out over bills that haven't reached the server.
-                onSelect: () => (unsynced && unsynced.pending + unsynced.conflict > 0 ? setConfirm("signout" as const) : onSignOut()),
-              },
-            ]}
-          />
         </header>
 
-        <InstallHint eligible={lines.length === 0 && !saved} />
-
-        {confirm === "signout" && unsynced && (
-          <ConfirmDialog {...signOutWarning(unsynced, lines.length > 0 && !saved)} confirmLabel={t("signout.anyway")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onSignOut(); }} />
-        )}
         {confirm === "clear" && (
           <ConfirmDialog {...clearBillWarning(lines.length)} confirmLabel={t("menu.clear")} onCancel={() => setConfirm(null)} onConfirm={() => { setConfirm(null); onClearBill?.(); }} />
         )}
@@ -1227,6 +1250,12 @@ export function BillView({
               {t("add.title")}
             </button>
           </span>
+          {/* KB-414 Q2 (owner, 16 Nov 2026): Clear bill - from the ≡ menu to a text button here, while the bill has lines; it asks first */}
+          {onClearBill && lines.length > 0 && !readOnly && (
+            <Button variant="destructive-text" onClick={() => setConfirm("clear")}>
+              {t("menu.clear")}
+            </Button>
+          )}
           <div ref={endRef} />
         </div>
         {editingRow && (

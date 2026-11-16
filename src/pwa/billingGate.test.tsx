@@ -12,7 +12,6 @@ import { HistoryScreen } from "@/ui/HistoryScreen";
 import { SettingsScreen } from "@/ui/SettingsScreen";
 import { IDLE_VOICE } from "@/ui/useVoiceBilling";
 import { isUpdateSafe, resetUpdateGate } from "./updateGate";
-import { chooseMenu } from "@/ui/menuTestUtil";
 
 // KB-401 (D67 - owner, 9 Oct 2026): the update never reloads the page under a bill. The billing screen reports
 // "idle" only for an EMPTY bill with nothing open; every overlay (Add item, History, Catalog, Settings, a dialog)
@@ -27,7 +26,7 @@ function lines(transcript = "2 kilo chini"): (BillLine & { id: string })[] {
   if (!items) throw new Error("did not parse");
   return items.map((item, i) => ({ id: `l${i}`, item, displayName: (item.catalogId && SEED_PARSER_CATALOG.byId.get(item.catalogId)?.displayName) || item.spokenName, source: "fastpath" as const }));
 }
-const base = { lines: [] as (BillLine & { id: string })[], onSignOut: () => {}, onEdit: () => null, onRemove: () => {} };
+const base = { lines: [] as (BillLine & { id: string })[], onEdit: () => null, onRemove: () => {} };
 const parser = prepareParserCatalog(SEED_PARSER_CATALOG.entries);
 
 describe("the billing screen reports whether a reload is safe", () => {
@@ -87,7 +86,8 @@ describe("the billing screen reports whether a reload is safe", () => {
 
   it("a confirmation dialog is not", () => {
     render(<BillView {...base} lines={lines()} onClearBill={() => {}} />);
-    chooseMenu("Sign out");
+    fireEvent.click(screen.getByRole("button", { name: "Clear bill" })); // KB-414: under the lines; its dialog asks first
+    expect(screen.getByRole("alertdialog")).toBeTruthy();
     expect(isUpdateSafe()).toBe(false);
   });
 

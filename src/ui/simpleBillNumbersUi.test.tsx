@@ -101,10 +101,10 @@ describe("KB-341 - bill 58 is saved as the plain number 58 and shown with its la
 
 describe("KB-341 - the saved strip on the billing screen", () => {
   it("'Bill 58 saved' (English) and 'बिल 58 सेव हो गया' (हिन्दी)", () => {
-    const { rerender } = render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} saved={{ receiptNumber: "58" }} />);
+    const { rerender } = render(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} saved={{ receiptNumber: "58" }} />);
     expect(screen.getByRole("status", { name: /saved|सेव/i }).textContent).toBe("Bill 58 saved");
     setScreenLanguage("hi");
-    rerender(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} saved={{ receiptNumber: "58" }} />);
+    rerender(<BillView lines={[]} onEdit={() => null} onRemove={() => {}} saved={{ receiptNumber: "58" }} />);
     expect(screen.getByRole("status", { name: /सेव|saved/i }).textContent).toBe("बिल 58 सेव हो गया");
   });
 });

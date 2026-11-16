@@ -4,9 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { KiranaBillDB, type LocalBaseProduct, type LocalShopProduct } from "@/data/db";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
-import { BillView } from "./BillingScreen";
 import { CatalogScreen } from "./CatalogScreen";
-import { chooseMenu } from "./menuTestUtil";
 
 // KB-311 (owner, 8 Oct 2026): S4 Catalog. Search (the Add item index), rows
 // with name, unit, price and use count, filters, an inline price edit
@@ -77,12 +75,6 @@ const row = (name: string) => rows().find((r) => within(r).getByTestId("name").t
 const search = (q: string) => fireEvent.change(screen.getByRole("searchbox", { name: "Search products" }), { target: { value: q } });
 
 describe("KB-311 - S4 Catalog", () => {
-  it("the ≡ menu has Catalog", () => {
-    const onOpenCatalog = vi.fn();
-    render(<BillView lines={[]} onSignOut={() => {}} onEdit={() => null} onRemove={() => {}} onOpenCatalog={onOpenCatalog} />);
-    chooseMenu("Catalog");
-    expect(onOpenCatalog).toHaveBeenCalledOnce();
-  });
 
   it("rows: this shop's active products, most used first, then by name - name, unit, price, use count", async () => {
     await open();

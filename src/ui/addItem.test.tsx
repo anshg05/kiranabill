@@ -39,9 +39,10 @@ interface Props {
   pre?: ReturnType<typeof spoken>[];
   voice?: VoiceView;
   api?: MutableRefObject<BillLines | null>;
+  addSignal?: number;
 }
 
-function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api }: Props) {
+function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api, addSignal }: Props) {
   const bill = useBillLines(shop.entries);
   useEffect(() => {
     for (const u of pre) bill.add(u.lines, u.flags, u.transcript);
@@ -51,7 +52,6 @@ function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api }: Props) {
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       flags={bill.flags}
@@ -62,6 +62,7 @@ function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api }: Props) {
       catalog={shop}
       onAddByHand={bill.addByHand}
       focusLineId={bill.focusLineId}
+      addSignal={addSignal}
     />
   );
 }
@@ -83,6 +84,21 @@ function commit(label: string, value: string) {
   fireEvent.change(input, { target: { value } });
   fireEvent.keyDown(input, { key: "Enter" });
 }
+
+describe("KB-414 step 1 - Home's Type items", () => {
+  it("opens 12 with Add item open (empty search), once per tap; closing it does not reopen it", () => {
+    const { rerender } = render(<Harness />);
+    expect(panel()).toBeNull();
+    rerender(<Harness addSignal={1} />);
+    expect(panel()).toBeTruthy();
+    expect(search().value).toBe("");
+    fireEvent.keyDown(search(), { key: "Escape" });
+    rerender(<Harness addSignal={1} />);
+    expect(panel()).toBeNull();
+    rerender(<Harness addSignal={2} />);
+    expect(panel()).toBeTruthy();
+  });
+});
 
 describe("KB-305 - the panel", () => {
   it("'Add item' opens a non-modal panel, search focused; TOTAL, the mic and Bill Banao stay in place", () => {

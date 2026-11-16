@@ -318,7 +318,7 @@ describe("11 / 23 survive the app closing - the recording is in the phone's voic
 
 describe("24 Offline: the bill screen, as today's offline waiting - drawn as 24", () => {
   const base = {
-    shopName: "Gupta Kirana Store", flags: [], onSignOut: () => {}, onEdit: () => null, onRemove: () => {}, onAcknowledge: () => {}, onFinalise: vi.fn(),
+    shopName: "Gupta Kirana Store", flags: [], onEdit: () => null, onRemove: () => {}, onAcknowledge: () => {}, onFinalise: vi.fn(),
     catalog: SEED_PARSER_CATALOG, onAddByHand: () => {}, onChangeProduct: () => {}, customer: { name: "Cash", mobile: null }, onCustomerName: () => null, onCustomerMobile: () => null,
   };
   const line = { id: "l1", displayName: "टाटा नमक", source: "manual" as const, item: { spokenName: "टाटा नमक", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "piece", rate: 3000, rateUnit: "piece", total: 3000, priceType: "rate" } };

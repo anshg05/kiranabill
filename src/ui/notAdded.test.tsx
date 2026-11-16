@@ -69,7 +69,6 @@ function Harness({ api }: { api: MutableRefObject<Api | null> }) {
   return (
     <BillView
       lines={bill.rows}
-      onSignOut={() => {}}
       onEdit={bill.edit}
       onRemove={bill.remove}
       flags={bill.flags}

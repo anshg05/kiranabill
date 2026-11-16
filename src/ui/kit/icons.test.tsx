@@ -64,6 +64,8 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     ["Pencil", "12-BillReview.html", "class=\"kb-s2\"", false], // the first line's edit button
     ["TriangleAlert", "12-BillReview.html", "Price needed</div>", false],
     ["Ear", "12-BillReview.html", "Heard:</b>", false],
+    // KB-414 step 1 (16 Nov 2026)
+    ["Profile", "08-Home.html", '<path d="M4 21c1.5-4', false],
   ] as const)("%s is the drawing of %s", (name, file, before, filled) => {
     const want = design(file, before);
     const { container } = render(<Icon icon={KB_ICONS[name]} size={20} />);
@@ -75,7 +77,16 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     }
   });
 
-  it("Play (KB-413 step 2) is 10-Review's filled triangle, at the file's stroke 1.5", () => {
+  it("Twinkle (KB-414 step 1) is 08-Home's filled star - filled with its colour, no stroke", () => {
+    const want = design("08-Home.html", 'fill="#D69A35"/></svg></div>');
+    const { container } = render(<Icon icon={KB_ICONS.Twinkle} size={14} />);
+    const svg = container.querySelector("svg")!;
+    expect(shapes(svg)).toEqual(shapes(want));
+    expect(svg.firstElementChild!.getAttribute("fill")).toBe("currentColor");
+    expect(svg.firstElementChild!.getAttribute("stroke")).toBe("none");
+  });
+
+    it("Play (KB-413 step 2) is 10-Review's filled triangle, at the file's stroke 1.5", () => {
     const want = design("10-Review.html", 'M8 5l11 7-11 7z"/></svg></button>');
     const { container } = render(<Icon icon={KB_ICONS.Play} size={20} />);
     const svg = container.querySelector("svg")!;
@@ -96,6 +107,8 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     expect(list).toMatch(/TriangleAlert[^.]*12-BillReview/);
     expect(list).toMatch(/Ear[^.]*12-BillReview/);
     expect(list).toMatch(/Play[^.]*filled triangle[^.]*10-Review/);
+    expect(list).toMatch(/Profile[^.]*08-Home/);
+    expect(list).toMatch(/Twinkle[^.]*08-Home/);
   });
 });
 

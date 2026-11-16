@@ -64,6 +64,14 @@ const Ear = createLucideIcon("kb-ear", [
   ["path", { d: "M10 10a2 2 0 0 1 4 0c0 1.5-2 2-2 4", key: "b" }],
 ]);
 
+/** 08-Home "Shop profile": a head and shoulders (KB-414 step 1) */
+const Profile = createLucideIcon("kb-profile", [
+  ["circle", { cx: "12", cy: "8", r: "4", key: "a" }],
+  ["path", { d: "M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", key: "b" }],
+]);
+/** 08-Home's hero card: the filled 4-point star that twinkles (amber; KB-414 step 1) */
+const Twinkle = createLucideIcon("kb-twinkle", [["path", { d: "M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6z", fill: "currentColor", stroke: "none", key: "a" }]]);
+
 export const KB_ICONS = {
   Mic, Pause, Square, Play, RotateCcw, Keyboard, Printer, MessageCircle, FileText, Share2, ReceiptText, Home: House, Package,
   MoreHorizontal: Ellipsis, ChevronRight, ChevronLeft, Plus, Minus, Check, X, Pencil, TriangleAlert, Lightbulb, Sparkles,
@@ -75,6 +83,8 @@ export const KB_ICONS = {
   BillDesign, ChevronDown,
   // 23-ReadFailed "Try again": one clockwise arrow round (KB-413 step 3)
   RotateCw,
+  // 08-Home (KB-414 step 1)
+  Profile, Twinkle,
 } satisfies Record<string, LucideIcon>;
 
 /** One icon at the design's stroke (1.9 - the Saved tick draws 2.4), coloured by its text; the button or row carries the words.
