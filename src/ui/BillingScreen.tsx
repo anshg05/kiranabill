@@ -365,13 +365,15 @@ export function BillingScreen() {
   // KB-340 (D86): the shop's name in the header; re-read when Settings closes, so a rename shows at once.
   const shopName = useShopName(localDb ?? null, shop?.id, shop?.name, `${settingsOpen}:${catalogPulls}`);
   const sync = useSyncChip(localDb);
-  // KB-413 step 2 (owner, answer 1): the stopped recording on this phone, so 10 survives the app closing
+  // KB-413 step 2 (owner, answer 1): the stopped recording on this phone, so 10 survives the app closing - with the bill's draft in the
+  // same write (bug 2: after a full close the take comes back on the SAME bill)
+  const draftRowOf = bill.draftRow;
   const takes = useMemo<TakeStore | undefined>(
     () =>
       localDb && shop?.id
-        ? { load: () => loadRecordingDraft(localDb, shop.id), save: (tk) => saveRecordingDraft(localDb, { ...tk, shopId: shop.id }), clear: () => clearRecordingDraft(localDb, shop.id) }
+        ? { load: () => loadRecordingDraft(localDb, shop.id), save: (tk) => saveRecordingDraft(localDb, { ...tk, shopId: shop.id, draft: draftRowOf() }), clear: () => clearRecordingDraft(localDb, shop.id) }
         : undefined,
-    [localDb, shop?.id],
+    [localDb, shop?.id, draftRowOf],
   );
   return (
     <>
@@ -387,7 +389,7 @@ export function BillingScreen() {
           noteSlot={noteSlot}
           hasLines={bill.rows.length > 0}
           disabledReason={parser && bill.ready ? null : "Loading your catalog…"}
-          onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms, bill.rows.length === 0))}
+          onGenerate={(audio, ms) => (wiring.onTurn(), void orders.generate(audio, ms, bill.rows.length === 0, bill.draftRow()))}
           onAddByHand={openAdd}
         />
       )}

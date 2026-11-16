@@ -20,8 +20,8 @@ import { CASH, parseCustomerName, parseIndianMobile } from "@/domain/customer";
 import { amountNeeded, visibleFlags, type FinalFlag, type FinalLine } from "@/domain/finalBill";
 import type { LearnDiscarded } from "@/domain/learning";
 import type { BillLine } from "@/data/voiceBilling";
-import type { KiranaBillDB } from "@/data/db";
-import { DRAFT_SAVE_DELAY_MS, clearDraft, loadDraft, saveDraft } from "./billDraftStore";
+import type { KiranaBillDB, LocalMeta } from "@/data/db";
+import { DRAFT_SAVE_DELAY_MS, clearDraft, draftRow, loadDraft, saveDraft } from "./billDraftStore";
 
 // KB-303: the bill being built - its lines (each with a stable id, the
 // utterance it came from, and what was spoken), editing, removing with a
@@ -232,6 +232,9 @@ export interface BillLines {
   readonly ready: boolean;
   discardDraft: () => Promise<void>;
   clearBill: () => Promise<void>;
+  /** KB-413 bug 2: this bill's draft row as it is now, for Generate / Stop to write in the SAME transaction as the recording (null: no
+   *  database, the draft has not loaded yet, or the bill was just saved by Bill Banao) */
+  draftRow: () => LocalMeta | null;
   /** KB-325: load the replacement draft of a cancelled bill (only onto an empty bill). */
   startFrom: (state: BillState) => void;
   /** KB-307: everything data/finalise.ts needs, as the screen holds it now. */
@@ -436,6 +439,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
   /** KB-325: the replacement draft of a cancelled bill - only onto an EMPTY bill (the reducer's "restore" rule). */
   const startFrom = useCallback((state: BillState) => dispatch({ type: "restore", state }), []);
   /** "Clear bill": the bill is thrown away - nothing is saved, nothing is learned (hard rule 8). */
+  const row = useCallback(() => (db && shopId && ready && !frozen.current ? draftRow(shopId, latest.current) : null), [db, shopId, ready]);
   const clearBill = useCallback(async () => {
     frozen.current = false;
     dispatch({ type: "reset" });
@@ -451,6 +455,7 @@ export function useBillLines(catalog: readonly CatalogEntry[], persist?: BillPer
     reset,
     ready,
     discardDraft,
+    draftRow: row,
     clearBill,
     startFrom,
     draft,

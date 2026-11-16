@@ -1,4 +1,4 @@
-import type { KiranaBillDB } from "@/data/db";
+import type { KiranaBillDB, LocalMeta } from "@/data/db";
 import { CASH, isStorableMobile, isStorableName } from "@/domain/customer";
 import type { BillRow, BillState } from "./useBillLines";
 
@@ -115,12 +115,26 @@ export function isWorthSaving(state: BillState): boolean {
   return state.rows.length > 0 || state.notAdded.length > 0 || state.customer.name !== CASH || state.customer.mobile !== null;
 }
 
+/**
+ * KB-413 phone check (owner, 16 Nov 2026, bug 2): a recording not yet in the bill (queued, being sent, failed, answered but not added)
+ * or 10's saved take makes even an empty bill worth keeping - the recording is tied to this bill's id, and without the draft a full
+ * close started a new bill and 11 / 23 / 24 showed nowhere. A recording already added ("appended") adds nothing.
+ */
+export async function holdsRecording(db: KiranaBillDB, shopId: string, billLocalId: string): Promise<boolean> {
+  const open = await db.voiceQueue.where("billLocalId").equals(billLocalId).filter((r) => r.state !== "appended").count();
+  return open > 0 || (await db.recordingDraft.get(shopId)) !== undefined;
+}
+
+/** The draft row as Generate / Stop write it, in their own transaction with the recording (KB-413 bug 2). */
+export const draftRow = (shopId: string, state: BillState): LocalMeta => ({ key: draftKey(shopId), value: serializeBill(state) });
+
 export async function saveDraft(db: KiranaBillDB, shopId: string, state: BillState): Promise<void> {
-  if (!isWorthSaving(state)) {
-    await db.meta.delete(draftKey(shopId));
-    return;
-  }
-  await db.meta.put({ key: draftKey(shopId), value: serializeBill(state) });
+  // one transaction: a save that finds no recording can never delete the draft after a recording (and its draft) landed in between -
+  // the app going to the background saves the take and flushes this at the same moment
+  await db.transaction("rw", db.meta, db.voiceQueue, db.recordingDraft, async () => {
+    if (!isWorthSaving(state) && !(await holdsRecording(db, shopId, state.localId))) await db.meta.delete(draftKey(shopId));
+    else await db.meta.put(draftRow(shopId, state));
+  });
 }
 
 export async function clearDraft(db: KiranaBillDB, shopId: string): Promise<void> {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { KiranaBillDB, LocalVoiceRecording } from "@/data/db";
+import type { KiranaBillDB, LocalMeta, LocalVoiceRecording } from "@/data/db";
 import type { BillLine } from "@/data/voiceBilling";
 import type { VoiceJobOutcome } from "@/data/voiceJob";
 import { audioOf, enqueueRecording, markAppended, recordingsForBill, removeRecording, saveOutcome, unsentRecordings } from "@/data/voiceQueue";
@@ -45,7 +45,8 @@ export interface VoiceOrders {
   sending: ReadonlySet<string>;
   offline: boolean;
   /** billEmpty: the bill had no lines when this was recorded (KB-413 fix 1) */
-  generate: (audio: Blob, recordedMs: number, billEmpty?: boolean) => Promise<void>;
+  /** draft: the bill's draft row, written in the same transaction as the recording (KB-413 bug 2) */
+  generate: (audio: Blob, recordedMs: number, billEmpty?: boolean, draft?: LocalMeta | null) => Promise<void>;
   retry: (recordingId: string) => Promise<void>;
   remove: (recordingId: string) => Promise<void>;
   /** KB-413 step 3: the ones waiting to be read (queued - offline or about to be sent - or answered and about to be added); a failed one
@@ -120,10 +121,10 @@ export function useVoiceOrders({ db, shopId, billLocalId, parser, submit, onAppe
   );
 
   const generate = useCallback(
-    async (audio: Blob, recordedMs: number, billEmpty?: boolean) => {
+    async (audio: Blob, recordedMs: number, billEmpty?: boolean, draft?: LocalMeta | null) => {
       if (!db || !shopId || !billLocalId) return;
       const recordingId = crypto.randomUUID(); // made ONCE per recording (one recording = one bill)
-      await enqueueRecording(db, { recordingId, shopId, billLocalId, audio, recordedMs, billEmpty });
+      await enqueueRecording(db, { recordingId, shopId, billLocalId, audio, recordedMs, billEmpty, draft });
       await refresh();
       await send(recordingId);
     },

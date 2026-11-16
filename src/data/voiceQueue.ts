@@ -1,4 +1,4 @@
-import type { KiranaBillDB, LocalVoiceRecording } from "./db";
+import type { KiranaBillDB, LocalMeta, LocalVoiceRecording } from "./db";
 import type { VoiceJobOutcome } from "./voiceJob";
 
 // KB-385 step 3 (owner, 10 Nov 2026; doc 25 §6, D107): the voice recording stays ON THE PHONE until its bill exists.
@@ -15,14 +15,18 @@ export interface NewRecording {
   recordedMs: number;
   /** KB-413 fix 1: the bill had no lines when this was recorded (marked only if it is also the bill's first recording) */
   billEmpty?: boolean;
+  /** KB-413 bug 2: the bill's draft row (its id, holding this recording) - written in the SAME transaction, so a full close can never
+   *  keep the recording without the bill it belongs to (the format is the screen's, src/ui/billDraftStore) */
+  draft?: LocalMeta | null;
 }
 
 /** Keeps a new recording; the same recording queued again (a double tap) stays one row with its first audio. */
 export async function enqueueRecording(db: KiranaBillDB, r: NewRecording): Promise<void> {
   const bytes = await r.audio.arrayBuffer();
   // KB-413: the saved copy of this recording (screen 10) is deleted in the same write - it is in the queue now, never both, never neither
-  await db.transaction("rw", db.voiceQueue, db.recordingDraft, async () => {
+  await db.transaction("rw", db.voiceQueue, db.recordingDraft, db.meta, async () => {
     await db.recordingDraft.delete(r.shopId);
+    if (r.draft) await db.meta.put(r.draft);
     if (await db.voiceQueue.get(r.recordingId)) return;
     const first = r.billEmpty === true && (await db.voiceQueue.where("billLocalId").equals(r.billLocalId).count()) === 0;
     await db.voiceQueue.add({
