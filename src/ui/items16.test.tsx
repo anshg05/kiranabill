@@ -96,7 +96,8 @@ async function open(w = writers(), inFrame = false) {
     <CatalogScreen localDb={db} shopId={shopId} {...w} onChanged={onChanged} onClose={onClose} />
   );
   render(inFrame ? <TabFrame tab="items" onTab={() => {}} offline={false}>{screenEl}</TabFrame> : screenEl);
-  await waitFor(() => expect(within(screen.getByRole("region")).getAllByRole("listitem").length).toBeGreaterThan(0)); // any language
+  // any language; 5 s - under the full parallel run the list can take longer than waitFor's 1 s (a flake seen 17 Nov 2026)
+  await waitFor(() => expect(within(screen.getByRole("region")).getAllByRole("listitem").length).toBeGreaterThan(0), { timeout: 5000 });
   return w;
 }
 const list = () => screen.getByRole("list", { name: "Products" });
