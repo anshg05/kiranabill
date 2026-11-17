@@ -231,11 +231,16 @@ describe("the Items tab's inner pages and the Sign out warning, inside the real 
   }
   const page = (name: string) => screen.findByRole("region", { name });
 
+  // KB-414 step 3: New item / ready catalog / import are in the "+ Add" sheet; a card opens Edit item
+  const fromAddSheet = (option: string) => async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    fireEvent.click(within(await screen.findByRole("dialog", { name: "Add items" })).getByRole("button", { name: new RegExp(option) }));
+  };
   for (const [what, open, name] of [
-    ["Add product", () => fireEvent.click(screen.getByRole("button", { name: "Add product" })), "Add product"],
-    ["Edit product", () => fireEvent.click(screen.getByRole("button", { name: "Edit Sugar" })), "Edit product"],
-    ["Import", () => fireEvent.click(screen.getByRole("button", { name: "Import from file" })), "Import products"],
-    ["Ready catalog", () => fireEvent.click(screen.getByRole("button", { name: "Add from ready catalog" })), "Ready catalog"],
+    ["Add item", fromAddSheet("New item"), "Add item"],
+    ["Edit item", async () => fireEvent.click(screen.getByRole("button", { name: "Edit Sugar" })), "Edit item"],
+    ["Import", fromAddSheet("Import from file"), "Import products"],
+    ["Ready catalog", fromAddSheet("Add from ready catalog"), "Ready catalog"],
   ] as const) {
     it(`${what}: no nav while it is open (its Save never under the nav), and it starts below the offline strip`, async () => {
       await openItems();

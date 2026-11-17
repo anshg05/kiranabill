@@ -1,18 +1,27 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
 import type { LocalShopProduct } from "@/data/db";
+import { MAX_RATE_PAISE, parseMoneyInput } from "@/domain/billEdit";
 import { checkAliases, checkName, lostNameNote, productPatch, type OtherProduct, type ProductPatch } from "@/domain/catalogEdit";
 import { nameKey } from "@/domain/catalogImport";
+import { plainRupees } from "@/domain/money";
 import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
 import { useDiscardGuard } from "./useDiscardGuard";
+import { FieldError, ItemPage, PageNote } from "./ItemPage";
+import { OtherNamesField } from "./OtherNamesField";
+import { Button } from "./kit/Button";
+import { TextField } from "./kit/TextField";
+import { KB_ICONS } from "./kit/icons";
 import { useT } from "./useT";
 
 // KB-330 (D71, D77): rename, other names (aliases) and archive for ONE product. The unit is shown, never editable (a unit
 // sets what the price means - the remedy is archive + Add product). Save sends only the columns that changed, and the
 // aliases only if their text was touched - a pure rename never rewrites a list the shopkeeper did not open. Everything
 // the import would refuse is refused here, with the same reasons, BEFORE any write.
+// KB-414 step 3 (owner + reviewer, 17 Nov 2026): 19's look, filled ("Edit item"); the other names as chips; the PRICE moved here from the
+// row (today's price writer, whole paise, parseMoneyInput as the row did) and "Used N times in the last 30 days" with it; Save item;
+// Archive. Changed details and a changed price are two writes (today's two writers) - the first that fails stops and says so.
 
 export const OFFLINE_NOTE = "Needs internet to change the catalog";
 export const SAVE_FAILED_TEXT = "Couldn't save — check the internet and try again";
@@ -22,19 +31,24 @@ interface Props {
   /** Every OTHER product of the shop, archived ones included. */
   others: readonly OtherProduct[];
   online: boolean;
-  onSave: (patch: ProductPatch) => Promise<CatalogWriteResult>;
+  /** The changed details (or {}) and the new price in paise (or null): the page closes when both are written. */
+  onSave: (patch: ProductPatch, pricePaise: number | null) => Promise<CatalogWriteResult>;
   /** Absent for an archived product (already archived). */
   onArchive?: () => Promise<CatalogWriteResult>;
   onClose: () => void;
   /** KB-350: what another phone changed on this product while the sheet is open - shown, never applied over his typing. */
   changedNote?: string | null;
+  /** "Used 3 times in the last 30 days" (KB-321) - moved here from the row. */
+  used?: string;
 }
 
-export function EditProductSheet({ product, others, online, onSave, onArchive, onClose, changedNote }: Props) {
+export function EditProductSheet({ product, others, online, onSave, onArchive, onClose, changedNote, used }: Props) {
   const { t, tx } = useT();
   const initialAliases = product.aliases.join("\n");
+  const initialPrice = plainRupees(product.pricePaise);
   const [name, setName] = useState(product.displayName);
   const [aliasText, setAliasText] = useState(initialAliases);
+  const [price, setPrice] = useState(initialPrice);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,10 +62,11 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
         { displayName: nameCheck.name, aliases: aliasesTouched ? aliasCheck.aliases : product.aliases },
       )
     : {};
-  const changed = Object.keys(patch).length > 0;
+  const priceTouched = product.isActive && price.trim() !== initialPrice;
+  const changed = Object.keys(patch).length > 0 || priceTouched;
   const lost = nameCheck.ok ? lostNameNote(product.displayName, nameCheck.name, aliasesTouched ? aliasCheck.aliases : product.aliases.map(nameKey)) : null;
   const canWrite = online && !busy;
-  const guard = useDiscardGuard(name !== product.displayName || aliasesTouched, onClose);
+  const guard = useDiscardGuard(name !== product.displayName || aliasesTouched || priceTouched, onClose);
   useBackEntry("kbEditProduct", guard.requestClose, guard.canClose);
   useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
 
@@ -67,108 +82,67 @@ export function EditProductSheet({ product, others, online, onSave, onArchive, o
       setBusy(false);
     }
   };
+  const save = () => {
+    let paise: number | null = null;
+    if (priceTouched) {
+      const r = parseMoneyInput(price, MAX_RATE_PAISE);
+      if (!r.ok) return setError(r.error);
+      paise = r.value === product.pricePaise ? null : r.value;
+    }
+    void run(() => onSave(patch, paise), finalName);
+  };
 
   return (
-    <section aria-label={t("product.editTitle")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
-      <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
-        <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
-            <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
-          </button>
-          <h2 className="text-[20px] font-semibold">{t("product.editTitle")}</h2>
-        </header>
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE_NOTE)}</p>}
-          {changedNote && <p role="status" className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{changedNote}</p>}
-
-          <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">{t("product.name")}</span>
-            <input
-              type="text"
-              aria-label={t("product.name")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              aria-invalid={!nameCheck.ok}
-              className="min-h-11 rounded-[6px] border border-line bg-surface px-3"
-            />
-          </label>
-          {!nameCheck.ok && (
-            <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {tx(nameCheck.error)}
-            </p>
-          )}
-          {lost && (
-            <div className="flex flex-wrap items-center gap-2 text-[13px]">
-              <span>{tx(lost)}</span>
-              <button
-                type="button"
-                aria-label={t("product.keepNameLabel", { name: product.displayName })}
-                onClick={() => setAliasText((t) => (t.trim() === "" ? nameKey(product.displayName) : `${t.replace(/\s+$/, "")}\n${nameKey(product.displayName)}`))}
-                className="min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium"
-              >
-                {t("product.keepName")}
-              </button>
-            </div>
-          )}
-
-          <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">{t("product.otherNames")}</span>
-            <textarea
-              aria-label={t("product.otherNames")}
-              rows={4}
-              value={aliasText}
-              onChange={(e) => setAliasText(e.target.value)}
-              placeholder={t("product.otherNamesPlaceholder")}
-              className="rounded-[6px] border border-line bg-surface px-3 py-2"
-            />
-          </label>
-          {aliasesTouched && aliasCheck.dropped.length > 0 && (
-            <div className="text-[13px]">
-              <p className="font-medium text-danger">{t("product.notSaved")}</p>
-              <ul aria-label={t("product.notSavedLabel")} className="mt-1 list-disc pl-5">
-                {aliasCheck.dropped.map((d) => (
-                  <li key={d.alias} className="[overflow-wrap:anywhere]">
-                    {t("product.aliasRow", { alias: d.alias, why: tx(d.why) })}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <p className="text-[13px] text-ink-soft">
-            {t("product.unitFixed", { unit: product.unit })}
-          </p>
-
-          {error && (
-            <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {tx(error)}
-            </p>
-          )}
-        </div>
-        <div className="safe-bottom flex flex-wrap items-center gap-2 border-t border-line px-4 pt-3">
-          <button
-            type="button"
-            disabled={!canWrite || !nameCheck.ok || !changed}
-            onClick={() => void run(() => onSave(patch), finalName)}
-            className="min-h-11 rounded-[6px] bg-ink px-5 font-medium text-paper disabled:opacity-50"
-          >
-            {t("settings.save")}
-          </button>
+    <ItemPage
+      title={t("product.editTitle")}
+      onBack={guard.requestClose}
+      footer={
+        <>
+          <Button variant="primary" icon={KB_ICONS.Check} disabled={!canWrite || !nameCheck.ok || !changed} onClick={save}>
+            {t("items.save")}
+          </Button>
+          {canWrite && nameCheck.ok && !changed && <p className="text-center text-kb-13 text-kb-sub">{t("reason.noChanges")}</p>}
           {onArchive && (
-            <button
-              type="button"
-              aria-label={t("product.archiveLabel")}
-              disabled={!canWrite}
-              onClick={() => void run(onArchive, product.displayName)}
-              className="ml-auto min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium disabled:opacity-50"
-            >
+            <Button variant="destructive-text" ariaLabel={t("product.archiveLabel")} disabled={!canWrite} onClick={() => void run(onArchive, product.displayName)}>
               {t("product.archive")}
-            </button>
+            </Button>
           )}
-          {canWrite && nameCheck.ok && !changed && <p className="w-full text-[13px] text-ink-soft">{t("reason.noChanges")}</p>}
+          {guard.dialog}
+        </>
+      }
+    >
+      {!online && <PageNote>{tx(OFFLINE_NOTE)}</PageNote>}
+      {changedNote && (
+        <p role="status" className="rounded-[12px] border border-kb-border bg-kb-card px-3 py-[10px] text-kb-13 text-kb-sub">
+          {changedNote}
+        </p>
+      )}
+      <TextField label={t("product.name")} value={name} onChange={setName} />
+      {!nameCheck.ok && <FieldError>{tx(nameCheck.error)}</FieldError>}
+      {lost && (
+        <div className="-mt-2 flex flex-wrap items-center gap-2 text-kb-13">
+          <span>{tx(lost)}</span>
+          <Button
+            variant="secondary"
+            height={46}
+            fill={false}
+            className="px-3"
+            ariaLabel={t("product.keepNameLabel", { name: product.displayName })}
+            onClick={() => setAliasText((a) => (a.trim() === "" ? nameKey(product.displayName) : `${a.replace(/\s+$/, "")}\n${nameKey(product.displayName)}`))}
+          >
+            {t("product.keepName")}
+          </Button>
         </div>
+      )}
+      <OtherNamesField ownName={name} text={aliasText} onText={setAliasText} others={others} showDropped={aliasesTouched} />
+      <div className="flex flex-col gap-2">
+        <p className="text-kb-14 font-semibold">{t("items.soldBy")}</p>
+        <PageNote>{t("product.unitFixed", { unit: product.unit })}</PageNote>
       </div>
-      {guard.dialog}
-    </section>
+      {product.isActive && (
+        <TextField label={t("items.pricePer", { unit: product.unit })} value={price} onChange={setPrice} prefix="₹" inputMode="decimal" helper={used} />
+      )}
+      {error && <FieldError>{tx(error)}</FieldError>}
+    </ItemPage>
   );
 }

@@ -40,7 +40,7 @@ describe("KB-330 catalog manage - real local stack", () => {
   const local = async (id: string) => (await localDb.shopProducts.get(id))!;
 
   async function add(name: string, unit = "kg", pricePaise = 5_000) {
-    expect(await addCustomProduct(client, localDb, shopId, deviceId, { name, unit, unitKnown: true, pricePaise })).toEqual({ ok: true });
+    expect(await addCustomProduct(client, localDb, shopId, deviceId, { name, unit, unitKnown: true, pricePaise, aliases: [] })).toEqual({ ok: true });
     const row = (await localDb.shopProducts.where("shopId").equals(shopId).toArray()).find((p) => p.displayName === name);
     if (!row) throw new Error(`"${name}" did not arrive in Dexie`);
     return row;
@@ -70,10 +70,18 @@ describe("KB-330 catalog manage - real local stack", () => {
     expect((await loadShopCatalog(localDb, shopId)).entries.some((e) => e.id === row.id)).toBe(true);
   });
 
+  it("1b. KB-414 step 3: the other names typed on Add item go in the SAME insert - on the server, in Dexie, and the billing catalog matches them", async () => {
+    expect(await addCustomProduct(client, localDb, shopId, deviceId, { name: "Toor Dal Fine", unit: "kg", unitKnown: true, pricePaise: 15_000, aliases: ["toor fine", "तुअर बारीक"] })).toEqual({ ok: true });
+    const row = (await localDb.shopProducts.where("shopId").equals(shopId).toArray()).find((p) => p.displayName === "Toor Dal Fine")!;
+    expect(row.aliases).toEqual(expect.arrayContaining(["toor fine", "तुअर बारीक"]));
+    expect((await serverRow(row.id))!.aliases).toEqual(expect.arrayContaining(["toor fine", "तुअर बारीक"]));
+    expect((await loadShopCatalog(localDb, shopId)).entries.find((e) => e.id === row.id)?.aliases).toEqual(expect.arrayContaining(["toor fine"]));
+  });
+
   it("2. adding a name that exists - any case, or ARCHIVED - is 'duplicate'; nothing is written", async () => {
     const row = await add("Ragi Flour");
     const before = await localDb.shopProducts.where("shopId").equals(shopId).count();
-    const again = { name: "RAGI FLOUR", unit: "kg", unitKnown: true, pricePaise: 100 };
+    const again = { name: "RAGI FLOUR", unit: "kg", unitKnown: true, pricePaise: 100, aliases: [] };
     expect(await addCustomProduct(client, localDb, shopId, deviceId, again)).toEqual({ ok: false, reason: "duplicate" });
     expect(await setProductActive(client, localDb, shopId, row.id, false)).toEqual({ ok: true });
     expect(await addCustomProduct(client, localDb, shopId, deviceId, again)).toEqual({ ok: false, reason: "duplicate" });
@@ -148,7 +156,7 @@ describe("KB-330 catalog manage - real local stack", () => {
     const dead = createClient("http://127.0.0.1:9", anonKey!, { auth: { persistSession: false, autoRefreshToken: false } });
     expect(await saveProductDetails(dead, localDb, shopId, row.id, { display_name: "Nope" })).toEqual({ ok: false, reason: "failed" });
     expect(await setProductActive(dead, localDb, shopId, row.id, false)).toEqual({ ok: false, reason: "failed" });
-    expect(await addCustomProduct(dead, localDb, shopId, deviceId, { name: "Nowhere", unit: "kg", unitKnown: true, pricePaise: 100 })).toMatchObject({ ok: false });
+    expect(await addCustomProduct(dead, localDb, shopId, deviceId, { name: "Nowhere", unit: "kg", unitKnown: true, pricePaise: 100, aliases: [] })).toMatchObject({ ok: false });
     expect(await local(row.id)).toMatchObject({ displayName: "Vermicelli", isActive: true });
     expect((await localDb.shopProducts.toArray()).some((p) => p.displayName === "Nowhere")).toBe(false);
   });

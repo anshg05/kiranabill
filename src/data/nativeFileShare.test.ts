@@ -9,7 +9,7 @@ const plugin = vi.hoisted(() => ({
 }));
 vi.mock("@capacitor/core", () => ({ registerPlugin: (name: string) => (name === "FileShare" ? plugin : null) }));
 
-const { savePdf, shareFile, WHATSAPP } = await import("./nativeFileShare");
+const { saveFile, shareFile, WHATSAPP } = await import("./nativeFileShare");
 
 const png = new File([new Uint8Array([137, 80, 78, 71, 255, 0])], "Bill-519.png", { type: "image/png" });
 const pdf = new File(["%PDF-1.4 x"], "Bill-519.pdf", { type: "application/pdf" });
@@ -31,19 +31,19 @@ describe("shareFile", () => {
   });
 });
 
-describe("savePdf", () => {
+describe("saveFile", () => {
   it("Android 10+: saved in Downloads - no share sheet", async () => {
-    expect(await savePdf(pdf)).toBe("saved");
+    expect(await saveFile(pdf)).toBe("saved");
     expect(plugin.saveToDownloads).toHaveBeenCalledWith({ name: "Bill-519.pdf", mime: "application/pdf", data: btoa("%PDF-1.4 x") });
     expect(plugin.share).not.toHaveBeenCalled();
   });
   it("Android 7-9 (saved=false): the share sheet with the PDF instead", async () => {
     plugin.saveToDownloads.mockResolvedValue({ saved: false });
-    expect(await savePdf(pdf)).toBe("shared");
+    expect(await saveFile(pdf)).toBe("shared");
     expect(plugin.share).toHaveBeenCalledWith({ name: "Bill-519.pdf", mime: "application/pdf", data: btoa("%PDF-1.4 x") });
   });
   it("a failed save is an error for the screen to show (never swallowed)", async () => {
     plugin.saveToDownloads.mockRejectedValue(new Error("SAVE_FAILED"));
-    await expect(savePdf(pdf)).rejects.toThrow("SAVE_FAILED");
+    await expect(saveFile(pdf)).rejects.toThrow("SAVE_FAILED");
   });
 });

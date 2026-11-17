@@ -75,24 +75,27 @@ async function openCatalog(l: Language) {
 describe("the Catalog", () => {
   it.each(LANGUAGES)("heading, search, filters and buttons - in %s; product names, prices and units never change", async (l) => {
     await openCatalog(l);
-    expect(screen.getByRole("heading", { name: T("menu.catalog", l) })).toBeTruthy();
+    // KB-414 step 3: 16 - the tab's title, "+ Add", the search, the filter chips; the extras in the "+ Add" sheet
+    expect(screen.getByRole("heading", { level: 1, name: T("nav.items", l) })).toBeTruthy();
     expect(screen.getByRole("searchbox", { name: T("add.search", l) })).toBeTruthy();
     expect(screen.getByPlaceholderText(T("catalog.searchPlaceholder", l))).toBeTruthy();
-    const filters = within(screen.getByRole("radiogroup", { name: T("catalog.show", l) }));
-    for (const id of ["catalog.all", "catalog.custom", "catalog.learned", "catalog.base", "catalog.archived"] as const) expect(filters.getByText(T(id, l))).toBeTruthy();
-    for (const id of ["catalog.addReady", "product.addTitle", "catalog.import"] as const) expect(screen.getByRole("button", { name: T(id, l) })).toBeTruthy();
-    // the row: name and price/unit exactly as stored, the use line and the Edit button said in the language
+    const filters = within(screen.getByRole("group", { name: T("catalog.show", l) }));
+    expect(filters.getByText(T("items.all", l, { n: 1 }))).toBeTruthy();
+    for (const id of ["catalog.custom", "catalog.learned", "catalog.base", "catalog.archived"] as const) expect(filters.getByText(T(id, l))).toBeTruthy();
+    // the card: name and price exactly as stored, "per kg" said in the language; the card is named "Edit Sugar" for a screen reader
     const row = screen.getByTestId("name").closest("li")!;
     expect(within(row).getByText("Sugar")).toBeTruthy();
-    expect(row.textContent).toContain("₹48 / kg");
-    expect(within(row).getByLabelText(T("catalog.priceOf", l, { name: "Sugar" }))).toBeTruthy(); // the price control is named for a screen reader, in the language
-    expect(within(row).getByText(T("catalog.usedMany", l, { n: 9 }))).toBeTruthy();
-    expect(within(row).getByRole("button", { name: T("catalog.editLabel", l, { name: "Sugar" }) }).textContent).toBe(T("catalog.edit", l));
+    expect(within(row).getByText("₹48")).toBeTruthy();
+    expect(within(row).getByText(T("items.perUnit", l, { unit: "kg" }))).toBeTruthy();
+    expect(within(row).getByRole("button", { name: T("catalog.editLabel", l, { name: "Sugar" }) })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: T("common.add", l) }));
+    const sheet = within(await screen.findByRole("dialog", { name: T("items.addTitle", l) }));
+    for (const id of ["items.newItem", "catalog.addReady", "catalog.import", "items.newItemSub", "items.readySub", "items.importSub"] as const) expect(sheet.getByText(T(id, l))).toBeTruthy();
   });
 
   it.each(LANGUAGES)("an archived product offers Restore, and the empty states are said - in %s", async (l) => {
     await openCatalog(l);
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: T("catalog.show", l) })).getByText(T("catalog.archived", l)));
+    fireEvent.click(within(screen.getByRole("group", { name: T("catalog.show", l) })).getByText(T("catalog.archived", l)));
     const restore = await screen.findByRole("button", { name: T("catalog.restoreLabel", l, { name: "Old Soap" }) });
     expect(restore.textContent).toBe(T("catalog.restore", l));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzzz" } });
@@ -108,7 +111,8 @@ describe("the Catalog", () => {
   it("the ready catalog says what it has to say", async () => {
     await db.baseProducts.bulkPut([{ id: crypto.randomUUID(), catalogVersion: 1, displayName: "Besan", sourceCategory: "grain", guardCategory: "grain", defaultUnit: "kg", suggestedPricePaise: 9_000, aliases: ["besan"], isActive: true }]);
     await openCatalog("hi");
-    fireEvent.click(screen.getByRole("button", { name: T("catalog.addReady", "hi") }));
+    fireEvent.click(screen.getByRole("button", { name: T("common.add", "hi") }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByText(T("catalog.addReady", "hi")));
     expect(await screen.findByRole("heading", { name: T("ready.title", "hi") })).toBeTruthy();
     const add = await screen.findByRole("button", { name: T("ready.addLabel", "hi", { name: "Besan" }) });
     expect(add.textContent).toBe(T("common.add", "hi"));
@@ -120,24 +124,27 @@ describe("Add product and Edit product", () => {
   it.each(LANGUAGES)("Add product: labels, and the domain's refusals said in the language - in %s", async (l) => {
     use(l);
     render(<AddProductSheet existing={[]} online onCreate={ok} onClose={() => {}} />);
-    expect(screen.getByRole("heading", { name: T("product.addTitle", l) })).toBeTruthy();
-    expect(screen.getByText(T("product.price", l))).toBeTruthy();
-    expect(screen.getByRole("button", { name: T("common.add", l) })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: T("common.add", l) }));
+    // KB-414 step 3: 19's words
+    expect(screen.getByRole("heading", { name: T("add.title", l) })).toBeTruthy();
+    for (const id of ["product.name", "product.otherNames", "items.otherNamesHelp", "items.soldBy", "product.price", "items.priceHelp", "items.addName"] as const) expect(screen.getByText(T(id, l))).toBeTruthy();
+    expect(screen.getByRole("radio", { name: T("items.otherUnit", l) })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: T("items.save", l) }));
     const alerts = screen.getAllByRole("alert").map((a) => a.textContent);
     expect(alerts).toContain(T("product.nameNeeded", l));
     expect(alerts).toContain(T("product.unitNeeded", l));
     expect(alerts).toContain(T("need.price", l));
-    for (const chip of ["kg", "gm", "liter", "ml", "piece"]) expect(screen.getByRole("button", { name: chip })).toBeTruthy(); // units never change
+    for (const chip of ["kg", "gm", "liter", "ml", "piece"]) expect(screen.getByRole("radio", { name: chip })).toBeTruthy(); // units never change
+    fireEvent.click(screen.getByRole("radio", { name: "kg" }));
+    expect(screen.getByText(T("items.pricePer", l, { unit: "kg" }))).toBeTruthy();
   });
 
   it("a name already used names the product exactly as typed, in the language", () => {
     use("hl");
     render(<AddProductSheet existing={[{ id: "x", displayName: "Sugar", aliases: [], isActive: false }]} online onCreate={ok} onClose={() => {}} />);
     fireEvent.change(screen.getByLabelText(T("product.name", "hl")), { target: { value: "Sugar" } });
-    fireEvent.change(screen.getByLabelText(T("col.unit", "hl")), { target: { value: "kg" } });
-    fireEvent.change(screen.getByLabelText(T("product.priceLabel", "hl")), { target: { value: "45" } });
-    fireEvent.click(screen.getByRole("button", { name: T("common.add", "hl") }));
+    fireEvent.click(screen.getByRole("radio", { name: "kg" }));
+    fireEvent.change(screen.getByLabelText(T("items.pricePer", "hl", { unit: "kg" })), { target: { value: "45" } });
+    fireEvent.click(screen.getByRole("button", { name: T("items.save", "hl") }));
     expect(screen.getAllByRole("alert").map((a) => a.textContent)).toContain(T("product.dupArchived", "hl", { name: "Sugar" }));
   });
 
@@ -145,9 +152,10 @@ describe("Add product and Edit product", () => {
     use("hi");
     render(<AddProductSheet existing={[]} online onCreate={async () => ({ ok: false, reason: "duplicate" })} onClose={() => {}} />);
     fireEvent.change(screen.getByLabelText(T("product.name", "hi")), { target: { value: "Rusk" } });
+    fireEvent.click(screen.getByRole("radio", { name: T("items.otherUnit", "hi") }));
     fireEvent.change(screen.getByLabelText(T("col.unit", "hi")), { target: { value: "pkt" } });
-    fireEvent.change(screen.getByLabelText(T("product.priceLabel", "hi")), { target: { value: "30" } });
-    fireEvent.click(screen.getByRole("button", { name: T("common.add", "hi") }));
+    fireEvent.change(screen.getByLabelText(T("items.pricePer", "hi", { unit: "pkt" })), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("button", { name: T("items.save", "hi") }));
     expect((await screen.findByRole("alert")).textContent).toBe(T("product.dup", "hi", { name: "Rusk" }));
   });
 
@@ -160,7 +168,12 @@ describe("Add product and Edit product", () => {
     fireEvent.change(screen.getByLabelText(T("product.name", l)), { target: { value: "Atta" } });
     expect(screen.getByRole("alert").textContent).toBe(T("product.dup", l, { name: "Atta" }));
     fireEvent.change(screen.getByLabelText(T("product.name", l)), { target: { value: "Sugar" } });
-    fireEvent.change(screen.getByLabelText(T("product.otherNames", l)), { target: { value: "x\ngehun" } });
+    // KB-414 step 3: other names are chips - "+ Add name", one at a time
+    for (const name of ["x", "gehun"]) {
+      fireEvent.click(screen.getByRole("button", { name: T("items.addName", l) }));
+      fireEvent.change(screen.getByLabelText(T("items.otherName", l)), { target: { value: name } });
+      fireEvent.keyDown(screen.getByLabelText(T("items.otherName", l)), { key: "Enter" });
+    }
     expect(screen.getByLabelText(T("product.notSavedLabel", l)).textContent).toContain(T("product.aliasShort", l, { min: 3 }));
     expect(screen.getByLabelText(T("product.notSavedLabel", l)).textContent).toContain(T("product.aliasTaken", l));
   });

@@ -25,6 +25,7 @@ import { renderReceiptFiles } from "./receiptImage";
 import type { ReceiptShare } from "./useReceiptShare";
 import { HomeScreen } from "./HomeScreen";
 import { TabFrame } from "./AppTabs";
+import { CatalogScreen } from "./CatalogScreen";
 
 // DEV ONLY (KB-413, /__dev/screens): each rebuilt screen, the REAL component with sample data, full-size beside its whole approved
 // screen file (docs/design/screens/NN-*.html) - the owner's review of a full screen (D110 item 9).
@@ -350,6 +351,116 @@ function Screen14({ state, onReady }: { state: string; onReady: () => void }) {
   ) : null;
 }
 
+/** KB-414 step 3: 16-Items / 19-AddItem on a dev database (fake-indexeddb, as 14): 16's six items, as drawn (the app's units), inside
+ *  the REAL tab frame. The states are reached as a tap reaches them:
+ *  16: all | banner (with what the bills taught: 2 prices, 1 new name, 1 learned name) | learned | archived | undo (after Archive)
+ *      | sheet (B: "+ Add") | bills (C: "From your bills")
+ *  19: add (19's own sample: तूर दाल, its other names, kg, ₹150) | adderror (a name already used, no unit, no price) | edit (E) */
+function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
+  const [db, setDb] = useState<KiranaBillDB | null>(null);
+  const shopId = "11111111-1111-4111-8111-111111111111";
+  useEffect(() => {
+    void (async () => {
+      const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
+      Dexie.dependencies.indexedDB = new IDBFactory();
+      Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+      const d = new KiranaBillDB("kb-dev-sheet-16");
+      const ITEMS = [
+        ["sugar", "चीनी", ["Sugar", "शक्कर"], "kg", 4_500, "learned"], ["rice", "चावल", ["Rice"], "kg", 6_800, "base"],
+        ["salt", "टाटा नमक", ["Tata Salt"], "piece", 3_000, "learned"], ["toor", "तूर दाल", ["Toor dal", "तुअर"], "kg", 15_000, "base"],
+        ["dane", "दाने", ["Moongfali dana"], "kg", 15_000, "custom"], ["rin", "रिन साबुन", ["Rin soap", "रिन"], "piece", 1_000, "custom"],
+        ["old", "पुराना साबुन", ["purana sabun"], "piece", 2_500, "custom"],
+      ] as const;
+      // 19's own sample adds तूर दाल - not in the list behind it then, or its name and "toor dal" would clash
+      for (const [id, name, aliases, unit, price, source] of ITEMS.filter(([id]) => !(state === "add" && id === "toor")))
+        await d.shopProducts.put({ id, shopId, baseProductId: null, displayName: name, category: null, unit, pricePaise: price, aliases: [...aliases], source, useCount: 0, sku: null, barcode: null, isActive: id !== "old" });
+      if (state === "banner" || state === "bills") {
+        const now = new Date().toISOString();
+        for (const [p, paise] of [["sugar", 4_800], ["rice", 7_000]] as const)
+          for (let i = 0; i < 3; i++) await d.priceObservations.put({ localId: crypto.randomUUID(), shopId, syncStatus: "synced", shopProductId: p, observedPricePaise: paise, occurredAt: now, updatedAt: now, deviceId: "d" });
+        await d.provisionalProducts.put({ localId: crypto.randomUUID(), shopId, syncStatus: "synced", spokenName: "काजू", seenCount: 2, suggestedUnit: null, suggestedPricePaise: null, promotedAt: null, promotedShopProductId: null, updatedAt: now, deviceId: "d" });
+        for (let i = 0; i < 3; i++)
+          await d.learningEvents.add({ localId: `e${i}`, shopId, syncStatus: "synced", billLocalId: "", eventType: "alias_confirmed", payload: { alias: "cheeni", shop_product_id: "sugar", source_layer: "fastpath" }, createdAt: new Date(Date.now() - 1000 * (10 - i)).toISOString(), updatedAt: now, deviceId: "d" });
+      }
+      setDb(d);
+    })();
+  }, [state]);
+  useEffect(() => {
+    if (!db) return;
+    const say16 = (id: Parameters<typeof say>[0], p: Record<string, string | number> = {}) => say(id, p, getScreenLanguage());
+    const button = (re: RegExp | string) => [...document.querySelectorAll<HTMLElement>("button")].find((b) => (typeof re === "string" ? b.textContent?.trim() === re || b.getAttribute("aria-label") === re : re.test(b.textContent ?? "")));
+    const set = (el: HTMLInputElement | null | undefined, v: string) => {
+      if (!el) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const field = (label: string) => {
+      const l = [...document.querySelectorAll("label")].find((x) => x.textContent?.trim() === label);
+      return l ? (document.getElementById(l.htmlFor) as HTMLInputElement | null) : null;
+    };
+    const steps: (() => void)[] = [];
+    const later = (f: () => void) => steps.push(f);
+    if (state === "learned") later(() => button(say16("catalog.learned"))?.click());
+    if (state === "archived") later(() => button(say16("catalog.archived"))?.click());
+    if (state === "sheet") later(() => button(say16("common.add"))?.click());
+    if (state === "bills") later(() => button(new RegExp(say16("items.fromBills")))?.click());
+    if (state === "undo") {
+      later(() => button(say16("catalog.editLabel", { name: "रिन साबुन" }))?.click());
+      later(() => button(say16("product.archiveLabel"))?.click());
+    }
+    if (state === "edit") later(() => button(say16("catalog.editLabel", { name: "तूर दाल" }))?.click());
+    if (state === "add" || state === "adderror") {
+      later(() => button(say16("common.add"))?.click());
+      later(() => button(new RegExp(say16("items.newItem")))?.click());
+      if (state === "add") {
+        later(() => set(field(say16("product.name")), "तूर दाल"));
+        for (const n of ["तुअर दाल", "toor dal", "अरहर"]) {
+          later(() => button(say16("items.addName"))?.click());
+          later(() => {
+            const el = document.querySelector<HTMLInputElement>(`input[aria-label="${say16("items.otherName")}"]`);
+            set(el, n);
+            el?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+          });
+        }
+        later(() => [...document.querySelectorAll<HTMLElement>('[role="radio"]')].find((r) => r.textContent === "kg")?.click());
+        later(() => set(field(say16("items.pricePer", { unit: "kg" })), "150"));
+        later(() => (document.activeElement as HTMLElement | null)?.blur());
+      } else {
+        later(() => set(field(say16("product.name")), "चीनी"));
+        later(() => button(say16("items.save"))?.click());
+      }
+    }
+    let i = 0;
+    const id = window.setInterval(() => {
+      if (!document.querySelector("[data-testid=name]")) return; // the list has loaded
+      const step = steps[i++];
+      if (step) return step();
+      window.clearInterval(id);
+      window.setTimeout(onReady, 900);
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [db]);
+  const ok = async () => ({ ok: true }) as const;
+  return db ? (
+    <TabFrame tab="items" onTab={noop} offline={params.get("offline") === "1"}>
+      <CatalogScreen
+        localDb={db}
+        shopId={shopId}
+        save={ok}
+        add={ok}
+        importRows={async () => ({ added: 0, alreadyThere: 0, failed: [], notSent: 0, stopReason: null })}
+        saveDetails={ok}
+        setActive={async (id, active) => (await db.shopProducts.update(id, { isActive: active }), { ok: true })}
+        create={ok}
+        ignoreSuggestion={async () => {}}
+        removeAlias={async () => {}}
+        onChanged={noop}
+        onClose={noop}
+      />
+    </TabFrame>
+  ) : null;
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) =>
   /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c) &&
@@ -428,7 +539,7 @@ function ReachCheck() {
 }
 
 const FILES: Record<string, string> = {
-  "08": "08-Home.html", "14": "14-BillsList.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "08": "08-Home.html", "14": "14-BillsList.html", "16": "16-Items.html", "19": "19-AddItem.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
   "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
@@ -436,7 +547,7 @@ const FILES: Record<string, string> = {
 function Frame() {
   const lang = params.get("lang");
   // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
-  const [ready, setReady] = useState(!["15", "08", "14", "25"].includes(params.get("screen") ?? ""));
+  const [ready, setReady] = useState(!["15", "08", "14", "25", "16", "19"].includes(params.get("screen") ?? ""));
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -453,7 +564,7 @@ function Frame() {
     <>
       <main>
         {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
-        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
+        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25", "16", "19"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
           {params.get("screen") === "08" ? <Screen08 state={params.get("state") ?? "home"} onReady={() => setReady(true)} />
             : params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
@@ -464,6 +575,8 @@ function Frame() {
             : params.get("screen") === "15" ? <Screen15 state={params.get("state") ?? "history"} onReady={() => setReady(true)} />
             : params.get("screen") === "25" ? <Screen15 state="history" sheet25 onReady={() => setReady(true)} />
             : params.get("screen") === "14" ? <Screen14 state={params.get("state") ?? "list"} onReady={() => setReady(true)} />
+            : params.get("screen") === "16" ? <Screen16 state={params.get("state") ?? "all"} onReady={() => setReady(true)} />
+            : params.get("screen") === "19" ? <Screen16 state={params.get("state") ?? "add"} onReady={() => setReady(true)} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>

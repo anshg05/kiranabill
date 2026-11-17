@@ -6,7 +6,7 @@ import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
 import { isNativeApp } from "@/data/nativeSignIn";
-import { WHATSAPP, savePdf, shareFile } from "@/data/nativeFileShare";
+import { WHATSAPP, saveFile, shareFile } from "@/data/nativeFileShare";
 import type { SavedBill } from "./useFinalise";
 
 // KB-309 commit 3 (owner, 4 Oct 2026 - the legacy behaviour, D58):
@@ -150,7 +150,7 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
       download(ready.png);
     }),
     downloadPdf: once("pdf", () => {
-      if (ready && inApp) return viaApp(async () => ((await savePdf(ready.pdf)) === "saved" ? "share.savedDownloads" : null));
+      if (ready && inApp) return viaApp(async () => ((await saveFile(ready.pdf)) === "saved" ? "share.savedDownloads" : null));
       if (ready) download(ready.pdf);
     }),
     whatsApp: once("whatsapp", () => {

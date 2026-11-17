@@ -44,7 +44,11 @@ function open(ignoreSuggestion?: (id: string) => Promise<void>) {
   render(<CatalogScreen localDb={db} shopId={shopId} save={save} add={vi.fn()} ignoreSuggestion={ignoreSuggestion} onChanged={() => {}} onClose={() => {}} />);
   return save;
 }
-const panel = () => screen.findByRole("region", { name: "Suggestions" });
+// KB-414 step 3: the suggestions are on the "From your bills" page, behind its banner
+async function panel() {
+  fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }));
+  return within(await screen.findByRole("region", { name: "From your bills" })).getByRole("region", { name: "Prices you charged" });
+}
 const realIgnore = vi.fn((id: string) => ignorePriceSuggestionFor(db, shopId, id, "dev-a", Date.now()));
 
 describe("KB-329 - Ignore on a price suggestion", () => {
@@ -71,7 +75,7 @@ describe("KB-329 - Ignore on a price suggestion", () => {
     expect(screen.getByRole("status").textContent).toBe("Suggestion for Sugar hidden for 90 days");
     expect(save).not.toHaveBeenCalled();
     expect((await db.shopProducts.get(sugar.id))!.pricePaise).toBe(4_800);
-    expect(screen.getByText("₹48 / kg")).toBeTruthy(); // the row's price is untouched
+    expect(within(screen.getByRole("list", { name: "Products", hidden: true })).getAllByText("₹48").length).toBe(1); // the card's price is untouched
   });
 
   it("works offline - it is a local learning write; 'Use' stays disabled offline", async () => {
@@ -80,7 +84,7 @@ describe("KB-329 - Ignore on a price suggestion", () => {
     const p = await panel();
     online = false;
     window.dispatchEvent(new Event("offline"));
-    await screen.findByText("Needs internet to change the catalog");
+    await within(p).findByText("Needs internet to change the catalog");
     expect(within(p).getByRole("button", { name: "Use ₹55 for Sugar" }).getAttribute("aria-disabled")).toBe("true");
     const ignore = within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" });
     expect(ignore.getAttribute("aria-disabled")).toBeNull();
@@ -96,9 +100,9 @@ describe("KB-329 - Ignore on a price suggestion", () => {
     expect(within(p).getByText(/Sugar:/)).toBeTruthy();
   });
 
-  it("the button is a 44 px touch target", async () => {
+  it("the button is a 44 px touch target (KB-414: the kit's 46 px secondary button, 48 with its border)", async () => {
     open(realIgnore);
     const p = await panel();
-    expect(within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" }).className).toContain("min-h-11");
+    expect(within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" }).className).toContain("min-h-[48px]");
   });
 });

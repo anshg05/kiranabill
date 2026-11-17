@@ -271,22 +271,28 @@ describe("in the Catalog", () => {
     await screen.findByRole("list", { name: "Products" });
     return { run, onChanged };
   };
+  // KB-414 step 3: "Import from file" is in the "+ Add" sheet
+  const importButton = async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    return within(await screen.findByRole("dialog", { name: "Add items" })).getByRole("button", { name: /Import from file/ });
+  };
 
   it("has 'Import from file'; it opens the sheet over the Catalog", async () => {
     await open();
-    fireEvent.click(screen.getByRole("button", { name: "Import from file" }));
+    fireEvent.click(await importButton());
     expect(await screen.findByRole("heading", { name: "Import products" })).toBeTruthy();
   });
 
   it("offline the button is disabled with the same note as the other catalog changes", async () => {
     online = false;
     await open();
-    expect(screen.getByRole("button", { name: "Import from file" }).getAttribute("aria-disabled")).toBe("true");
+    expect((await importButton()).getAttribute("aria-disabled")).toBe("true");
+    expect(within(screen.getByRole("dialog", { name: "Add items" })).getByText("Needs internet to change the catalog")).toBeTruthy();
   });
 
   it("hidden (inactive) products count as 'already in your shop' - the database would refuse the name", async () => {
     await open();
-    fireEvent.click(screen.getByRole("button", { name: "Import from file" }));
+    fireEvent.click(await importButton());
     await pick(csv("Name,Price,Unit\nOld Soap,30,piece\n"));
     const list = await screen.findByRole("list", { name: "Already in your shop" });
     expect(list.textContent).toMatch(/archived/i); // KB-330: "hidden" is now "archived"
@@ -294,7 +300,7 @@ describe("in the Catalog", () => {
 
   it("after an import the Catalog shows the new products and the billing catalog is told to reload", async () => {
     const { run, onChanged } = await open();
-    fireEvent.click(screen.getByRole("button", { name: "Import from file" }));
+    fireEvent.click(await importButton());
     await pick(csv("Name,Price,Unit\nTea,250,kg\nSalt,20,kg\n"));
     fireEvent.click(await screen.findByRole("button", { name: "Add 2 products" }));
     await screen.findByRole("heading", { name: "Import finished" });
@@ -306,7 +312,7 @@ describe("in the Catalog", () => {
 
   it("an import that added nothing does not tell billing to reload", async () => {
     const { onChanged } = await open(vi.fn(async () => ok({ alreadyThere: 1 })));
-    fireEvent.click(screen.getByRole("button", { name: "Import from file" }));
+    fireEvent.click(await importButton());
     await pick(csv("Name,Price,Unit\nTea,250,kg\n"));
     fireEvent.click(await screen.findByRole("button", { name: "Add 1 product" }));
     await screen.findByRole("heading", { name: "Import finished" });

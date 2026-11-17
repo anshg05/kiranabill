@@ -90,14 +90,14 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
   it("Edit product, a typed change: the Back arrow asks; Cancel keeps the sheet and the text; Discard closes", () => {
     const close = vi.fn();
     render(<EditProductSheet product={product("Sugar")} others={[]} online onSave={okWrite} onClose={close} />);
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sugar Fine" } });
+    fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Sugar Fine" } });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(dialog()).not.toBeNull();
     expect(close).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" })); // the safe one
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(dialog()).toBeNull();
-    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Sugar Fine");
+    expect((screen.getByLabelText("Item name") as HTMLInputElement).value).toBe("Sugar Fine");
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     fireEvent.click(screen.getByRole("button", { name: "Discard" }));
     expect(close).toHaveBeenCalledTimes(1);
@@ -106,7 +106,7 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
   it("Escape asks too (and Escape on the question keeps editing)", () => {
     const close = vi.fn();
     render(<EditProductSheet product={product("Sugar")} others={[]} online onSave={okWrite} onClose={close} />);
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sugar Fine" } });
+    fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Sugar Fine" } });
     fireEvent.keyDown(document, { key: "Escape" });
     expect(dialog()).not.toBeNull();
     expect(close).not.toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
   it("Android Back asks too - and the sheet still has its history entry afterwards (a second Back asks again)", async () => {
     const close = vi.fn();
     render(<EditProductSheet product={product("Sugar")} others={[]} online onSave={okWrite} onClose={close} />);
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sugar Fine" } });
+    fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Sugar Fine" } });
     act(() => window.history.back());
     await waitFor(() => expect(dialog()).not.toBeNull());
     expect(close).not.toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
     render(<AddProductSheet existing={[]} online onCreate={okWrite} onClose={close} />);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(close).toHaveBeenCalledTimes(1);
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Besan" } });
+    fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Besan" } });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(dialog()).not.toBeNull();
     expect(close).toHaveBeenCalledTimes(1);
@@ -143,19 +143,23 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
     expect(close).toHaveBeenCalledTimes(2);
   });
 
-  it("Add product: a typed price alone, or a typed unit alone, counts as a change", () => {
-    for (const label of [/^price/i, /^unit$/i]) {
+  it("Add product: a typed price alone, or a chosen unit alone, counts as a change", () => {
+    // KB-414 step 3: the unit is chosen from 19's "Sold by" chips (or typed after "Other…")
+    for (const change of [() => fireEvent.change(screen.getByLabelText(/^price/i), { target: { value: "12" } }), () => fireEvent.click(screen.getByRole("radio", { name: "kg" }))]) {
       const { unmount } = render(<AddProductSheet existing={[]} online onCreate={okWrite} onClose={() => {}} />);
-      fireEvent.change(screen.getByLabelText(label), { target: { value: "12" } });
+      change();
       fireEvent.click(screen.getByRole("button", { name: "Back" }));
-      expect(dialog(), String(label)).not.toBeNull();
+      expect(dialog()).not.toBeNull();
       unmount();
     }
   });
 
   it("Edit product: a typed change to 'Other names' alone counts as a change", () => {
     render(<EditProductSheet product={product("Sugar")} others={[]} online onSave={okWrite} onClose={() => {}} />);
-    fireEvent.change(screen.getByLabelText("Other names"), { target: { value: "Sugar, shakkar" } });
+    // KB-414 step 3: other names are chips - "+ Add name", then the name
+    fireEvent.click(screen.getByRole("button", { name: "Add name" }));
+    fireEvent.change(screen.getByLabelText("Other name"), { target: { value: "shakkar" } });
+    fireEvent.keyDown(screen.getByLabelText("Other name"), { key: "Enter" });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(dialog()).not.toBeNull();
   });
@@ -163,7 +167,7 @@ describe("#14 - Back / Escape with typed changes asks 'Discard changes?'; with n
   it("हिन्दी: the question and its buttons are translated", () => {
     setScreenLanguage("hi");
     render(<AddProductSheet existing={[]} online onCreate={okWrite} onClose={() => {}} />);
-    fireEvent.change(screen.getByLabelText("नाम"), { target: { value: "Besan" } });
+    fireEvent.change(screen.getByLabelText("सामान का नाम"), { target: { value: "Besan" } });
     fireEvent.click(screen.getByRole("button", { name: "वापस" }));
     expect(screen.getByRole("alertdialog", { name: "बदलाव छोड़ें?" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "छोड़ दें" })).toBeTruthy();
@@ -201,7 +205,7 @@ describe("#15 - every disabled button says why, in one short line", () => {
   it("Edit product Save: 'No changes to save yet' until something changes", () => {
     render(<EditProductSheet product={product("Sugar")} others={[]} online onSave={okWrite} onClose={() => {}} />);
     expect(screen.getByText("No changes to save yet")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sugar Fine" } });
+    fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Sugar Fine" } });
     expect(screen.queryByText("No changes to save yet")).toBeNull();
   });
 

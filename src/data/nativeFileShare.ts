@@ -23,7 +23,7 @@ export async function shareFile(file: File, app?: string): Promise<void> {
 }
 
 /** D58 "PDF always downloads": into Downloads; on Android 7-9 (no MediaStore Downloads) the share sheet with the PDF instead. */
-export async function savePdf(file: File): Promise<"saved" | "shared"> {
+export async function saveFile(file: File): Promise<"saved" | "shared"> {
   const options = await asPlugin(file);
   if ((await FileShare.saveToDownloads(options)).saved) return "saved";
   await FileShare.share(options);

@@ -88,7 +88,7 @@ describe("productPatch - only what changed; never a unit or a price", () => {
 describe("checkNewProduct - the Add product form", () => {
   const ok = { name: "  Jaggery ", unit: "KG", price: "₹ 1,250.50" };
   it("a good row: normalised name, the app's own unit spelling, exact integer paise", () => {
-    expect(checkNewProduct(ok, others, 3)).toEqual({ ok: true, product: { name: "Jaggery", unit: "kg", unitKnown: true, pricePaise: 125_050 } });
+    expect(checkNewProduct(ok, others, 3)).toEqual({ ok: true, product: { name: "Jaggery", unit: "kg", unitKnown: true, pricePaise: 125_050, aliases: [] } });
   });
   it("a unit is never defaulted: empty -> 'Unit needed'", () => {
     const r = checkNewProduct({ ...ok, unit: " " }, others, 3);
@@ -102,7 +102,7 @@ describe("checkNewProduct - the Add product form", () => {
   });
   it("an unusual unit is kept as typed, lower-case, marked unknown", () => {
     const r = checkNewProduct({ ...ok, unit: "Dozen" }, others, 3);
-    expect(r).toEqual({ ok: true, product: { name: "Jaggery", unit: "dozen", unitKnown: false, pricePaise: 125_050 } });
+    expect(r).toEqual({ ok: true, product: { name: "Jaggery", unit: "dozen", unitKnown: false, pricePaise: 125_050, aliases: [] } });
   });
   it("a unit longer than 12 characters is refused", () => {
     expect(checkNewProduct({ ...ok, unit: "x".repeat(13) }, others, 3)).toEqual({ ok: false, errors: { unit: "Unit is longer than 12 characters" } });
@@ -114,6 +114,12 @@ describe("checkNewProduct - the Add product form", () => {
   it("every error is reported at once", () => {
     const r = checkNewProduct({ name: "", unit: "", price: "" }, others, 3);
     expect(r).toEqual({ ok: false, errors: { name: "Name needed", unit: "Unit needed", price: "Price needed" } });
+  });
+  it("KB-414 step 3: other names typed on Add item - Edit's rules: the item's own name skipped, a name another item has refused (never blocks the item)", () => {
+    const r = checkNewProduct({ ...ok, aliases: ["gud", "jaggery", "chini, Gur"].join("\n") }, others, 3);
+    expect(r.ok).toBe(true);
+    // "jaggery" = its own name (skipped); "chini" is Sugar's alias (refused, shown on the page, not saved); the rest kept as keys
+    expect(r.ok && r.product.aliases).toEqual(["gud", "gur"]);
   });
   it("a catalog already at 10,000 products takes no more", () => {
     expect(checkNewProduct(ok, others, 10_000)).toEqual({ ok: false, errors: { name: "The catalog holds at most 10,000 products" } });

@@ -91,12 +91,16 @@ export interface NewProductInput {
   name: string;
   unit: string;
   price: string;
+  /** KB-414 step 3 (owner, 17 Nov 2026): the other names typed on Add item - Edit's rules; saved with the item in the same write. */
+  aliases?: string;
 }
 export interface NewProduct {
   name: string;
   unit: string;
   unitKnown: boolean;
   pricePaise: number;
+  /** Only the names Edit's rules accept (checkAliases); a refused one is shown, never saved, and never blocks the item. */
+  aliases: string[];
 }
 export type NewProductCheck = { ok: true; product: NewProduct } | { ok: false; errors: { name?: string; unit?: string; price?: string } };
 
@@ -112,5 +116,7 @@ export function checkNewProduct(input: NewProductInput, existing: readonly Other
   const price = parseImportPrice(input.price);
   if (!price.ok) errors.price = price.error;
   if (errors.name !== undefined || errors.unit !== undefined || errors.price !== undefined) return { ok: false, errors };
-  return { ok: true, product: { name: (name as { name: string }).name, unit: unit!.unit, unitKnown: unit!.known, pricePaise: (price as { paise: number }).paise } };
+  const finalName = (name as { name: string }).name;
+  const aliases = checkAliases(finalName, input.aliases ?? "", existing).aliases;
+  return { ok: true, product: { name: finalName, unit: unit!.unit, unitKnown: unit!.known, pricePaise: (price as { paise: number }).paise, aliases } };
 }

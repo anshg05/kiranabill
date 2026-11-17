@@ -83,7 +83,7 @@ export async function addCustomProduct(
   product: NewProduct,
 ): Promise<CatalogWriteResult> {
   const out = await importProducts(client, localDb, shopId, deviceId, [
-    { name: product.name, pricePaise: product.pricePaise, unit: product.unit, category: null, aliases: [], sku: null, barcode: null, localId: crypto.randomUUID() },
+    { name: product.name, pricePaise: product.pricePaise, unit: product.unit, category: null, aliases: [...product.aliases], sku: null, barcode: null, localId: crypto.randomUUID() },
   ]);
   if (out.added === 1) return { ok: true };
   return { ok: false, reason: out.alreadyThere > 0 ? "duplicate" : "failed" };

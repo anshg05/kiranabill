@@ -51,8 +51,9 @@ export function ChoiceChip({ selected, onClick, children }: { selected: boolean;
 
 export function RemovableChip({ removeLabel, onRemove, children }: { removeLabel: string; onRemove: () => void; children: ReactNode }) {
   return (
-    // the x's tap area: over its own chip's words, then half the gap to the next chip (owner, 15 Nov 2026: never overlapping)
-    <span className="font-kb [--kb-gap-x:calc(12px+var(--kb-chip-gap,48px))] [--kb-gap-y:calc(8px+var(--kb-chip-gap,48px))] whitespace-nowrap inline-flex items-center gap-[6px] min-h-[34px] pl-3 pr-[6px] rounded-full bg-kb-primary-pale text-kb-ink text-kb-14 font-semibold">
+    // the x's tap area: over its own chip's words, then half the gap to the next chip (owner, 15 Nov 2026: never overlapping); a group may
+    // give the gap across and down apart (--kb-chip-gap-x / -y, KB-414 step 3: 19's rows 14 px apart)
+    <span className="font-kb [--kb-gap-x:calc(12px+var(--kb-chip-gap-x,var(--kb-chip-gap,48px)))] [--kb-gap-y:calc(8px+var(--kb-chip-gap-y,var(--kb-chip-gap,48px)))] whitespace-nowrap inline-flex items-center gap-[6px] min-h-[34px] pl-3 pr-[6px] rounded-full bg-kb-primary-pale text-kb-ink text-kb-14 font-semibold">
       {children}
       <button type="button" aria-label={removeLabel} onClick={onRemove} className="kb-hit-icon w-[26px] h-[26px] rounded-full text-kb-sub flex items-center justify-center">
         <Icon icon={KB_ICONS.X} size={14} />
@@ -71,7 +72,7 @@ export function AddChip({ onClick, children }: { onClick: () => void; children: 
     <button
       type="button"
       onClick={onClick}
-      className="font-kb kb-hit whitespace-nowrap inline-flex items-center gap-[6px] min-h-[34px] px-3 rounded-full border-[1.5px] border-dashed border-kb-border bg-transparent text-kb-primary text-kb-14 font-bold"
+      className="font-kb kb-hit whitespace-nowrap inline-flex items-center gap-[6px] min-h-[34px] px-3 rounded-full outline-[1.5px] outline-dashed outline-kb-border -outline-offset-[1.5px] bg-transparent text-kb-primary text-kb-14 font-bold"
     >
       <Icon icon={KB_ICONS.Plus} size={15} />
       {children}

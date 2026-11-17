@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { KiranaBillDB, type LocalShopProduct } from "@/data/db";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
 import type { NewProduct, ProductPatch } from "@/domain/catalogEdit";
@@ -64,23 +64,27 @@ async function open(w = writers(), onChanged = vi.fn()) {
   await screen.findByRole("list", { name: "Products" });
   return { ...w, onChanged };
 }
-const rows = () => within(screen.getByRole("list", { name: "Products" })).queryAllByRole("listitem");
+// hidden: true - the list under an open page is still there (inert), as on the phone
+const rows = () => within(screen.getByRole("list", { name: "Products", hidden: true })).queryAllByRole("listitem", { hidden: true });
 const names = () => rows().map((r) => within(r).getByTestId("name").textContent);
 const row = (name: string) => rows().find((r) => within(r).getByTestId("name").textContent === name)!;
 const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 const tap = (el: HTMLElement) => fireEvent.click(el);
 
+// KB-414 step 3: a card opens Edit item; the filters are 16's chips
 async function openEdit(name: string) {
   tap(within(row(name)).getByRole("button", { name: `Edit ${name}` }));
-  return within(await screen.findByRole("region", { name: "Edit product" }));
+  return within(await screen.findByRole("region", { name: "Edit item" }));
 }
+const chip = (label: string) => tap(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: label }));
 
 describe("KB-330 - Edit product: rename and other names", () => {
-  it("each row has an Edit button; the sheet shows the name, the other names, and the unit as plain text (no unit field)", async () => {
+  it("each card opens Edit item; it shows the name, the other names (chips), and the unit as plain text (no unit field)", async () => {
     await open();
     const s = await openEdit("Sugar");
-    expect((s.getByRole("textbox", { name: "Name" }) as HTMLInputElement).value).toBe("Sugar");
-    expect((s.getByRole("textbox", { name: "Other names" }) as HTMLTextAreaElement).value).toBe("chini\ncheeni");
+    expect((s.getByRole("textbox", { name: "Item name" }) as HTMLInputElement).value).toBe("Sugar");
+    expect(s.getByRole("button", { name: "Remove chini" })).toBeTruthy();
+    expect(s.getByRole("button", { name: "Remove cheeni" })).toBeTruthy();
     expect(s.getByText(/Unit: kg/)).toBeTruthy();
     expect(s.queryByRole("textbox", { name: /unit/i })).toBeNull();
     expect(s.queryByRole("combobox")).toBeNull();
@@ -89,20 +93,20 @@ describe("KB-330 - Edit product: rename and other names", () => {
   it("Save is off until something changed", async () => {
     await open();
     const s = await openEdit("Sugar");
-    expect((s.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(true);
-    type(s.getByRole("textbox", { name: "Name" }), "Sugar Fine");
-    expect((s.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((s.getByRole("button", { name: "Save item" }) as HTMLButtonElement).disabled).toBe(true);
+    type(s.getByRole("textbox", { name: "Item name" }), "Sugar Fine");
+    expect((s.getByRole("button", { name: "Save item" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("a rename sends ONLY the name, normalised; the list, the sheet and onChanged follow", async () => {
     const w = await open();
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "  Sugar   Fine ");
-    tap(s.getByRole("button", { name: "Save" }));
+    type(s.getByRole("textbox", { name: "Item name" }), "  Sugar   Fine ");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(w.saveDetails).toHaveBeenCalledOnce());
     expect(w.saveDetails).toHaveBeenCalledWith(sugar.id, { display_name: "Sugar Fine" });
     await waitFor(() => expect(names()).toContain("Sugar Fine"));
-    expect(screen.queryByRole("region", { name: "Edit product" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Edit item" })).toBeNull();
     expect(w.onChanged).toHaveBeenCalledOnce();
   });
 
@@ -112,8 +116,8 @@ describe("KB-330 - Edit product: rename and other names", () => {
     const w = await open();
     const s = await openEdit("Besan");
     expect(s.queryByRole("list", { name: "Not saved" })).toBeNull(); // nothing listed until the shopkeeper edits the names
-    type(s.getByRole("textbox", { name: "Name" }), "Besan Fine");
-    tap(s.getByRole("button", { name: "Save" }));
+    type(s.getByRole("textbox", { name: "Item name" }), "Besan Fine");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(w.saveDetails).toHaveBeenCalledOnce());
     expect(w.saveDetails).toHaveBeenCalledWith(besan.id, { display_name: "Besan Fine" });
   });
@@ -121,10 +125,10 @@ describe("KB-330 - Edit product: rename and other names", () => {
   it("a name already used - by an active OR an archived product - is refused before any write", async () => {
     const w = await open();
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "atta");
+    type(s.getByRole("textbox", { name: "Item name" }), "atta");
     expect(s.getByRole("alert").textContent).toBe("Another product is already called “atta”");
-    expect((s.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(true);
-    type(s.getByRole("textbox", { name: "Name" }), "OLD SOAP");
+    expect((s.getByRole("button", { name: "Save item" }) as HTMLButtonElement).disabled).toBe(true);
+    type(s.getByRole("textbox", { name: "Item name" }), "OLD SOAP");
     expect(s.getByRole("alert").textContent).toBe("Another product is already called “OLD SOAP” (archived)");
     expect(w.saveDetails).not.toHaveBeenCalled();
   });
@@ -132,51 +136,55 @@ describe("KB-330 - Edit product: rename and other names", () => {
   it("an empty name is refused", async () => {
     await open();
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "   ");
+    type(s.getByRole("textbox", { name: "Item name" }), "   ");
     expect(s.getByRole("alert").textContent).toBe("Name needed");
   });
 
   it("a dropped alias is LISTED before Save, with its reason; Save sends only the good ones", async () => {
     const w = await open();
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Other names" }), "chini\nab\nGehun Atta\nmeetha");
+    for (const n of ["ab", "Gehun Atta", "meetha"]) {
+      tap(s.getByRole("button", { name: "Add name" }));
+      type(s.getByRole("textbox", { name: "Other name" }), n);
+      fireEvent.keyDown(s.getByRole("textbox", { name: "Other name" }), { key: "Enter" });
+    }
     const list = s.getByRole("list", { name: "Not saved" });
     expect(list.textContent).toContain("“ab” — shorter than 3 characters");
     expect(list.textContent).toContain("“gehun atta” — same as another product's name or alias");
-    tap(s.getByRole("button", { name: "Save" }));
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(w.saveDetails).toHaveBeenCalledOnce());
-    expect(w.saveDetails).toHaveBeenCalledWith(sugar.id, { aliases: ["chini", "meetha"] });
+    expect(w.saveDetails).toHaveBeenCalledWith(sugar.id, { aliases: ["chini", "cheeni", "meetha"] });
   });
 
   it("renaming warns that the old name stops matching; 'Keep as another name' adds it to the field - and only then is it saved", async () => {
     const w = await open();
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "Cheeni Powder");
+    type(s.getByRole("textbox", { name: "Item name" }), "Cheeni Powder");
     expect(s.getByText("“Sugar” will stop matching when spoken.")).toBeTruthy();
     tap(s.getByRole("button", { name: "Keep “Sugar” as another name" }));
-    expect((s.getByRole("textbox", { name: "Other names" }) as HTMLTextAreaElement).value).toBe("chini\ncheeni\nsugar");
+    expect(s.getByRole("button", { name: "Remove sugar" })).toBeTruthy(); // the old name is a chip now
     expect(s.queryByText(/will stop matching/)).toBeNull();
     expect(w.saveDetails).not.toHaveBeenCalled(); // nothing silent: it is a field edit until Save
-    tap(s.getByRole("button", { name: "Save" }));
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(w.saveDetails).toHaveBeenCalledWith(sugar.id, { display_name: "Cheeni Powder", aliases: ["chini", "cheeni", "sugar"] }));
   });
 
   it("the server says 'duplicate' (another phone took the name): the sheet stays open and says so", async () => {
     await open(writers({ ok: false, reason: "duplicate" }));
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "Sugar Fine");
-    tap(s.getByRole("button", { name: "Save" }));
+    type(s.getByRole("textbox", { name: "Item name" }), "Sugar Fine");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(s.getByRole("alert").textContent).toContain("already called “Sugar Fine”"));
-    expect(screen.getByRole("region", { name: "Edit product" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Edit item" })).toBeTruthy();
   });
 
   it("a failed save keeps the sheet and the typing, and says why", async () => {
     await open(writers({ ok: false, reason: "failed" }));
     const s = await openEdit("Sugar");
-    type(s.getByRole("textbox", { name: "Name" }), "Sugar Fine");
-    tap(s.getByRole("button", { name: "Save" }));
+    type(s.getByRole("textbox", { name: "Item name" }), "Sugar Fine");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(s.getByRole("alert").textContent).toBe("Couldn't save — check the internet and try again"));
-    expect((s.getByRole("textbox", { name: "Name" }) as HTMLInputElement).value).toBe("Sugar Fine");
+    expect((s.getByRole("textbox", { name: "Item name" }) as HTMLInputElement).value).toBe("Sugar Fine");
   });
 });
 
@@ -202,24 +210,24 @@ describe("KB-330 - Archive and restore (never a delete)", () => {
 
   it("the Archived filter lists archived products with Restore (price shown, not editable); Restore brings one back", async () => {
     const w = await open();
-    tap(screen.getByRole("radio", { name: "Archived" }));
+    chip("Archived");
     expect(names()).toEqual(["Old Soap"]);
-    expect(row("Old Soap").textContent).toContain("₹30 / kg");
+    expect(row("Old Soap").textContent).toContain("₹30");
     expect(within(row("Old Soap")).queryByRole("button", { name: /Price of/ })).toBeNull();
     tap(within(row("Old Soap")).getByRole("button", { name: "Restore Old Soap" }));
     await waitFor(() => expect(w.setActive).toHaveBeenCalledWith(oldSoap.id, true));
     await waitFor(() => expect(screen.getByText("No archived products.")).toBeTruthy());
-    tap(screen.getByRole("radio", { name: "All" }));
+    chip("All 3");
     expect(names()).toContain("Old Soap");
   });
 
   it("an archived product can still be renamed - that is how its name is freed for a new product", async () => {
     const w = await open();
-    tap(screen.getByRole("radio", { name: "Archived" }));
+    chip("Archived");
     const s = await openEdit("Old Soap");
-    type(s.getByRole("textbox", { name: "Name" }), "Old Soap (retired)");
+    type(s.getByRole("textbox", { name: "Item name" }), "Old Soap (retired)");
     expect(s.queryByRole("button", { name: "Archive product" })).toBeNull(); // already archived
-    tap(s.getByRole("button", { name: "Save" }));
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(w.saveDetails).toHaveBeenCalledWith(oldSoap.id, { display_name: "Old Soap (retired)" }));
   });
 
@@ -234,129 +242,129 @@ describe("KB-330 - Archive and restore (never a delete)", () => {
 });
 
 describe("KB-330 - offline: the catalog can't be changed (D62)", () => {
-  it("Edit, Add product and Restore are disabled with the existing note; nothing opens", async () => {
+  it("Edit item opens to look but Save item and Archive wait; the Add options and Restore wait; nothing is written", async () => {
     const w = await open();
     online = false;
     window.dispatchEvent(new Event("offline"));
     await screen.findByText("Needs internet to change the catalog");
-    const edit = within(row("Sugar")).getByRole("button", { name: "Edit Sugar" });
-    expect(edit.getAttribute("aria-disabled")).toBe("true");
-    tap(edit);
-    expect(screen.queryByRole("region", { name: "Edit product" })).toBeNull();
-    const add = screen.getByRole("button", { name: "Add product" });
+    const s = await openEdit("Sugar");
+    expect((s.getByRole("button", { name: "Save item" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((s.getByRole("button", { name: "Archive product" }) as HTMLButtonElement).disabled).toBe(true);
+    tap(s.getByRole("button", { name: "Back" }));
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Edit item" })).toBeNull());
+    tap(screen.getByRole("button", { name: "Add" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Add items" }));
+    const add = sheet.getByRole("button", { name: /New item/ });
     expect(add.getAttribute("aria-disabled")).toBe("true");
     tap(add);
-    expect(screen.queryByRole("region", { name: "Add product" })).toBeNull();
-    tap(screen.getByRole("radio", { name: "Archived" }));
+    expect(screen.queryByRole("region", { name: "Add item" })).toBeNull();
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => setTimeout(r, 40));
+    });
+    chip("Archived");
     const restore = within(row("Old Soap")).getByRole("button", { name: "Restore Old Soap" });
     expect(restore.getAttribute("aria-disabled")).toBe("true");
     tap(restore);
     expect(w.setActive).not.toHaveBeenCalled();
+    expect(w.saveDetails).not.toHaveBeenCalled();
   });
 });
 
-describe("KB-330 - Add product (D77): name, unit, price - typed by the shopkeeper, never filled in by the app", () => {
+describe("KB-330 - Add product (D77): name, unit, price - typed by the shopkeeper, never filled in by the app (KB-414 step 3: 19's Add item)", () => {
   async function openAdd(w = writers()) {
     const ctx = await open(w);
-    tap(screen.getByRole("button", { name: "Add product" }));
-    const s = within(await screen.findByRole("region", { name: "Add product" }));
+    tap(screen.getByRole("button", { name: "Add" }));
+    tap(within(await screen.findByRole("dialog", { name: "Add items" })).getByRole("button", { name: /New item/ }));
+    const s = within(await screen.findByRole("region", { name: "Add item" }));
     return { ...ctx, s };
   }
-  const fields = (s: ReturnType<typeof within>) => ({
-    name: s.getByRole("textbox", { name: "Name" }) as HTMLInputElement,
-    unit: s.getByRole("textbox", { name: "Unit" }) as HTMLInputElement,
-    price: s.getByRole("textbox", { name: "Price (₹)" }) as HTMLInputElement,
-  });
+  const CHIPS = ["kg", "gm", "liter", "ml", "piece"];
+  const name = (s: ReturnType<typeof within>) => s.getByRole("textbox", { name: "Item name" }) as HTMLInputElement;
+  const price = (s: ReturnType<typeof within>) => s.getByRole("textbox", { name: /^Price/ }) as HTMLInputElement;
+  /** a unit as the shopkeeper gives it: one of 19's chips, or "Other…" and typed */
+  const unit = (s: ReturnType<typeof within>, u: string) => {
+    if (CHIPS.includes(u)) return tap(s.getByRole("radio", { name: u }));
+    tap(s.getByRole("radio", { name: "Other…" }));
+    type(s.getByRole("textbox", { name: "Unit" }), u);
+  };
+  const fill = (s: ReturnType<typeof within>, n: string, u: string, p: string) => {
+    type(name(s), n);
+    unit(s, u);
+    type(price(s), p);
+  };
 
-  it("opens with every field EMPTY - no default unit, no default price", async () => {
+  it("opens with every field EMPTY - no unit chosen, no price", async () => {
     const { s } = await openAdd();
-    const f = fields(s);
-    expect([f.name.value, f.unit.value, f.price.value]).toEqual(["", "", ""]);
-    expect(s.queryByRole("button", { name: "kg" })?.getAttribute("aria-pressed") ?? "false").toBe("false"); // no chip pre-picked
+    expect([name(s).value, price(s).value]).toEqual(["", ""]);
+    expect(s.getAllByRole("radio").every((r) => r.getAttribute("aria-checked") === "false")).toBe(true); // no chip pre-picked
   });
 
-  it("Add with nothing typed reports all three and writes nothing", async () => {
+  it("Save item with nothing typed reports all three and writes nothing", async () => {
     const { s, create } = await openAdd();
-    tap(s.getByRole("button", { name: "Add" }));
+    tap(s.getByRole("button", { name: "Save item" }));
     expect(s.getAllByRole("alert").map((a) => a.textContent)).toEqual(["Name needed", "Unit needed", "Price needed"]);
     expect(create).not.toHaveBeenCalled();
   });
 
   it("a typed row is written once: normalised name, the app's unit spelling, exact paise; the list and a status line follow", async () => {
     const { s, create, onChanged } = await openAdd();
-    const f = fields(s);
-    type(f.name, "  Jaggery  Block ");
-    type(f.unit, "Kilo");
-    type(f.price, "₹ 125.50");
-    tap(s.getByRole("button", { name: "Add" }));
+    fill(s, "  Jaggery  Block ", "Kilo", "₹ 125.50");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
-    expect(create).toHaveBeenCalledWith({ name: "Jaggery Block", unit: "kg", unitKnown: true, pricePaise: 12_550 });
+    expect(create).toHaveBeenCalledWith({ name: "Jaggery Block", unit: "kg", unitKnown: true, pricePaise: 12_550, aliases: [] });
     await waitFor(() => expect(names()).toContain("Jaggery Block"));
     expect(screen.getByRole("status").textContent).toContain("Jaggery Block added — ₹125.50 / kg");
     expect(onChanged).toHaveBeenCalledOnce();
-    expect(screen.queryByRole("region", { name: "Add product" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Add item" })).toBeNull();
   });
 
-  it("a unit chip is a tap by the shopkeeper: it fills the unit field", async () => {
+  it("a unit chip is a tap by the shopkeeper: it chooses the unit (and names the price)", async () => {
     const { s } = await openAdd();
-    tap(s.getByRole("button", { name: "piece" }));
-    expect(fields(s).unit.value).toBe("piece");
+    tap(s.getByRole("radio", { name: "piece" }));
+    expect(s.getByRole("radio", { name: "piece" }).getAttribute("aria-checked")).toBe("true");
+    expect(price(s).getAttribute("id")).toBe(s.getByText("Price per piece").getAttribute("for"));
   });
 
-  it("an unusual unit is allowed, with a note that it is kept as typed", async () => {
+  it("an unusual unit is allowed (Other…), with a note that it is kept as typed", async () => {
     const { s, create } = await openAdd();
-    const f = fields(s);
-    type(f.name, "Eggs");
-    type(f.unit, "Dozen");
-    type(f.price, "84");
+    fill(s, "Eggs", "Dozen", "84");
     expect(s.getByText(/“dozen” isn't one of kg, gm, liter, ml, piece — it is saved as typed/)).toBeTruthy();
-    tap(s.getByRole("button", { name: "Add" }));
-    await waitFor(() => expect(create).toHaveBeenCalledWith({ name: "Eggs", unit: "dozen", unitKnown: false, pricePaise: 8_400 }));
+    tap(s.getByRole("button", { name: "Save item" }));
+    await waitFor(() => expect(create).toHaveBeenCalledWith({ name: "Eggs", unit: "dozen", unitKnown: false, pricePaise: 8_400, aliases: [] }));
   });
 
   it("a name used by an ARCHIVED product is refused, pointing at the Archived list", async () => {
     const { s, create } = await openAdd();
-    const f = fields(s);
-    type(f.name, "old soap");
-    type(f.unit, "pc");
-    type(f.price, "30");
-    tap(s.getByRole("button", { name: "Add" }));
+    fill(s, "old soap", "pc", "30");
+    tap(s.getByRole("button", { name: "Save item" }));
     expect(s.getAllByRole("alert").map((a) => a.textContent)).toEqual(["Another product is already called “old soap” (archived)"]);
     expect(create).not.toHaveBeenCalled();
   });
 
   it("a price of 0 or unclear text is refused", async () => {
     const { s, create } = await openAdd();
-    const f = fields(s);
-    type(f.name, "Soap");
-    type(f.unit, "pc");
-    type(f.price, "0");
-    tap(s.getByRole("button", { name: "Add" }));
+    fill(s, "Soap", "pc", "0");
+    tap(s.getByRole("button", { name: "Save item" }));
     expect(s.getByRole("alert").textContent).toBe("Must be more than ₹0");
-    type(f.price, "45,50");
-    tap(s.getByRole("button", { name: "Add" }));
+    type(price(s), "45,50");
+    tap(s.getByRole("button", { name: "Save item" }));
     expect(s.getByRole("alert").textContent).toMatch(/Price unclear/);
     expect(create).not.toHaveBeenCalled();
   });
 
   it("the server says 'duplicate' (another phone added it): the sheet stays and says so; 'failed' says to check the internet", async () => {
     const { s } = await openAdd(writers({ ok: false, reason: "duplicate" }));
-    const f = fields(s);
-    type(f.name, "Soap");
-    type(f.unit, "pc");
-    type(f.price, "30");
-    tap(s.getByRole("button", { name: "Add" }));
+    fill(s, "Soap", "pc", "30");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(s.getByRole("alert").textContent).toContain("already called “Soap”"));
   });
 
   it("a failed add keeps the typing", async () => {
     const { s } = await openAdd(writers({ ok: false, reason: "failed" }));
-    const f = fields(s);
-    type(f.name, "Soap");
-    type(f.unit, "pc");
-    type(f.price, "30");
-    tap(s.getByRole("button", { name: "Add" }));
+    fill(s, "Soap", "pc", "30");
+    tap(s.getByRole("button", { name: "Save item" }));
     await waitFor(() => expect(s.getByRole("alert").textContent).toBe("Couldn't save — check the internet and try again"));
-    expect(f.price.value).toBe("30");
+    expect(price(s).value).toBe("30");
   });
 });

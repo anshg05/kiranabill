@@ -39,24 +39,36 @@ afterEach(async () => {
   await db.delete();
 });
 
-async function open(removeAlias?: (alias: string, productId: string) => Promise<void>, onChanged = vi.fn()) {
-  render(<CatalogScreen localDb={db} shopId={shopId} save={noop} add={noop} removeAlias={removeAlias} onChanged={onChanged} onClose={() => {}} />);
+async function open(removeAlias?: (alias: string, productId: string) => Promise<void>, onChanged = vi.fn(), editable = false) {
+  render(<CatalogScreen localDb={db} shopId={shopId} save={noop} add={noop} removeAlias={removeAlias} saveDetails={editable ? noop : undefined} onChanged={onChanged} onClose={() => {}} />);
   await screen.findByRole("list", { name: "Products" });
   return { onChanged };
 }
 const names = () => within(screen.getByRole("list", { name: "Products" })).getAllByRole("listitem").map((r) => within(r).getByTestId("name").textContent);
+// KB-414 step 3: the learned names are on the "From your bills" page, behind its banner; "Used N times" is in Edit item
+async function fromBills() {
+  fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }));
+  return screen.findByRole("region", { name: "From your bills" });
+}
+async function usedOf(n: string) {
+  fireEvent.click(screen.getByRole("button", { name: `Edit ${n}` }));
+  const page = await screen.findByRole("region", { name: "Edit item" });
+  const text = page.textContent;
+  fireEvent.click(within(page).getByRole("button", { name: "Back" }));
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Edit item" })).toBeNull());
+  return text;
+}
 
 describe("KB-321: most used first", () => {
   it("products are ordered by the bills of the last 30 days (then name), and say how often", async () => {
     await bill("b1", ["gamma", "beta"]);
     await bill("b2", ["gamma"]);
     await bill("b3", ["gamma", "beta"]);
-    await open();
+    await open(undefined, vi.fn(), true);
     expect(names()).toEqual(["Gamma", "Beta", "Alpha"]);
-    const list = within(screen.getByRole("list", { name: "Products" }));
-    expect(list.getByText("Used 3 times in the last 30 days")).toBeTruthy();
-    expect(list.getByText("Used 2 times in the last 30 days")).toBeTruthy();
-    expect(list.getByText("Not used yet")).toBeTruthy();
+    expect(await usedOf("Gamma")).toContain("Used 3 times in the last 30 days");
+    expect(await usedOf("Beta")).toContain("Used 2 times in the last 30 days");
+    expect(await usedOf("Alpha")).toContain("Not used yet");
   });
   it("with no bills it is the old order: by name", async () => {
     await open();
@@ -68,7 +80,7 @@ describe("KB-323: Learned names", () => {
   it("lists each learned phrase with its product and how sure the app is; 'in use' only from 0.8", async () => {
     await db.learningEvents.bulkAdd([confirm("pale ji", "alpha"), confirm("pale ji", "alpha"), confirm("pale ji", "alpha"), confirm("bhoora", "beta")]);
     await open(async () => {});
-    const section = screen.getByRole("region", { name: "Learned names" });
+    const section = within(await fromBills()).getByRole("region", { name: "Learned names" });
     const items = within(section).getAllByRole("listitem").map((li) => li.textContent);
     expect(items.some((t) => t!.includes("pale ji") && t!.includes("Alpha") && t!.includes("In use"))).toBe(true);
     expect(items.some((t) => t!.includes("bhoora") && t!.includes("Beta") && t!.includes("Still learning"))).toBe(true);
@@ -80,6 +92,7 @@ describe("KB-323: Learned names", () => {
     await db.learningEvents.bulkAdd([confirm("pale ji", "alpha")]);
     cleanup();
     await open();
+    await fromBills();
     expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
   });
 
@@ -89,6 +102,7 @@ describe("KB-323: Learned names", () => {
       await db.learningEvents.add({ ...confirm(alias, productId), localId: "rm", eventType: "alias_removed" });
     });
     const { onChanged } = await open(removeAlias);
+    await fromBills();
     fireEvent.click(screen.getByRole("button", { name: "Remove “pale ji” (Alpha)" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Learned names" })).toBeNull());
     expect(removeAlias).toHaveBeenCalledWith("pale ji", "alpha");

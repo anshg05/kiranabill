@@ -147,7 +147,8 @@ describe("chips", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove तुअर दाल" }));
     expect(onRemove).toHaveBeenCalledOnce();
     const add = screen.getByRole("button", { name: "Add name" });
-    has(add, "border-dashed", "text-kb-primary", "min-h-[34px]");
+    // the dashed edge is an outline drawn inside the chip (KB-414 step 3): the same look, and no border eating its 48 px tap area
+    has(add, "outline-dashed", "-outline-offset-[1.5px]", "text-kb-primary", "min-h-[34px]");
     fireEvent.click(add);
     expect(onAdd).toHaveBeenCalledOnce();
   });
@@ -353,7 +354,7 @@ describe("tap areas never overlap (owner, 15 Nov 2026): each stops at the middle
 
   it("the chip x reaches over its own chip's words but stops half way to the next chip: 12 px of chip + the gap across, 8 px of chip + the gap up and down", () => {
     render(<RemovableChip removeLabel="Remove x" onRemove={() => {}}>x</RemovableChip>);
-    has(screen.getByText("x"), "[--kb-gap-x:calc(12px+var(--kb-chip-gap,48px))]", "[--kb-gap-y:calc(8px+var(--kb-chip-gap,48px))]");
+    has(screen.getByText("x"), "[--kb-gap-x:calc(12px+var(--kb-chip-gap-x,var(--kb-chip-gap,48px)))]", "[--kb-gap-y:calc(8px+var(--kb-chip-gap-y,var(--kb-chip-gap,48px)))]");
   });
 
   it("the filter row tells its chips the 8 px gap between them", () => {

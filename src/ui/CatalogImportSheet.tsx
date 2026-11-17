@@ -16,6 +16,9 @@ import {
 import { formatRupees } from "@/domain/money";
 import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
+import { useT } from "./useT";
+import { isNativeApp } from "@/data/nativeSignIn";
+import { saveFile } from "@/data/nativeFileShare";
 
 // KB-314 (owner, 10 Oct 2026; docs/07-DECISIONS.md D68): import products from a spreadsheet or CSV, over the Catalog.
 //   pick a file -> the columns it found (changeable) -> a PREVIEW of what will be added, what is already in the shop
@@ -47,20 +50,37 @@ type Stage =
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const priceUnit = (paise: number | null, unit: string) => `${paise === null ? "—" : formatRupees(paise)} / ${unit}`;
 
-function downloadSample(): void {
+const SAMPLE_NAME = "kiranabill-products-sample.csv";
+
+/** The browser: today's download. KB-414 step 3: the Android app's WebView drops downloads - there the FileShare plugin saves it. */
+async function downloadSample(): Promise<"saved" | "shared" | "downloaded"> {
+  if (isNativeApp()) return saveFile(new File(["﻿" + SAMPLE_CSV], SAMPLE_NAME, { type: "text/csv" }));
   const blob = new Blob(["﻿" + SAMPLE_CSV], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "kiranabill-products-sample.csv";
+  a.download = SAMPLE_NAME;
   a.click();
   URL.revokeObjectURL(url);
+  return "downloaded";
 }
 
 export function CatalogImportSheet({ existing, online, run, onClose }: CatalogImportSheetProps) {
   useBackEntry("kbImport", onClose);
   useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const [stage, setStage] = useState<Stage>({ kind: "pick", error: null });
+  const { t } = useT();
+  // KB-414 step 3: the app's line after the sample is saved ("Saved to Downloads") or could not be
+  const [sample, setSample] = useState<"saved" | "failed" | null>(null);
+  const getSample = () => {
+    setSample(null);
+    downloadSample()
+      .then((r) => setSample(r === "saved" ? "saved" : null))
+      .catch((err: unknown) => {
+        console.warn("[import] sample not saved:", err instanceof Error ? err.message : err);
+        setSample("failed");
+      });
+  };
   const fileInput = useRef<HTMLInputElement>(null);
   const known = useMemo(() => existing.map((p) => ({ displayName: p.displayName, unit: p.unit, pricePaise: p.pricePaise, aliases: p.aliases, isActive: p.isActive })), [existing]);
   const preview = useMemo(() => (stage.kind === "preview" ? buildPreview(stage.table, stage.mapping, known) : null), [stage, known]);
@@ -122,9 +142,11 @@ export function CatalogImportSheet({ existing, online, run, onClose }: CatalogIm
               />
               {stage.kind === "reading" && <p role="status" aria-label="Progress" className="text-ink-soft">Reading the file…</p>}
               {stage.kind === "pick" && stage.error && <p role="alert" className="text-danger">{stage.error}</p>}
-              <button type="button" onClick={downloadSample} className="min-h-11 self-start rounded-[6px] border border-line bg-surface px-4 font-medium">
+              <button type="button" onClick={getSample} className="min-h-11 self-start rounded-[6px] border border-line bg-surface px-4 font-medium">
                 Download sample CSV
               </button>
+              {sample === "saved" && <p role="status" className="text-[13px] text-ink-soft">{t("share.savedDownloads")}</p>}
+              {sample === "failed" && <p role="alert" className="text-[13px] text-danger">{t("share.failed")}</p>}
             </div>
           )}
 

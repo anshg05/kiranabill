@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useId, useState } from "react";
 import type { CatalogWriteResult } from "@/data/catalogEdit";
 import { checkNewProduct, type NewProduct, type OtherProduct } from "@/domain/catalogEdit";
 import { normalizeUnit } from "@/domain/catalogImport";
@@ -7,12 +6,20 @@ import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
 import { useDiscardGuard } from "./useDiscardGuard";
 import { OFFLINE_NOTE, SAVE_FAILED_TEXT } from "./EditProductSheet";
+import { FieldError, ItemPage, PageNote } from "./ItemPage";
+import { OtherNamesField } from "./OtherNamesField";
+import { Button } from "./kit/Button";
+import { TextField } from "./kit/TextField";
+import { KB_ICONS } from "./kit/icons";
 import { useT } from "./useT";
 
 // KB-330 (D77, owner 11 Oct 2026): "Add product" - a shop's own product with a name, a unit and a price, so anything
 // outside the Ready catalog doesn't stay bill-only and priced by hand every time. It is the import's row, judged by the
 // import's rules (domain/catalogEdit.ts checkNewProduct) and written through the import's insert path. EVERY field starts
 // empty and stays what the shopkeeper typed: the app never picks a unit or a price (hard rule 7).
+// KB-414 step 3 (owner + reviewer, 17 Nov 2026): 19-AddItem's look - "Add item"; the other names customers say, saved WITH the item
+// (one write, Edit's rules); "Sold by" = today's unit chips + "Other…" (today's typed unit and its hint); "Price per kg" with 19's
+// helper. Pack size (drawn) is not built (12 SG-33).
 
 const UNIT_CHIPS = ["kg", "gm", "liter", "ml", "piece"] as const;
 
@@ -29,18 +36,21 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
   const { t, tx } = useT();
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
+  const [other, setOther] = useState(false);
   const [price, setPrice] = useState("");
-  const guard = useDiscardGuard(name.trim() !== "" || unit.trim() !== "" || price.trim() !== "", onClose);
+  const [aliases, setAliases] = useState("");
+  const guard = useDiscardGuard(name.trim() !== "" || unit.trim() !== "" || price.trim() !== "" || aliases.trim() !== "", onClose);
   useBackEntry("kbAddProduct", guard.requestClose, guard.canClose);
   useHidesNav(); // KB-414: no nav over this page (it is drawn inside a tab screen, under the nav)
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
   const typedUnit = normalizeUnit(unit);
+  const soldBy = useId();
+
   const submit = async () => {
     setServerError(null);
-    const r = checkNewProduct({ name, unit, price }, existing, existing.length);
+    const r = checkNewProduct({ name, unit, price, aliases }, existing, existing.length);
     if (!r.ok) return setErrors(r.errors);
     setErrors({});
     setBusy(true);
@@ -54,81 +64,54 @@ export function AddProductSheet({ existing, online, onCreate, onClose }: Props) 
     }
   };
 
-  const field = "min-h-11 rounded-[6px] border border-line bg-surface px-3";
+  const chip = (on: boolean) =>
+    `kb-hit min-h-[40px] rounded-[12px] px-[14px] text-kb-15 font-bold ${on ? "bg-kb-primary text-kb-card" : "border border-kb-border bg-kb-card text-kb-ink"}`;
   return (
-    <section aria-label={t("product.addTitle")} className="fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-paper text-ink text-[15px]">
-      <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
-        <header className="flex items-center gap-2 border-b border-line px-2 py-2">
-          <button type="button" aria-label={t("settings.back")} onClick={guard.requestClose} className="flex size-11 shrink-0 items-center justify-center rounded-[6px] text-ink-soft">
-            <ArrowLeft size={20} strokeWidth={1.5} aria-hidden />
-          </button>
-          <h2 className="text-[20px] font-semibold">{t("product.addTitle")}</h2>
-        </header>
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-          {!online && <p className="rounded-[6px] border border-line bg-surface px-3 py-2 text-[13px] text-ink-soft">{tx(OFFLINE_NOTE)}</p>}
-
-          <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">{t("product.name")}</span>
-            <input type="text" aria-label={t("product.name")} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" className={field} />
-          </label>
-          {errors.name && (
-            <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {tx(errors.name)}
-            </p>
-          )}
-
-          <div className="flex flex-col gap-1">
-            <label className="flex flex-col gap-1">
-              <span className="text-[13px] font-medium text-ink-soft">{t("col.unit")}</span>
-              <input type="text" aria-label={t("col.unit")} value={unit} onChange={(e) => setUnit(e.target.value)} autoComplete="off" placeholder={t("product.unitPlaceholder")} className={field} />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {UNIT_CHIPS.map((u) => (
-                <button key={u} type="button" onClick={() => setUnit(u)} className="min-h-11 min-w-11 rounded-[6px] border border-line bg-surface px-3 font-medium">
-                  {u}
-                </button>
-              ))}
-            </div>
-            {typedUnit && !typedUnit.known && (
-              <p className="text-[13px] text-ink-soft [overflow-wrap:anywhere]">
-                {t("product.unitUnknown", { unit: typedUnit.unit, list: UNIT_CHIPS.join(", ") })}
-              </p>
-            )}
-          </div>
-          {errors.unit && (
-            <p role="alert" className="text-[13px] text-danger">
-              {tx(errors.unit)}
-            </p>
-          )}
-
-          <label className="flex flex-col gap-1">
-            <span className="text-[13px] font-medium text-ink-soft">{t("product.price")}</span>
-            <input type="text" inputMode="decimal" aria-label={t("product.priceLabel")} value={price} onChange={(e) => setPrice(e.target.value)} autoComplete="off" placeholder="₹" className={field} />
-          </label>
-          {errors.price && (
-            <p role="alert" className="text-[13px] text-danger">
-              {tx(errors.price)}
-            </p>
-          )}
-
-          {serverError && (
-            <p role="alert" className="text-[13px] text-danger [overflow-wrap:anywhere]">
-              {tx(serverError)}
-            </p>
-          )}
-        </div>
-        <div className="safe-bottom flex items-center gap-2 border-t border-line px-4 pt-3">
-          <button
-            type="button"
-            disabled={!online || busy}
-            onClick={() => void submit()}
-            className="min-h-11 rounded-[6px] bg-ink px-5 font-medium text-paper disabled:opacity-50"
-          >
-            {t("common.add")}
+    <ItemPage
+      title={t("add.title")}
+      onBack={guard.requestClose}
+      footer={
+        <>
+          <Button variant="primary" icon={KB_ICONS.Check} disabled={!online || busy} onClick={() => void submit()}>
+            {t("items.save")}
+          </Button>
+          {guard.dialog}
+        </>
+      }
+    >
+      {!online && <PageNote>{tx(OFFLINE_NOTE)}</PageNote>}
+      <TextField label={t("product.name")} value={name} onChange={setName} />
+      {errors.name && <FieldError>{tx(errors.name)}</FieldError>}
+      <OtherNamesField ownName={name} text={aliases} onText={setAliases} others={existing} showDropped />
+      <div className="flex flex-col gap-2">
+        <p id={soldBy} className="text-kb-14 font-semibold">{t("items.soldBy")}</p>
+        {/* 8 px apart as drawn; a tap area counts from inside the 1 px border, so the gap it may share is 10 */}
+        <div role="radiogroup" aria-labelledby={soldBy} className="flex flex-wrap gap-2 [--kb-gap-x:10px] [--kb-gap-y:10px]">
+          {UNIT_CHIPS.map((u) => (
+            <button key={u} type="button" role="radio" aria-checked={!other && unit === u} onClick={() => (setOther(false), setUnit(u))} className={chip(!other && unit === u)}>
+              {u}
+            </button>
+          ))}
+          <button type="button" role="radio" aria-checked={other} onClick={() => (setOther(true), setUnit(""))} className={chip(other)}>
+            {t("items.otherUnit")}
           </button>
         </div>
+        {other && <TextField label={t("col.unit")} value={unit} onChange={setUnit} placeholder={t("product.unitPlaceholder")} />}
+        {other && typedUnit && !typedUnit.known && (
+          <p className="text-kb-13 text-kb-sub [overflow-wrap:anywhere]">{t("product.unitUnknown", { unit: typedUnit.unit, list: UNIT_CHIPS.join(", ") })}</p>
+        )}
       </div>
-      {guard.dialog}
-    </section>
+      {errors.unit && <FieldError>{tx(errors.unit)}</FieldError>}
+      <TextField
+        label={typedUnit ? t("items.pricePer", { unit: typedUnit.unit }) : t("product.price")}
+        value={price}
+        onChange={setPrice}
+        prefix="₹"
+        inputMode="decimal"
+        helper={t("items.priceHelp")}
+      />
+      {errors.price && <FieldError>{tx(errors.price)}</FieldError>}
+      {serverError && <FieldError>{tx(serverError)}</FieldError>}
+    </ItemPage>
   );
 }

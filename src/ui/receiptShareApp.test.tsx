@@ -16,10 +16,10 @@ import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 const env = vi.hoisted(() => ({
   native: false,
   shareFile: vi.fn(async (_f: File, _app?: string) => {}),
-  savePdf: vi.fn(async (_f: File): Promise<"saved" | "shared"> => "saved"),
+  saveFile: vi.fn(async (_f: File): Promise<"saved" | "shared"> => "saved"),
 }));
 vi.mock("@/data/nativeSignIn", () => ({ isNativeApp: () => env.native }));
-vi.mock("@/data/nativeFileShare", () => ({ WHATSAPP: "com.whatsapp", shareFile: env.shareFile, savePdf: env.savePdf }));
+vi.mock("@/data/nativeFileShare", () => ({ WHATSAPP: "com.whatsapp", shareFile: env.shareFile, saveFile: env.saveFile }));
 
 const item: ReceiptItem = { displayName: "Chini", qty: 2, unit: "kg", ratePaise: 4800 as Paise, rateUnit: "kg", totalPaise: 9600 as Paise };
 const receipt = buildReceipt({ receiptNumber: "519", customerName: "Cash", totalPaise: 9600 as Paise, finalizedAt: "2026-11-10T12:18:00.000Z", createdAt: "2026-11-10T12:18:00.000Z", status: "final" }, [item], { name: "Gupta Kirana Store", phone: null, logoUrl: null, billLanguage: "en" });
@@ -32,7 +32,7 @@ let webShare: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   env.native = true;
   env.shareFile.mockReset().mockResolvedValue(undefined);
-  env.savePdf.mockReset().mockResolvedValue("saved");
+  env.saveFile.mockReset().mockResolvedValue("saved");
   anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   winOpen = vi.fn(() => null);
   vi.stubGlobal("open", winOpen);
@@ -76,18 +76,18 @@ describe("in the Android app (no web share sheet, downloads dropped)", () => {
   it("PDF: saved to Downloads - 'Saved to Downloads' shows; no dropped download", async () => {
     await ready();
     await tap("PDF");
-    expect(env.savePdf).toHaveBeenCalledOnce();
-    expect(fileOf(env.savePdf.mock.calls[0]).name).toBe("Bill-519.pdf");
-    expect(fileOf(env.savePdf.mock.calls[0]).type).toBe("application/pdf");
+    expect(env.saveFile).toHaveBeenCalledOnce();
+    expect(fileOf(env.saveFile.mock.calls[0]).name).toBe("Bill-519.pdf");
+    expect(fileOf(env.saveFile.mock.calls[0]).type).toBe("application/pdf");
     expect(await screen.findByRole("status")).toHaveProperty("textContent", "Saved to Downloads");
     expect(anchorClick).not.toHaveBeenCalled();
   });
 
   it("PDF on Android 7-9 (Downloads cannot be written): the share sheet opened instead - no 'Saved' note", async () => {
-    env.savePdf.mockResolvedValue("shared");
+    env.saveFile.mockResolvedValue("shared");
     await ready();
     await tap("PDF");
-    expect(env.savePdf).toHaveBeenCalledOnce();
+    expect(env.saveFile).toHaveBeenCalledOnce();
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -111,7 +111,7 @@ describe("in the Android app (no web share sheet, downloads dropped)", () => {
 
   it("a PDF that could not be saved says so too", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    env.savePdf.mockRejectedValue(new Error("SAVE_FAILED"));
+    env.saveFile.mockRejectedValue(new Error("SAVE_FAILED"));
     await ready();
     await tap("PDF");
     expect(await screen.findByRole("status")).toHaveProperty("textContent", "Couldn't open sharing — try again");
@@ -154,7 +154,7 @@ describe("in the browser: unchanged", () => {
     await tap("WhatsApp");
     expect(webShare).toHaveBeenCalledTimes(2);
     expect(env.shareFile).not.toHaveBeenCalled();
-    expect(env.savePdf).not.toHaveBeenCalled();
+    expect(env.saveFile).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).toBeNull();
   });
 });

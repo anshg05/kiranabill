@@ -193,7 +193,10 @@ describe("the notch and the home bar", () => {
   });
   it("the bottom bars keep clear of the home indicator: safe-bottom is defined and used", () => {
     expect(read("src/index.css")).toMatch(/\.safe-bottom\s*\{[^}]*env\(safe-area-inset-bottom\)/);
-    for (const f of ["src/ui/BillingScreen.tsx", "src/ui/AddProductSheet.tsx", "src/ui/EditProductSheet.tsx"]) expect(read(f), f).toContain("safe-bottom");
+    expect(read("src/ui/BillingScreen.tsx")).toContain("safe-bottom");
+    // KB-414 step 3: Add / Edit item are 19's page frame now - its footer keeps 19's 22 px, more over a home bar
+    for (const f of ["src/ui/AddProductSheet.tsx", "src/ui/EditProductSheet.tsx"]) expect(read(f), f).toContain("<ItemPage");
+    expect(read("src/ui/ItemPage.tsx")).toContain("pb-[max(22px,env(safe-area-inset-bottom))]");
     // KB-414 step 2: the cancel sheet is the kit's bottom sheet now - it keeps 25's drawn 26 px, more over a home bar
     expect(read("src/ui/kit/BottomSheet.tsx")).toContain("pb-[max(26px,env(safe-area-inset-bottom))]");
   });
