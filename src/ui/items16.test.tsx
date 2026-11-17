@@ -335,12 +335,23 @@ describe("the Learned chip", () => {
     expect(screen.queryByRole("region", { name: "Items added from your bills" })).toBeNull();
   });
 
-  it("only items added from bills, no names yet: the items, and no empty message", async () => {
+  // owner + reviewer, 17 Nov 2026 (the step-3 fixes review): no learned names = the message, at the TOP - even when items the app added
+  // from bills are listed below it
+  it("no names yet but items added from bills: 'Nothing learned yet' at the top, the items below", async () => {
     await open();
     learnedChip();
-    expect(await screen.findByRole("region", { name: "Items added from your bills" })).toBeTruthy();
-    expect(screen.queryByText("Nothing learned yet")).toBeNull();
+    const message = await screen.findByText("Nothing learned yet");
+    const items = await screen.findByRole("region", { name: "Items added from your bills" });
+    expect(message.compareDocumentPosition(items) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Names learned from your bills" })).toBeNull();
+  });
+
+  it("names learned: no 'Nothing learned yet'", async () => {
+    await fromBills();
+    await open();
+    learnedChip();
+    await screen.findByRole("region", { name: "Names learned from your bills" });
+    expect(screen.queryByText("Nothing learned yet")).toBeNull();
   });
 
   it("in हिन्दी", async () => {

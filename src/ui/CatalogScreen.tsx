@@ -258,7 +258,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
           {loaded && filter === "learned" && (
             <LearnedNames
               learned={loaded.learnedNames.filter((l) => !typed || [l.alias, l.productName].some((x) => nameKey(x).includes(nameKey(typed))))}
-              empty={!typed && shown.length === 0}
+              empty={!typed} // no learned names: the message, at the top - even with items added from bills below (owner, 17 Nov 2026)
               onRemove={removeAlias ? (l) => void removeAlias(l.alias, l.catalogId).then(wrote).catch((err: unknown) => console.warn("[catalog] could not remove the alias:", err)) : undefined}
             />
           )}

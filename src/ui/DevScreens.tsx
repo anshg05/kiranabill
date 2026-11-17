@@ -374,7 +374,8 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
       // 19's own sample adds तूर दाल - not in the list behind it then, or its name and "toor dal" would clash
       // learnedempty: no learned names and no item the app added from bills (टाटा नमक is one) - the Learned chip's empty text
       for (const [id, name, aliases, unit, price, source] of ITEMS.filter(([id]) => !(state === "add" && id === "toor") && !(state === "learnedempty" && id === "salt")))
-        await d.shopProducts.put({ id, shopId, baseProductId: null, displayName: name, category: null, unit, pricePaise: price, aliases: [...aliases], source, useCount: 0, sku: null, barcode: null, isActive: id !== "old" });
+        // learnednone: the owner's phone - no learned names AND no item the app added from bills
+        await d.shopProducts.put({ id, shopId, baseProductId: null, displayName: name, category: null, unit, pricePaise: price, aliases: [...aliases], source: state === "learnednone" && source === "learned" ? "custom" : source, useCount: 0, sku: null, barcode: null, isActive: id !== "old" });
       // ready: the owner's ready catalog is ~370 items - 400 here (KB-414 step 3 phone check: every item, no cap)
       if (state === "ready")
         await d.baseProducts.bulkPut(Array.from({ length: 400 }, (_, i) => ({ id: `b${i}`, catalogVersion: 1, displayName: `${["चना", "मूंग", "उड़द", "मसूर", "राजमा", "पोहा", "सूजी", "मैदा"][i % 8]} ${Math.floor(i / 8) + 1}`, sourceCategory: "grain", guardCategory: "grain", defaultUnit: "kg", suggestedPricePaise: 5_000 + i * 10, aliases: [], isActive: true })));
@@ -404,7 +405,7 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
     };
     const steps: (() => void)[] = [];
     const later = (f: () => void) => steps.push(f);
-    if (state === "learned" || state === "learnedempty") later(() => button(say16("catalog.learned"))?.click());
+    if (state === "learned" || state === "learnedempty" || state === "learnednone") later(() => button(say16("catalog.learned"))?.click());
     if (state === "ready") {
       later(() => button(say16("common.add"))?.click());
       later(() => button(new RegExp(say16("catalog.addReady")))?.click());
@@ -439,8 +440,11 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
       }
     }
     let i = 0;
+    let loaded = false;
     const id = window.setInterval(() => {
-      if (!document.querySelector("[data-testid=name]")) return; // the list has loaded
+      // the list has loaded (once - a step may leave no card on screen: the Learned chip with nothing learned)
+      if (!loaded && !document.querySelector("[data-testid=name]")) return;
+      loaded = true;
       const step = steps[i++];
       if (step) return step();
       window.clearInterval(id);
