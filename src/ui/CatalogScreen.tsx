@@ -254,12 +254,14 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
           )}
           {loaded && filter !== "archived" && loaded.products.length === 0 && !typed && <p className="px-1 py-6 text-center text-kb-15">{t("catalog.noneYet")}</p>}
           {loaded && (
-            <ul aria-label={t("add.products")} className={shown.length > 0 ? "overflow-hidden rounded-[16px] border border-kb-border bg-kb-card" : ""}>
+            // flex-none: a clipping box may shrink in its column - on a short screen the lower cards were cut, out of reach (the size matrix)
+            <ul aria-label={t("add.products")} className={shown.length > 0 ? "flex-none overflow-hidden rounded-[16px] border border-kb-border bg-kb-card" : ""}>
               {shown.map((p) => (
-                <li key={p.id} className="flex items-center border-b border-kb-border last:border-b-0">
+                // an archived card has Restore UNDER it (beside the price it had no room on a small phone at a big text size)
+                <li key={p.id} className={`flex border-b border-kb-border last:border-b-0 ${p.isActive ? "items-center" : "flex-col"}`}>
                   <ItemCard p={p} onOpen={saveDetails ? () => setEditing(p) : undefined} />
                   {!p.isActive && setActive && (
-                    <span className="flex flex-none flex-col items-end gap-1 pr-[14px]">
+                    <span className="flex flex-none flex-col items-end gap-1 px-[14px] pb-3">
                       <Button
                         variant="secondary"
                         height={46}
@@ -425,7 +427,8 @@ function ItemCard({ p, onOpen }: { p: LocalShopProduct; onOpen?: () => void }) {
   const aliases = p.aliases.filter((a) => nameKey(a) !== own);
   const body = (
     <>
-      <span data-testid="tile" aria-hidden="true" className="flex size-[42px] flex-none items-center justify-center rounded-[12px] bg-kb-muted text-kb-18 font-bold">
+      {/* the tile is decoration (hidden from screen readers): its letter stays 18 px at every text size, inside its 42 px tile */}
+      <span data-testid="tile" aria-hidden="true" className="flex size-[42px] flex-none items-center justify-center rounded-[12px] bg-kb-muted text-[18px] leading-none font-bold">
         {[...p.displayName][0]?.toUpperCase()}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">

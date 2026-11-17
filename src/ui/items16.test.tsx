@@ -165,6 +165,14 @@ describe("16 Items: the list comes first", () => {
     expect((within(page).getByRole("textbox", { name: "Price per kg" }) as HTMLInputElement).value).toBe("68");
   });
 
+  it("found by the size matrix: the list never shrinks in its scroller (a short screen cut the lower cards); the tile's letter stays 18 px; an archived card has Restore under it", async () => {
+    await open();
+    expect(list().getAttribute("class")).toContain("flex-none");
+    expect(within(card("चीनी")).getByTestId("tile").getAttribute("class")).toContain("text-[18px]");
+    fireEvent.click(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: "Archived" }));
+    expect(screen.getByRole("button", { name: "Restore Old Soap" }).closest("li")!.getAttribute("class")).toContain("flex-col");
+  });
+
   it("no back arrow on the tab (the nav and Android Back go Home)", async () => {
     await open();
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
