@@ -87,10 +87,13 @@ function writers(result: CatalogWriteResult = { ok: true }) {
 }
 
 const onChanged = vi.fn();
+/** The Items tab closing = going Home (the app's onClose) */
+const onClose = vi.fn();
 async function open(w = writers(), inFrame = false) {
   onChanged.mockClear();
+  onClose.mockClear();
   const screenEl = (
-    <CatalogScreen localDb={db} shopId={shopId} {...w} onChanged={onChanged} onClose={vi.fn()} />
+    <CatalogScreen localDb={db} shopId={shopId} {...w} onChanged={onChanged} onClose={onClose} />
   );
   render(inFrame ? <TabFrame tab="items" onTab={() => {}} offline={false}>{screenEl}</TabFrame> : screenEl);
   await waitFor(() => expect(within(screen.getByRole("region")).getAllByRole("listitem").length).toBeGreaterThan(0)); // any language
@@ -187,17 +190,26 @@ describe("B: '+ Add' opens a sheet with every way to add", () => {
     expect(within(sheet).getAllByRole("button").map((b) => b.querySelector("b")?.textContent ?? b.textContent)).toEqual(["New item", "Add from ready catalog", "Import from file"]);
   });
 
-  it("each opens its page (the sheet closes): New item -> Add item; ready catalog; import", async () => {
+  // KB-414 step 3 phone check (owner, 17 Nov 2026): Back from these three went HOME - the Items tab closed too. Never again: with
+  // the arrow AND Android Back, for each, Items stays and does not close (onClose = Home); then one Android Back on Items goes Home.
+  it("each opens its page (the sheet closes); Back - the arrow or Android Back - returns to Items, never Home", async () => {
     await open();
-    for (const [option, page] of [["New item", "Add item"], ["Add from ready catalog", "Ready catalog"], ["Import from file", "Import products"]] as const) {
-      fireEvent.click(screen.getByRole("button", { name: "Add" }));
-      fireEvent.click(within(await screen.findByRole("dialog", { name: "Add items" })).getByRole("button", { name: new RegExp(option) }));
-      expect(screen.queryByRole("dialog", { name: "Add items" })).toBeNull();
-      expect(await screen.findByRole("region", { name: page })).toBeTruthy();
-      await back();
-      await waitFor(() => expect(screen.queryByRole("region", { name: page })).toBeNull());
-      expect(screen.getByRole("region", { name: "Items" })).toBeTruthy(); // Android Back: the list, never Home
-    }
+    for (const how of ["android", "arrow"] as const)
+      for (const [option, page] of [["New item", "Add item"], ["Add from ready catalog", "Ready catalog"], ["Import from file", "Import products"]] as const) {
+        fireEvent.click(screen.getByRole("button", { name: "Add" }));
+        fireEvent.click(within(await screen.findByRole("dialog", { name: "Add items" })).getByRole("button", { name: new RegExp(option) }));
+        expect(screen.queryByRole("dialog", { name: "Add items" })).toBeNull();
+        const region = await screen.findByRole("region", { name: page });
+        await act(async () => void (await new Promise((r) => setTimeout(r, 40))));
+        if (how === "android") await back();
+        else fireEvent.click(within(region).getByRole("button", { name: "Back" }));
+        await waitFor(() => expect(screen.queryByRole("region", { name: page })).toBeNull());
+        await act(async () => void (await new Promise((r) => setTimeout(r, 120))));
+        expect(onClose, `${option} - ${how}`).not.toHaveBeenCalled();
+        expect(screen.getByRole("region", { name: "Items" })).toBeTruthy();
+      }
+    await back(); // one more Back: now Items goes Home
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("offline: all three wait, with today's note", async () => {
@@ -222,7 +234,9 @@ describe("B: '+ Add' opens a sheet with every way to add", () => {
 });
 
 describe("C: the 'From your bills' banner and its inner page", () => {
-  it("the banner counts what is waiting - 2 prices, 1 new name, 2 learned names; none when there is nothing", async () => {
+  // KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): "From your bills" keeps only what needs a decision - the learned names
+  // moved to the Learned chip, and the banner counts only prices and new names
+  it("the banner counts only what needs a decision - 2 prices, 1 new name (never the learned names); none when there is nothing", async () => {
     await open();
     expect(screen.queryByRole("button", { name: /From your bills/ })).toBeNull();
     cleanup();
@@ -231,11 +245,17 @@ describe("C: the 'From your bills' banner and its inner page", () => {
     const banner = await screen.findByRole("button", { name: /From your bills/ });
     expect(banner.textContent).toContain("2 prices to check");
     expect(banner.textContent).toContain("1 new name");
-    expect(banner.textContent).toContain("2 learned names");
-    expect(banner.textContent).not.toContain("2 new names");
+    expect(banner.textContent).not.toMatch(/learned/);
   });
 
-  it("the page holds today's three blocks - Use / Ignore on each price, the said names (read only), Remove on each learned name", async () => {
+  it("only learned names waiting: no banner (nothing to decide) - they are on the Learned chip", async () => {
+    await db.learningEvents.bulkAdd([confirm("cheeni", "sugar"), confirm("cheeni", "sugar"), confirm("cheeni", "sugar")]);
+    await open();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole("button", { name: /From your bills/ })).toBeNull();
+  });
+
+  it("the page holds the two blocks that need a decision - Use / Ignore on each price, the said names (read only); no learned names", async () => {
     await fromBills();
     const w = await open();
     fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }));
@@ -244,14 +264,13 @@ describe("C: the 'From your bills' banner and its inner page", () => {
     expect(within(prices).getByRole("button", { name: "Use ₹48 for चीनी" })).toBeTruthy();
     expect(within(prices).getByRole("button", { name: "Ignore the suggestion for चावल" })).toBeTruthy();
     expect(within(page).getByRole("region", { name: "Said, not in your items" }).textContent).toContain("“काजू” — said 2 times, not in the catalog");
-    const learned = within(page).getByRole("region", { name: "Learned names" });
-    fireEvent.click(within(learned).getByRole("button", { name: /Remove “cheeni”/ }));
-    await waitFor(() => expect(w.removeAlias).toHaveBeenCalledWith("cheeni", "sugar"));
+    expect(within(page).queryByRole("region", { name: "Learned names" })).toBeNull();
+    expect(within(page).queryByRole("button", { name: /Remove/ })).toBeNull();
     fireEvent.click(within(prices).getByRole("button", { name: "Use ₹48 for चीनी" }));
     await waitFor(() => expect(w.save).toHaveBeenCalledWith("sugar", 4_800));
   });
 
-  it("offline: Use waits (a catalog write); Ignore and Remove still work (local learning writes)", async () => {
+  it("offline: Use waits (a catalog write); Ignore still works (a local learning write)", async () => {
     await fromBills();
     online = false;
     const w = await open();
@@ -275,6 +294,61 @@ describe("C: the 'From your bills' banner and its inner page", () => {
     fireEvent.click(screen.getByRole("button", { name: /From your bills/ }));
     fireEvent.click(within(await screen.findByRole("region", { name: "From your bills" })).getByRole("button", { name: "Back" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "From your bills" })).toBeNull());
+  });
+});
+
+// KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): the Learned chip was empty on the owner's phone - it listed only items the
+// app ADDED from bills (source "learned", KB-320; his shop has none), while the learned NAMES were on another page. It now shows the
+// learned names (Remove on each, offline too), then - only if there are any - the items added from bills; nothing: what will appear.
+describe("the Learned chip", () => {
+  const learnedChip = () => fireEvent.click(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: "Learned" }));
+
+  it("lists every learned name - 'said name → item · In use / Still learning (N%)' - with Remove; then the items added from bills", async () => {
+    await fromBills();
+    const w = await open();
+    learnedChip();
+    const names = await screen.findByRole("region", { name: "Names learned from your bills" });
+    const rows = within(names).getAllByRole("listitem").map((r) => r.textContent);
+    expect(rows.some((r) => r!.includes("“cheeni” → चीनी") && r!.includes("In use"))).toBe(true);
+    expect(rows.some((r) => r!.includes("“chaawal” → चावल") && r!.includes("Still learning"))).toBe(true);
+    fireEvent.click(within(names).getByRole("button", { name: /Remove “cheeni”/ }));
+    await waitFor(() => expect(w.removeAlias).toHaveBeenCalledWith("cheeni", "sugar"));
+    // टाटा नमक is an item the app added from bills (source learned): below the names, as a card
+    expect(within(screen.getByRole("region", { name: "Items added from your bills" })).getByRole("button", { name: "Edit टाटा नमक" })).toBeTruthy();
+  });
+
+  it("Remove works offline (a local learning event), as before", async () => {
+    await fromBills();
+    online = false;
+    const w = await open();
+    learnedChip();
+    fireEvent.click(within(await screen.findByRole("region", { name: "Names learned from your bills" })).getByRole("button", { name: /Remove “cheeni”/ }));
+    await waitFor(() => expect(w.removeAlias).toHaveBeenCalledWith("cheeni", "sugar"));
+  });
+
+  it("no learned names and no items added from bills: it says what will appear there - how learning really works", async () => {
+    await db.shopProducts.delete("salt"); // the only item added from bills
+    await open();
+    learnedChip();
+    expect(await screen.findByText("Nothing learned yet")).toBeTruthy();
+    expect(screen.getByText("When you save a bill made by voice, the app learns the names you said for your items, like “cheeni” → चीनी. They show here, and you can remove any of them.")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Items added from your bills" })).toBeNull();
+  });
+
+  it("only items added from bills, no names yet: the items, and no empty message", async () => {
+    await open();
+    learnedChip();
+    expect(await screen.findByRole("region", { name: "Items added from your bills" })).toBeTruthy();
+    expect(screen.queryByText("Nothing learned yet")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Names learned from your bills" })).toBeNull();
+  });
+
+  it("in हिन्दी", async () => {
+    act(() => setScreenLanguage("hi"));
+    await db.shopProducts.delete("salt");
+    await open();
+    fireEvent.click(within(screen.getByRole("group")).getByRole("button", { name: "सीखे हुए" }));
+    expect(await screen.findByText("अभी कुछ नहीं सीखा")).toBeTruthy();
   });
 });
 

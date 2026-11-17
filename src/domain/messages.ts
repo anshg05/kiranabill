@@ -329,6 +329,9 @@ export const MESSAGES = {
   "share.copied": m("Copied", "कॉपी हो गया", "Copy ho gaya"),
   // KB-414 (phone check, 17 Nov 2026): the Android app's notes under the share buttons
   "share.savedDownloads": m("Saved to Downloads", "डाउनलोड में सेव हो गया", "Downloads mein save ho gaya"),
+  // KB-414 step 3 phone check: "Open" after a save - the saved PDF / CSV in the phone's own viewer
+  "share.open": m("Open", "खोलें", "Kholein"),
+  "share.noViewer": m("No app on this phone can open this file", "इस फ़ोन पर इस फ़ाइल को खोलने वाला कोई ऐप नहीं है", "Is phone par is file ko kholne wala koi app nahi hai"),
   "share.failed": m("Couldn't open sharing — try again", "शेयर नहीं खुल पाया — फिर कोशिश करें", "Share nahi khul paaya — phir koshish karein"),
   "signin.error": m("Couldn't start sign-in — check the internet and try again", "साइन इन शुरू नहीं हो पाया — इंटरनेट देखें और फिर कोशिश करें", "Sign in shuru nahi ho paya — internet dekhein aur phir koshish karein"), // KB-343
   "onboard.error": m("Couldn't set up the shop — check the internet and try again", "दुकान सेट नहीं हो पाई — इंटरनेट देखें और फिर कोशिश करें", "Dukaan set nahi ho payi — internet dekhein aur phir koshish karein"),
@@ -515,7 +518,6 @@ export const MESSAGES = {
   "ready.hasAll": m("Your shop already has every product in the ready catalog.", "तैयार सूची का हर सामान आपकी दुकान में पहले से है।", "Taiyaar list ka har saaman aapki dukaan mein pehle se hai."),
   "ready.alreadyQ": m("“{q}” is already in your catalog.", "“{q}” आपकी सूची में पहले से है।", "“{q}” aapki list mein pehle se hai."),
   "ready.noMatch": m("No ready product matches “{q}”. Add it from a bill: Add item → + Add “{q}” as a new product.", "तैयार सूची में “{q}” नहीं मिला। बिल से जोड़ें: सामान जोड़ें → + “{q}” को नया सामान बनाएं।", "Taiyaar list mein “{q}” nahi mila. Bill se jodein: Saaman jodein → + “{q}” ko naya saaman banayein."),
-  "ready.showing": m("Showing {shown} of {total} — search to find more.", "{total} में से {shown} दिख रहे हैं — और खोजने के लिए खोज करें।", "{total} mein se {shown} dikh rahe hain — aur khojne ke liye khoj karein."),
 
   // ---- Add product / Edit product (and the rules the catalog and the import share)
   // KB-414 step 3: 19's own words (Add item / Edit item)
@@ -556,6 +558,16 @@ export const MESSAGES = {
   "items.priceHelp": m("Fills in when you don’t say a price.", "जब आप भाव नहीं बोलते, यह भर जाता है।", "Jab aap bhav nahi bolte, yeh bhar jaata hai."),
   "items.save": m("Save item", "सामान सेव करें", "Saamaan save karein"),
   "items.learned": m("learned", "सीखा", "seekha"),
+  // KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): the Learned chip shows the learned names. The empty text says how learning
+  // really happens (domain/learning.ts learnBillLessons): a SAVED bill's VOICE lines teach the names said; typed lines never do.
+  "items.learnedHead": m("Names learned from your bills", "आपके बिलों से सीखे नाम", "Aapke bills se seekhe naam"),
+  "items.learnedItems": m("Items added from your bills", "आपके बिलों से जोड़ा गया सामान", "Aapke bills se joda gaya saamaan"),
+  "items.learnedEmptyTitle": m("Nothing learned yet", "अभी कुछ नहीं सीखा", "Abhi kuch nahi seekha"),
+  "items.learnedEmpty": m(
+    "When you save a bill made by voice, the app learns the names you said for your items, like “cheeni” → चीनी. They show here, and you can remove any of them.",
+    "जब आप आवाज़ से बना बिल सेव करते हैं, ऐप आपके बोले गए नाम सीखता है, जैसे “cheeni” → चीनी। वे यहाँ दिखते हैं, और आप कोई भी हटा सकते हैं।",
+    "Jab aap awaaz se bana bill save karte hain, app aapke bole gaye naam seekhta hai, jaise “cheeni” → चीनी. Woh yahan dikhte hain, aur aap koi bhi hata sakte hain.",
+  ),
   "product.notSaved": m("These will not be saved:", "ये सेव नहीं होंगे:", "Yeh save nahi honge:"),
   "product.notSavedLabel": m("Not saved", "सेव नहीं होंगे", "Save nahi honge"),
   "product.unitFixed": m("Unit: {unit}. A unit can't be changed here — it decides what the price means. To change it, archive this product and add it again with the right unit.", "इकाई: {unit}। यहाँ इकाई नहीं बदली जा सकती — भाव का मतलब उसी से तय होता है। बदलने के लिए इस सामान को आर्काइव करें और सही इकाई के साथ फिर जोड़ें।", "Unit: {unit}. Yahan unit nahi badli ja sakti — bhav ka matlab usi se tay hota hai. Badalne ke liye is saaman ko archive karein aur sahi unit ke saath phir jodein."),

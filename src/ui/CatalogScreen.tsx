@@ -25,6 +25,8 @@ import { Icon, KB_ICONS } from "./kit/icons";
 import { LinkBanner } from "./kit/Banner";
 import { SearchField } from "./kit/TextField";
 import { ScreenTitle } from "./kit/TopBar";
+import { GroupLabel } from "./kit/ListRow";
+import { LearnedNames } from "./FromBillsPage";
 import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
 import { useBrowserOnline } from "./useBrowserOnline";
@@ -50,7 +52,6 @@ const FILTERS: readonly { value: Filter; label: string }[] = [
   { value: "base", label: "From base catalog" },
   { value: "archived", label: "Archived" },
 ];
-const READY_SHOWN = 100;
 const OFFLINE = "Needs internet to change the catalog";
 const SAVE_FAILED = SAVE_FAILED_TEXT;
 
@@ -214,7 +215,6 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
     ? [
         ...count(priceSuggestions.length, "items.pricesOne", "items.pricesMany"),
         ...count(loaded.provisional.length, "items.newNameOne", "items.newNameMany"),
-        ...count(loaded.learnedNames.length, "items.learnedOne", "items.learnedMany"),
       ]
     : [];
   const covered = addMenu || readyOpen || importOpen || billsOpen || editing !== null || addOpen;
@@ -249,12 +249,24 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
             <LinkBanner icon={KB_ICONS.Lightbulb} title={t("items.fromBills")} sub={fromBills.join(" · ")} onClick={() => setBillsOpen(true)} />
           )}
           {loaded && filter === "archived" && shown.length === 0 && <p className="px-1 py-6 text-center text-kb-15">{t(typed ? "catalog.noneFound" : "catalog.noneArchived")}</p>}
-          {loaded && filter !== "archived" && loaded.products.length > 0 && shown.length === 0 && (
+          {loaded && filter !== "archived" && filter !== "learned" && loaded.products.length > 0 && shown.length === 0 && (
             <p className="px-1 py-6 text-center text-kb-15">{t(typed ? "catalog.noneFound" : "catalog.noneOfKind")}</p>
           )}
           {loaded && filter !== "archived" && loaded.products.length === 0 && !typed && <p className="px-1 py-6 text-center text-kb-15">{t("catalog.noneYet")}</p>}
+          {/* KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): the Learned chip shows the learned NAMES first (it used to list only
+              the items the app added from bills - none in most shops - so it looked empty), then those items; nothing yet: what will appear */}
+          {loaded && filter === "learned" && (
+            <LearnedNames
+              learned={loaded.learnedNames.filter((l) => !typed || [l.alias, l.productName].some((x) => nameKey(x).includes(nameKey(typed))))}
+              empty={!typed && shown.length === 0}
+              onRemove={removeAlias ? (l) => void removeAlias(l.alias, l.catalogId).then(wrote).catch((err: unknown) => console.warn("[catalog] could not remove the alias:", err)) : undefined}
+            />
+          )}
           {loaded && (
-            // flex-none: a clipping box may shrink in its column - on a short screen the lower cards were cut, out of reach (the size matrix)
+            // on Learned the items the app added from bills come under their own label, after the names
+            <section aria-label={filter === "learned" && shown.length > 0 ? t("items.learnedItems") : undefined} className="flex flex-none flex-col gap-2">
+            {filter === "learned" && shown.length > 0 && <GroupLabel>{t("items.learnedItems")}</GroupLabel>}
+            {/* flex-none: a clipping box may shrink in its column - on a short screen the lower cards were cut, out of reach (the size matrix) */}
             <ul aria-label={t("add.products")} className={shown.length > 0 ? "flex-none overflow-hidden rounded-[16px] border border-kb-border bg-kb-card" : ""}>
               {shown.map((p) => (
                 // an archived card has Restore UNDER it (beside the price it had no room on a small phone at a big text size)
@@ -279,6 +291,7 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
                 </li>
               ))}
             </ul>
+            </section>
           )}
         </div>
         {note && (
@@ -318,7 +331,6 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
         <FromBillsPage
           suggestions={priceSuggestions}
           provisional={loaded.provisional}
-          learned={loaded.learnedNames}
           online={online}
           saving={saving}
           failed={failed}
@@ -326,7 +338,6 @@ export function CatalogScreen({ localDb, shopId, save, add, importRows, saveDeta
           ignoreFailed={ignoreFailed}
           onUse={savePrice}
           onIgnore={ignoreSuggestion ? ignore : undefined}
-          onRemove={removeAlias ? (l) => void removeAlias(l.alias, l.catalogId).then(wrote).catch((err: unknown) => console.warn("[catalog] could not remove the alias:", err)) : undefined}
           onClose={() => (setBillsOpen(false), setBillsNote(null))}
         />
       )}
@@ -573,7 +584,8 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
             </p>
           )}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* data-scroll-list: ~400 rows scroll here by design (KB-414 step 3 phone check: every product, no cap) */}
+        <div data-scroll-list className="min-h-0 flex-1 overflow-y-auto">
           {bases !== null && bases.length === 0 && <p className="px-4 py-6 text-center">{t("ready.notOnPhone")}</p>}
           {bases !== null && bases.length > 0 && available.length === 0 && (
             <p className="px-4 py-6 text-center [overflow-wrap:anywhere]">
@@ -581,8 +593,9 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
             </p>
           )}
           <ul aria-label={t("ready.products")}>
-            {available.slice(0, READY_SHOWN).map((b) => (
-              <li key={b.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2">
+            {/* KB-414 step 3 phone check: EVERY product not yet in the shop (it was capped at 100 - "Showing 100 of 368") */}
+            {available.map((b) => (
+              <li key={b.id} className="flex min-h-12 items-center gap-3 border-b border-line bg-surface px-4 py-2 [content-visibility:auto] [contain-intrinsic-size:auto_64px]">
                 <span className="min-w-0 flex-1">
                   <span data-testid="ready-name" className="block font-medium [overflow-wrap:anywhere]">{b.displayName}</span>
                   <span className="block text-[13px] tabular-nums text-ink-soft">{priceText(b.suggestedPricePaise, b.defaultUnit)}</span>
@@ -592,18 +605,14 @@ function ReadyCatalog({ localDb, inShop, online, add, onClose }: {
                   aria-label={t("ready.addLabel", { name: b.displayName })}
                   aria-disabled={!online || busy !== null}
                   onClick={online && busy === null ? () => onAdd(b) : undefined}
-                  className="min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
+                  className="kb-hit min-h-11 rounded-[6px] border border-line bg-surface px-4 font-medium aria-disabled:opacity-50"
                 >
                   {busy === b.id ? t("ready.adding") : t("common.add")}
                 </button>
               </li>
             ))}
           </ul>
-          {available.length > READY_SHOWN && (
-            <p className="px-4 py-4 text-center text-[13px] text-ink-soft">
-              {t("ready.showing", { shown: READY_SHOWN, total: available.length })}
-            </p>
-          )}
+
         </div>
       </div>
     </section>

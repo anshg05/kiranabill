@@ -19,13 +19,13 @@ export interface LearnedName {
 /**
  * KB-414 step 3 (owner + reviewer, 17 Nov 2026; mock C): what the app picked up from the bills, moved off the Items list behind one
  * banner - today's three blocks, unchanged in what they do: a price paid on 3 bills with Use (a catalog write - online) / Ignore (a local
- * learning write - works offline, KB-329); the names said but not in the catalog (read only, KB-320 saves them); the learned names
+ * learning write - works offline, KB-329); the names said but not in the catalog (read only, KB-320 saves them). KB-414 step 3 phone check
+ * (owner + reviewer, 17 Nov 2026): only what needs a decision - the learned names moved to the Learned chip (LearnedNames below); was: the learned names
  * with Remove (a local event - works offline, KB-323). An inner page: Back, no nav.
  */
-export function FromBillsPage({ suggestions, provisional, learned, online, saving, failed, note, ignoreFailed, onUse, onIgnore, onRemove, onClose }: {
+export function FromBillsPage({ suggestions, provisional, online, saving, failed, note, ignoreFailed, onUse, onIgnore, onClose }: {
   suggestions: readonly { s: PriceSuggestion; p: LocalShopProduct }[];
   provisional: readonly LocalProvisionalProduct[];
-  learned: readonly LearnedName[];
   online: boolean;
   saving: ReadonlySet<string>;
   failed: ReadonlySet<string>;
@@ -33,14 +33,13 @@ export function FromBillsPage({ suggestions, provisional, learned, online, savin
   ignoreFailed: boolean;
   onUse: (p: LocalShopProduct, pricePaise: number) => void;
   onIgnore?: (p: LocalShopProduct) => void;
-  onRemove?: (l: LearnedName) => void;
   onClose: () => void;
 }) {
   useBackEntry("kbFromBills", onClose);
   useHidesNav();
   const { t, tx } = useT();
   const card = "flex flex-col gap-2 rounded-[16px] border border-kb-border bg-kb-card px-[14px] py-3 text-kb-15 [overflow-wrap:anywhere]";
-  const empty = suggestions.length === 0 && provisional.length === 0 && learned.length === 0;
+  const empty = suggestions.length === 0 && provisional.length === 0;
   return (
     <section aria-label={t("items.fromBills")} className="font-kb fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-kb-bg text-kb-ink">
       <div data-scroll-page className="mx-auto flex h-full w-full max-w-[480px] flex-col overflow-y-auto">
@@ -94,27 +93,45 @@ export function FromBillsPage({ suggestions, provisional, learned, online, savin
               </ul>
             </section>
           )}
-          {learned.length > 0 && (
-            <section aria-label={t("catalog.learnedNames")} className="flex flex-col gap-2">
-              <GroupLabel>{t("catalog.learnedNames")}</GroupLabel>
-              <ul className="flex flex-col gap-2">
-              {learned.map((l) => (
-                <li key={l.alias.toLowerCase()} className={card.replace("flex-col", "flex-row flex-wrap items-center justify-between")}>
-                  <span className="min-w-0 flex-1">
-                    {t("catalog.learnedRow", { alias: l.alias, name: l.productName, state: t(l.inUse ? "catalog.inUse" : "catalog.stillLearning"), pct: Math.round(l.confidence * 100) })}
-                  </span>
-                  {onRemove && (
-                    <Button variant="secondary" height={46} fill={false} className="px-4" ariaLabel={t("catalog.removeLabel", { alias: l.alias, name: l.productName })} onClick={() => onRemove(l)}>
-                      {t("col.remove")}
-                    </Button>
-                  )}
-                </li>
-              ))}
-              </ul>
-            </section>
-          )}
         </div>
       </div>
+    </section>
+  );
+}
+
+const learnedCard = "flex flex-row flex-wrap items-center justify-between gap-2 border-b border-kb-border px-[14px] py-3 text-kb-15 last:border-b-0 [overflow-wrap:anywhere]";
+
+/**
+ * KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): the Learned chip - every name the app learned for an item ("said name ->
+ * item · In use / Still learning (N%)") with Remove (a local event - works offline, KB-323). Nothing learned and nothing added from bills:
+ * how learning really works (domain/learning.ts: a SAVED bill's VOICE lines teach the names said; typed lines never do).
+ */
+export function LearnedNames({ learned, empty, onRemove }: { learned: readonly LearnedName[]; empty: boolean; onRemove?: (l: LearnedName) => void }) {
+  const { t } = useT();
+  if (learned.length === 0)
+    return empty ? (
+      <div className="rounded-[16px] border border-kb-border bg-kb-card px-4 py-[18px] text-center text-kb-15 leading-[1.5] text-kb-sub">
+        <p className="mb-1 text-kb-16 font-bold text-kb-ink">{t("items.learnedEmptyTitle")}</p>
+        <p>{t("items.learnedEmpty")}</p>
+      </div>
+    ) : null;
+  return (
+    <section aria-label={t("items.learnedHead")} className="flex flex-none flex-col gap-2">
+      <GroupLabel>{t("items.learnedHead")}</GroupLabel>
+      <ul className="flex-none overflow-hidden rounded-[16px] border border-kb-border bg-kb-card">
+        {learned.map((l) => (
+          <li key={l.alias.toLowerCase()} className={learnedCard}>
+            <span className="min-w-0 flex-1">
+              {t("catalog.learnedRow", { alias: l.alias, name: l.productName, state: t(l.inUse ? "catalog.inUse" : "catalog.stillLearning"), pct: Math.round(l.confidence * 100) })}
+            </span>
+            {onRemove && (
+              <Button variant="secondary" height={46} fill={false} className="px-4" ariaLabel={t("catalog.removeLabel", { alias: l.alias, name: l.productName })} onClick={() => onRemove(l)}>
+                {t("col.remove")}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

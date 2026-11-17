@@ -45,10 +45,10 @@ async function open(removeAlias?: (alias: string, productId: string) => Promise<
   return { onChanged };
 }
 const names = () => within(screen.getByRole("list", { name: "Products" })).getAllByRole("listitem").map((r) => within(r).getByTestId("name").textContent);
-// KB-414 step 3: the learned names are on the "From your bills" page, behind its banner; "Used N times" is in Edit item
+// KB-414 step 3 phone check (owner + reviewer, 17 Nov 2026): the learned names are on the Learned chip; "Used N times" is in Edit item
 async function fromBills() {
-  fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }));
-  return screen.findByRole("region", { name: "From your bills" });
+  fireEvent.click(within(screen.getByRole("group", { name: "Show" })).getByRole("button", { name: "Learned" }));
+  return screen.getByRole("region", { name: "Items" });
 }
 async function usedOf(n: string) {
   fireEvent.click(screen.getByRole("button", { name: `Edit ${n}` }));
@@ -80,7 +80,7 @@ describe("KB-323: Learned names", () => {
   it("lists each learned phrase with its product and how sure the app is; 'in use' only from 0.8", async () => {
     await db.learningEvents.bulkAdd([confirm("pale ji", "alpha"), confirm("pale ji", "alpha"), confirm("pale ji", "alpha"), confirm("bhoora", "beta")]);
     await open(async () => {});
-    const section = within(await fromBills()).getByRole("region", { name: "Learned names" });
+    const section = within(await fromBills()).getByRole("region", { name: "Names learned from your bills" });
     const items = within(section).getAllByRole("listitem").map((li) => li.textContent);
     expect(items.some((t) => t!.includes("pale ji") && t!.includes("Alpha") && t!.includes("In use"))).toBe(true);
     expect(items.some((t) => t!.includes("bhoora") && t!.includes("Beta") && t!.includes("Still learning"))).toBe(true);
@@ -88,7 +88,7 @@ describe("KB-323: Learned names", () => {
 
   it("no section when nothing is learned, and no Remove button when no writer is given", async () => {
     await open();
-    expect(screen.queryByRole("region", { name: "Learned names" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Names learned from your bills" })).toBeNull();
     await db.learningEvents.bulkAdd([confirm("pale ji", "alpha")]);
     cleanup();
     await open();
@@ -104,7 +104,7 @@ describe("KB-323: Learned names", () => {
     const { onChanged } = await open(removeAlias);
     await fromBills();
     fireEvent.click(screen.getByRole("button", { name: "Remove “pale ji” (Alpha)" }));
-    await waitFor(() => expect(screen.queryByRole("region", { name: "Learned names" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Names learned from your bills" })).toBeNull());
     expect(removeAlias).toHaveBeenCalledWith("pale ji", "alpha");
     expect(onChanged).toHaveBeenCalled();
   });

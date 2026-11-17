@@ -120,3 +120,4 @@ describe("closing several overlays at once ('Cancel and make a new bill' closes 
     expect(closed).toEqual([]);
   });
 });
+

@@ -183,6 +183,21 @@ describe("KB-311 - S4 Catalog (KB-414 step 3: Items 16 - the price is edited in 
     expect(page.getByRole("button", { name: "Save item" }).hasAttribute("disabled")).toBe(true);
   });
 
+  // KB-414 step 3 phone check (owner, 17 Nov 2026): "Showing 100 of 368" - the ready catalog listed only 100. Every not-yet-added
+  // item now, the same sort, no "Showing N of M" line; the search on top still narrows.
+  it("the ready catalog lists EVERY product not yet in the shop - no cap of 100, no 'Showing' line", async () => {
+    await db.baseProducts.bulkPut(Array.from({ length: 150 }, (_, i) => base(`Item ${String(i).padStart(3, "0")}`, 1_000 + i)));
+    await open();
+    const ready = await readyCatalog();
+    await within(ready).findAllByTestId("ready-name");
+    const shown = within(ready).getAllByTestId("ready-name").map((n) => n.textContent);
+    expect(shown).toHaveLength(151); // the 150 + Besan (Sugar is already in the shop)
+    expect(shown).toEqual([...shown].sort((a, b) => a!.localeCompare(b!))); // the same sort: by name
+    expect(within(ready).queryByText(/Showing/)).toBeNull();
+    fireEvent.change(within(ready).getByRole("searchbox", { name: "Search ready catalog" }), { target: { value: "Item 14" } });
+    expect(within(ready).getAllByTestId("ready-name")).toHaveLength(10);
+  });
+
   it("Add from ready catalog: only base products not yet in the shop; Add copies one in and it leaves the list", async () => {
     const { add, onChanged } = await open();
     const ready = await readyCatalog();

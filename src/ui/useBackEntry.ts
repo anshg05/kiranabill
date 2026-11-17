@@ -21,10 +21,14 @@ const pending = new Set<string>();
 const closing = new Set<string>();
 let backing = false;
 let listening = false;
+// KB-414 step 3: the left-over entry being taken off on THIS popstate - still left-over for every overlay that hears the same event
+// after this listener (which listener runs first depends on what opened and closed earlier).
+const draining = new Set<string>();
 
 function drain(): void {
   const now = tokenOf(window.history.state);
   if (backing || now === undefined || !closing.delete(now)) return;
+  draining.add(now);
   backing = true;
   window.history.back();
 }
@@ -33,6 +37,7 @@ function ensureListening(): void {
   listening = true;
   window.addEventListener("popstate", () => {
     backing = false;
+    draining.clear();
     drain();
   });
 }
@@ -77,6 +82,9 @@ export function useBackEntry(key: string, onClose: () => void, canClose?: () => 
     const onPop = () => {
       // On my entry, or on one of an overlay opened above me: still open.
       const now = tokenOf(window.history.state);
+      // KB-414 step 3 phone check: an overlay that already closed (a sheet closed in the same tap a page opened) left its entry under
+      // the page; Back lands on it. It is waiting to be taken off (drain does that next) - never "below me", so nothing else closes.
+      if (now !== undefined && (closing.has(now) || draining.has(now))) return;
       const here = now === undefined ? -1 : stack.indexOf(now);
       if (here >= stack.indexOf(mine.token) && stack.indexOf(mine.token) >= 0) return;
       if (canCloseRef.current && !canCloseRef.current()) {

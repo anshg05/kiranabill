@@ -94,10 +94,20 @@ function ShareTiles({ share, smsOpen, onSms, onCloseSms }: { share: ReceiptShare
         {tile("sms", t("share.sms"), MessageSquareText, onSms, { expanded: smsOpen })}
       </div>
       {!share.ready && <p className="mt-2 text-center text-kb-13 text-kb-sub">{t("reason.preparing")}</p>}
-      {share.notice && (
-        <p role="status" className={`mt-2 text-center text-kb-13 ${share.notice === "share.failed" ? "text-kb-err" : "text-kb-ok"}`}>
-          {t(share.notice)}
-        </p>
+      {share.notice === "share.noViewer" ? (
+        <p role="alert" className="mt-2 text-center text-kb-13 text-kb-err">{t(share.notice)}</p>
+      ) : (
+        share.notice && (
+          <p role="status" className={`mt-2 flex flex-wrap items-center justify-center gap-x-2 text-center text-kb-13 ${share.notice === "share.failed" ? "text-kb-err" : "text-kb-ok"}`}>
+            <span>{t(share.notice)}</span>
+            {/* KB-414 step 3 phone check: open the saved file - some phones' Files app lists it under the folder, not "Downloads" */}
+            {share.openSaved && (
+              <button type="button" onClick={share.openSaved} className="kb-hit min-h-11 px-2 font-bold text-kb-primary">
+                {t("share.open")}
+              </button>
+            )}
+          </p>
+        )
       )}
       {smsOpen && <SmsSheet share={share} onClose={onCloseSms} />}
     </div>

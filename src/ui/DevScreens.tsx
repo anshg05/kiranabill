@@ -372,9 +372,13 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
         ["old", "पुराना साबुन", ["purana sabun"], "piece", 2_500, "custom"],
       ] as const;
       // 19's own sample adds तूर दाल - not in the list behind it then, or its name and "toor dal" would clash
-      for (const [id, name, aliases, unit, price, source] of ITEMS.filter(([id]) => !(state === "add" && id === "toor")))
+      // learnedempty: no learned names and no item the app added from bills (टाटा नमक is one) - the Learned chip's empty text
+      for (const [id, name, aliases, unit, price, source] of ITEMS.filter(([id]) => !(state === "add" && id === "toor") && !(state === "learnedempty" && id === "salt")))
         await d.shopProducts.put({ id, shopId, baseProductId: null, displayName: name, category: null, unit, pricePaise: price, aliases: [...aliases], source, useCount: 0, sku: null, barcode: null, isActive: id !== "old" });
-      if (state === "banner" || state === "bills") {
+      // ready: the owner's ready catalog is ~370 items - 400 here (KB-414 step 3 phone check: every item, no cap)
+      if (state === "ready")
+        await d.baseProducts.bulkPut(Array.from({ length: 400 }, (_, i) => ({ id: `b${i}`, catalogVersion: 1, displayName: `${["चना", "मूंग", "उड़द", "मसूर", "राजमा", "पोहा", "सूजी", "मैदा"][i % 8]} ${Math.floor(i / 8) + 1}`, sourceCategory: "grain", guardCategory: "grain", defaultUnit: "kg", suggestedPricePaise: 5_000 + i * 10, aliases: [], isActive: true })));
+      if (state === "banner" || state === "bills" || state === "learned") {
         const now = new Date().toISOString();
         for (const [p, paise] of [["sugar", 4_800], ["rice", 7_000]] as const)
           for (let i = 0; i < 3; i++) await d.priceObservations.put({ localId: crypto.randomUUID(), shopId, syncStatus: "synced", shopProductId: p, observedPricePaise: paise, occurredAt: now, updatedAt: now, deviceId: "d" });
@@ -400,7 +404,11 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
     };
     const steps: (() => void)[] = [];
     const later = (f: () => void) => steps.push(f);
-    if (state === "learned") later(() => button(say16("catalog.learned"))?.click());
+    if (state === "learned" || state === "learnedempty") later(() => button(say16("catalog.learned"))?.click());
+    if (state === "ready") {
+      later(() => button(say16("common.add"))?.click());
+      later(() => button(new RegExp(say16("catalog.addReady")))?.click());
+    }
     if (state === "archived") later(() => button(say16("catalog.archived"))?.click());
     if (state === "sheet") later(() => button(say16("common.add"))?.click());
     if (state === "bills") later(() => button(new RegExp(say16("items.fromBills")))?.click());

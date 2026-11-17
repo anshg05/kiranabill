@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ContentValues
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -83,6 +84,23 @@ class FileSharePlugin : Plugin() {
             resolver.delete(uri, null, null) // never a broken, empty file left in Downloads
             return call.reject("Could not save", "SAVE_FAILED", e)
         }
-        call.resolve(JSObject().put("saved", true))
+        call.resolve(JSObject().put("saved", true).put("uri", uri.toString()))
+    }
+
+    /** KB-414 step 3 phone check: "Open" after a save - the saved file in the phone's own viewer, read granted for it. No viewer: NO_APP. */
+    @PluginMethod
+    fun open(call: PluginCall) {
+        val uri = call.getString("uri")?.takeIf { it.startsWith("content://") } ?: return call.reject("Missing file", "BAD_INPUT")
+        val mime = call.getString("mime")?.takeIf { it.isNotBlank() } ?: return call.reject("Missing type", "BAD_INPUT")
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(uri), mime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            activity.startActivity(view)
+            call.resolve()
+        } catch (e: ActivityNotFoundException) {
+            call.reject("No app can open this file", "NO_APP", e)
+        }
     }
 }

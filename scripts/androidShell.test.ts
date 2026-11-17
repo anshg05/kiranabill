@@ -91,6 +91,13 @@ describe("the Android shell (D111)", () => {
     // a name from the page is a file name only, never a path out of the cache folder
     expect(plugin).toContain("substringAfterLast('/')");
     expect(permissions).not.toContain("android.permission.WRITE_EXTERNAL_STORAGE");
+    // KB-414 step 3 phone check: the save answers where it went; "Open" views it with the phone's own app (read granted, no new
+    // permission, no notification); no app for it = an error the screen says
+    expect(plugin).toMatch(/put\("uri", uri\.toString\(\)\)/);
+    expect(plugin).toMatch(/fun open\(call: PluginCall\)/);
+    expect(plugin).toMatch(/Intent\.ACTION_VIEW[\s\S]*setDataAndType[\s\S]*FLAG_GRANT_READ_URI_PERMISSION/);
+    expect(plugin).toMatch(/"NO_APP"/);
+    expect(permissions).not.toContain("android.permission.POST_NOTIFICATIONS");
   });
 
   it("keeps the shop's data out of Android's cloud and adb backups", () => {

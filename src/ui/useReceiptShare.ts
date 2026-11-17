@@ -6,7 +6,7 @@ import type { KiranaBillDB } from "@/data/db";
 import type { Receipt } from "@/domain/receipt";
 import { receiptText, smsLink, smsText, waLink } from "@/domain/receiptText";
 import { isNativeApp } from "@/data/nativeSignIn";
-import { WHATSAPP, saveFile, shareFile } from "@/data/nativeFileShare";
+import { WHATSAPP, openFile, saveFile, shareFile } from "@/data/nativeFileShare";
 import type { SavedBill } from "./useFinalise";
 
 // KB-309 commit 3 (owner, 4 Oct 2026 - the legacy behaviour, D58):
@@ -27,7 +27,7 @@ import type { SavedBill } from "./useFinalise";
 // says so. The browser is unchanged.
 
 /** A short note under the share buttons (a message key). */
-export type ShareNotice = "share.savedDownloads" | "share.failed";
+export type ShareNotice = "share.savedDownloads" | "share.failed" | "share.noViewer";
 
 export type RenderReceiptFiles = (receipt: Receipt) => Promise<{ png: Blob; pdf: Blob }>;
 
@@ -36,6 +36,8 @@ export interface ReceiptShare {
   readonly ready: boolean;
   /** The app's note after Share / PDF / WhatsApp ("Saved to Downloads", or the failure) - null until there is one. */
   readonly notice?: ShareNotice | null;
+  /** KB-414 step 3 phone check: after "Saved to Downloads", open that file in the phone's viewer ("Open"). */
+  readonly openSaved?: () => void;
   /** The SMS body (the preview shows exactly this). */
   readonly smsText: string;
   downloadImage(): void;
@@ -72,6 +74,7 @@ function download(file: File): void {
 export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBillDB | null; saved: SavedBill | null; render: RenderReceiptFiles }): ReceiptShare | null {
   const [files, setFiles] = useState<Files | null>(null);
   const [notice, setNotice] = useState<ShareNotice | null>(null);
+  const [savedUri, setSavedUri] = useState<string | null>(null);
   const lastRun = useRef<Record<string, number>>({});
   // KB-342: a double tap must not download twice or open two share sheets - the same button's repeats within 1.5 s are ignored (another button is not).
   const once =
@@ -131,6 +134,14 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
   return {
     ready: ready !== null,
     notice,
+    openSaved:
+      inApp && savedUri && notice === "share.savedDownloads"
+        ? () =>
+            void openFile(savedUri, "application/pdf").catch((err: unknown) => {
+              console.warn("[share] open failed:", err instanceof Error ? err.message : err);
+              setNotice("share.noViewer");
+            })
+        : undefined,
     smsText: sms,
     downloadImage: once("image", () => {
       if (ready) download(ready.png);
@@ -150,7 +161,12 @@ export function useReceiptShare({ localDb, saved, render }: { localDb: KiranaBil
       download(ready.png);
     }),
     downloadPdf: once("pdf", () => {
-      if (ready && inApp) return viaApp(async () => ((await saveFile(ready.pdf)) === "saved" ? "share.savedDownloads" : null));
+      if (ready && inApp)
+        return viaApp(async () => {
+          const r = await saveFile(ready.pdf);
+          setSavedUri(r.kind === "saved" ? r.uri : null);
+          return r.kind === "saved" ? "share.savedDownloads" : null;
+        });
       if (ready) download(ready.pdf);
     }),
     whatsApp: once("whatsapp", () => {

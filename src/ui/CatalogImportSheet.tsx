@@ -18,7 +18,7 @@ import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
 import { useT } from "./useT";
 import { isNativeApp } from "@/data/nativeSignIn";
-import { saveFile } from "@/data/nativeFileShare";
+import { openFile, saveFile, type SavedFile } from "@/data/nativeFileShare";
 
 // KB-314 (owner, 10 Oct 2026; docs/07-DECISIONS.md D68): import products from a spreadsheet or CSV, over the Catalog.
 //   pick a file -> the columns it found (changeable) -> a PREVIEW of what will be added, what is already in the shop
@@ -53,7 +53,7 @@ const priceUnit = (paise: number | null, unit: string) => `${paise === null ? "�
 const SAMPLE_NAME = "kiranabill-products-sample.csv";
 
 /** The browser: today's download. KB-414 step 3: the Android app's WebView drops downloads - there the FileShare plugin saves it. */
-async function downloadSample(): Promise<"saved" | "shared" | "downloaded"> {
+async function downloadSample(): Promise<SavedFile | { kind: "downloaded" }> {
   if (isNativeApp()) return saveFile(new File(["﻿" + SAMPLE_CSV], SAMPLE_NAME, { type: "text/csv" }));
   const blob = new Blob(["﻿" + SAMPLE_CSV], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -62,7 +62,7 @@ async function downloadSample(): Promise<"saved" | "shared" | "downloaded"> {
   a.download = SAMPLE_NAME;
   a.click();
   URL.revokeObjectURL(url);
-  return "downloaded";
+  return { kind: "downloaded" };
 }
 
 export function CatalogImportSheet({ existing, online, run, onClose }: CatalogImportSheetProps) {
@@ -71,14 +71,15 @@ export function CatalogImportSheet({ existing, online, run, onClose }: CatalogIm
   const [stage, setStage] = useState<Stage>({ kind: "pick", error: null });
   const { t } = useT();
   // KB-414 step 3: the app's line after the sample is saved ("Saved to Downloads") or could not be
-  const [sample, setSample] = useState<"saved" | "failed" | null>(null);
+  // "saved" carries where it went: "Open" shows it (KB-414 step 3 phone check - the Files app's Downloads view may not list a CSV)
+  const [sample, setSample] = useState<{ kind: "saved"; uri: string } | { kind: "failed" | "noViewer" } | null>(null);
   const getSample = () => {
     setSample(null);
     downloadSample()
-      .then((r) => setSample(r === "saved" ? "saved" : null))
+      .then((r) => setSample(r.kind === "saved" ? r : null))
       .catch((err: unknown) => {
         console.warn("[import] sample not saved:", err instanceof Error ? err.message : err);
-        setSample("failed");
+        setSample({ kind: "failed" });
       });
   };
   const fileInput = useRef<HTMLInputElement>(null);
@@ -145,8 +146,25 @@ export function CatalogImportSheet({ existing, online, run, onClose }: CatalogIm
               <button type="button" onClick={getSample} className="min-h-11 self-start rounded-[6px] border border-line bg-surface px-4 font-medium">
                 Download sample CSV
               </button>
-              {sample === "saved" && <p role="status" className="text-[13px] text-ink-soft">{t("share.savedDownloads")}</p>}
-              {sample === "failed" && <p role="alert" className="text-[13px] text-danger">{t("share.failed")}</p>}
+              {sample?.kind === "saved" && (
+                <p role="status" className="flex flex-wrap items-center gap-x-2 text-[13px] text-ink-soft">
+                  <span>{t("share.savedDownloads")}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void openFile(sample.uri, "text/csv").catch((err: unknown) => {
+                        console.warn("[import] open failed:", err instanceof Error ? err.message : err);
+                        setSample({ kind: "noViewer" });
+                      })
+                    }
+                    className="min-h-11 px-2 font-medium text-indigo"
+                  >
+                    {t("share.open")}
+                  </button>
+                </p>
+              )}
+              {sample?.kind === "failed" && <p role="alert" className="text-[13px] text-danger">{t("share.failed")}</p>}
+              {sample?.kind === "noViewer" && <p role="alert" className="text-[13px] text-danger">{t("share.noViewer")}</p>}
             </div>
           )}
 

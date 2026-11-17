@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { buildReceipt, type ReceiptItem } from "@/domain/receipt";
 import type { Paise } from "@/domain/money";
 import { ShareBar } from "./ShareBar";
@@ -16,10 +16,11 @@ import { useReceiptShare, type RenderReceiptFiles } from "./useReceiptShare";
 const env = vi.hoisted(() => ({
   native: false,
   shareFile: vi.fn(async (_f: File, _app?: string) => {}),
-  saveFile: vi.fn(async (_f: File): Promise<"saved" | "shared"> => "saved"),
+  saveFile: vi.fn(async (_f: File): Promise<{ kind: "saved"; uri: string } | { kind: "shared" }> => ({ kind: "saved", uri: "content://media/external/downloads/208" })),
+  openFile: vi.fn(async (_u: string, _m: string) => {}),
 }));
 vi.mock("@/data/nativeSignIn", () => ({ isNativeApp: () => env.native }));
-vi.mock("@/data/nativeFileShare", () => ({ WHATSAPP: "com.whatsapp", shareFile: env.shareFile, saveFile: env.saveFile }));
+vi.mock("@/data/nativeFileShare", () => ({ WHATSAPP: "com.whatsapp", shareFile: env.shareFile, saveFile: env.saveFile, openFile: env.openFile }));
 
 const item: ReceiptItem = { displayName: "Chini", qty: 2, unit: "kg", ratePaise: 4800 as Paise, rateUnit: "kg", totalPaise: 9600 as Paise };
 const receipt = buildReceipt({ receiptNumber: "519", customerName: "Cash", totalPaise: 9600 as Paise, finalizedAt: "2026-11-10T12:18:00.000Z", createdAt: "2026-11-10T12:18:00.000Z", status: "final" }, [item], { name: "Gupta Kirana Store", phone: null, logoUrl: null, billLanguage: "en" });
@@ -32,7 +33,8 @@ let webShare: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   env.native = true;
   env.shareFile.mockReset().mockResolvedValue(undefined);
-  env.saveFile.mockReset().mockResolvedValue("saved");
+  env.saveFile.mockReset().mockResolvedValue({ kind: "saved", uri: "content://media/external/downloads/208" });
+  env.openFile.mockReset().mockResolvedValue(undefined);
   anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   winOpen = vi.fn(() => null);
   vi.stubGlobal("open", winOpen);
@@ -79,12 +81,29 @@ describe("in the Android app (no web share sheet, downloads dropped)", () => {
     expect(env.saveFile).toHaveBeenCalledOnce();
     expect(fileOf(env.saveFile.mock.calls[0]).name).toBe("Bill-519.pdf");
     expect(fileOf(env.saveFile.mock.calls[0]).type).toBe("application/pdf");
-    expect(await screen.findByRole("status")).toHaveProperty("textContent", "Saved to Downloads");
+    expect((await screen.findByRole("status")).textContent).toContain("Saved to Downloads");
     expect(anchorClick).not.toHaveBeenCalled();
   });
 
+  it("KB-414 step 3 phone check: after a save, 'Open' opens the saved PDF with the phone's viewer", async () => {
+    await ready();
+    await tap("PDF");
+    const status = await screen.findByRole("status");
+    await act(async () => void fireEvent.click(within(status).getByRole("button", { name: "Open" })));
+    expect(env.openFile).toHaveBeenCalledWith("content://media/external/downloads/208", "application/pdf");
+  });
+
+  it("no app on the phone to open it: it says so", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    env.openFile.mockRejectedValue(new Error("No app"));
+    await ready();
+    await tap("PDF");
+    await act(async () => void fireEvent.click(within(await screen.findByRole("status")).getByRole("button", { name: "Open" })));
+    expect((await screen.findByRole("alert")).textContent).toBe("No app on this phone can open this file");
+  });
+
   it("PDF on Android 7-9 (Downloads cannot be written): the share sheet opened instead - no 'Saved' note", async () => {
-    env.saveFile.mockResolvedValue("shared");
+    env.saveFile.mockResolvedValue({ kind: "shared" });
     await ready();
     await tap("PDF");
     expect(env.saveFile).toHaveBeenCalledOnce();
@@ -122,7 +141,7 @@ describe("in the Android app (no web share sheet, downloads dropped)", () => {
     render(<Tiles />);
     await waitFor(() => expect(screen.getByRole("button", { name: "PDF" }).getAttribute("aria-disabled")).toBe("false"), { timeout: 4000 });
     await tap("PDF");
-    expect((await screen.findByRole("status")).textContent).toBe("डाउनलोड में सेव हो गया");
+    expect((await screen.findByRole("status")).textContent).toContain("डाउनलोड में सेव हो गया");
   });
 
   it("SMS is unchanged: its sheet opens, nothing goes through the plugin", async () => {
