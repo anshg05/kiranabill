@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { buildSwConfig, computeBuildId, parseSwMode, resolveSwMode } from "./pwa-build";
+import { PRECACHE_BUDGET_BYTES, buildSwConfig, computeBuildId, parseSwMode, resolveSwMode } from "./pwa-build";
 
 // KB-401 (D67): the build step that turns dist/ into the worker's precache list. The cache name is derived from the
 // CONTENT of every precached file, so two different builds can never share a cache.
@@ -44,6 +44,13 @@ describe("buildSwConfig", () => {
   it("refuses a precache that has grown past the size budget (a forgotten font family)", () => {
     const big = [...FILES, { path: "assets/huge.png", bytes: new Uint8Array(3 * 1024 * 1024) }];
     expect(() => buildSwConfig(big, "normal")).toThrow(/budget/i);
+  });
+
+  it("the budget is 2.25 MiB until KB-429 removes Mukta (owner, 17 Nov 2026) - then back to 2 MiB: 2.2 MiB passes (the old 2 MiB refused it), 2.3 MiB is refused", () => {
+    expect(PRECACHE_BUDGET_BYTES).toBe(2_359_296);
+    const filler = (mib: number) => [...FILES, { path: "assets/fill.js", bytes: new Uint8Array(Math.round(mib * 1024 * 1024)) }];
+    expect(() => buildSwConfig(filler(2.2), "normal")).not.toThrow();
+    expect(() => buildSwConfig(filler(2.3), "normal")).toThrow(/2359296 byte budget/);
   });
 
   it("kill mode precaches nothing", () => {
