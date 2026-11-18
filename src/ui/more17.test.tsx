@@ -292,12 +292,12 @@ describe("21 Bill design", () => {
     expect(screen.getByText(/A receipt opened from History shows today's shop name, phone and language/)).toBeTruthy();
   });
 
-  it("'Item names on bill' says the truth (a fixed row, no choice): your items' names; an unknown item prints the name said", async () => {
+  it("'Item names on bill' says the truth (a fixed row, no choice): voice orders the name said, Add item the items' name", async () => {
     await open();
     fireEvent.click(row(/^Bill design/));
     const names = screen.getByRole("group", { name: "Item names on bill" });
-    expect(names.textContent).toContain("As in your items");
-    expect(names.textContent).toContain("An item not in your items prints the name you said.");
+    expect(names.textContent).toContain("As you said them");
+    expect(names.textContent).toContain("Voice orders print the name you said. Items you add by hand print the name from your items.");
     expect(within(names).queryByRole("button")).toBeNull();
   });
 

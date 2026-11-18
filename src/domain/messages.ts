@@ -547,12 +547,13 @@ export const MESSAGES = {
   "more.privacy": m("Privacy", "गोपनीयता", "Privacy"),
   "more.preview": m("Receipt preview", "रसीद का नमूना", "Receipt ka namoona"),
   "more.namesOnBill": m("Item names on bill", "बिल पर सामान के नाम", "Bill par saamaan ke naam"),
-  // the truth (domain/layer2.ts): a matched item prints its name from the shop's items; an unknown one the name said
-  "more.namesAsItems": m("As in your items", "आपके सामान जैसे", "Aapke saamaan jaise"),
+  // the truth (owner + reviewer, 18 Nov 2026; pinned by itemNamesOnBill.test.tsx): a voice line keeps the name SAID (D102, the V3 path
+  // useVoiceOrders); Add item puts the item's name from the shop's items
+  "more.namesAsSaid": m("As you said them", "जैसे आपने बोले", "Jaise aapne bole"),
   "more.namesHelp": m(
-    "An item in your items prints with its name there. An item not in your items prints the name you said.",
-    "जो सामान आपकी सूची में है, वह वहाँ के नाम से छपता है। जो सूची में नहीं है, वह आपके बोले नाम से छपता है।",
-    "Jo saamaan aapki list mein hai, woh wahan ke naam se chhapta hai. Jo list mein nahi hai, woh aapke bole naam se chhapta hai.",
+    "Voice orders print the name you said. Items you add by hand print the name from your items.",
+    "बोलकर दिए ऑर्डर में वही नाम छपता है जो आपने बोला। हाथ से जोड़े सामान पर आपकी सूची वाला नाम छपता है।",
+    "Bolkar diye order mein wahi naam chhapta hai jo aapne bola. Haath se jode saamaan par aapki list wala naam chhapta hai.",
   ),
   "items.all": m("All {n}", "सब {n}", "Sab {n}"),
   "items.fromBills": m("From your bills", "आपके बिलों से", "Aapke bills se"),

@@ -216,7 +216,7 @@ export function BillDesignPage({ localDb, shop, onClose }: { localDb: KiranaBill
       <div role="group" aria-label={t("more.namesOnBill")} className="flex flex-col gap-1 rounded-[16px] border border-kb-border bg-kb-card px-[14px] py-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
           <span className="text-kb-15 font-semibold">{t("more.namesOnBill")}</span>
-          <span className="text-kb-13 text-kb-sub">{t("more.namesAsItems")}</span>
+          <span className="text-kb-13 text-kb-sub">{t("more.namesAsSaid")}</span>
         </div>
         <p className={help}>{t("more.namesHelp")}</p>
       </div>
