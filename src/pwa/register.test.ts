@@ -50,7 +50,7 @@ describe("resetServiceWorker", () => {
 // KB-401 (D67): what the page does about the worker. A KILL build (src/sw/mode.txt = kill) must never register one -
 // the tombstone worker reloads its pages, and a page that registered it again would loop forever.
 describe("swPlan", () => {
-  const on = { production: true, supported: true, search: "", killBuild: false };
+  const on = { production: true, supported: true, search: "", killBuild: false, native: false };
   it("registers in a normal production build", () => {
     expect(swPlan(on)).toBe("register");
   });
@@ -64,5 +64,10 @@ describe("swPlan", () => {
   });
   it("a kill build clears whatever is there and never registers", () => {
     expect(swPlan({ ...on, killBuild: true })).toBe("clear");
+  });
+  it("option (b) step 3 (owner, 18 Nov 2026): never inside the Android app - its screens come from the APK - even with ?nosw=1 or a kill build", () => {
+    expect(swPlan({ ...on, native: true })).toBe("off");
+    expect(swPlan({ ...on, native: true, search: "?nosw=1" })).toBe("off");
+    expect(swPlan({ ...on, native: true, killBuild: true })).toBe("off");
   });
 });

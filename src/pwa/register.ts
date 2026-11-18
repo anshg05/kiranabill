@@ -1,3 +1,4 @@
+import { isNativeApp } from "@/data/nativeSignIn";
 import { SW_KILL_BUILD } from "./buildId";
 import { createUpdater } from "./updater";
 import { isUpdateSafe, onUpdateSafetyChange } from "./updateGate";
@@ -60,14 +61,15 @@ function sessionGuard() {
 }
 
 /** What this page does about the worker. A KILL build clears and never registers (the tombstone reloads its pages). */
-export function swPlan(env: { production: boolean; supported: boolean; search: string; killBuild: boolean }): "off" | "reset" | "clear" | "register" {
-  if (!env.production || !env.supported) return "off";
+export function swPlan(env: { production: boolean; supported: boolean; search: string; killBuild: boolean; native: boolean }): "off" | "reset" | "clear" | "register" {
+  // Option (b) step 3 (owner, 18 Nov 2026): the Android app's screens come from the APK, so it has no worker at all; the website keeps its own.
+  if (!env.production || !env.supported || env.native) return "off";
   if (wantsReset(env.search)) return "reset";
   return env.killBuild ? "clear" : "register";
 }
 
 export function startServiceWorker(): void {
-  const plan = swPlan({ production: import.meta.env.PROD, supported: "serviceWorker" in navigator, search: window.location.search, killBuild: SW_KILL_BUILD });
+  const plan = swPlan({ production: import.meta.env.PROD, supported: "serviceWorker" in navigator, search: window.location.search, killBuild: SW_KILL_BUILD, native: isNativeApp() });
   if (plan === "off") return;
   if (plan === "reset") {
     void resetServiceWorker({ serviceWorker: navigator.serviceWorker, caches: window.caches, location: window.location });
