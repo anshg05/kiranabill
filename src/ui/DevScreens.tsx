@@ -27,6 +27,11 @@ import { HomeScreen } from "./HomeScreen";
 import { TabFrame } from "./AppTabs";
 import { CatalogScreen } from "./CatalogScreen";
 import { MoreScreen } from "./MoreScreen";
+import { SignedOutFlow } from "./WelcomeScreens";
+import { OnboardingScreen } from "./OnboardingScreen";
+import { AuthProvider } from "@/providers/AuthProvider";
+import { ShopProvider } from "@/providers/ShopProvider";
+import { DeviceDB } from "@/data/device";
 import type { MorePage } from "./MorePages";
 
 // DEV ONLY (KB-413, /__dev/screens): each rebuilt screen, the REAL component with sample data, full-size beside its whole approved
@@ -215,7 +220,7 @@ function Screen24() {
 }
 
 // 13 and History draw "Print bill" only inside the Android app - the sheet shows the app's screen (dev frame only; printing is never run)
-if (params.get("frame") && ["13", "15", "17", "18", "21"].includes(params.get("screen") ?? "")) {
+if (params.get("frame") && ["13", "15", "17", "18", "21", "01", "02", "03", "04", "05"].includes(params.get("screen") ?? "")) {
   try {
     Object.defineProperty(Capacitor, "isNativePlatform", { value: () => true, configurable: true });
   } catch {
@@ -535,6 +540,47 @@ function Screen17({ state, onReady }: { state: string; onReady: () => void }) {
   ) : null;
 }
 
+/** Sign in needs the sign-in provider around it; the dev sheets keep their own device database */
+const DEV_DEVICE_DB = new DeviceDB("kb-dev-sheet-auth");
+
+/** KB-415: the first-time flow, as the Android app shows it (the printing chips are there). 01-04 the splash and onboarding pages, 05 Sign
+ *  in, 06 Shop setup - setup (06's sample typed in: Gupta Kirana Store, 98765 43210) | error (a 5-digit phone, then Use ready catalog). */
+function Screen06({ state, onReady }: { state: string; onReady: () => void }) {
+  const deviceDb = DEV_DEVICE_DB;
+  useEffect(() => {
+    const set = (label: RegExp, v: string) => {
+      const l = [...document.querySelectorAll("label")].find((x) => label.test(x.textContent ?? ""));
+      const el = l ? (document.getElementById(l.htmlFor) as HTMLInputElement | null) : null;
+      if (!el) return;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const say06 = (id: Parameters<typeof say>[0]) => say(id, {}, getScreenLanguage());
+    const steps = [
+      () => set(new RegExp(`^${say06("settings.shopName")}$`), "Gupta Kirana Store"),
+      () => set(new RegExp(`^${say06("onboard.phoneLabel")}`), state === "error" ? "12345" : "98765 43210"),
+      ...(state === "error" ? [() => [...document.querySelectorAll<HTMLElement>("button")].find((b) => b.textContent === say06("onboard.ready"))?.click()] : []),
+      () => (document.activeElement as HTMLElement | null)?.blur(),
+    ];
+    let i = 0;
+    const id = window.setInterval(() => {
+      if (!document.querySelector("label")) return;
+      const step = steps[i++];
+      if (step) return step();
+      window.clearInterval(id);
+      window.setTimeout(onReady, 900);
+    }, 250);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <AuthProvider deviceDb={deviceDb}>
+      <ShopProvider userId={null} online={false} deviceDb={deviceDb}>
+        <OnboardingScreen />
+      </ShopProvider>
+    </AuthProvider>
+  );
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) =>
   /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c) &&
@@ -613,7 +659,8 @@ function ReachCheck() {
 }
 
 const FILES: Record<string, string> = {
-  "08": "08-Home.html", "14": "14-BillsList.html", "16": "16-Items.html", "17": "17-More.html", "18": "18-Printer.html", "19": "19-AddItem.html", "21": "21-BillDesign.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "08": "08-Home.html", "14": "14-BillsList.html", "01": "01-Main.html", "02": "02-Onboarding.html", "03": "03-Onboarding.html", "04": "04-Onboarding.html", "05": "05-SignIn.html", "06": "06-ShopSetup.html",
+  "16": "16-Items.html", "17": "17-More.html", "18": "18-Printer.html", "19": "19-AddItem.html", "21": "21-BillDesign.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
   "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
@@ -621,7 +668,7 @@ const FILES: Record<string, string> = {
 function Frame() {
   const lang = params.get("lang");
   // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
-  const [ready, setReady] = useState(!["15", "08", "14", "25", "16", "19", "17", "18", "21"].includes(params.get("screen") ?? ""));
+  const [ready, setReady] = useState(!["15", "08", "14", "25", "16", "19", "17", "18", "21", "06"].includes(params.get("screen") ?? ""));
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -638,7 +685,7 @@ function Frame() {
     <>
       <main>
         {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
-        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25", "16", "19", "17", "18", "21"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
+        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25", "16", "19", "17", "18", "21", "01", "02", "03", "04", "05", "06"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
           {params.get("screen") === "08" ? <Screen08 state={params.get("state") ?? "home"} onReady={() => setReady(true)} />
             : params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
@@ -651,6 +698,12 @@ function Frame() {
             : params.get("screen") === "14" ? <Screen14 state={params.get("state") ?? "list"} onReady={() => setReady(true)} />
             : params.get("screen") === "16" ? <Screen16 state={params.get("state") ?? "all"} onReady={() => setReady(true)} />
             : params.get("screen") === "19" ? <Screen16 state={params.get("state") ?? "add"} onReady={() => setReady(true)} />
+            : ["01", "02", "03", "04", "05"].includes(params.get("screen") ?? "") ? (
+                <AuthProvider deviceDb={DEV_DEVICE_DB}>
+                  <SignedOutFlow start={({ "01": 0, "02": 1, "03": 2, "04": 3, "05": 4 } as const)[params.get("screen") as "01"]} />
+                </AuthProvider>
+              )
+            : params.get("screen") === "06" ? <Screen06 state={params.get("state") ?? "setup"} onReady={() => setReady(true)} />
             : ["17", "18", "21"].includes(params.get("screen") ?? "") ? <Screen17 state={params.get("state") ?? "more"} onReady={() => setReady(true)} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
@@ -702,7 +755,7 @@ function Sheet() {
   return (
     <main style={{ padding: 16, font: "13px system-ui" }}>
       <h1 style={{ font: "700 16px system-ui", margin: "0 0 4px" }}>
-        {["08", "14", "15", "16", "17", "18", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
+        {["01", "02", "03", "04", "05", "06"].includes(screen) ? "KB-415" : ["08", "14", "15", "16", "17", "18", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
         {lang ? ` - ${lang}` : ""} - {w} x {h} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
       </h1>
       <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>

@@ -10,6 +10,9 @@ import { stubLocalStorage } from "./testStorage";
 stubLocalStorage();
 const createShop = vi.fn(() => new Promise<void>(() => {})); // the server is slow
 vi.mock("@/providers/ShopProvider", () => ({ useShop: () => ({ createShop }) }));
+// KB-415: shop setup's back arrow signs out (useAuth)
+vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signOut: () => Promise.resolve() }) }));
+
 afterEach(() => {
   cleanup();
   createShop.mockClear();

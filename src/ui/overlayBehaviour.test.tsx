@@ -9,6 +9,7 @@ import { CancelBillSheet } from "./CancelBillSheet";
 import { OnboardingScreen } from "./OnboardingScreen";
 
 vi.mock("@/providers/ShopProvider", () => ({ useShop: () => ({ createShop: async () => {} }) }));
+vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signOut: () => Promise.resolve() }) })); // KB-415: setup's back signs out
 
 // KB-342: every overlay closes on Escape and Android Back (the top one only); a dialog is modal in fact - a tap on the
 // dim backdrop cancels, focus goes in and stays in; the bill behind a full-screen overlay is inert.
@@ -129,11 +130,12 @@ describe("the bill behind a full-screen overlay", () => {
 });
 
 describe("the set-up screen's touch targets are 44 px", () => {
-  it("both fields and both buttons carry min-h-11", () => {
+  it("KB-415 (06's sizes): both fields' boxes 54 px, Use ready catalog 56, Start empty 52 + its border - all above 44", () => {
     render(<OnboardingScreen />);
-    for (const el of [screen.getByLabelText("Shop name"), screen.getByLabelText("Phone (optional)"), screen.getByRole("button", { name: "Use ready catalog" }), screen.getByRole("button", { name: "Start empty" })]) {
-      expect(el.className, el.outerHTML.slice(0, 60)).toContain("min-h-11");
-    }
+    expect(screen.getByLabelText("Shop name").parentElement!.className).toContain("min-h-[54px]");
+    expect(screen.getByLabelText("Phone · optional, printed on bills").parentElement!.className).toContain("min-h-[54px]");
+    expect(screen.getByRole("button", { name: "Use ready catalog" }).className).toContain("min-h-[56px]");
+    expect(screen.getByRole("button", { name: "Start empty" }).className).toContain("min-h-[54px]");
   });
 });
 

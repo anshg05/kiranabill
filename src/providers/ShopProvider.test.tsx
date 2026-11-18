@@ -6,6 +6,9 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ShopProvider, useShop } from "./ShopProvider";
 import { ShopGate } from "@/app/App";
+
+// KB-415: shop setup's back arrow signs out (useAuth) - this file renders it without an AuthProvider
+vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signOut: () => Promise.resolve() }) }));
 import { openShopDb } from "@/data/db";
 import { DeviceDB } from "@/data/device";
 import { isSyncLoopRunning, stopSyncLoop, type OnlineEventSource } from "@/data/sync";

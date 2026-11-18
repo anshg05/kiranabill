@@ -23,6 +23,7 @@ import type { ReceiptShare } from "./useReceiptShare";
 // disabled button, "Understanding…", the Undo strip, translated error messages, visible labels on the set-up fields.
 
 vi.mock("@/providers/ShopProvider", () => ({ useShop: () => ({ createShop: async () => {} }) }));
+vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signOut: () => Promise.resolve() }) })); // KB-415: setup's back signs out
 stubLocalStorage();
 afterEach(async () => {
   cleanup();
@@ -330,20 +331,22 @@ describe("#17 - the Undo strip stays until the next action, or 10 s", () => {
 
 // ---------------------------------------------------------------------------------------------------------------- #19
 describe("#19 - the set-up fields have visible labels (the placeholders are examples)", () => {
+  // KB-415: 06's fields - the kit's TextField, a visible <label for> tied to each input
+  const labelOf = (el: HTMLElement) => document.querySelector(`label[for="${el.id}"]`)?.textContent;
   it("English: a label per field, each tied to its input; the placeholders are examples", () => {
     render(<OnboardingScreen />);
     const name = screen.getByLabelText("Shop name") as HTMLInputElement;
-    const phone = screen.getByLabelText("Phone (optional)") as HTMLInputElement;
+    const phone = screen.getByLabelText("Phone · optional, printed on bills") as HTMLInputElement;
     expect(name.tagName).toBe("INPUT");
     expect(phone.tagName).toBe("INPUT");
     expect(name.placeholder).not.toBe("Shop name");
-    expect(phone.placeholder).not.toBe("Phone (optional)");
-    expect(name.closest("label")?.textContent).toContain("Shop name"); // visible text, not only an aria-label
-    expect(phone.closest("label")?.textContent).toContain("Phone (optional)");
+    expect(phone.placeholder).not.toMatch(/Phone/);
+    expect(labelOf(name)).toBe("Shop name"); // visible text, not only an aria-label
+    expect(labelOf(phone)).toBe("Phone · optional, printed on bills");
   });
   it("हिन्दी", () => {
     setScreenLanguage("hi");
     render(<OnboardingScreen />);
-    expect(screen.getByLabelText("दुकान का नाम").closest("label")?.textContent).toContain("दुकान का नाम");
+    expect(labelOf(screen.getByLabelText("दुकान का नाम"))).toBe("दुकान का नाम");
   });
 });

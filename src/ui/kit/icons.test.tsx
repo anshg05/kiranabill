@@ -70,6 +70,9 @@ describe("the design's own drawings (26 §2.4 exceptions)", () => {
     ["Keyboard", "10-Review.html", '<path d="M7 10h.01', false],
     ["Keyboard", "23-ReadFailed.html", '<path d="M7 10h.01', false],
     ["Keyboard", "11-Generating.html", '<path d="M7 10h.01', false],
+    // KB-415 (18 Nov 2026): 05-SignIn's trust rows
+    ["Devices", "05-SignIn.html", "Bill from more than one phone", false],
+    ["ShieldTick", "05-SignIn.html", "We never post to your Google account", false],
   ] as const)("%s is the drawing of %s", (name, file, before, filled) => {
     const want = design(file, before);
     const { container } = render(<Icon icon={KB_ICONS[name]} size={20} />);

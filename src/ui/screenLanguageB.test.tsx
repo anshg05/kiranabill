@@ -23,7 +23,7 @@ import type { RenderReceiptFiles } from "./useReceiptShare";
 
 const shopState = vi.hoisted(() => ({ loading: false, shop: null as unknown, loadError: false, createShop: vi.fn(() => Promise.resolve()), retry: vi.fn() }));
 vi.mock("@/providers/ShopProvider", () => ({ useShop: () => shopState, ShopProvider: ({ children }: { children: unknown }) => children }));
-vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signInWithGoogle: () => Promise.resolve(), userId: "u", mode: "online", deviceDb: null, loading: false }), AuthProvider: ({ children }: { children: unknown }) => children }));
+vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signInWithGoogle: () => Promise.resolve(), signOut: () => Promise.resolve(), userId: "u", mode: "online", deviceDb: null, loading: false }), AuthProvider: ({ children }: { children: unknown }) => children }));
 vi.mock("@/ui/BillingScreen", () => ({ BillingScreen: () => null }));
 
 // KB-332 (D84), Checkpoint B: Catalog, History and Cancel, the product sheets, the import, the first-time shop set-up and the
@@ -269,7 +269,7 @@ describe("the first-time shop set-up and the shop-load error", () => {
     render(<OnboardingScreen />);
     expect(screen.getByRole("heading", { name: T("onboard.title", l) })).toBeTruthy();
     expect(screen.getByLabelText(T("settings.shopName", l))).toBeTruthy(); // KB-343: visible labels
-    expect(screen.getByLabelText(T("onboard.phone", l))).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: new RegExp(`^${T("onboard.phoneLabel", l)}`) })).toBeTruthy(); // KB-415: "Phone · optional, printed on bills"
     expect(screen.getByText(T("onboard.question", l))).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: T("onboard.ready", l) }));
     expect(screen.getByText(T("err.shopNameRequired", l))).toBeTruthy();

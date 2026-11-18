@@ -223,6 +223,14 @@ describe("Logo (26 §4: logo-blue2.svg)", () => {
     expect(readFileSync(join(__dirname, "logo-blue2.svg"), "utf8")).toBe(readFileSync(join(ROOT, "docs", "design", "logo-blue2.svg"), "utf8"));
   });
 
+  it("KB-415: the light logo for 01's splash is the approved logo-light.svg, byte for byte; 92 px, radius 20, the blue shadow", () => {
+    expect(readFileSync(join(__dirname, "logo-light.svg"), "utf8")).toBe(readFileSync(join(ROOT, "docs", "design", "logo-light.svg"), "utf8"));
+    const { container } = render(<Logo size={92} light shadow alt="KiranaBill logo" />);
+    const img = container.querySelector("img")!;
+    expect(img.getAttribute("src")).toContain("logo-light");
+    expect([img.width, img.className.includes("rounded-[20px]"), img.className.includes("shadow-kb-logo")]).toEqual([92, true, true]);
+  });
+
   it("the drawn sizes and corners: 42 (radius 9), 52 (12), 76 (16); the blue shadow where the screen draws it", () => {
     const { container } = render(<><Logo size={42} shadow /><Logo size={52} /><Logo size={76} shadow alt="KiranaBill logo" /></>);
     const [a, b, c] = [...container.querySelectorAll("img")];

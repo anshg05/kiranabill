@@ -75,6 +75,16 @@ const Profile = createLucideIcon("kb-profile", [
   ["path", { d: "M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6", key: "b" }],
 ]);
 /** 08-Home's hero card: the filled 4-point star that twinkles (amber; KB-414 step 1) */
+/** 05-SignIn "Bill from more than one phone": two phones side by side (KB-415) */
+const Devices = createLucideIcon("kb-devices", [
+  ["rect", { x: "3", y: "4", width: "8", height: "15", rx: "2", key: "a" }],
+  ["rect", { x: "13", y: "6", width: "8", height: "15", rx: "2", key: "b" }],
+]);
+/** 05-SignIn "We never post to your Google account": the shield WITH a tick (17's Privacy shield has none) (KB-415) */
+const ShieldTick = createLucideIcon("kb-shield-tick", [
+  ["path", { d: "M12 3l8 3v6c0 4.5-3.5 8-8 9-4.5-1-8-4.5-8-9V6z", key: "a" }],
+  ["path", { d: "M9 12l2 2 4-4", key: "b" }],
+]);
 const Twinkle = createLucideIcon("kb-twinkle", [["path", { d: "M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6z", fill: "currentColor", stroke: "none", key: "a" }]]);
 
 export const KB_ICONS = {
@@ -90,6 +100,8 @@ export const KB_ICONS = {
   RotateCw,
   // 08-Home (KB-414 step 1)
   Profile, Twinkle,
+  // 05-SignIn's trust rows (KB-415)
+  Devices, ShieldTick,
 } satisfies Record<string, LucideIcon>;
 
 /** One icon at the design's stroke (1.9 - the Saved tick draws 2.4), coloured by its text; the button or row carries the words.

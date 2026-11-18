@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { ShopProvider, useShop } from "@/providers/ShopProvider";
-import { SignInScreen } from "@/ui/SignInScreen";
+import { useEffect } from "react";
+import { SignedOutFlow, markWelcomed } from "@/ui/WelcomeScreens";
 import { OnboardingScreen } from "@/ui/OnboardingScreen";
 import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
@@ -46,6 +47,10 @@ function AuthGate() {
   // this device (D38) - the app runs from their local database either way.
   const { loading, userId, mode, deviceDb } = useAuth();
   const { t } = useT();
+  // KB-415: someone signed in on this phone has been welcomed - an update to this version never shows them the splash after a sign-out
+  useEffect(() => {
+    if (userId) markWelcomed();
+  }, [userId]);
 
   if (loading) {
     return (
@@ -55,7 +60,8 @@ function AuthGate() {
     );
   }
 
-  if (!userId) return <SignInScreen />;
+  // KB-415: signed out -> the splash and onboarding once per install, then Sign in (WelcomeScreens.tsx)
+  if (!userId) return <SignedOutFlow />;
 
   return (
     <ShopProvider userId={userId} online={mode === "online"} deviceDb={deviceDb}>
