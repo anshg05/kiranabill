@@ -1,3 +1,4 @@
+import { privacyHref } from "./privacyLink";
 import { useEffect, useState } from "react";
 import { liveQuery } from "dexie";
 import { deriveShopAliases } from "@/data/aliasEvidence";
@@ -105,7 +106,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
             <ListCard>
               <ListRow icon={KB_ICONS.Languages} title={t("more.appLanguage")} value={SCREEN_LANGUAGES.find((l) => l.value === lang)?.label} onClick={() => setPage("language")} />
               <ListRow icon={KB_ICONS.Cloud} title={t("more.sync")} sub={syncText} onClick={() => setPage("sync")} />
-              <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href="/privacy" />
+              <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href={privacyHref()} />
               {/* English in every language, as today's Developer mode (KB-312) */}
               <ListRow icon={KB_ICONS.Phone} title="Developer" onClick={() => setPage("developer")} />
             </ListCard>

@@ -1,3 +1,4 @@
+import { privacyHref } from "./privacyLink";
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
 import { useT } from "./useT";
@@ -109,7 +110,7 @@ export function SignInScreen() {
             {opening ? t("signin.opening") : t("signin.google")}
           </button>
           <p className="text-center text-kb-13 text-kb-sub">
-            <a href="/privacy" target="_blank" rel="noopener" className="kb-hit-icon inline-flex min-h-[44px] items-center font-semibold text-kb-primary underline">
+            <a href={privacyHref()} target="_blank" rel="noopener" className="kb-hit-icon inline-flex min-h-[44px] items-center font-semibold text-kb-primary underline">
               {t("signin.privacy")}
             </a>
           </p>
