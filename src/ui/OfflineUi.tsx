@@ -3,6 +3,7 @@ import type { SyncChip, Unsynced } from "./syncChip";
 import { useBackEntry } from "./useBackEntry";
 import { useHidesNav } from "./AppTabs";
 import { useT } from "./useT";
+import { Icon, KB_ICONS } from "./kit/icons";
 
 // KB-313 (05 §7, 16 §2): the header chip, and the two inline confirmations (sign out with unsynced bills,
 // Clear bill). A chip is a status - plain text, tappable only when amber - never a dialog in billing's way.
@@ -140,11 +141,12 @@ export function ConfirmDialog({ title, lines, confirmLabel, onCancel, onConfirm 
           <p key={l}>{tx(l)}</p>
         ))}
       </div>
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={onCancel} className="min-h-11 rounded-[6px] border border-line bg-paper px-4 font-medium">
+      {/* kb-hit: tap areas the sheets can check (KB-414 step 4 - Sign out's warning over More); the 8 px gap declared */}
+      <div className="mt-4 flex flex-wrap justify-end gap-2 [--kb-gap-x:8px] [--kb-gap-y:8px]">
+        <button type="button" onClick={onCancel} className="kb-hit min-h-11 rounded-[6px] border border-line bg-paper px-4 font-medium">
           {t("common.cancel")}
         </button>
-        <button type="button" onClick={onConfirm} className="min-h-11 rounded-[6px] border border-danger px-4 font-medium text-danger">
+        <button type="button" onClick={onConfirm} className="kb-hit min-h-11 rounded-[6px] border border-danger px-4 font-medium text-danger">
           {confirmLabel}
         </button>
       </div>
@@ -165,8 +167,9 @@ export function SignOutButton({ unsynced, billInProgress, onSignOut }: { unsynce
       <button
         type="button"
         onClick={() => (unsynced && unsynced.pending + unsynced.conflict > 0 ? setAsking(true) : onSignOut())}
-        className="font-kb kb-hit mt-6 flex min-h-[52px] w-full items-center justify-center rounded-[14px] border border-kb-border bg-kb-card text-kb-15 font-bold text-kb-err"
+        className="font-kb kb-hit mt-6 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-kb-border bg-kb-card text-kb-15 font-bold text-kb-err"
       >
+        <Icon icon={KB_ICONS.LogOut} size={18} />
         {t("menu.signout")}
       </button>
       {asking && unsynced && (

@@ -92,7 +92,6 @@ export const MESSAGES = {
 
   // ---- Menu
   "menu.label": m("Menu", "मेन्यू", "Menu"),
-  "menu.settings": m("Settings", "सेटिंग", "Settings"),
   "menu.clear": m("Clear bill", "बिल हटाएं", "Bill hatayein"),
   "menu.signout": m("Sign out", "साइन आउट", "Sign out"),
 
@@ -360,7 +359,7 @@ export const MESSAGES = {
   "print.reprint": m("Reprint", "दोबारा प्रिंट करें", "Dobara print karein"),
   "print.printing": m("Printing… {percent}%", "प्रिंट हो रहा है… {percent}%", "Print ho raha hai… {percent}%"),
   "print.done": m("Printed", "प्रिंट हो गया", "Print ho gaya"),
-  "print.noPrinter": m("No printer chosen — choose one in Settings → Printer.", "कोई प्रिंटर नहीं चुना — सेटिंग्स → प्रिंटर में चुनें।", "Koi printer nahi chuna — Settings → Printer mein chunein."),
+  "print.noPrinter": m("No printer chosen — choose one in More → Printer.", "कोई प्रिंटर नहीं चुना — और → प्रिंटर में चुनें।", "Koi printer nahi chuna — Aur → Printer mein chunein."),
   "print.unreachable": m(
     "Printer not connected — switch it on, keep it close and tap Print again. You can still share the bill.",
     "प्रिंटर से जुड़ नहीं पाए — उसे चालू करें, पास रखें और फिर से प्रिंट दबाएं। बिल अब भी शेयर कर सकते हैं।",
@@ -394,7 +393,6 @@ export const MESSAGES = {
   "settings.compatHint": m("Turn on if your printer prints strange symbols.", "अगर प्रिंटर अजीब निशान छापे, तो इसे चालू करें।", "Agar printer ajeeb nishaan chhaape, to ise chalu karein."),
   "settings.longTestPrint": m("Long test print (60 lines)", "लंबा टेस्ट प्रिंट (60 लाइन)", "Lamba test print (60 line)"),
   "settings.printerChecking": m("Checking the printer…", "प्रिंटर जाँच रहे हैं…", "Printer check kar rahe hain…"),
-  "settings.privacy": m("Privacy policy", "गोपनीयता नीति", "Privacy policy"), // D91
   "settings.back": m("Back", "वापस", "Wapas"),
   "settings.shopDetails": m("Shop details", "दुकान की जानकारी", "Dukaan ki jaankari"),
   "settings.shopName": m("Shop name", "दुकान का नाम", "Dukaan ka naam"),
@@ -532,6 +530,30 @@ export const MESSAGES = {
   "product.keepNameLabel": m("Keep “{name}” as another name", "“{name}” को दूसरे नाम के रूप में रखें", "“{name}” ko doosre naam ke roop mein rakhein"),
   "product.otherNames": m("Other names customers say", "ग्राहक जो दूसरे नाम बोलते हैं", "Grahak jo doosre naam bolte hain"),
   // KB-414 step 3 (owner + reviewer, 17 Nov 2026): Items (16), the "+ Add" sheet, "From your bills", Add / Edit item (19)
+  // KB-414 step 4 (owner + reviewer, 18 Nov 2026): More (17) and its inner pages, Bill design (21)
+  "more.editShop": m("Edit shop details", "दुकान की जानकारी बदलें", "Dukaan ki jaankari badlein"),
+  "more.billing": m("Billing", "बिलिंग", "Billing"),
+  "more.app": m("App", "ऐप", "App"),
+  "more.billDesign": m("Bill design", "बिल का डिज़ाइन", "Bill ka design"),
+  "more.receiptIn": m("Receipt in {lang}", "रसीद {lang} में", "Receipt {lang} mein"),
+  "more.items": m("Items & prices", "सामान और भाव", "Saamaan aur bhav"),
+  "more.itemOne": m("1 item", "1 सामान", "1 saamaan"),
+  "more.itemMany": m("{n} items", "{n} सामान", "{n} saamaan"),
+  "more.appLanguage": m("App language", "ऐप की भाषा", "App ki bhasha"),
+  "more.sync": m("Sync", "सिंक", "Sync"),
+  "more.synced": m("Synced", "सिंक हो गया", "Sync ho gaya"),
+  "more.waitingOne": m("1 bill waiting to sync", "1 बिल सिंक होना बाकी", "1 bill sync hona baaki"),
+  "more.waitingMany": m("{n} bills waiting to sync", "{n} बिल सिंक होने बाकी", "{n} bill sync hone baaki"),
+  "more.privacy": m("Privacy", "गोपनीयता", "Privacy"),
+  "more.preview": m("Receipt preview", "रसीद का नमूना", "Receipt ka namoona"),
+  "more.namesOnBill": m("Item names on bill", "बिल पर सामान के नाम", "Bill par saamaan ke naam"),
+  // the truth (domain/layer2.ts): a matched item prints its name from the shop's items; an unknown one the name said
+  "more.namesAsItems": m("As in your items", "आपके सामान जैसे", "Aapke saamaan jaise"),
+  "more.namesHelp": m(
+    "An item in your items prints with its name there. An item not in your items prints the name you said.",
+    "जो सामान आपकी सूची में है, वह वहाँ के नाम से छपता है। जो सूची में नहीं है, वह आपके बोले नाम से छपता है।",
+    "Jo saamaan aapki list mein hai, woh wahan ke naam se chhapta hai. Jo list mein nahi hai, woh aapke bole naam se chhapta hai.",
+  ),
   "items.all": m("All {n}", "सब {n}", "Sab {n}"),
   "items.fromBills": m("From your bills", "आपके बिलों से", "Aapke bills se"),
   "items.pricesOne": m("1 price to check", "1 भाव देखना है", "1 bhav dekhna hai"),

@@ -10,7 +10,7 @@ import { EditableValue } from "./EditableValue";
 import { EditProductSheet } from "./EditProductSheet";
 import { AddProductSheet } from "./AddProductSheet";
 import { CancelBillSheet } from "./CancelBillSheet";
-import { SettingsScreen } from "./SettingsScreen";
+import { MoreScreen } from "./MoreScreen";
 import { OnboardingScreen } from "./OnboardingScreen";
 import { ShareBar } from "./ShareBar";
 import { setScreenLanguage } from "./screenLanguage";
@@ -240,7 +240,7 @@ describe("#15 - every disabled button says why, in one short line", () => {
   });
 });
 
-describe("#15 - Settings Save says 'No changes to save yet' until the shop's details change", () => {
+describe("#15 - Edit shop details (was: Settings) Save says 'No changes to save yet' until the shop's details change", () => {
   let db: KiranaBillDB;
   beforeEach(async () => {
     db = new KiranaBillDB(`ui-round-${crypto.randomUUID()}`);
@@ -251,7 +251,8 @@ describe("#15 - Settings Save says 'No changes to save yet' until the shop's det
     await db.delete();
   });
   it("shows the reason, then drops it once the name is edited", async () => {
-    render(<SettingsScreen localDb={db} shopId="s" deviceId="d" onClose={() => {}} />);
+    render(<MoreScreen localDb={db} shopId="s" deviceId="d" sync={{ chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } }} billInProgress={false} onSignOut={() => {}} onItems={() => {}} onClose={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Edit shop details/ }));
     const name = await screen.findByRole("textbox", { name: "Shop name" });
     expect(screen.getByText("No changes to save yet")).toBeTruthy();
     fireEvent.change(name, { target: { value: "Verma Store" } });

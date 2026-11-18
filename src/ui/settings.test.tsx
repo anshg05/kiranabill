@@ -7,13 +7,14 @@ import { DeviceDB } from "@/data/device";
 import { ignorePriceSuggestionFor } from "@/data/learningAudit";
 import { requestPersistentStorage } from "@/data/storagePersist";
 import { BUILD_ID } from "@/pwa/buildId";
-import { SettingsScreen } from "./SettingsScreen";
+import { MoreScreen } from "./MoreScreen";
 import { render as say } from "@/domain/messages";
 import { getScreenLanguage, setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
 
 // KB-312 (owner, 8 Oct 2026): S7 Settings - shop name and phone, the customer's receipt language, and a
-// collapsed Developer mode (learned aliases, provisional products, price suggestions, reset learning).
+// Developer mode (learned aliases, provisional products, price suggestions, reset learning). KB-414 step 4 (owner + reviewer,
+// 18 Nov 2026): Settings became More (17) and its inner pages - the same behaviour, reached through More's rows.
 // A shop edit is local-first (works offline) and pushed by the ordinary sync (D64); the reset is local-only
 // and says so (NI-27).
 
@@ -48,13 +49,24 @@ afterEach(async () => {
   await db.delete();
 });
 
-async function open(onClose = vi.fn()) {
-  render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} onClose={onClose} />);
+const SYNCED = { chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } };
+function more(deviceDb?: DeviceDB) {
+  return render(<MoreScreen localDb={db} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} sync={SYNCED} billInProgress={false} onSignOut={() => {}} onItems={() => {}} onClose={() => {}} />);
+}
+/** More -> the shop card -> Edit shop details */
+async function open() {
+  more();
+  fireEvent.click(await screen.findByRole("button", { name: /Edit shop details|दुकान की जानकारी बदलें|Dukaan ki jaankari badlein/ }));
   await screen.findByRole("textbox", { name: "Shop name" });
-  return { onClose };
+}
+/** More -> Bill design (the receipt language) */
+async function openBillDesign() {
+  more();
+  fireEvent.click(await screen.findByRole("button", { name: /^Bill design/ }));
+  return screen.getByRole("radiogroup", { name: "Receipt language" });
 }
 const nameBox = () => screen.getByRole("textbox", { name: "Shop name" }) as HTMLInputElement;
-const phoneBox = () => screen.getByRole("textbox", { name: "Shop phone" }) as HTMLInputElement;
+const phoneBox = () => screen.getByRole("textbox", { name: "Shop phone (optional)" }) as HTMLInputElement;
 const type = (el: HTMLElement, value: string) => fireEvent.change(el, { target: { value } });
 const save = () => fireEvent.click(screen.getByRole("button", { name: "Save" }));
 const row = () => db.shops.get(shopId);
@@ -75,23 +87,25 @@ async function seedLearning() {
     { localId: "po-other", shopId: otherShopId, syncStatus: "synced" as const, shopProductId: "x", observedPricePaise: 100, occurredAt: at, updatedAt: at, deviceId },
   ]);
 }
-const openDeveloper = async () => {
-  const section = screen.getByText("Developer mode").closest("details")!;
-  section.open = true;
-  fireEvent(section, new Event("toggle"));
-  return section;
+/** More -> Developer (was: the collapsed Developer mode) */
+const openDeveloper = async (deviceDb?: DeviceDB) => {
+  more(deviceDb);
+  fireEvent.click(await screen.findByRole("button", { name: /^Developer/ }));
+  return screen.getByTestId("developer");
 };
 
 describe("KB-312 - S7 Settings", () => {
 
-  it("shows the shop's name, phone and receipt language; Back closes it", async () => {
+  it("shows the shop's name and phone (Edit shop details) and the receipt language (Bill design); Back goes to More", async () => {
     await db.shops.put(shop({ phone: "9876543210", billLanguage: "hi" }));
-    const { onClose } = await open();
+    await open();
     expect(nameBox().value).toBe("Sharma Kirana");
     expect(phoneBox().value).toBe("98765 43210");
-    expect((within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onClose).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByRole("textbox")).toBeNull());
+    cleanup();
+    const group = await openBillDesign();
+    expect(within(group).getByRole("radio", { name: "हिन्दी" }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("Save does nothing until something changed", async () => {
@@ -141,8 +155,8 @@ describe("KB-312 - S7 Settings", () => {
   });
 
   it("choosing a receipt language saves at once, through the same path", async () => {
-    await open();
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }));
+    const group = await openBillDesign();
+    fireEvent.click(within(group).getByRole("radio", { name: "हिन्दी" }));
     await waitFor(async () => expect(await row()).toMatchObject({ billLanguage: "hi", syncStatus: "pending" }));
     fireEvent.click(screen.getByRole("radio", { name: "Both" }));
     await waitFor(async () => expect((await row())?.billLanguage).toBe("both"));
@@ -152,15 +166,18 @@ describe("KB-312 - S7 Settings", () => {
     await open();
     await db.shops.update(shopId, { name: "Edited Elsewhere", billLanguage: "hi", updatedAt: "2026-10-08T11:00:00.000000+00:00" }); // a pull landed
     await waitFor(() => expect(nameBox().value).toBe("Edited Elsewhere"));
-    expect((within(screen.getByRole("radiogroup", { name: "Receipt language" })).getByRole("radio", { name: "हिन्दी" }) as HTMLInputElement).checked).toBe(true);
     type(phoneBox(), "98765"); // mid-typing
     await db.shops.update(shopId, { name: "Edited Again", phone: "9123456789", updatedAt: "2026-10-08T12:00:00.000000+00:00" });
     await waitFor(() => expect(nameBox().value).toBe("Edited Again")); // the untouched field follows
     expect(phoneBox().value).toBe("98765"); // the one being typed stays
+    type(nameBox(), "Gupta St"); // KB-414 step 4: and the name field the same way
+    await db.shops.update(shopId, { name: "Edited Third", updatedAt: "2026-10-08T13:00:00.000000+00:00" });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(nameBox().value).toBe("Gupta St");
   });
 
   it("says plainly that a reopened receipt shows today's name, phone and language (owner Q4)", async () => {
-    await open();
+    await openBillDesign();
     expect(screen.getByText(/A receipt opened from History shows today's shop name, phone and language/)).toBeTruthy();
   });
 });
@@ -170,7 +187,6 @@ describe("KB-330 - an archived product in Developer mode", () => {
     await seedLearning();
     const sugarId = (await db.shopProducts.toArray()).find((p) => p.displayName === "Sugar")!.id;
     await db.shopProducts.update(sugarId, { isActive: false });
-    await open();
     const dev = within(await openDeveloper());
     expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("chini → Sugar (archived)");
   });
@@ -180,7 +196,6 @@ describe("KB-329 - ignored price suggestions in Developer mode", () => {
   it("lists a suggestion hidden by Ignore with its end date, and no longer under 'Price suggestions'", async () => {
     await seedLearning();
     await ignorePriceSuggestionFor(db, shopId, sugar.id, deviceId, Date.now());
-    await open();
     const dev = within(await openDeveloper());
     const until = new Date(Date.now() + 90 * 86_400_000).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
     const ignored = await dev.findByText(/ignored until/);
@@ -195,15 +210,12 @@ describe("KB-312 - Developer mode", () => {
     await seedLearning();
     const ev = (i: number, type: string) => ({ localId: `ae${i}`, shopId, syncStatus: "synced" as const, billLocalId: "", eventType: type, payload: { alias: "chini", shop_product_id: sugar.id, source_layer: "fastpath" }, createdAt: `2026-10-0${i + 1}T10:00:00.000Z`, updatedAt: now, deviceId });
     await db.learningEvents.bulkAdd([ev(1, "alias_confirmed"), ev(2, "alias_confirmed"), ev(3, "alias_confirmed"), ev(4, "alias_confirmed"), ev(5, "alias_confirmed")]); // the row says 80%; the evidence says 100%
-    await open();
     const dev = within(await openDeveloper());
     expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("100%");
     expect(dev.getByText(/cheeni → Sugar/).textContent).toContain("50%"); // no events for this one: the row stands
   });
-  it("is collapsed by default, and shows this shop's learning when opened: aliases, provisional products, price suggestions - read-only", async () => {
+  it("its own page (was: collapsed), shows this shop's learning: aliases, provisional products, price suggestions - read-only", async () => {
     await seedLearning();
-    await open();
-    expect((screen.getByText("Developer mode").closest("details") as HTMLDetailsElement).open).toBe(false);
     const section = await openDeveloper();
     const dev = within(section);
     expect((await dev.findByText(/chini → Sugar/)).textContent).toContain("seen 3 times");
@@ -217,7 +229,6 @@ describe("KB-312 - Developer mode", () => {
 
   it("Reset learning asks first - the dialog says what is and is not cleared; Cancel changes nothing", async () => {
     await seedLearning();
-    await open();
     const dev = within(await openDeveloper());
     await dev.findByText(/chini → Sugar/);
     fireEvent.click(dev.getByRole("button", { name: "Reset learning" }));
@@ -233,7 +244,6 @@ describe("KB-312 - Developer mode", () => {
 
   it("confirming clears THIS shop's learning only, says the server's copy was not deleted, and records the reset event for the sync", async () => {
     await seedLearning();
-    await open();
     const dev = within(await openDeveloper());
     await dev.findByText(/chini → Sugar/);
     fireEvent.click(dev.getByRole("button", { name: "Reset learning" }));
@@ -252,7 +262,6 @@ describe("KB-312 - Developer mode", () => {
   });
 
   it("with nothing learned it says so", async () => {
-    await open();
     const dev = within(await openDeveloper());
     expect(await dev.findByText("Nothing learned on this phone yet.")).toBeTruthy();
   });
@@ -260,28 +269,24 @@ describe("KB-312 - Developer mode", () => {
 
 // KB-401 (D67, KI-68): which version this phone runs, and whether its storage is protected.
 describe("KB-401 - version and storage", () => {
-  it("shows the build id (support can see which version a phone has)", async () => {
-    await open();
+  it("shows the build id on More (support can see which version a phone has)", async () => {
+    more();
+    await screen.findByRole("button", { name: /Edit shop details/ });
     expect(screen.getByText(`Version ${BUILD_ID}`)).toBeTruthy();
   });
 
   it("Developer mode says plainly whether the phone's storage is protected - never alarming", async () => {
     const deviceDb = new DeviceDB(`ui-settings-device-${crypto.randomUUID()}`);
-    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} onClose={() => {}} />);
-    await screen.findByRole("textbox", { name: "Shop name" });
-    const dev = within(await openDeveloper());
+    const dev = within(await openDeveloper(deviceDb));
     expect(await dev.findByText("Storage: not protected yet — install the app")).toBeTruthy();
     expect(dev.queryByRole("alert")).toBeNull();
     await requestPersistentStorage(deviceDb, { persisted: () => Promise.resolve(false), persist: () => Promise.resolve(true) });
     cleanup();
-    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} onClose={() => {}} />);
-    await screen.findByRole("textbox", { name: "Shop name" });
-    expect(await within(await openDeveloper()).findByText("Storage: protected")).toBeTruthy();
+    expect(await within(await openDeveloper(deviceDb)).findByText("Storage: protected")).toBeTruthy();
     deviceDb.close();
   });
 
   it("without a device database there is no storage line", async () => {
-    await open();
     const dev = within(await openDeveloper());
     await dev.findByText("Nothing learned on this phone yet.");
     expect(dev.queryByText(/Storage:/)).toBeNull();
@@ -298,18 +303,23 @@ describe("KB-332 - Screen language (a per-device choice, separate from the recei
     vi.unstubAllGlobals();
   });
 
-  it("three choices, English selected until one is made; the receipt language is its own group", async () => {
-    await open();
-    const group = screen.getByRole("radiogroup", { name: "Screen language" });
-    expect(within(group).getAllByRole("radio").map((r) => (r as HTMLInputElement).getAttribute("aria-label"))).toEqual(["English", "हिन्दी", "Hinglish"]);
-    expect((within(group).getByRole("radio", { name: "English" }) as HTMLInputElement).checked).toBe(true);
-    expect(screen.getByRole("radiogroup", { name: "Receipt language" })).toBeTruthy();
+  const openLanguage = async () => {
+    more();
+    fireEvent.click(await screen.findByRole("button", { name: /^(App language|ऐप की भाषा|App ki bhasha)/ }));
+    return screen.getByRole("radiogroup");
+  };
+
+  it("three choices, English selected until one is made; the receipt language is its own group (on Bill design)", async () => {
+    const group = await openLanguage();
+    expect(group.getAttribute("aria-label")).toBe("App language");
+    expect(within(group).getAllByRole("radio").map((r) => r.textContent)).toEqual(["English", "हिन्दी", "Hinglish"]);
+    expect(within(group).getByRole("radio", { name: "English" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.queryByRole("radiogroup", { name: "Receipt language" })).toBeNull();
   });
 
   it("choosing हिन्दी changes this screen at once, is kept on this device - and touches nothing of the shop", async () => {
-    await open();
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Screen language" })).getByRole("radio", { name: "हिन्दी" }));
-    expect(screen.getByRole("heading", { name: say("menu.settings", {}, "hi") })).toBeTruthy();
+    fireEvent.click(within(await openLanguage()).getByRole("radio", { name: "हिन्दी" }));
+    expect(screen.getByRole("heading", { name: say("more.appLanguage", {}, "hi") })).toBeTruthy();
     expect(getScreenLanguage()).toBe("hi");
     expect(store.get("kb.screenLanguage")).toBe("hi");
     const row = (await db.shops.get(shopId))!;
@@ -318,14 +328,15 @@ describe("KB-332 - Screen language (a per-device choice, separate from the recei
 
   it("the three labels are never translated, whatever the language", async () => {
     setScreenLanguage("hl");
-    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} onClose={() => {}} />);
-    const group = await screen.findByRole("radiogroup", { name: say("settings.screenLanguage", {}, "hl") });
-    expect(within(group).getAllByRole("radio").map((r) => r.getAttribute("aria-label"))).toEqual(["English", "हिन्दी", "Hinglish"]);
+    const group = await openLanguage();
+    expect(group.getAttribute("aria-label")).toBe(say("more.appLanguage", {}, "hl"));
+    expect(within(group).getAllByRole("radio").map((r) => r.textContent)).toEqual(["English", "हिन्दी", "Hinglish"]);
   });
 
-  it("the Developer mode section stays English in every language", async () => {
+  it("the Developer page stays English in every language", async () => {
     setScreenLanguage("hi");
-    render(<SettingsScreen localDb={db} shopId={shopId} deviceId={deviceId} onClose={() => {}} />);
-    expect(await screen.findByText("Developer mode")).toBeTruthy();
+    const dev = await openDeveloper();
+    expect(screen.getByRole("heading", { level: 1, name: "Developer" })).toBeTruthy();
+    expect(await within(dev).findByRole("button", { name: "Reset learning" })).toBeTruthy();
   });
 });

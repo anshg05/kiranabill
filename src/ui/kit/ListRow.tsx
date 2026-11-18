@@ -4,12 +4,13 @@ import { Icon, KB_ICONS } from "./icons";
 
 // KB-412 batch b (26 §5 list row), as drawn on 17-More: a 60 px row (every row, the last too, carries its 1 px divider below,
 // so 61 on screen), 14 px sides, gap 12; a 38 px pale tile (radius 11) with a 19 px primary icon; title 15 / 600 over an optional
-// sub 13 sub (gap 1); an optional value 13 sub; the 18 px sub chevron. The whole row is the button.
+// sub 13 sub (gap 1); an optional value 13 sub; the 18 px sub chevron. The whole row is the button - or, with `href`, a link that opens
+// in a new tab (KB-414 step 4: 17's Privacy -> /privacy, as today's link did).
 export function ListRow({
-  icon, title, sub, value, onClick,
-}: { icon: LucideIcon; title: string; sub?: string; value?: string; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="font-kb kb-hit w-full flex items-center gap-3 min-h-[61px] px-[14px] text-left text-kb-ink border-b border-kb-border">
+  icon, title, sub, value, onClick, href,
+}: { icon: LucideIcon; title: string; sub?: string; value?: string; onClick?: () => void; href?: string }) {
+  const inside = (
+    <>
       <span className="w-[38px] h-[38px] flex-none rounded-[11px] bg-kb-primary-pale text-kb-primary flex items-center justify-center">
         <Icon icon={icon} size={19} />
       </span>
@@ -19,6 +20,16 @@ export function ListRow({
       </span>
       {value && <span className="flex-none whitespace-nowrap text-kb-13 text-kb-sub">{value}</span>}
       <Icon icon={KB_ICONS.ChevronRight} size={18} className="text-kb-sub" />
+    </>
+  );
+  const look = "font-kb kb-hit w-full flex items-center gap-3 min-h-[61px] px-[14px] text-left text-kb-ink border-b border-kb-border";
+  return href ? (
+    <a href={href} target="_blank" rel="noopener" className={look}>
+      {inside}
+    </a>
+  ) : (
+    <button type="button" onClick={onClick} className={look}>
+      {inside}
     </button>
   );
 }

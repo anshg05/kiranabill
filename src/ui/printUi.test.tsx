@@ -87,7 +87,7 @@ describe("PrintButton", () => {
     render(<PrintButton receipt={receipt} firstIsOriginal />);
     fireEvent.click(printBtn());
     await settle();
-    expect(screen.getByRole("alert").textContent).toBe("No printer chosen — choose one in Settings → Printer.");
+    expect(screen.getByRole("alert").textContent).toBe("No printer chosen — choose one in More → Printer.");
     expect(classic.t.open).not.toHaveBeenCalled();
   });
 
@@ -193,13 +193,8 @@ describe("PrintButton", () => {
   });
 });
 
-describe("Settings → Printer", () => {
-  it("is not there in a browser or the PWA", () => {
-    env.native = false;
-    render(<PrinterSection shop={shop} />);
-    expect(screen.queryByText("Printer")).toBeNull();
-  });
-
+// KB-414 step 4: More -> Printer (the row is there only in the Android app - more17.test.tsx)
+describe("More → Printer", () => {
   it("asks for Bluetooth permission only when Choose printer is tapped - never just by opening Settings", async () => {
     render(<PrinterSection shop={shop} />);
     await settle();
@@ -226,7 +221,7 @@ describe("Settings → Printer", () => {
     choose(BT58);
     render(<PrinterSection shop={shop} />);
     const sw = screen.getByRole("switch", { name: "Compatible mode (for older printers)" });
-    expect((sw as HTMLInputElement).checked).toBe(false);
+    expect(sw.getAttribute("aria-checked")).toBe("false");
     expect(screen.getByText("Turn on if your printer prints strange symbols.")).toBeTruthy();
     fireEvent.click(sw);
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(true);

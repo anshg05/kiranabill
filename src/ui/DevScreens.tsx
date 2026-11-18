@@ -26,6 +26,8 @@ import type { ReceiptShare } from "./useReceiptShare";
 import { HomeScreen } from "./HomeScreen";
 import { TabFrame } from "./AppTabs";
 import { CatalogScreen } from "./CatalogScreen";
+import { MoreScreen } from "./MoreScreen";
+import type { MorePage } from "./MorePages";
 
 // DEV ONLY (KB-413, /__dev/screens): each rebuilt screen, the REAL component with sample data, full-size beside its whole approved
 // screen file (docs/design/screens/NN-*.html) - the owner's review of a full screen (D110 item 9).
@@ -213,7 +215,7 @@ function Screen24() {
 }
 
 // 13 and History draw "Print bill" only inside the Android app - the sheet shows the app's screen (dev frame only; printing is never run)
-if (params.get("frame") && ["13", "15"].includes(params.get("screen") ?? "")) {
+if (params.get("frame") && ["13", "15", "17", "18", "21"].includes(params.get("screen") ?? "")) {
   try {
     Object.defineProperty(Capacitor, "isNativePlatform", { value: () => true, configurable: true });
   } catch {
@@ -473,6 +475,66 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
   ) : null;
 }
 
+/** KB-414 step 4: 17-More and its inner pages on a dev database (fake-indexeddb, as 16), inside the REAL tab frame, as the Android app
+ *  shows them (the Printer row is there; a saved printer "BT-SRT-58"):
+ *  17: more | signout (2 bills not on the server + a bill in progress: the warning) | shop (Edit shop details) | language | sync (failing:
+ *      2 waiting, 1 stuck) | developer (learned names, a price suggestion, a said-not-in-items name)
+ *  18: printer (the Printer page, 58 mm) · 21: bill (Bill design) */
+function Screen17({ state, onReady }: { state: string; onReady: () => void }) {
+  const [db, setDb] = useState<KiranaBillDB | null>(null);
+  const shopId = "11111111-1111-4111-8111-111111111111";
+  useEffect(() => {
+    void (async () => {
+      const { IDBFactory, IDBKeyRange } = await import("fake-indexeddb");
+      Dexie.dependencies.indexedDB = new IDBFactory();
+      Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+      try {
+        localStorage.setItem("kb.printer.v1", JSON.stringify({ device: { id: "AA:BB", name: "BT-SRT-58", kind: "classic", printerLike: true }, dots: 384, compat: false }));
+      } catch {
+        // no storage: the Printer row says "No printer chosen"
+      }
+      const d = new KiranaBillDB("kb-dev-sheet-17");
+      const now = new Date().toISOString();
+      await d.shops.put({ id: shopId, syncStatus: "synced", name: "Gupta Kirana Store", phone: "9876543210", address: null, logoUrl: null, catalogMode: "base_imported", billLanguage: "en", receiptPrefix: "KB", updatedAt: now });
+      for (const [id, name, unit, price] of [["sugar", "चीनी", "kg", 4_500], ["rice", "चावल", "kg", 6_800], ["salt", "टाटा नमक", "piece", 3_000]] as const)
+        await d.shopProducts.put({ id, shopId, baseProductId: null, displayName: name, category: null, unit, pricePaise: price, aliases: [], source: "custom", useCount: 0, sku: null, barcode: null, isActive: true });
+      for (let i = 0; i < 3; i++)
+        await d.learningEvents.add({ localId: `e${i}`, shopId, syncStatus: "synced", billLocalId: "", eventType: "alias_confirmed", payload: { alias: "cheeni", shop_product_id: "sugar", source_layer: "fastpath" }, createdAt: new Date(Date.now() - 1000 * (10 - i)).toISOString(), updatedAt: now, deviceId: "d" });
+      await d.learnedAliases.put({ localId: "la1", shopId, syncStatus: "synced", alias: "cheeni", shopProductId: "sugar", hitCount: 3, confidence: 0.9, source: "confirmation", updatedAt: now, deviceId: "d" });
+      for (let i = 0; i < 3; i++) await d.priceObservations.put({ localId: `po${i}`, shopId, syncStatus: "synced", shopProductId: "rice", observedPricePaise: 7_000, occurredAt: now, updatedAt: now, deviceId: "d" });
+      await d.provisionalProducts.put({ localId: "pp1", shopId, syncStatus: "synced", spokenName: "काजू", seenCount: 2, suggestedUnit: null, suggestedPricePaise: null, promotedAt: null, promotedShopProductId: null, updatedAt: now, deviceId: "d" });
+      setDb(d);
+    })();
+  }, []);
+  useEffect(() => {
+    if (!db) return;
+    let clicked = state !== "signout";
+    const id = window.setInterval(() => {
+      if (!document.querySelector("[data-scroll-page]")) return;
+      if (!clicked) {
+        clicked = true;
+        [...document.querySelectorAll<HTMLElement>("button")].find((b) => b.textContent === say("menu.signout", {}, getScreenLanguage()))?.click();
+        return;
+      }
+      window.clearInterval(id);
+      window.setTimeout(onReady, 900);
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [db]);
+  const page: MorePage | undefined = ({ shop: "shop", printer: "printer", bill: "billDesign", language: "language", sync: "sync", developer: "developer" } as const)[state as "shop"];
+  const sync =
+    state === "sync"
+      ? { chip: { kind: "failing" as const, label: "Sync failing" }, unsynced: { pending: 2, conflict: 1 }, detail: { pending: 2, conflict: 1, lastAttemptAt: new Date().toISOString() } }
+      : state === "signout"
+        ? { chip: null, unsynced: { pending: 2, conflict: 0 }, detail: { pending: 2, conflict: 0, lastAttemptAt: null } }
+        : { chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } };
+  return db ? (
+    <TabFrame tab="more" onTab={noop} offline={params.get("offline") === "1"}>
+      <MoreScreen localDb={db} shopId={shopId} deviceId="d" sync={sync} billInProgress={state === "signout"} onSignOut={noop} onItems={noop} onClose={noop} initialPage={page} />
+    </TabFrame>
+  ) : null;
+}
+
 /** green only when every count is zero and something was actually checked (0 tap areas = nothing seen = not a pass) */
 const SHEET_OK = (c: string) =>
   /outside: 0\b/.test(c) && /clipped: 0\b/.test(c) && /overlapping pairs: 0\b/.test(c) && /by a gap: 0\b/.test(c) && !/Tap areas: 0\b/.test(c) && !/Containment: 0 parts/.test(c) &&
@@ -551,7 +613,7 @@ function ReachCheck() {
 }
 
 const FILES: Record<string, string> = {
-  "08": "08-Home.html", "14": "14-BillsList.html", "16": "16-Items.html", "19": "19-AddItem.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
+  "08": "08-Home.html", "14": "14-BillsList.html", "16": "16-Items.html", "17": "17-More.html", "18": "18-Printer.html", "19": "19-AddItem.html", "21": "21-BillDesign.html", "25": "25-CancelBill.html", "09": "09-Recording.html", "10": "10-Review.html", "11": "11-Generating.html", "12": "12-BillReview.html", "13": "13-BillSaved.html", "15": "15-BillDetail.html",
   "23": "23-ReadFailed.html", "24": "24-Offline.html",
 };
 
@@ -559,7 +621,7 @@ const FILES: Record<string, string> = {
 function Frame() {
   const lang = params.get("lang");
   // screen 15 builds its dev database and opens the bill first - the checks look only once the detail is on screen
-  const [ready, setReady] = useState(!["15", "08", "14", "25", "16", "19"].includes(params.get("screen") ?? ""));
+  const [ready, setReady] = useState(!["15", "08", "14", "25", "16", "19", "17", "18", "21"].includes(params.get("screen") ?? ""));
   useEffect(() => {
     setScreenLanguage((lang ?? "en") as Language); // always set: the language is remembered between visits
     if (params.get("scale")) document.documentElement.style.fontSize = `${Number(params.get("scale"))}%`;
@@ -576,7 +638,7 @@ function Frame() {
     <>
       <main>
         {/* History is a fixed full screen: the part takes the window's height so the checks see it */}
-        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25", "16", "19"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
+        <div data-kit-part={`screen ${params.get("screen")}`} style={["15", "08", "14", "25", "16", "19", "17", "18", "21"].includes(params.get("screen") ?? "") ? { minHeight: "100dvh" } : undefined}>
           {params.get("screen") === "08" ? <Screen08 state={params.get("state") ?? "home"} onReady={() => setReady(true)} />
             : params.get("screen") === "09" ? <Screen09 state={params.get("state") ?? "recording"} />
             : params.get("screen") === "10" ? <Screen10 state={params.get("state") ?? "review"} />
@@ -589,6 +651,7 @@ function Frame() {
             : params.get("screen") === "14" ? <Screen14 state={params.get("state") ?? "list"} onReady={() => setReady(true)} />
             : params.get("screen") === "16" ? <Screen16 state={params.get("state") ?? "all"} onReady={() => setReady(true)} />
             : params.get("screen") === "19" ? <Screen16 state={params.get("state") ?? "add"} onReady={() => setReady(true)} />
+            : ["17", "18", "21"].includes(params.get("screen") ?? "") ? <Screen17 state={params.get("state") ?? "more"} onReady={() => setReady(true)} />
             : <Screen12 state={params.get("state") ?? "design"} />}
         </div>
       </main>
@@ -639,7 +702,7 @@ function Sheet() {
   return (
     <main style={{ padding: 16, font: "13px system-ui" }}>
       <h1 style={{ font: "700 16px system-ui", margin: "0 0 4px" }}>
-        {["08", "14", "15", "16", "17", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
+        {["08", "14", "15", "16", "17", "18", "19", "21", "25"].includes(screen) ? "KB-414" : "KB-413"} screen {screen} - {state}
         {lang ? ` - ${lang}` : ""} - {w} x {h} px{scale ? `, text ${scale}%` : ""}{motion === "reduce" ? " - reduced motion" : ""}
       </h1>
       <p data-sheet-checks style={{ margin: "0 0 10px", color: SHEET_OK(checks) ? "#2a6" : "#b00", fontWeight: 600 }}>{checks}</p>

@@ -28,7 +28,7 @@ import { afterPaint } from "./afterPaint";
 import { reconcileBills, recordColdStart } from "@/data/billMetrics";
 import { clearThenSignOut } from "@/data/reviewCapture";
 import { CatalogScreen } from "./CatalogScreen";
-import { SettingsScreen } from "./SettingsScreen";
+import { MoreScreen } from "./MoreScreen";
 import { addCustomProduct, addFromReadyCatalog, saveProductDetails, saveProductPrice, setProductActive } from "@/data/catalogEdit";
 import { importProducts } from "@/data/catalogImport";
 import { ignorePriceSuggestionFor } from "@/data/learningAudit";
@@ -55,7 +55,7 @@ import { coldPhases, markCold } from "./coldMarks";
 import { AddItemSheet } from "./AddItemSheet";
 import { useT, type Translate } from "./useT";
 import { EditableValue } from "./EditableValue";
-import { SyncChipView, ConfirmDialog, SignOutButton, clearBillWarning } from "./OfflineUi";
+import { SyncChipView, ConfirmDialog, clearBillWarning } from "./OfflineUi";
 import { BillBack, TabFrame, useStartTab } from "./AppTabs";
 import { HomeScreen } from "./HomeScreen";
 import type { SyncChip } from "./syncChip";
@@ -469,20 +469,16 @@ export function BillingScreen() {
           />
         )}
         {tab === "more" && localDb && shop && deviceId && (
-          <SettingsScreen
+          <MoreScreen
             localDb={localDb}
             shopId={shop.id}
             deviceId={deviceId}
             deviceDb={deviceDb}
             reconcile={() => reconcileBills(supabase, localDb, shop.id)}
-            footer={
-              <>
-                <div className="mt-6">
-                  <SyncChipView chip={sync.chip} detail={sync.detail} />
-                </div>
-                <SignOutButton unsynced={sync.unsynced} billInProgress={billInProgress} onSignOut={onSignOut} />
-              </>
-            }
+            sync={sync}
+            billInProgress={billInProgress}
+            onSignOut={onSignOut}
+            onItems={() => setTab("items")}
             onClose={goHome}
           />
         )}

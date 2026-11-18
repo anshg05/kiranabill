@@ -9,7 +9,7 @@ import type { BillLine } from "@/data/voiceBilling";
 import { KiranaBillDB } from "@/data/db";
 import { BillView } from "@/ui/BillingScreen";
 import { HistoryScreen } from "@/ui/HistoryScreen";
-import { SettingsScreen } from "@/ui/SettingsScreen";
+import { MoreScreen } from "@/ui/MoreScreen";
 import { IDLE_VOICE } from "@/ui/useVoiceBilling";
 import { isUpdateSafe, resetUpdateGate } from "./updateGate";
 
@@ -100,7 +100,7 @@ describe("the billing screen reports whether a reload is safe", () => {
 });
 
 describe("overlays", () => {
-  it("History and Settings are busy while open (every overlay uses useBackEntry)", () => {
+  it("History and More are busy while open (every overlay uses useBackEntry)", () => {
     const db = new KiranaBillDB(`gate-${crypto.randomUUID()}`);
     const idle = render(<BillView {...base} />);
     expect(isUpdateSafe()).toBe(true);
@@ -108,7 +108,7 @@ describe("overlays", () => {
     expect(isUpdateSafe()).toBe(false);
     history.unmount();
     expect(isUpdateSafe()).toBe(true);
-    const settings = render(<SettingsScreen localDb={db} shopId="s" deviceId="d" onClose={() => {}} />);
+    const settings = render(<MoreScreen localDb={db} shopId="s" deviceId="d" sync={{ chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } }} billInProgress={false} onSignOut={() => {}} onItems={() => {}} onClose={() => {}} />);
     expect(isUpdateSafe()).toBe(false);
     settings.unmount();
     idle.unmount();

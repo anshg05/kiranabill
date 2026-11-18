@@ -8,7 +8,7 @@ import { KiranaBillDB } from "@/data/db";
 import { decideFetch } from "@/sw/core";
 import { selectPrecache } from "@/sw/precache";
 import { setScreenLanguage } from "./screenLanguage";
-import { SettingsScreen } from "./SettingsScreen";
+import { MoreScreen } from "./MoreScreen";
 import { stubLocalStorage } from "./testStorage";
 
 // D91 (owner, 21 Oct 2026): a MINIMAL public privacy-policy page for Google's consent screen - not KB-347 (no consent flow, no
@@ -83,7 +83,7 @@ describe("/privacy is served as its own page", () => {
   });
 });
 
-describe("Settings links to it", () => {
+describe("More links to it (KB-414 step 4: 17's Privacy row; was Settings' link)", () => {
   let db: KiranaBillDB;
   beforeEach(async () => {
     db = new KiranaBillDB(`ui-privacy-${crypto.randomUUID()}`);
@@ -95,15 +95,15 @@ describe("Settings links to it", () => {
     db.close();
     await db.delete();
   });
-  it("a 'Privacy policy' link to /privacy that opens in a new tab - and in हिन्दी", async () => {
-    const { unmount } = render(<SettingsScreen localDb={db} shopId="s" deviceId="d" onClose={() => {}} />);
-    const link = (await screen.findByRole("link", { name: "Privacy policy" })) as HTMLAnchorElement;
+  it("a 'Privacy' row linking to /privacy that opens in a new tab - and in हिन्दी", async () => {
+    const { unmount } = render(<MoreScreen localDb={db} shopId="s" deviceId="d" sync={{ chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } }} billInProgress={false} onSignOut={() => {}} onItems={() => {}} onClose={() => {}} />);
+    const link = (await screen.findByRole("link", { name: "Privacy" })) as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("/privacy");
     expect(link.target).toBe("_blank");
     expect(link.rel).toContain("noopener");
     unmount();
     setScreenLanguage("hi");
-    render(<SettingsScreen localDb={db} shopId="s" deviceId="d" onClose={() => {}} />);
-    expect(await screen.findByRole("link", { name: "गोपनीयता नीति" })).toBeTruthy();
+    render(<MoreScreen localDb={db} shopId="s" deviceId="d" sync={{ chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } }} billInProgress={false} onSignOut={() => {}} onItems={() => {}} onClose={() => {}} />);
+    expect(await screen.findByRole("link", { name: "गोपनीयता" })).toBeTruthy();
   });
 });
