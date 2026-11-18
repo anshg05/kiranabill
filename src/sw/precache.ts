@@ -1,10 +1,9 @@
 // KB-401 (D67): which built files the worker precaches, and the guard that nothing else ever gets in.
-// Offline open needs the shell, the JS/CSS, Mukta (all subsets - Devanagari is the app's text) and ONLY the IBM Plex
-// Mono latin + latin-ext 400/600 (KB-308's note: the digits). woff fallbacks and other subsets are never requested
+// Offline open needs the shell, the JS/CSS, the new look's fonts (below) and ONLY the IBM Plex Mono latin + latin-ext
+// 400/600/700 (KB-308's note: the digits). KB-429: Mukta is removed - no rule for it any more. woff fallbacks and other subsets are never requested
 // by Android Chrome, so they stay online-only.
 
 const FONT = /\.(woff2?|ttf|otf|eot)$/;
-const MUKTA = /^mukta-[a-z-]+-\d+-normal-[^/]+\.woff2$/;
 const PLEX = /^ibm-plex-mono-(latin|latin-ext)-(400|600|700)-normal-[^/]+\.woff2$/; // 700: the printed bill's bold (KB-408)
 // KB-411: the new look's variable fonts - Inter latin + latin-ext (the rupee sign) and Noto Sans Devanagari's Devanagari only.
 const KB_FONTS = /^(inter-(latin|latin-ext)|noto-sans-devanagari-devanagari)-wght-normal-[^/]+\.woff2$/;
@@ -19,7 +18,7 @@ export function selectPrecache(files: readonly string[]): string[] {
     else if (file.startsWith("assets/")) {
       const name = file.slice("assets/".length);
       if (name.includes("/") || name.endsWith(".map")) continue;
-      if (!FONT.test(name) || MUKTA.test(name) || PLEX.test(name) || KB_FONTS.test(name)) urls.add(`/${file}`);
+      if (!FONT.test(name) || PLEX.test(name) || KB_FONTS.test(name)) urls.add(`/${file}`);
     }
   }
   return [...urls].sort();

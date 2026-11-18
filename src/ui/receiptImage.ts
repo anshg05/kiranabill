@@ -12,10 +12,11 @@ import type { RenderReceiptFiles } from "./useReceiptShare";
 // KB-413 step 4: laid out at 13's 320 px paper, painted at 2.4x - the same 768 px wide image as before (Q4)
 const WIDTH = 320;
 const SCALE = 2.4;
-const FAMILY = `"IBM Plex Mono", Mukta, monospace`;
+// KB-429 (option A): Devanagari in Noto Sans Devanagari (was Mukta) - the share image, the PDF and the printed bill
+const FAMILY = `"IBM Plex Mono", "Noto Sans Devanagari Variable", monospace`;
 export const cssFont = (f: FontSpec) => `${f.weight} ${f.size}px ${FAMILY}`;
 
-/** Owner: Plex and Mukta are split by unicode-range and a canvas doesn't
+/** Owner: Plex and Noto are split by unicode-range and a canvas doesn't
  * trigger those subsets - load every face/weight with the receipt's ACTUAL
  * strings first, or the first image after a reload draws in a fallback. */
 export async function loadFonts(receipt: Receipt, weights: readonly number[] = [400, 600]): Promise<void> {
@@ -23,7 +24,7 @@ export async function loadFonts(receipt: Receipt, weights: readonly number[] = [
   const strings = [r.shopName.toUpperCase(), r.shopPhone ?? "", r.dateTime, r.billNoLabel, r.receiptNumber, r.customerLabel, r.customer ?? "",
     ...Object.values(r.headers), ...r.rows.flatMap((x) => [x.name, x.qty, x.rate, x.amount]), r.totalLabel, r.total, r.thanks, r.cancelled ?? "", r.replaces ?? "", r.reprint ?? ""];
   const sample = [...new Set(strings.join(""))].join("");
-  await Promise.all(weights.flatMap((w) => [`${w} 14px "IBM Plex Mono"`, `${w} 14px Mukta`].map((font) => document.fonts.load(font, sample))));
+  await Promise.all(weights.flatMap((w) => [`${w} 14px "IBM Plex Mono"`, `${w} 14px "Noto Sans Devanagari Variable"`].map((font) => document.fonts.load(font, sample))));
 }
 
 function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {

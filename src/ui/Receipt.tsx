@@ -5,7 +5,7 @@ import { numberChunks, type Receipt as ReceiptModel } from "@/domain/receipt";
 // raw HTML (hard rule 9; lint bans it). The three number columns never wrap; the item column takes the
 // rest and wraps - a long name, Hindi included, stays inside it.
 // KB-413 step 4 (owner, 16 Nov 2026): design 13's receipt look (26 §5) - white paper (the frame, its shadow and torn edge are
-// kit/ReceiptPaper), IBM Plex Mono with Mukta for Devanagari (--font-mono, KB-429), the shop name 15 / 700 tracked .5, small lines 11
+// kit/ReceiptPaper), IBM Plex Mono with Noto Sans Devanagari for Devanagari (--font-mono; Mukta removed in KB-429), the shop name 15 / 700 tracked .5, small lines 11
 // in the receipt grey, rows 12 with qty and rate in the darker grey and the amount bold, a 2 px rule under the header, light rules
 // between rows, TOTAL 16 / 700 between dashed rules. Sizes are the rem text steps, so the phone's text size grows them. The content and
 // its order are today's (D110); the share image draws the same (SCREEN_STYLE), the PRINTED bill keeps its own style.

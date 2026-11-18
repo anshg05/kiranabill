@@ -10,18 +10,10 @@
   padding-right: env(safe-area-inset-right);
 }
 
-/* Mukta, self-hosted via @fontsource (M-21; 11-STACK-DECISIONS.md).
- * Weights are 13-DESIGN.md section 4's scale. Each file is split by
- * unicode-range, so the browser fetches only the Devanagari/Latin subsets it
- * actually renders. Served from our own origin - no font CDN (offline app). */
-@import "@fontsource/mukta/400.css";
-@import "@fontsource/mukta/500.css";
-@import "@fontsource/mukta/600.css";
-@import "@fontsource/mukta/700.css";
-/* KB-308 (SD-029): the receipt face, 400 + 600, split by unicode-range like
- * Mukta - the browser fetches only the subsets a receipt renders: Latin, and
- * latin-ext for ₹ (U+20B9, not in the Latin subset). Plex Mono has no
- * Devanagari - --font-mono falls back to Mukta for Hindi glyphs. */
+/* KB-429 (owner + reviewer, 18 Nov 2026, option A): Mukta is removed - its Devanagari is Noto Sans Devanagari (below).
+ * KB-308 (SD-029): the receipt face, 400 + 600, split by unicode-range - the browser fetches only the subsets a receipt
+ * renders: Latin, and latin-ext for ₹ (U+20B9, not in the Latin subset). Plex Mono has no Devanagari - --font-mono falls
+ * back to Noto Sans Devanagari for Hindi glyphs. */
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/600.css";
 /* KB-408 fix 2 (owner, 14 Nov 2026): the PRINTED bill's bold (amounts, headers, TOTAL) - thermal paper needs heavier strokes. */
@@ -37,7 +29,7 @@
  * These are the ONLY colours allowed in the app.
  * If you need a colour not listed here, add it to 13-DESIGN.md first.
  *
- * Typography: Mukta for everything, numerals included (tabular-nums);
+ * Typography (KB-429): Inter + Noto Sans Devanagari for everything, numerals included (tabular-nums);
  * IBM Plex Mono is the receipt's face only (13-DESIGN.md section 4, KB-308).
  * Dark mode: deferred — see 13-DESIGN.md §8.
  */
@@ -56,10 +48,10 @@
   --color-ok: #2E6B3E;
   --color-muted: #9A9689;
 
-  /* Fonts. Mukta is --font-sans, i.e. the DEFAULT, not opt-in (KI-19).
-   * IBM Plex Mono is the receipt's face (KB-308, imported above); Mukta covers its Devanagari. */
-  --font-sans: "Mukta", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", "Mukta", monospace;
+  /* Fonts. --font-sans is the DEFAULT, not opt-in (KI-19) - KB-429: the new look's stack (Mukta removed).
+   * IBM Plex Mono is the receipt's face (KB-308, imported above); Noto Sans Devanagari covers its Devanagari. */
+  --font-sans: "Inter Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Noto Sans Devanagari Variable", monospace;
   /* KB-411: 26 §2.2's stack - Inter for Latin and digits, Noto Sans Devanagari for Hindi (item names as spoken). */
   --font-kb: "Inter Variable", "Noto Sans Devanagari Variable", sans-serif;
 

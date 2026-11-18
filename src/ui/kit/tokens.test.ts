@@ -97,9 +97,17 @@ describe("the other design tokens (26 §2.2 - §2.3)", () => {
     for (const [f, src] of roots) if (/export function/.test(src) && !/Logo\.tsx|ReceiptPaper\.tsx/.test(f)) expect(src, f).toMatch(/font-kb/);
   });
 
-  it("the screens of today keep their own tokens and font until they move to the new look (no screen change in KB-411)", () => {
+  it("the screens of today keep their own tokens until they move to the new look (no screen change in KB-411)", () => {
     expect(css).toMatch(/--color-indigo:\s*#2C3E7B;/);
-    expect(css).toMatch(/--font-sans:\s*"Mukta", system-ui, sans-serif;/);
-    expect(css).toMatch(/--font-mono:\s*"IBM Plex Mono", "Mukta", monospace;/);
+  });
+
+  // KB-429 (owner + reviewer, 18 Nov 2026, option A): Mukta removed - the default text is the new look's Inter + Noto Sans Devanagari, the
+  // receipt's Devanagari (screen, share image, printed bill) is Noto beside IBM Plex Mono
+  it("KB-429: no Mukta anywhere - the default font and the receipt's Devanagari are Noto Sans Devanagari", () => {
+    expect(css).toMatch(/--font-sans:\s*"Inter Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;/);
+    expect(css).toMatch(/--font-mono:\s*"IBM Plex Mono", "Noto Sans Devanagari Variable", monospace;/);
+    expect(css).not.toMatch(/@fontsource\/mukta|--font-[a-z]+:[^;]*mukta/i); // no import, no font stack with it (comments may name it)
+    const pkg = readFileSync(join(__dirname, "..", "..", "..", "package.json"), "utf8");
+    expect(pkg).not.toMatch(/mukta/i);
   });
 });

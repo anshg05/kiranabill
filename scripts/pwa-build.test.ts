@@ -46,11 +46,11 @@ describe("buildSwConfig", () => {
     expect(() => buildSwConfig(big, "normal")).toThrow(/budget/i);
   });
 
-  it("the budget is 2.25 MiB until KB-429 removes Mukta (owner, 17 Nov 2026) - then back to 2 MiB: 2.2 MiB passes (the old 2 MiB refused it), 2.3 MiB is refused", () => {
-    expect(PRECACHE_BUDGET_BYTES).toBe(2_359_296);
+  it("KB-429 done-condition (owner + reviewer, 17 Nov 2026): Mukta removed, the budget is back to 2 MiB - 1.9 MiB passes, 2.1 MiB is refused", () => {
+    expect(PRECACHE_BUDGET_BYTES).toBe(2_097_152);
     const filler = (mib: number) => [...FILES, { path: "assets/fill.js", bytes: new Uint8Array(Math.round(mib * 1024 * 1024)) }];
-    expect(() => buildSwConfig(filler(2.2), "normal")).not.toThrow();
-    expect(() => buildSwConfig(filler(2.3), "normal")).toThrow(/2359296 byte budget/);
+    expect(() => buildSwConfig(filler(1.9), "normal")).not.toThrow();
+    expect(() => buildSwConfig(filler(2.1), "normal")).toThrow(/2097152 byte budget/);
   });
 
   it("kill mode precaches nothing", () => {

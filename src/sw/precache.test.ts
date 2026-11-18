@@ -34,10 +34,10 @@ describe("selectPrecache", () => {
     expect(urls).toContain("/icons/icon-maskable-512.png");
   });
 
-  it("keeps every Mukta woff2 (12 files) and no woff", () => {
-    const mukta = urls.filter((u) => u.includes("/mukta-"));
-    expect(mukta).toHaveLength(12);
-    expect(mukta.every((u) => u.endsWith(".woff2"))).toBe(true);
+  // KB-429 (owner + reviewer, 18 Nov 2026, option A): Mukta is gone - not even a stray built file is ever precached
+  it("never precaches Mukta (KB-429) - Devanagari is Noto Sans Devanagari now", () => {
+    expect(urls.filter((u) => u.includes("/mukta-"))).toEqual([]);
+    expect(urls.filter((u) => u.includes("/noto-sans-devanagari-devanagari-"))).toHaveLength(1);
   });
 
   it("keeps only IBM Plex Mono latin + latin-ext, 400, 600 and 700 (the printed bill's bold, KB-408), woff2 (6 files)", () => {

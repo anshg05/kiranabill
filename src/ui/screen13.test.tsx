@@ -179,7 +179,7 @@ describe("13 Bill saved, as drawn", () => {
 });
 
 describe("design 13's receipt look (on screen: 13, History; Receipt.tsx)", () => {
-  it("white paper, no border, Plex Mono (Devanagari in Mukta - the mono font's fallback, KB-429), the drawn sizes and colours", () => {
+  it("white paper, no border, Plex Mono (Devanagari in Noto Sans Devanagari - the mono font's fallback, KB-429), the drawn sizes and colours", () => {
     render(<Receipt receipt={receipt} />);
     const a = screen.getByRole("article", { name: "Receipt" });
     expect(cls(a)).toMatch(/\bbg-kb-card\b/);

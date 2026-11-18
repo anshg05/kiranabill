@@ -108,6 +108,20 @@ function Screen12({ state }: { state: string }) {
     window.setTimeout(() => document.querySelector<HTMLButtonElement>("button[aria-label='Add more by voice'], button[aria-label='आवाज़ से और जोड़ें'], button[aria-label='Awaaz se aur jodein']")?.click(), 50);
   }, [state]);
   useEffect(() => {
+    // KB-429: the Add item sheet (an old-look part), opened and searched as a tap and typing do
+    if (state !== "additem" || opened.current) return;
+    opened.current = true;
+    window.setTimeout(() => {
+      [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.trim() === say("add.title", {}, getScreenLanguage()))?.click();
+      window.setTimeout(() => {
+        const box = document.querySelector<HTMLInputElement>("input[type=search]");
+        if (!box) return;
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(box, "दाल");
+        box.dispatchEvent(new Event("input", { bubbles: true }));
+      }, 200);
+    }, 50);
+  }, [state]);
+  useEffect(() => {
     // the edit sheet, open on the first line (as a tap on its edit button opens it)
     if (state !== "edit" || opened.current) return;
     opened.current = true;
@@ -419,6 +433,11 @@ function Screen16({ state, onReady }: { state: string; onReady: () => void }) {
     }
     if (state === "archived") later(() => button(say16("catalog.archived"))?.click());
     if (state === "sheet") later(() => button(say16("common.add"))?.click());
+    // KB-429: the Import page (an old-look part)
+    if (state === "import") {
+      later(() => button(say16("common.add"))?.click());
+      later(() => button(new RegExp(say16("catalog.import")))?.click());
+    }
     if (state === "bills") later(() => button(new RegExp(say16("items.fromBills")))?.click());
     if (state === "undo") {
       later(() => button(say16("catalog.editLabel", { name: "रिन साबुन" }))?.click());

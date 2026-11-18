@@ -9,9 +9,8 @@ import { assertSafePrecache, selectPrecache } from "../src/sw/precache";
 // the worker (src/sw) is bundled by Vite itself (a second, tiny build) with the precache list injected.
 
 /** The precache holds the app, not a gallery: a forgotten font family or image must fail the build, not the data plan. */
-// KB-414 step 3 (owner + reviewer, 17 Nov 2026): 2 MiB was exceeded by 7,614 bytes (step 3's code).
-// shortcut: temporary until KB-429 removes Mukta (557 KB) - then set back to 2 MiB
-export const PRECACHE_BUDGET_BYTES = 2.25 * 1024 * 1024;
+// KB-429 (owner + reviewer, 17 / 18 Nov 2026): back to 2 MiB once Mukta was removed (it was 2.25 MiB for KB-414 step 3).
+export const PRECACHE_BUDGET_BYTES = 2 * 1024 * 1024;
 
 export function parseSwMode(value: string | undefined): SwMode {
   const v = (value ?? "").trim();
