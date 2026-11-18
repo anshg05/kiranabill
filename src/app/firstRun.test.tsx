@@ -142,7 +142,7 @@ const setupPhone = () => screen.getByRole("textbox", { name: /^Phone/ }) as HTML
 
 /** splash -> 1 -> 2 -> 3 -> Get started -> Sign in */
 async function throughWelcome() {
-  await heading("KiranaBill");
+  await heading("Kirana Voice Bill");
   tap("Get started");
   await heading("Speak the whole order");
   tap("Next");
@@ -217,7 +217,7 @@ describe("KB-415: the WHOLE first-time flow on a fresh phone", () => {
 describe("onboarding: Skip, Back, once per install", () => {
   it("Skip on any onboarding page goes to Sign in, and the splash is not shown again", async () => {
     const { unmount } = render(<App />);
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
     tap("Get started");
     await heading("Speak the whole order");
     expect(screen.getByText("1 of 3")).toBeTruthy();
@@ -230,12 +230,12 @@ describe("onboarding: Skip, Back, once per install", () => {
 
   it("closing the app in the middle of onboarding shows it again next time (only finishing or Skip remembers it)", async () => {
     const { unmount } = render(<App />);
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
     tap("Get started");
     await heading("Speak the whole order");
     unmount();
     render(<App />);
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
   });
 
   it("Android Back: 3 -> 2 -> 1 -> splash; Sign in (reached through onboarding) -> 3", async () => {
@@ -248,12 +248,12 @@ describe("onboarding: Skip, Back, once per install", () => {
     await androidBack();
     await heading("Speak the whole order");
     await androidBack();
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
   });
 
   it("the dots and the step count follow the page", async () => {
     render(<App />);
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
     tap("Get started");
     await heading("Speak the whole order");
     tap("Next");
@@ -266,7 +266,7 @@ describe("onboarding: Skip, Back, once per install", () => {
 describe("the words are true (defaults 2, 6, 7)", () => {
   it("onboarding 3 uses the owner's learning sentence - never 'Say a price once' or 'remembered'", async () => {
     render(<App />);
-    await heading("KiranaBill");
+    await heading("Kirana Voice Bill");
     tap("Get started");
     tap("Next");
     tap("Next");
@@ -292,7 +292,7 @@ describe("the words are true (defaults 2, 6, 7)", () => {
       env.native = native;
       store.clear();
       const { unmount } = render(<App />);
-      await heading("KiranaBill");
+      await heading("Kirana Voice Bill");
       expect(!!screen.queryByText("58 / 80 mm")).toBe(native);
       tap("Get started");
       tap("Next");
@@ -399,7 +399,7 @@ describe("3 languages", () => {
     it(`${l}: splash, onboarding, sign in and setup in that language; the language names never translated`, async () => {
       act(() => setScreenLanguage(l));
       render(<App />);
-      await heading("KiranaBill");
+      await heading("Kirana Voice Bill");
       expect(screen.getByText(T("welcome.tagline1", l), { exact: false }).textContent).toBe(T("welcome.tagline1", l) + T("welcome.tagline2", l));
       tap(T("welcome.start", l));
       await heading(T("onb1.title", l));

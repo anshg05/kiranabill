@@ -12,6 +12,7 @@ import { MetaLine } from "./MetaLine";
 import { ReceiptNumberText } from "./Receipt";
 import { inject, mark } from "./inject";
 import { useT } from "./useT";
+import { APP_NAME } from "./appName";
 
 // KB-414 step 1 (owner + reviewer, 16 Nov 2026; plan defaults): 08-Home. The logo, the greeting (the phone's clock) over the shop's name,
 // the profile button (opens More, Q4); the record card - the mic records (09), Type items opens 12 with Add item; Recent bills - this
@@ -63,7 +64,7 @@ export function HomeScreen({ localDb, shopId, shopName, onRecord, onType, onOpen
             <Logo size={42} shadow />
             <div className="flex min-w-0 flex-col">
               <p className="text-kb-13 text-kb-sub">{greeting}</p>
-              <h1 className="text-kb-19 font-extrabold tracking-[-0.3px] [overflow-wrap:anywhere]">{shopName ?? "KiranaBill"}</h1>
+              <h1 className="text-kb-19 font-extrabold tracking-[-0.3px] [overflow-wrap:anywhere]">{shopName ?? APP_NAME}</h1>
             </div>
           </div>
           <button type="button" aria-label={t("home.profile")} onClick={onProfile} className="kb-hit flex size-11 shrink-0 items-center justify-center rounded-full border border-kb-border bg-kb-card text-kb-ink">

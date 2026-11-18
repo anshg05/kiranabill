@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
 import { useT } from "./useT";
+import { APP_NAME } from "./appName";
 import { useAuth } from "@/providers/AuthProvider";
 import { useUpdateGate } from "@/pwa/updateGate";
 import { DevEmailSignIn, isLocalSupabaseUrl } from "./DevEmailSignIn";
@@ -57,8 +58,8 @@ export function SignInScreen() {
       <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col">
         <IllustrationPanel minHeight={300}>
           <div className="flex flex-col items-center gap-4">
-            <Logo size={76} shadow alt="KiranaBill logo" />
-            <div className="text-kb-26 font-extrabold tracking-[-0.5px]">KiranaBill</div>
+            <Logo size={76} shadow alt={`${APP_NAME} logo`} />
+            <div className="text-center text-kb-26 leading-[1.2] font-extrabold tracking-[-0.5px]">{APP_NAME}</div>
             <div className="flex flex-wrap justify-center gap-2">
               <span className={chip}>
                 <Icon icon={KB_ICONS.Mic} size={15} />

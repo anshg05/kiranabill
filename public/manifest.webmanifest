@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "KiranaBill",
-  "short_name": "KiranaBill",
+  "name": "Kirana Voice Bill",
+  "short_name": "Kirana Voice Bill",
   "description": "Voice-first billing for Indian grocery shops",
   "start_url": "/",
   "scope": "/",

@@ -12,6 +12,7 @@ import { Receipt } from "./Receipt";
 import { SignInScreen } from "./SignInScreen";
 import { useBackEntry } from "./useBackEntry";
 import { useT } from "./useT";
+import { APP_NAME } from "./appName";
 
 // KB-415 (owner + reviewer, 18 Nov 2026; the approved plan): the signed-out part of the first-time flow - Splash (01), Onboarding 1-3
 // (02-04), then Sign in (05). Splash and onboarding are shown once per install: finishing them (Get started on 3) or Skip remembers it on
@@ -71,10 +72,10 @@ function Splash({ onStart }: { onStart: () => void }) {
         <Sparkle size={12} tone="white" className="top-[250px] left-[60px] [animation-delay:1s]" />
         <div className="relative flex flex-1 flex-col items-center justify-center gap-[18px] px-8 py-10 text-center">
           <div className="animate-kb-up">
-            <Logo size={92} light shadow alt="KiranaBill logo" />
+            <Logo size={92} light shadow alt={`${APP_NAME} logo`} />
           </div>
-          {/* one word that cannot wrap: 36 px, or 12% of the screen's width when a big text size would push it off a small phone */}
-          <h1 className="animate-kb-up text-[length:min(var(--text-kb-36),12vw)] font-extrabold tracking-[-0.8px] [animation-delay:.12s]">KiranaBill</h1>
+          {/* the name wraps between its words on a small phone at a big text size (the one-word "KiranaBill" needed a cap) */}
+          <h1 className="animate-kb-up text-kb-36 leading-[1.15] font-extrabold tracking-[-0.8px] [animation-delay:.12s]">{APP_NAME}</h1>
           <p className="animate-kb-up text-kb-18 leading-[1.5] font-semibold [animation-delay:.24s]">
             {t("welcome.tagline1")}
             <br />

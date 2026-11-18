@@ -6,7 +6,7 @@
 
 ## What this is
 
-KiranaBill is a **voice-first billing app for Indian grocery (kirana) shops.** The shopkeeper speaks
+KiranaBill - shown to users as **"Kirana Voice Bill"** (owner, 18 Nov 2026; D111) - is a **voice-first billing app for Indian grocery (kirana) shops.** The shopkeeper speaks
 an order the way they'd say it out loud — *"2 kilo chini, teen Parle-G 10 wala"* — and gets a
 correct, itemised, editable bill in one turn.
 

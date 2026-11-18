@@ -507,7 +507,7 @@ export function BillingScreen() {
 const NO_ENTRIES: never[] = [];
 
 interface BillViewProps {
-  /** KB-340 (D86): the shop's name for the header (truncated to one line); "KiranaBill" when there is none. */
+  /** KB-340 (D86): the shop's name for the header (truncated to one line); the app's name when there is none. */
   shopName?: string;
   /** KB-303: the bill is always editable - every line has a stable id. */
   lines: readonly (BillLine & { readonly id: string })[];
