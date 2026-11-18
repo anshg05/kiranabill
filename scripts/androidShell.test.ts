@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import config from "../capacitor.config";
+import { ANDROID_APP_ORIGIN } from "../netlify/functions/_shared/cors";
 
 // KB-406 S1 (D111): the Android shell's settings are decisions, not defaults - this pins them.
 
@@ -17,10 +18,19 @@ describe("the Android shell (D111)", () => {
     expect(read("android/app/build.gradle")).toContain('applicationId "com.kiranavoicebill.app"');
   });
 
-  it("loads the release-draft site over https only (KB-410 decides production)", () => {
-    expect(config.server?.url).toBe("https://release-draft--kiranabilling.netlify.app");
+  it("option (b) step 3 (owner, 18 Nov 2026): the screens come from the APK (no server.url), at https://localhost - the origin /voice-run's CORS allows", () => {
+    expect(config.server?.url).toBeUndefined();
+    expect(config.webDir).toBe("dist");
+    expect(`${config.server?.androidScheme}://${config.server?.hostname}`).toBe(ANDROID_APP_ORIGIN);
+    expect(ANDROID_APP_ORIGIN).toBe("https://localhost");
     expect(config.server?.cleartext).not.toBe(true);
     expect(config.android?.allowMixedContent).not.toBe(true);
+  });
+
+  it("option (b) step 3: the functions site's only page is a plain placeholder - no app, no script", () => {
+    const page = read("functions-site/index.html");
+    expect(page).toContain("Kirana Voice Bill server");
+    expect(page).not.toMatch(/<script|<link/i);
   });
 
   it("targets SDK 36 with minimum Android 7.0 (API 24)", () => {
