@@ -45,9 +45,12 @@ function open(ignoreSuggestion?: (id: string) => Promise<void>) {
   return save;
 }
 // KB-414 step 3: the suggestions are on the "From your bills" page, behind its banner
+// KB-428 (owner, 14 Nov 2026): the banner appears only once the Catalog has read the suggestions (five reads) - on a slow full run that
+// took over findBy's default 1 s (11, 14 and 18 Nov 2026). 5 s, like items16's list: the wait is for the data, which always comes.
+const DATA = { timeout: 5000 };
 async function panel() {
-  fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }));
-  return within(await screen.findByRole("region", { name: "From your bills" })).getByRole("region", { name: "Prices you charged" });
+  fireEvent.click(await screen.findByRole("button", { name: /From your bills/ }, DATA));
+  return within(await screen.findByRole("region", { name: "From your bills" }, DATA)).getByRole("region", { name: "Prices you charged" });
 }
 const realIgnore = vi.fn((id: string) => ignorePriceSuggestionFor(db, shopId, id, "dev-a", Date.now()));
 
@@ -69,8 +72,8 @@ describe("KB-329 - Ignore on a price suggestion", () => {
     const save = open(realIgnore);
     const p = await panel();
     fireEvent.click(within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" }));
-    await waitFor(() => expect(realIgnore).toHaveBeenCalledExactlyOnceWith(sugar.id));
-    await waitFor(() => expect(within(p).queryByText(/Sugar:/)).toBeNull());
+    await waitFor(() => expect(realIgnore).toHaveBeenCalledExactlyOnceWith(sugar.id), DATA);
+    await waitFor(() => expect(within(p).queryByText(/Sugar:/)).toBeNull(), DATA); // after the re-read
     expect(within(p).getByText(/Atta:/)).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("Suggestion for Sugar hidden for 90 days");
     expect(save).not.toHaveBeenCalled();
@@ -84,19 +87,19 @@ describe("KB-329 - Ignore on a price suggestion", () => {
     const p = await panel();
     online = false;
     window.dispatchEvent(new Event("offline"));
-    await within(p).findByText("Needs internet to change the catalog");
+    await within(p).findByText("Needs internet to change the catalog", {}, DATA);
     expect(within(p).getByRole("button", { name: "Use ₹55 for Sugar" }).getAttribute("aria-disabled")).toBe("true");
     const ignore = within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" });
     expect(ignore.getAttribute("aria-disabled")).toBeNull();
     fireEvent.click(ignore);
-    await waitFor(() => expect(realIgnore).toHaveBeenCalledOnce());
+    await waitFor(() => expect(realIgnore).toHaveBeenCalledOnce(), DATA);
   });
 
   it("if saving the ignore fails the suggestion stays and the shopkeeper is told", async () => {
     open(() => Promise.reject(new Error("disk full")));
     const p = await panel();
     fireEvent.click(within(p).getByRole("button", { name: "Ignore the suggestion for Sugar" }));
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Couldn't hide that suggestion — try again"));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("Couldn't hide that suggestion — try again"), DATA);
     expect(within(p).getByText(/Sugar:/)).toBeTruthy();
   });
 
