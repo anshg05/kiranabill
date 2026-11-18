@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect, type MutableRefObject } from "react";
 import { parseUtterance } from "@/domain/grammar";
@@ -48,10 +48,9 @@ function spoken(transcript: string) {
 interface Props {
   pre?: ReturnType<typeof spoken>[];
   api?: MutableRefObject<BillLines | null>;
-  onMicTap?: () => void;
 }
 
-function Harness({ pre = [], api, onMicTap = () => {} }: Props) {
+function Harness({ pre = [], api }: Props) {
   const bill = useBillLines(catalog);
   const fin = useFinalise({ localDb: db, shopId, deviceId, getNumber: countedGetNumber(db) });
   useEffect(() => {
@@ -72,7 +71,6 @@ function Harness({ pre = [], api, onMicTap = () => {} }: Props) {
       notAdded={bill.notAdded}
       onRetry={() => {}}
       onDismiss={bill.dismiss}
-      onMicTap={onMicTap}
       catalog={SEED_PARSER_CATALOG}
       onAddByHand={bill.addByHand}
       focusLineId={bill.focusLineId}
@@ -194,7 +192,7 @@ describe("KB-307 - finalise and the saved screen", () => {
   // item there; and, as on today's screen with the order bar, no mic): decision 4's shortcuts are replaced by that one button.
   it("13 has no mic and no Add item: Start a new bill is the way to the next bill (owner, 16 Nov 2026)", async () => {
     const api: MutableRefObject<BillLines | null> = { current: null };
-    render(<Harness api={api} pre={[spoken("1 kilo besan")]} onMicTap={vi.fn()} />);
+    render(<Harness api={api} pre={[spoken("1 kilo besan")]} />);
     await tapBillBanao();
     await waitFor(() => screen.getByRole("button", { name: "Start a new bill" }));
     expect(screen.queryByRole("button", { name: /Tap to speak/ })).toBeNull();

@@ -9,7 +9,6 @@ import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
-import { NO_ITEM_FOUND, type VoiceView } from "./useVoiceBilling";
 import { billQueries } from "./testLineSheet";
 
 // KB-305 (owner, 2 Oct 2026) - add an item by hand (05 S3a): a NON-modal
@@ -37,12 +36,11 @@ function spoken(transcript: string, pc: ParserCatalog = SEED_PARSER_CATALOG) {
 interface Props {
   shop?: ParserCatalog;
   pre?: ReturnType<typeof spoken>[];
-  voice?: VoiceView;
   api?: MutableRefObject<BillLines | null>;
   addSignal?: number;
 }
 
-function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api, addSignal }: Props) {
+function Harness({ shop = SEED_PARSER_CATALOG, pre = [], api, addSignal }: Props) {
   const bill = useBillLines(shop.entries);
   useEffect(() => {
     for (const u of pre) bill.add(u.lines, u.flags, u.transcript);
@@ -57,8 +55,6 @@ function Harness({ shop = SEED_PARSER_CATALOG, pre = [], voice, api, addSignal }
       flags={bill.flags}
       pending={bill.pending}
       onAcknowledge={bill.acknowledge}
-      voice={voice}
-      onMicTap={() => {}}
       catalog={shop}
       onAddByHand={bill.addByHand}
       focusLineId={bill.focusLineId}
@@ -101,13 +97,13 @@ describe("KB-414 step 1 - Home's Type items", () => {
 });
 
 describe("KB-305 - the panel", () => {
-  it("'Add item' opens a non-modal panel, search focused; TOTAL, the mic and Bill Banao stay in place", () => {
+  it("'Add item' opens a non-modal panel, search focused; TOTAL and Bill Banao stay in place", () => {
     render(<Harness />);
     open();
     expect(panel()).not.toBeNull();
     expect(document.activeElement).toBe(search());
     expect(document.querySelector("[aria-modal]")).toBeNull();
-    expect((screen.getByRole("button", { name: /Tap to speak/ }) as HTMLButtonElement).disabled).toBe(false);
+    // (the old mic that stood here was deleted with the old voice path, 18 Nov 2026; V3's recorder sits in the order bar)
     expect(screen.getByTestId("bill-total")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Bill Banao" })).toBeTruthy();
   });
@@ -292,76 +288,5 @@ describe("KB-305 - Android back closes the panel, never leaves the app (the bill
   });
 });
 
-describe("KB-305 - 'Couldn't find an item — add it manually' is actionable", () => {
-  it("its 'Add by hand' opens the panel with the heard words in the search, selected", () => {
-    const voice: VoiceView = { phase: "failed", transcript: "kuch naya cheez", message: NO_ITEM_FOUND, elapsedMs: 0, disabledReason: null };
-    render(<Harness voice={voice} />);
-    act(() => screen.getByRole("button", { name: "Add “kuch naya cheez” by hand" }).click());
-    const input = search();
-    expect(input.value).toBe("kuch naya cheez");
-    expect([input.selectionStart, input.selectionEnd]).toEqual([0, "kuch naya cheez".length]);
-  });
-});
-
-// KB-331 (owner, 11 Oct 2026): EVERY failure the shopkeeper can see has "Add by hand" - the heard words prefilled when
-// there are some, an empty search when there aren't. It only opens the panel: it adds nothing, fills no qty or price.
-describe("KB-331 - 'Add by hand' on every voice failure", () => {
-  const failed = (message: string, transcript: string | null): VoiceView => ({ phase: "failed", transcript, message, elapsedMs: 0, disabledReason: null });
-  const NO_TRANSCRIPT = [
-    "Mic permission denied — allow it in the browser's site settings",
-    "No microphone found",
-    "Voice isn't supported in this browser",
-    "The microphone didn't start — try again",
-    "Recording stopped — the app went to the background. Tap to try again",
-    "Didn't catch anything — try again",
-    "No internet — voice needs a connection",
-    "Took too long — try again",
-    "Voice limit reached for now — try again later, or add by hand",
-    "Voice service busy — try again in a minute",
-    "Session expired — sign out and sign in again",
-    "Couldn't hear that — try again",
-  ];
-  const WITH_TRANSCRIPT = [
-    "Couldn't hear that — try again", // no shop catalog
-    "Session expired — sign out and sign in again", // a non-retryable parse failure
-    "Couldn't read the items — Retry below", // a retryable parse failure (the entry is listed too)
-    NO_ITEM_FOUND,
-  ];
-
-  it.each(NO_TRANSCRIPT)("no transcript - %s: the button opens an EMPTY panel and adds nothing", (message) => {
-    const api = { current: null as BillLines | null };
-    render(<Harness voice={failed(message, null)} api={api} />);
-    act(() => screen.getByRole("button", { name: "Add by hand" }).click());
-    expect(search().value).toBe("");
-    expect(api.current!.rows).toHaveLength(0);
-    expect(api.current!.pending).toBe(0);
-  });
-
-  it.each(WITH_TRANSCRIPT)("transcript - %s: the button opens the panel with the heard words, adds nothing", (message) => {
-    const api = { current: null as BillLines | null };
-    render(<Harness voice={failed(message, "2 kuch naya")} api={api} />);
-    act(() => screen.getByRole("button", { name: "Add “2 kuch naya” by hand" }).click());
-    expect(search().value).toBe("2 kuch naya");
-    expect(api.current!.rows).toHaveLength(0); // no qty, no price, no line of its own
-  });
-
-  it("the heard words are plain text: markup in a transcript makes no element (hard rule 9)", () => {
-    render(<Harness voice={failed(NO_ITEM_FOUND, "<b>x</b> 2 kilo")} />);
-    expect(screen.getByTestId("voice-transcript").textContent).toBe("“<b>x</b> 2 kilo”");
-    expect(document.body.querySelector("b")).toBeNull();
-    act(() => screen.getByRole("button", { name: "Add “<b>x</b> 2 kilo” by hand" }).click());
-    expect(search().value).toBe("<b>x</b> 2 kilo");
-    expect(panel()!.querySelector("b")).toBeNull();
-  });
-
-  it("offline is not a failure view: its plain reason line stays, with no Add by hand button (Add item is right below)", () => {
-    render(<Harness voice={{ phase: "idle", transcript: null, message: null, elapsedMs: 0, disabledReason: "Offline — voice needs internet" }} />);
-    expect(screen.getByText("Offline — voice needs internet")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Add .*by hand/ })).toBeNull();
-  });
-
-  it("a non-failed state has no Add by hand button", () => {
-    render(<Harness voice={{ phase: "idle", transcript: "2 kilo chini", message: null, elapsedMs: 0, disabledReason: null }} />);
-    expect(screen.queryByRole("button", { name: /by hand/ })).toBeNull();
-  });
-});
+// (KB-305 / KB-331's 'Add by hand' on the OLD mic's failures were deleted with the old voice path, 18 Nov 2026; V3's failures offer
+// Type instead / Add by hand on their own cards - VoiceOrderPanel's tests)

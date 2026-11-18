@@ -7,8 +7,16 @@ import type { UtteranceMetric } from "@/domain/billMetrics";
 import { afterPaint } from "./afterPaint";
 import { finaliseSnapshot } from "./billMetricsRecorder";
 import type { BillRow } from "./useBillLines";
-import type { UtteranceReport } from "./useOrderResolver";
 import { useBillMetrics } from "./useBillMetrics";
+
+/** One voice order's report for the metrics (KB-404) - moved here from the deleted useOrderResolver.ts (18 Nov 2026); V3 reports through it. */
+export interface UtteranceReport {
+  readonly path: "fastpath" | "voice" | "failed";
+  readonly transcript: string;
+  /** Transcript received -> the lines painted (two animation frames after they were added); null when none were. */
+  readonly transcriptToItemsMs: number | null;
+  readonly lines: readonly { name: string; qty: number | null; unit: string; rate: number | null; total: number | null }[];
+}
 
 // KB-404 (docs/07-DECISIONS.md D80): the billing screen's measurement wiring in one place, so it can be tested without the
 // screen. Turns (a recording reached transcription), each utterance's report, the Bill Banao snapshot, and - once the receipt

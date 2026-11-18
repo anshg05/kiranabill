@@ -14,7 +14,6 @@ import { MoreScreen } from "./MoreScreen";
 import { OnboardingScreen } from "./OnboardingScreen";
 import { ShareBar } from "./ShareBar";
 import { setScreenLanguage } from "./screenLanguage";
-import { IDLE_VOICE } from "./useVoiceBilling";
 import { UNDO_MS, useBillLines } from "./useBillLines";
 import { stubLocalStorage } from "./testStorage";
 import type { ReceiptShare } from "./useReceiptShare";
@@ -262,28 +261,7 @@ describe("#15 - Edit shop details (was: Settings) Save says 'No changes to save 
 });
 
 // ---------------------------------------------------------------------------------------------------------------- #16
-describe("#16 - after the recording stops: 'Understanding…' until the result or the error arrives", () => {
-  const view = (phase: "listening" | "transcribing" | "resolving") => (
-    <BillView lines={[]} onEdit={() => null} onRemove={() => {}} onMicTap={() => {}} voice={{ ...IDLE_VOICE, phase, transcript: phase === "listening" ? null : "do kilo chini" }} />
-  );
-  it("listening still says Listening…; transcribing and resolving say Understanding…, on the line and on the mic", () => {
-    const { rerender } = render(view("listening"));
-    expect(screen.getAllByText(/Listening…/).length).toBeGreaterThan(0);
-    for (const phase of ["transcribing", "resolving"] as const) {
-      rerender(view(phase));
-      expect(screen.queryByText(/Listening…/), phase).toBeNull();
-      expect(screen.getAllByText("Understanding…").length, phase).toBeGreaterThanOrEqual(2);
-    }
-  });
-  it("in हिन्दी and Hinglish", () => {
-    for (const [lang, word] of [["hi", "समझ रहे हैं…"], ["hl", "Samajh rahe hain…"]] as const) {
-      setScreenLanguage(lang);
-      const { unmount } = render(view("transcribing"));
-      expect(screen.getAllByText(word).length, lang).toBeGreaterThan(0);
-      unmount();
-    }
-  });
-});
+// (#16 tested the old mic's 'Understanding…' - deleted with the old voice path, 18 Nov 2026; V3's screens 10-11 have their own)
 
 // ---------------------------------------------------------------------------------------------------------------- #17
 describe("#17 - the Undo strip stays until the next action, or 10 s", () => {

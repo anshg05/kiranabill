@@ -10,7 +10,6 @@ import { KiranaBillDB } from "@/data/db";
 import { BillView } from "@/ui/BillingScreen";
 import { HistoryScreen } from "@/ui/HistoryScreen";
 import { MoreScreen } from "@/ui/MoreScreen";
-import { IDLE_VOICE } from "@/ui/useVoiceBilling";
 import { isUpdateSafe, resetUpdateGate } from "./updateGate";
 
 // KB-401 (D67 - owner, 9 Oct 2026): the update never reloads the page under a bill. The billing screen reports
@@ -53,19 +52,7 @@ describe("the billing screen reports whether a reload is safe", () => {
     expect(isUpdateSafe()).toBe(false);
   });
 
-  it("a recording or an utterance in flight is not; a finished one (done, failed) is", () => {
-    for (const phase of ["requesting", "listening", "transcribing", "resolving"] as const) {
-      const r = render(<BillView {...base} voice={{ ...IDLE_VOICE, phase }} />);
-      expect(isUpdateSafe(), phase).toBe(false);
-      r.unmount();
-    }
-    for (const phase of ["idle", "done", "failed"] as const) {
-      const r = render(<BillView {...base} voice={{ ...IDLE_VOICE, phase }} />);
-      expect(isUpdateSafe(), phase).toBe(true);
-      r.unmount();
-    }
-  });
-
+  // (the old mic's in-flight phases were deleted with the old voice path, 18 Nov 2026; V3's recorder has its own gate tests)
   it("saving, a failed save and the saved-bill screen are not (the receipt and share buttons would be lost)", () => {
     render(<BillView {...base} saving />);
     expect(isUpdateSafe()).toBe(false);

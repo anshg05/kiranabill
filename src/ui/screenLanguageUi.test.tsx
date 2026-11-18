@@ -10,7 +10,6 @@ import { SignInScreen } from "./SignInScreen";
 import { setScreenLanguage } from "./screenLanguage";
 import { stubLocalStorage } from "./testStorage";
 import type { ShownFlag } from "./useBillLines";
-import type { VoiceView } from "./useVoiceBilling";
 import { SignOutButton } from "./OfflineUi";
 
 vi.mock("@/providers/AuthProvider", () => ({ useAuth: () => ({ signInWithGoogle: () => Promise.resolve() }) }));
@@ -33,30 +32,11 @@ afterEach(() => {
 const lines = (t = "2 kilo chini"): (BillLine & { id: string })[] =>
   parseUtterance(t, SEED_PARSER_CATALOG)!.map((item, i) => ({ id: `l${i}`, item, displayName: SEED_PARSER_CATALOG.byId.get(item.catalogId!)!.displayName, source: "fastpath" as const }));
 const base = { lines: [] as (BillLine & { id: string })[], onEdit: () => null, onRemove: () => {} };
-const voice = (over: Partial<VoiceView> = {}): VoiceView => ({ phase: "idle", transcript: null, message: null, elapsedMs: 0, disabledReason: null, ...over });
 const highFlag = (message: string, code = "duplicate_line"): ShownFlag =>
   ({ id: "f1", code, severity: "HIGH", message, itemIndex: null, lineId: null, utteranceId: 1, anchorLineId: "l0", transcript: "do kilo chini", key: "k1", acknowledged: false }) as ShownFlag;
 const use = (l: Language) => act(() => setScreenLanguage(l));
 
-describe("the mic and the recording text", () => {
-  it.each(LANGUAGES)("idle, listening, reading - in %s (English mode is fully English; the Hindi wording is हिन्दी's)", (l) => {
-    use(l);
-    const { rerender } = render(<BillView {...base} voice={voice()} onMicTap={() => {}} />);
-    expect(screen.getByRole("button", { name: say("mic.idle", {}, l) })).toBeTruthy();
-    rerender(<BillView {...base} voice={voice({ phase: "listening", elapsedMs: 5000 })} onMicTap={() => {}} />);
-    expect(screen.getByRole("button", { name: say("mic.stopLabel", {}, l) }).textContent).toContain(say("mic.stop", {}, l));
-    expect(document.body.textContent).toContain(say("voice.listening", {}, l));
-    rerender(<BillView {...base} voice={voice({ phase: "transcribing" })} onMicTap={() => {}} />);
-    expect(document.body.textContent).toContain(say("voice.understanding", {}, l)); // KB-343
-  });
-  it("a failure message and its 'Add by hand' - in the chosen language, the heard words untouched", () => {
-    use("hi");
-    render(<BillView {...base} voice={voice({ phase: "failed", message: "Didn't catch anything — try again", transcript: "do kilo chini" })} onMicTap={() => {}} onAddByHand={() => {}} catalog={SEED_PARSER_CATALOG} />);
-    expect(screen.getByRole("alert").textContent).toContain(say("voice.noSpeech", {}, "hi"));
-    expect(screen.getByRole("alert").textContent).toContain(say("byhand.button", {}, "hi"));
-    expect(screen.getByTestId("voice-transcript").textContent).toBe("“do kilo chini”");
-  });
-});
+// ("the mic and the recording text" tested the OLD mic - deleted with the old voice path, 18 Nov 2026; V3's recorder screens have their own language tests)
 
 describe("the bill screen", () => {
   it.each(LANGUAGES)("Back, Clear bill, headings, total, customer - in %s; Bill Banao never changes", (l) => {
@@ -88,14 +68,14 @@ describe("the bill screen", () => {
     expect(seen[0]![0]).toBe("₹90");
   });
   it("switching the language changes the open screen at once - no reload, no remount", () => {
-    render(<BillView {...base} lines={lines()} onMicTap={() => {}} voice={voice()} />);
-    expect(screen.getByRole("button", { name: say("mic.idle", {}, "en") })).toBeTruthy();
+    render(<BillView {...base} lines={lines()} catalog={SEED_PARSER_CATALOG} onAddByHand={() => {}} />);
+    expect(screen.getByRole("button", { name: say("add.title", {}, "en") })).toBeTruthy();
     use("hi");
-    expect(screen.getByRole("button", { name: say("mic.idle", {}, "hi") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: say("add.title", {}, "hi") })).toBeTruthy();
     use("hl");
-    expect(screen.getByRole("button", { name: say("mic.idle", {}, "hl") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: say("add.title", {}, "hl") })).toBeTruthy();
     use("en");
-    expect(screen.getByRole("button", { name: say("mic.idle", {}, "en") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: say("add.title", {}, "en") })).toBeTruthy();
   });
   it("a line's own controls carry the product name in the chosen language's sentence", () => {
     use("hi");

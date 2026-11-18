@@ -11,7 +11,6 @@ import { KiranaBillDB } from "@/data/db";
 import type { BillLine } from "@/data/voiceBilling";
 import { BillView } from "./BillingScreen";
 import { useBillLines } from "./useBillLines";
-import { COMMAND_CLEAR_HINT, COMMAND_FINISH_HINT, COMMAND_NOTHING_TO_REMOVE, runBillCommand } from "./voiceCommands";
 import { useShopName } from "./useShopName";
 import { billQueries } from "./testLineSheet";
 
@@ -97,42 +96,7 @@ describe("KB-338 - '—' (no unit) is a choice on EVERY line", () => {
   });
 });
 
-describe("KB-339 - what a spoken command does to the bill", () => {
-  it("'hatao' removes the LAST added line and the existing one-level Undo brings it back", () => {
-    const { result } = renderHook(() => useBillLines(catalog));
-    for (const t of ["2 kilo chini", "5 kg chawal 30 ka"]) {
-      const v = voice(t);
-      act(() => result.current.add(v.lines, v.flags));
-    }
-    let notice: string | null = "x";
-    act(() => {
-      notice = runBillCommand("removeLast", result.current.rows, result.current.remove);
-    });
-    expect(notice).toBeNull(); // the Undo strip says it
-    expect(result.current.rows.map((r) => r.displayName)).toEqual(["Chini"]);
-    expect(result.current.removed?.displayName).toBe("Chawal");
-    act(() => result.current.undo());
-    expect(result.current.rows.map((r) => r.displayName)).toEqual(["Chini", "Chawal"]);
-  });
-
-  it("'hatao' on an empty bill: a short message, nothing happens", () => {
-    const { result } = renderHook(() => useBillLines(catalog));
-    expect(runBillCommand("removeLast", result.current.rows, result.current.remove)).toBe(COMMAND_NOTHING_TO_REMOVE);
-    expect(COMMAND_NOTHING_TO_REMOVE).toBe("Nothing to remove");
-  });
-
-  it("'bas' / 'ho gaya' never finalise: only the hint; 'sab hatao' never clears: only the hint to tap Clear bill", () => {
-    const { result } = renderHook(() => useBillLines(catalog));
-    const v = voice("2 kilo chini");
-    act(() => result.current.add(v.lines, v.flags));
-    expect(runBillCommand("finalize", result.current.rows, result.current.remove)).toBe(COMMAND_FINISH_HINT);
-    expect(runBillCommand("clearAll", result.current.rows, result.current.remove)).toBe(COMMAND_CLEAR_HINT);
-    expect(COMMAND_FINISH_HINT).toBe("Tap Bill Banao to finish");
-    expect(COMMAND_CLEAR_HINT).toBe("To clear the whole bill, tap Clear bill under the items");
-    expect(result.current.rows).toHaveLength(1);
-    expect(result.current.removed).toBeNull();
-  });
-});
+// (KB-339's spoken commands ran on the OLD mic only - deleted with the old voice path, 18 Nov 2026, owner)
 
 // KB-413 (owner, 15 Nov 2026): screen 12's title is "New bill" as the design draws it - this REPLACES KB-340's shop name in this
 // header (the name truncated to "Gupta Ki..." at 130% text; it is on the receipt and, with KB-414, on Home).

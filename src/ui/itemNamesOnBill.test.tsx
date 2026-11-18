@@ -36,7 +36,7 @@ function Harness({ api, voiceOrder }: { api: MutableRefObject<BillLines | null>;
     // once, on mount
   }, []);
   api.current = bill;
-  return <BillView lines={bill.rows} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} onMicTap={() => {}} catalog={SEED_PARSER_CATALOG} onAddByHand={bill.addByHand} focusLineId={bill.focusLineId} />;
+  return <BillView lines={bill.rows} onEdit={bill.edit} onRemove={bill.remove} flags={bill.flags} pending={bill.pending} onAcknowledge={bill.acknowledge} catalog={SEED_PARSER_CATALOG} onAddByHand={bill.addByHand} focusLineId={bill.focusLineId} />;
 }
 
 describe("Item names on bill - the row's explanation is the real behaviour", () => {

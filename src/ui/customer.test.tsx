@@ -1,15 +1,13 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useEffect, type MutableRefObject } from "react";
 import { parseUtterance } from "@/domain/grammar";
 import { evaluateReviewFlags } from "@/domain/reviewFlags";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { MOBILE_LENGTH, NAME_TOO_LONG } from "@/domain/customer";
-import { parseTranscript } from "@/data/voiceApi";
 import { BillView } from "./BillingScreen";
 import { useBillLines, type BillLines } from "./useBillLines";
-import { useOrderResolver } from "./useOrderResolver";
 import { lineSheet } from "./testLineSheet";
 
 // KB-306 (owner, 3 Oct 2026; D6, D52): the customer on the bill - "Cash" by
@@ -166,25 +164,4 @@ describe("KB-306 - the customer never touches the bill's lines", () => {
   });
 });
 
-describe("KB-306 - customer data never goes to /voice", () => {
-  it("a Layer 2 parse after the customer is set carries neither the name nor the number", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ items: [] }), { status: 200 })) as unknown as typeof fetch;
-    const { result } = renderHook(() => {
-      const bill = useBillLines(catalog);
-      const resolver = useOrderResolver({ shop: SEED_PARSER_CATALOG, bill, parse: (t, s) => parseTranscript(t, { accessToken: "jwt", catalogSlice: s, fetchImpl }) });
-      return { bill, resolver };
-    });
-    act(() => {
-      result.current.bill.setCustomerName("Ramesh Kumar");
-      result.current.bill.setCustomerMobile("9876543210");
-    });
-    await act(async () => {
-      await result.current.resolver.onTranscript("2 kuch naya").catch(() => {});
-    });
-    const calls = (fetchImpl as unknown as ReturnType<typeof vi.fn>).mock.calls;
-    expect(calls).toHaveLength(1);
-    const sent = JSON.stringify([...((calls[0]![1] as RequestInit).body as FormData).entries()]) + JSON.stringify((calls[0]![1] as RequestInit).headers);
-    expect(sent).not.toContain("Ramesh");
-    expect(sent).not.toContain("9876543210");
-  });
-});
+// (KB-306's "customer data never goes to /voice" covered the old text path, deleted 18 Nov 2026; V3 sends only the recording - voiceJob's tests)

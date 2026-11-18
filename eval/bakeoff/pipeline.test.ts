@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveUtterance } from "../../src/data/voiceBilling.js";
 import type { ParsedItem } from "../../src/domain/grammar.js";
 import { prepareParserCatalog } from "../../src/domain/catalogIndex.js";
 import { SEED_PARSER_CATALOG } from "../../src/domain/seedCatalog.js";
-import { checksOf } from "../acceptance/compare.js";
 import { checkAudioAnswer, d102Fill, fillFromCatalog, flagNotHeardByB, hybridItems, nocatBill } from "./pipeline.js";
 
 // KB-370: candidates C (one audio call: transcript + items) and D (C's items, numbers only if B's ear heard them) get the SAME checks
@@ -15,14 +13,14 @@ const item = (over: Partial<ParsedItem>): ParsedItem => ({
 });
 
 describe("checkAudioAnswer", () => {
-  it("gives exactly what the shipped resolver gives when Layer 2 answers the whole order (no drift from the app's checks)", async () => {
+  // The old resolver (data/voiceBilling.ts resolveUtterance, deleted 18 Nov 2026 with the old voice path) gave, for this order: ONE line,
+  // its unreadable price dropped (priceType "unknown", rate / total null), 0 checks - recorded from it before the deletion, kept here
+  it("gives what the old shipped resolver gave when Layer 2 answered the whole order (no drift from the app's checks)", async () => {
     const text = "एक किलो मुँगडाल चैन रुपए किलो"; // Layer 1 reads nothing here (A48): the whole text goes to Layer 2
     const answer = [item({ spokenName: "मुँगडाल", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, rate: 9600, total: 9600 })];
-    const shipped = await resolveUtterance(text, { shop, parse: async () => answer });
-    expect(shipped.layer).toBe("voice");
     const mine = checkAudioAnswer(text, answer, shop);
-    expect(mine.lines.map((l) => l.item)).toEqual(shipped.lines.map((l) => l.item));
-    expect(mine.checks).toBe(checksOf(shipped.flags, shipped.lines.length));
+    expect(mine.lines.map((l) => l.item)).toEqual([{ spokenName: "मुँगडाल", catalogId: null, isCustom: true, matchStatus: "none", qty: 1, unit: "kg", rate: null, rateUnit: null, total: null, priceType: "unknown" }]);
+    expect(mine.checks).toBe(0);
     expect(mine.lines[0]!.item.priceType).toBe("unknown"); // the AI's Rs 96 for an unreadable price never reaches the line
 
   });

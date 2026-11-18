@@ -183,7 +183,6 @@ function Harness({ transcript, offline = false }: { transcript: string; offline?
       notAdded={bill.notAdded}
       onRetry={() => {}}
       onDismiss={bill.dismiss}
-      onMicTap={() => {}}
       catalog={SEED_PARSER_CATALOG}
       onAddByHand={bill.addByHand}
       customer={bill.customer}

@@ -4,7 +4,6 @@ import { openShopDb, type LocalShopProduct } from "./db";
 import { loadShopCatalog } from "./shopCatalog";
 import { parseUtterance } from "@/domain/grammar";
 import { buildCatalogSlice, prepareParserCatalog, searchCatalog } from "@/domain/catalogIndex";
-import { buildVocabularyPrompt } from "@/domain/vocabulary";
 
 function product(over: Partial<LocalShopProduct>): LocalShopProduct {
   return {
@@ -59,7 +58,6 @@ describe("an archived product is gone from every consumer of the billing catalog
     expect(parseUtterance("2 kilo lux sabun", pc)![0]).toMatchObject({ catalogId: "p-live" });
     expect(buildCatalogSlice(pc, "purana bhandar wala sabun").map((e) => e.id)).not.toContain("p-arch");
     expect(searchCatalog(pc, "purana", usageById, 8).map((r) => r.entry.id)).toEqual([]);
-    expect(buildVocabularyPrompt(entries, usageById).names).not.toContain("Purana Bhandar");
     db.close();
   });
 });

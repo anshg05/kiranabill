@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { listColdStarts, loadGateInputs, type ReconcileResult } from "@/data/billMetrics";
 import { listPhases, type PhaseName, type PhaseRow } from "@/data/phaseTimings";
-import { listVoiceTimings, type VoiceTimingRow } from "@/data/voiceTimings";
 import type { LocalReviewCapture } from "@/data/db";
 import { clearReviewCapture, isReviewCaptureOn, listReviewCapture, setReviewCapture } from "@/data/reviewCapture";
 import type { KiranaBillDB } from "@/data/db";
@@ -49,37 +48,6 @@ function phaseLine(rows: readonly PhaseRow[], name: PhaseName): string {
   return xs.length === 0 ? "no samples yet" : `median ${ms(median(xs)!)} · p95 ${ms(percentile(xs, 95)!)} · ${plural(xs.length, "sample", "samples")}`;
 }
 
-const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
-type VoicePick = (r: VoiceTimingRow) => number | undefined;
-const VOICE_LINES: readonly (readonly [string, VoicePick])[] = [
-  ["Whole: stop → transcript", (r) => r.totalMs],
-  ["Recorder stop → audio ready", (r) => r.stopToBlobMs],
-  ["Request: send → first byte of the answer", (r) => r.requestMs],
-  ["…inside it, the server in all", (r) => r.server.total],
-  ["…of which checking the token", (r) => r.server.auth],
-  ["…of which asking which shop (0 = remembered)", (r) => r.server.member],
-  ["…of which the rate limit", (r) => r.server.limit],
-  ["…of which reading the upload", (r) => r.server.form],
-  ["…of which Groq", (r) => r.server.groq],
-  ["…the rest is the network (request − server)", (r) => (r.server.total === undefined ? undefined : Math.max(0, r.requestMs - r.server.total))],
-  ["Reading the answer", (r) => r.bodyMs],
-];
-function voiceLine(rows: readonly VoiceTimingRow[], pick: VoicePick): string {
-  const xs = rows.flatMap((r) => {
-    const v = pick(r);
-    return typeof v === "number" && Number.isFinite(v) ? [v] : [];
-  });
-  return xs.length === 0 ? "no samples yet" : `median ${ms(median(xs)!)} · p95 ${ms(percentile(xs, 95)!)} · ${plural(xs.length, "sample", "samples")}`;
-}
-function regionLine(rows: readonly VoiceTimingRow[]): string {
-  const last = [...rows].reverse().find((r) => r.region !== null);
-  const audio = rows.flatMap((r) => (typeof r.audioBytes === "number" ? [r.audioBytes] : []));
-  const size = audio.length === 0 ? "" : ` · audio ${kb(median(audio)!)} median (${rows.find((r) => r.audioType)?.audioType ?? "?"})`;
-  if (!last) return "no samples yet";
-  const groq = [...rows].reverse().find((r) => r.groqRegion !== null)?.groqRegion;
-  return `${last.region} · Groq: ${groq ?? "not reported"}${size}`;
-}
-
 const COLD_STEPS: readonly (readonly [string, string])[] = [
   ["html", "Page HTML arrived"],
   ["js", "JS parsed and run"],
@@ -118,7 +86,6 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
   const [report, setReport] = useState<GateReport | null>(null);
   const [cold, setCold] = useState<{ ms: number; phases?: Readonly<Record<string, number>> }[]>([]);
   const [phases, setPhases] = useState<PhaseRow[]>([]);
-  const [voice, setVoice] = useState<VoiceTimingRow[]>([]);
   const [pairs, setPairs] = useState<{ capture: LocalReviewCapture; receipt: string | null }[]>([]);
   const [reviewOn, setReviewOn] = useState(false);
   const [check, setCheck] = useState<ReconcileResult | "asking" | null>(null);
@@ -128,7 +95,6 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
     setReport(gateReport(inputs, cancellations));
     setCold(await listColdStarts(localDb));
     setPhases(await listPhases(localDb));
-    setVoice(await listVoiceTimings(localDb));
     setReviewOn(await isReviewCaptureOn(localDb, shopId));
     const captures = await listReviewCapture(localDb, shopId);
     const bills = await localDb.bills.bulkGet(captures.map((c) => c.billLocalId));
@@ -193,17 +159,6 @@ export function PilotNumbers({ localDb, shopId, reconcile }: Props) {
           <Line label="Finalise → receipt">{budgetLine(r.finaliseToReceipt, BUDGET_MS.finalise)}</Line>
           <Line label="Bill number from the server (part of the line above)">{budgetLine(r.number, BUDGET_MS.number)} · only bills that got a server number</Line>
           <Line label="App cold start">{budgetLine(coldSpread, BUDGET_MS.cold)} (this phone)</Line>
-        </ul>
-      </div>
-
-      <div>
-        <h4 className={heading}>Where stop → transcript goes (this phone)</h4>
-        <p className="mt-1 text-[13px] text-ink-soft">The last {voice.length === 0 ? "voice turns" : plural(voice.length, "voice turn", "voice turns")} on this phone, each split into the recording, the request (the way there, the server, the way back) and what the server itself reports.</p>
-        <ul className="mt-1 flex flex-col gap-3">
-          {VOICE_LINES.map(([label, pick]) => (
-            <Line key={label} label={label}>{voiceLine(voice, pick)}</Line>
-          ))}
-          <Line label="Where /voice runs · where Groq answers from">{regionLine(voice)}</Line>
         </ul>
       </div>
 

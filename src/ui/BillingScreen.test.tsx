@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, describe, it, expect, vi } from "vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, it, expect } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { parseUtterance, type ParsedItem } from "@/domain/grammar";
 import { SEED_PARSER_CATALOG } from "@/domain/seedCatalog";
 import { formatRupees, sumPaise } from "@/domain/money";
 import { BillView } from "./BillingScreen";
 import { formatAmount, formatRate } from "./billFormat";
-import { IDLE_VOICE, NO_ITEM_FOUND, OFFLINE_REASON, type VoiceView } from "./useVoiceBilling";
 import voiceCases from "../../eval/voice-cases.json";
 import numberBenchmark from "../../eval/number-benchmark.json";
 import { lineSheet } from "./testLineSheet";
@@ -138,70 +137,7 @@ describe("BillView", () => {
   });
 });
 
-// KB-302: every voice state of 05-FRONTEND-SPEC.md section 2 renders, and the
-// mic is only ever disabled with a visible reason.
-describe("BillView voice states", () => {
-  const view = (v: Partial<VoiceView>): VoiceView => ({ ...IDLE_VOICE, ...v });
-  const renderVoice = (v: Partial<VoiceView>, onMicTap = vi.fn()) => {
-    render(<BillView lines={[]} voice={view(v)} onMicTap={onMicTap} {...editing} />);
-    return onMicTap;
-  };
-  const mic = () => screen.getAllByRole("button").find((b) => b.className.includes("bg-indigo")) as HTMLButtonElement;
-
-  it("idle: the mic is enabled and tapping it calls onMicTap", () => {
-    const onMicTap = renderVoice({});
-    expect(mic().textContent).toBe("Tap to speak"); // English mode is fully English (KB-332); the Hindi wording is हिन्दी mode's
-    expect(mic().disabled).toBe(false);
-    act(() => mic().click());
-    expect(onMicTap).toHaveBeenCalledOnce();
-  });
-
-  it("offline / offline session: mic disabled, the one-line reason VISIBLE (05 section 7)", () => {
-    renderVoice({ disabledReason: OFFLINE_REASON });
-    expect(mic().disabled).toBe(true);
-    expect(screen.getByText(OFFLINE_REASON)).toBeTruthy();
-  });
-
-  it("requesting permission: 'Mic permission…', never a blank pulsing button", () => {
-    renderVoice({ phase: "requesting" });
-    expect(mic().textContent).toBe("Mic permission…");
-    expect(mic().disabled).toBe(true);
-  });
-
-  it("listening: the mic becomes a pulsing stop button, with the elapsed timer", () => {
-    renderVoice({ phase: "listening", elapsedMs: 65_400 });
-    expect(screen.getByRole("button", { name: "Stop recording" }).className).toContain("animate-pulse");
-    expect(screen.getByText("Listening… 1:05")).toBeTruthy();
-  });
-
-  it("transcribing: spinner, mic disabled", () => {
-    renderVoice({ phase: "transcribing" });
-    expect(mic().disabled).toBe(true);
-    expect(mic().querySelector(".animate-spin")).not.toBeNull();
-  });
-
-  it("transcript ready: shown before items resolve", () => {
-    renderVoice({ phase: "resolving", transcript: "do kilo chini" });
-    expect(screen.getByTestId("voice-transcript").textContent).toBe("“do kilo chini”");
-    expect(screen.getAllByText("Understanding…").length).toBeGreaterThan(0); // KB-343: still working on it
-  });
-
-  it("failed: inline alert, and the mic stays usable (never a dead end)", () => {
-    renderVoice({ phase: "failed", message: "No microphone found" });
-    expect(screen.getByRole("alert").textContent).toBe("No microphone found");
-    expect(mic().disabled).toBe(false);
-  });
-
-  // KB-317 commit 5 (owner): a transcript that produced no item keeps the
-  // transcript on screen, with the manual-add message under it.
-  it("no item found: the transcript stays visible, with 'Couldn't find an item — add it manually'", () => {
-    renderVoice({ phase: "failed", transcript: "झाल", message: NO_ITEM_FOUND });
-    expect(NO_ITEM_FOUND).toBe("Couldn't find an item — add it manually");
-    expect(screen.getByTestId("voice-transcript").textContent).toBe("“झाल”");
-    expect(screen.getByRole("alert").textContent).toBe(NO_ITEM_FOUND);
-    expect(mic().disabled).toBe(false);
-  });
-});
+// (KB-302's "BillView voice states" tested the OLD mic - deleted with the old voice path, 18 Nov 2026)
 
 // Q4 (owner, 27 Sep 2026): no fixture yields an unpriced line yet (Layer 1
 // never emits one), so the "—" amount rule is tested on the formatter here;
@@ -217,5 +153,22 @@ describe("billFormat", () => {
     expect(formatRate(one("NB101"))).toBe("₹45/kg");
     expect(formatRate(one("VC015"))).toBe("₹60");
     expect(formatRate(one("VC013"))).toBe("—");
+  });
+});
+
+// 18 Nov 2026 (owner: "Keep, no Retry"): the old voice path is deleted, but a bill saved on a phone before that may still hold its
+// "Not added" entries. They still show, with Add by hand and ✕ - and no Retry, since nothing is left to retry with. The saved-bill format
+// is unchanged.
+describe("an old 'Not added' entry, after the old voice path was deleted", () => {
+  const entry = { id: "n1", transcript: "do kilo kuch naya", retrying: false, message: "Couldn't read the items — Retry below" };
+  it("shows its words with Add by hand and ✕; no Retry", () => {
+    const dismissed: string[] = [];
+    render(<BillView lines={[]} {...editing} notAdded={[entry]} onDismiss={(id) => dismissed.push(id)} onAddByHand={() => {}} catalog={SEED_PARSER_CATALOG} />);
+    const list = screen.getByRole("list", { name: /Not added/i });
+    expect(within(list).getByText(/do kilo kuch naya/)).toBeTruthy();
+    expect(within(list).queryByRole("button", { name: "Retry “do kilo kuch naya”" })).toBeNull();
+    expect(within(list).getByRole("button", { name: "Add by hand “do kilo kuch naya”" })).toBeTruthy();
+    within(list).getByRole("button", { name: "Dismiss “do kilo kuch naya”" }).click();
+    expect(dismissed).toEqual(["n1"]);
   });
 });

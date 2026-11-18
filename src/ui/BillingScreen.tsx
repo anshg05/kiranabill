@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Loader2, Mic, Square } from "lucide-react";
 import type { CatalogEntry } from "@/domain/catalog";
 import { prepareParserCatalog, type ParserCatalog } from "@/domain/catalogIndex";
 import type { ParsedItem } from "@/domain/grammar";
@@ -8,11 +7,9 @@ import { evaluateReviewFlags, type ReviewFlag } from "@/domain/reviewFlags";
 import { checkGroupKey, checkHeadline, customItem, displayRate, manualItem, unitChoices } from "@/domain/billEdit";
 import { amountNeeded } from "@/domain/finalBill";
 import { sumPaise } from "@/domain/money";
-import { recordingVocabulary } from "@/domain/vocabulary";
 import { learnedNoteFor, type LearnedMap } from "@/domain/aliasEvidence";
 import { removeLearnedAlias } from "@/data/aliasEvidence";
 import { useShopCatalog } from "./useShopCatalog";
-import { parseTranscript, warmVoice } from "@/data/voiceApi";
 import type { BillLine } from "@/data/voiceBilling";
 import { useAuth } from "@/providers/AuthProvider";
 import { usePersistentStorage } from "./usePersistentStorage";
@@ -36,7 +33,6 @@ import { renderReceiptFiles } from "./receiptImage";
 import type { Receipt as ReceiptModel } from "@/domain/receipt";
 import { formatAmount, formatQty, formatRate, paiseText } from "./billFormat";
 import { useBillLines, type EditField, type NotAdded, type ShownFlag } from "./useBillLines";
-import { useOrderResolver } from "./useOrderResolver";
 import { Button } from "./kit/Button";
 import { Badge } from "./kit/Badge";
 import { BillLine as KitBillLine, PriceNeededLine } from "./kit/BillLine";
@@ -49,7 +45,6 @@ import { requestBillNumber, warmServer } from "@/data/receiptNumbers";
 import { syncNow } from "@/data/sync";
 import { learnPendingBills } from "@/data/learnBill";
 import { recordPhases } from "@/data/phaseTimings";
-import { recordVoiceTiming } from "@/data/voiceTimings";
 import { runAfterSave } from "./afterSave";
 import { coldPhases, markCold } from "./coldMarks";
 import { AddItemSheet } from "./AddItemSheet";
@@ -60,13 +55,11 @@ import { BillBack, TabFrame, useStartTab } from "./AppTabs";
 import { HomeScreen } from "./HomeScreen";
 import type { SyncChip } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
-import { IDLE_VOICE, useVoiceBilling, type VoiceView } from "./useVoiceBilling";
 import { markRecordingBilled, submitRecording, type VoiceJobOutcome } from "@/data/voiceJob";
 import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
 import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
 import { clearRecordingDraft, loadRecordingDraft, saveRecordingDraft } from "@/data/recordingDraft";
-import { runBillCommand } from "./voiceCommands";
 import { useShopName } from "./useShopName";
 import type { Customer } from "./useBillLines";
 import { CASH, formatMobile } from "@/domain/customer";
@@ -94,30 +87,6 @@ function devTryUtterances(shop: ParserCatalog): { transcript: string; lines: Bil
       const lines = items.map((item): BillLine => ({ item, displayName: (item.catalogId && shop.byId.get(item.catalogId)?.displayName) || item.spokenName, source: "fastpath" }));
       return [{ transcript, lines, flags: [...evaluateReviewFlags(transcript, items, shop.entries)] }];
     });
-}
-
-/** DEV ONLY (owner, KB-319): `?failparse=timeout|502|429|network` makes the
- * FIRST parse of each transcript fail that way, so the "Not added" / Retry
- * flow can be seen in a browser; the Retry then goes to the real /voice.
- * `timeout` never answers, so the real 8 s client deadline fires. Removed
- * from `npm run build` (VERIFY greps dist/ for "failparse").
- * LIMIT: it only fails the Layer 2 parse REQUEST, so it only affects orders the
- * fast path can't read - an order Layer 1 reads on the device never sends one. */
-function devFailParseFetch(): typeof fetch | undefined {
-  if (!import.meta.env.DEV) return undefined;
-  const mode = new URLSearchParams(window.location.search).get("failparse");
-  if (!mode) return undefined;
-  const failedOnce = new Set<string>();
-  return async (input, init) => {
-    const meta = JSON.parse(String((init?.body as FormData).get("meta"))) as { transcript?: string };
-    const key = meta.transcript ?? "";
-    if (failedOnce.has(key)) return fetch(input, init);
-    failedOnce.add(key);
-    console.info(`[voice] dev ?failparse=${mode}: failing the first parse of`, key);
-    if (mode === "timeout") return new Promise<Response>(() => {});
-    if (mode === "network") throw new TypeError("Failed to fetch (dev ?failparse=network)");
-    return new Response(JSON.stringify({ error: `dev ?failparse=${mode}` }), { status: mode === "429" ? 429 : 502 });
-  };
 }
 
 /** DEV ONLY (KB-385): `?voicefake=done|empty|failed|session|limit|gaveup` - the order recorder records from a SILENT microphone (the
@@ -167,10 +136,6 @@ export function BillingScreen() {
   const { catalog: shopCatalog, reload: reloadCatalog, pulls: catalogPulls } = useShopCatalog(localDb ?? null, shop?.id);
   // KB-352: rebuilt only when the products themselves changed - a bill that only moves usage counts keeps the same `entries`.
   const parser = useMemo(() => (shopCatalog ? prepareParserCatalog(shopCatalog.entries) : null), [shopCatalog?.entries]);
-  const vocabulary = useMemo(
-    () => (shopCatalog ? recordingVocabulary(shopCatalog.entries, shopCatalog.usageById) : []),
-    [shopCatalog],
-  );
 
   // KB-303: the bill being built - its lines, edits, removals and flags
   // (useBillLines; KB-304 will display the flags, KB-305 adds items).
@@ -195,30 +160,6 @@ export function BillingScreen() {
   }, [bill.flags, bill.rows.length]);
 
   const accessToken = session?.access_token ?? null;
-  const [devFetch] = useState(devFailParseFetch);
-  const parse = useCallback(
-    (text: string, catalogSlice: Parameters<typeof parseTranscript>[1]["catalogSlice"]) => {
-      if (!accessToken) throw new Error("no live session"); // the mic is disabled without one
-      return parseTranscript(text, { accessToken, catalogSlice, fetchImpl: devFetch });
-    },
-    [accessToken, devFetch],
-  );
-  // KB-319: transcript -> lines; a failed parse stays on the bill as "Not added".
-  const { onTranscript, retry } = useOrderResolver({ shop: parser, bill, parse, onUtterance: (r) => wiringRef.current?.onUtterance(r) });
-
-  // Voice needs a LIVE session (offline-session mode has none - D38).
-  const voice = useVoiceBilling({
-    accessToken,
-    vocabulary,
-    onTranscript,
-    onTurn: () => wiringRef.current?.onTurn(),
-    // KB-339 (D86): a spoken command, decided before parsing - "hatao" removes the last line (Undo brings it back); the rest only hint.
-    onCommand: (command) => runBillCommand(command, rows, bill.remove),
-    onTranscribed: (ms) => wiringRef.current?.onTranscribed(ms),
-    onVoiceTiming: (t) => void (localDb && recordVoiceTiming(localDb, t)),
-    onMicStart: () => warmVoice(), // KB-353: wake /voice while the person starts speaking
-    notReadyReason: parser && bill.ready ? null : "Loading your catalog…",
-  });
   // KB-385 (D101, D107): the V3 voice path - one path for every order. The recording is kept on the phone (voiceQueue) until its bill
   // exists, sent through Supabase Storage + /voice-run, and its answer becomes lines on the phone (aiAnswerBill), added once. It works
   // offline (queued, sent when back online); with no live session the send ends as "session" (sign in, then Retry).
@@ -354,7 +295,6 @@ export function BillingScreen() {
   );
 
   const onSignOut = () => {
-    voice.releaseMic(); // the warm mic goes off before anything else (D45)
     // KB-404 (D80): the review capture (heard / billed pairs) is cleared when the shopkeeper signs out.
     void clearThenSignOut(localDb ?? null, shop?.id ?? null, signOut);
   };
@@ -409,7 +349,6 @@ export function BillingScreen() {
       waitingRecordings={orders.waiting.length}
       onAcknowledge={(key) => (wiring.touch(), bill.acknowledge(key))}
       notAdded={bill.notAdded}
-      onRetry={retry}
       onDismiss={bill.dismiss}
       catalog={parser}
       usage={shopCatalog?.usageById}
@@ -515,15 +454,12 @@ interface BillViewProps {
   onBack?: () => void;
   /** KB-414 step 1: Home's "Type items" - each new value opens Add item (empty search). */
   addSignal?: number;
-  /** KB-385 (D101): the V3 order recorder in the bottom bar - when given, it replaces the old mic (voice / onMicTap). */
+  /** KB-385 (D101): the V3 order recorder in the bottom bar (the old mic was deleted 18 Nov 2026 with the old voice path). */
   /** noteSlot: where the recorder's warnings go - the bill's scrolling list (KB-413 step-2 fix 1), never the bottom panel */
   orderBar?: (openAdd: () => void, noteSlot: HTMLElement | null) => ReactNode;
   /** KB-385: the bill's recordings (processing, failed, "Heard: …") under the lines. */
   /** KB-413: called twice - "heard" (the Heard cards, above the lines) and "pending" (recordings not in the bill yet, under them). */
   orderEntries?: (openAdd: (query: string) => void, part: "heard" | "meanwhile" | "pending") => ReactNode;
-  voice?: VoiceView;
-  onMicTap?: () => void;
-  onMicPointerDown?: () => void;
   onEdit: (id: string, field: EditField, value: string) => string | null;
   onRemove: (id: string) => void;
   /** The line "Undo" would bring back, while it can. */
@@ -609,16 +545,19 @@ function NotAddedList({
           <span className="min-w-0 font-bold">{t("notadded.line", { text: n.transcript })}</span>
           <span className="min-w-0">{tx(n.message)}</span>
           <span className="flex w-full flex-wrap items-center gap-2">
-            <button
-              type="button"
-              data-pending-target
-              aria-label={t("retry.label", { text: n.transcript })}
-              disabled={n.retrying}
-              onClick={() => onRetry?.(n.id)}
-              className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card disabled:opacity-50"
-            >
-              {n.retrying ? t("retry.reading") : t("retry.button")}
-            </button>
+            {/* 18 Nov 2026 (owner): the old voice path is gone - an entry saved by it keeps Add by hand and ✕; Retry only with a handler */}
+            {onRetry && (
+              <button
+                type="button"
+                data-pending-target
+                aria-label={t("retry.label", { text: n.transcript })}
+                disabled={n.retrying}
+                onClick={() => onRetry(n.id)}
+                className="kb-hit kb-press flex-none whitespace-nowrap min-h-[48px] rounded-[12px] bg-kb-ink px-4 text-kb-15 font-bold text-kb-card disabled:opacity-50"
+              >
+                {n.retrying ? t("retry.reading") : t("retry.button")}
+              </button>
+            )}
             {onAddByHand && (
               <button
                 type="button"
@@ -792,121 +731,12 @@ function UnitPicker({ label, fieldId, line, onPick }: { label: string; fieldId: 
   );
 }
 
-function mmss(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-/** The one line above the buttons: offline reason, failure, listening
- * timer, or the transcript (05-FRONTEND-SPEC.md section 2 voice states). */
-function VoiceStatus({ voice, onAddByHand }: { voice: VoiceView; onAddByHand?: (query: string) => void }) {
-  const { t, tx } = useT();
-  const base = "min-h-6 px-4 pt-2 text-[13px]";
-  if (voice.disabledReason) return <p className={`${base} text-ink-soft`}>{tx(voice.disabledReason)}</p>;
-  if (voice.phase === "failed" && voice.message) {
-    // KB-317 commit 5: a transcript that was heard stays visible above the failure.
-    return (
-      <>
-        {voice.transcript && (
-          <p data-testid="voice-transcript" className={`${base} text-ink`}>
-            “{voice.transcript}”
-          </p>
-        )}
-        <p role="alert" className={`${base} text-danger`}>
-          {tx(voice.message)}
-          {/* KB-305 / KB-331: every failure opens the add panel - the heard words in the search, or empty. It adds nothing itself. */}
-          {onAddByHand && (
-            <button
-              type="button"
-              aria-label={voice.transcript ? t("byhand.labelVoice", { text: voice.transcript }) : t("byhand.button")}
-              onClick={() => onAddByHand(voice.transcript ?? "")}
-              className="ml-2 min-h-11 rounded-[6px] border border-line bg-surface px-3 font-medium text-ink"
-            >
-              {t("byhand.button")}
-            </button>
-          )}
-        </p>
-      </>
-    );
-  }
-  if (voice.phase === "listening") {
-    return (
-      <p className={`${base} text-indigo tabular-nums`}>
-        {t("voice.listening")} {mmss(voice.elapsedMs)}
-      </p>
-    );
-  }
-  if (voice.phase === "transcribing") return <p className={`${base} text-ink-soft`}>{t("voice.understanding")}</p>;
-  if (voice.transcript) {
-    return (
-      <>
-        <p data-testid="voice-transcript" className={`${base} text-ink`}>
-          “{voice.transcript}”
-        </p>
-        {voice.phase === "resolving" && <p className={`${base} text-ink-soft`}>{t("voice.understanding")}</p>}
-        {voice.notice && (
-          <p role="status" data-testid="voice-notice" className={`${base} text-ink-soft`}>
-            {tx(voice.notice)}
-          </p>
-        )}
-      </>
-    );
-  }
-  return <p className={base} />;
-}
-
-function MicButton({ voice, onMicTap, onMicPointerDown }: { voice: VoiceView; onMicTap?: () => void; onMicPointerDown?: () => void }) {
-  const { t } = useT();
-  const cls =
-    "flex min-h-11 w-full items-center justify-center gap-2 rounded-[6px] bg-indigo px-3 font-medium text-surface disabled:opacity-50";
-  const icon = { size: 20, strokeWidth: 1.5, "aria-hidden": true } as const;
-  if (voice.phase === "listening") {
-    return (
-      <button type="button" onClick={onMicTap} aria-label={t("mic.stopLabel")} className={`${cls} animate-pulse`}>
-        <Square {...icon} />
-        {t("mic.stop")}
-      </button>
-    );
-  }
-  if (voice.phase === "requesting") {
-    return (
-      <button type="button" disabled className={cls}>
-        <Mic {...icon} />
-        {t("mic.permission")}
-      </button>
-    );
-  }
-  if (voice.phase === "transcribing" || voice.phase === "resolving") {
-    return (
-      <button type="button" disabled className={cls}>
-        <Loader2 {...icon} className="animate-spin" />
-        {t("voice.understanding")}
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onPointerDown={onMicPointerDown}
-      onClick={onMicTap}
-      disabled={!onMicTap || voice.disabledReason !== null}
-      className={cls}
-    >
-      <Mic {...icon} />
-      {t("mic.idle")}
-    </button>
-  );
-}
-
 export function BillView({
   lines,
   onBack,
   addSignal,
   orderBar,
   orderEntries,
-  voice = IDLE_VOICE,
-  onMicTap,
-  onMicPointerDown,
   onEdit,
   onRemove,
   removed,
@@ -950,8 +780,7 @@ export function BillView({
   const canAdd = catalog !== null && onAddByHand !== undefined;
   // KB-401 (D67): a waiting app update may reload the page only while NOTHING here would be lost: an empty bill, no
   // utterance in flight, nothing typed, no saved-bill screen to leave, no panel or dialog open.
-  const voiceBusy = voice.phase === "requesting" || voice.phase === "listening" || voice.phase === "transcribing" || voice.phase === "resolving";
-  useUpdateGate(lines.length === 0 && notAdded.length === 0 && customer.name === CASH && customer.mobile === null && !voiceBusy && !saving && saved === null && saveError === null && addItem === null && confirm === null);
+  useUpdateGate(lines.length === 0 && notAdded.length === 0 && customer.name === CASH && customer.mobile === null && !saving && saved === null && saveError === null && addItem === null && confirm === null);
   // KB-304: flags per line, and each utterance's bill-level flags under its last line.
   const billLevelAfter = (id: string) => flags.filter((f) => f.lineId === null && f.anchorLineId === id);
   // KB-363b: a line's own reasons and the reasons about what was said (anchored under the utterance's last line) are ONE check
@@ -1374,17 +1203,12 @@ export function BillView({
             </div>
           </div>
 
-          {!orderBar && <VoiceStatus voice={voice} onAddByHand={openAdd} />}
           <div data-testid="flag-announcer" aria-live="polite" className="sr-only">
             {announcement}
           </div>
 
           <div className="flex flex-wrap gap-[10px]">
-            {orderBar ? (
-              !readOnly && orderBar(() => openAdd?.(""), noteSlot)
-            ) : (
-              <MicButton voice={voice} onMicTap={readOnly && onMicTap ? nextBillThen(onMicTap) : onMicTap} onMicPointerDown={onMicPointerDown} />
-            )}
+            {orderBar && !readOnly && orderBar(() => openAdd?.(""), noteSlot)}
             {readOnly ? (
               <Button variant="primary" height={56} onClick={onNewBill} className="min-w-[150px] flex-1">
                 {t("bill.new")}

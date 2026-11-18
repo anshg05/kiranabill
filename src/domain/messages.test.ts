@@ -142,13 +142,10 @@ describe("every sentence the domain can build has a translation (drift guard - r
     ...literals(src("billEdit.ts"), /error:\s*(?:`([^`]*)`|"([^"]*)")/g),
     ...literals(src("customer.ts"), /export const [A-Z_]+ = (?:`([^`]*)`|"([^"]*)")/g),
     ...literals(src("shopSettings.ts"), /export const [A-Z_]+ = (?:`([^`]*)`|"([^"]*)")/g),
-    // What the hooks build: the voice failures, the capture failures, the offline reason, the parse and save failures.
-    ...literals(readFileSync(join(__dirname, "..", "ui", "useVoiceBilling.ts"), "utf8"), /return "([^"]{8,})";|OFFLINE_REASON = "([^"]+)"/g),
+    // What the hooks build: the capture failures, the parse and save failures. (The old mic's useVoiceBilling.ts, the spoken commands
+    // and useOrderResolver.ts were deleted with the old voice path, 18 Nov 2026.)
     ...literals(readFileSync(join(__dirname, "..", "ui", "useVoiceCapture.ts"), "utf8").split("permission:")[1]!.split("interrupted:")[0]!.replace(/^/, "permission:") + "interrupted:", /: "([^"]{8,})",/g),
     ...literals(readFileSync(join(__dirname, "..", "ui", "useBillLines.ts"), "utf8"), /PARSE_FAILED = "([^"]+)"/g),
-    // KB-339: the three lines a spoken command can answer with.
-    ...literals(readFileSync(join(__dirname, "..", "ui", "voiceCommands.ts"), "utf8"), /COMMAND_[A-Z_]+ = "([^"]+)"/g),
-    ...literals(readFileSync(join(__dirname, "..", "ui", "useOrderResolver.ts"), "utf8"), /"(Couldn't read the items[^"]*)"/g),
     ...literals(readFileSync(join(__dirname, "..", "data", "finalise.ts"), "utf8"), /SAVE_FAILED = "([^"]+)"/g),
     // Checkpoint B: the catalog rules, the import's reasons, the cancel reasons and refusals, the file-read errors, the set-up refusal.
     ...literals(src("catalogEdit.ts"), /(?:error:|errors\.\w+ =|return)\s*(?:`([^`]*)`|"([^"]*)")/g),
@@ -163,7 +160,7 @@ describe("every sentence the domain can build has a translation (drift guard - r
   ].filter((s) => s.length > 8);
 
   it("found the sentences to check (the scan itself works)", () => {
-    expect(sentences.length).toBeGreaterThan(70);
+    expect(sentences.length).toBeGreaterThan(60); // 68 since the old voice path's sources were deleted (18 Nov 2026)
   });
   it("each one is found in the catalog and says something different in Hindi and in Hinglish", () => {
     const missing = sentences.filter((s) => translateEnglish(s, "hi") === s || translateEnglish(s, "hl") === s);

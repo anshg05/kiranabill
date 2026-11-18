@@ -5,7 +5,6 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { KiranaBillDB, type LocalBillMetrics } from "@/data/db";
 import { recordColdStart } from "@/data/billMetrics";
 import { recordPhases } from "@/data/phaseTimings";
-import { recordVoiceTiming } from "@/data/voiceTimings";
 import { isReviewCaptureOn } from "@/data/reviewCapture";
 import { PilotNumbers } from "./PilotNumbers";
 
@@ -50,40 +49,7 @@ const open = (reconcile?: () => Promise<{ checked: number; problems: { receiptNu
 };
 const line = (panel: HTMLElement, label: string) => within(panel).getByText(label).closest("li") as HTMLElement;
 
-describe("KB-352 - where stop → transcript goes", () => {
-  const row = (panel: HTMLElement, label: string) => line(panel, label).textContent!;
-  it("no turns yet: every line says 'no samples yet'", async () => {
-    const panel = await open();
-    expect(row(panel, "Whole: stop → transcript")).toContain("no samples yet");
-    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("no samples yet");
-  });
-
-  it("the whole wait is split into the recorder, the request, the server's own parts and the network that is left; regions and audio size are named", async () => {
-    for (const [i, total] of [2100, 3100, 7500].entries()) {
-      await recordVoiceTiming(db, { at: `2026-10-28T10:0${i}:00.000Z`, audioBytes: 24_576, audioType: "audio/webm;codecs=opus", stopToBlobMs: 40, requestMs: total - 60, bodyMs: 3, totalMs: total, server: { auth: 200 + i, limit: 5, form: 9, groq: 400, total: 700 }, region: "us-east-2", groqRegion: "us-east-1" });
-    }
-    const panel = await open();
-    await waitFor(() => expect(row(panel, "Whole: stop → transcript")).toContain("median 3.1 s"));
-    expect(row(panel, "Whole: stop → transcript")).toContain("p95 7.5 s");
-    expect(row(panel, "Recorder stop → audio ready")).toContain("median 40 ms");
-    expect(row(panel, "…inside it, the server in all")).toContain("median 700 ms");
-    expect(row(panel, "…of which Groq")).toContain("median 400 ms");
-    expect(row(panel, "…of which checking the token")).toContain("median 201 ms");
-    expect(row(panel, "…the rest is the network (request − server)")).toContain("median 2.3 s"); // 3040 - 700
-    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("us-east-2 · Groq: us-east-1");
-    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("audio 24 KB median (audio/webm;codecs=opus)");
-    expect(panel.textContent).not.toContain("NaN");
-  });
-
-  it("an older server that sends no timing: the phone's own numbers show, the server lines say 'no samples yet', Groq 'not reported'", async () => {
-    await recordVoiceTiming(db, { at: "2026-10-28T10:00:00.000Z", requestMs: 1500, totalMs: 1600, server: {}, region: "us-east-2", groqRegion: null });
-    const panel = await open();
-    await waitFor(() => expect(row(panel, "Request: send → first byte of the answer")).toContain("median 1.5 s"));
-    expect(row(panel, "…of which Groq")).toContain("no samples yet");
-    expect(row(panel, "Where /voice runs · where Groq answers from")).toContain("Groq: not reported");
-  });
-});
-
+// The old path's "where stop -> transcript goes" lines (Groq, /voice) were deleted with it (18 Nov 2026).
 describe("KB-352 - where the app start goes", () => {
   const row = (panel: HTMLElement, label: string) => line(panel, label).textContent!;
   it("no starts yet: every step says 'no samples yet'", async () => {
