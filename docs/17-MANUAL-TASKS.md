@@ -22,7 +22,7 @@ If an agent claims it has done any of these, it is wrong — check yourself.
 | M-03 | Install Git | git-scm.com | Free | |
 | M-04 | Install **Claude Code** | `npm install -g @anthropic-ai/claude-code` | Claude plan | Build tool since 21 Aug 2026 (`07-DECISIONS.md` D28 — was Antigravity, T1). Setup detail: `19-MACHINE-SETUP.md` §1. |
 | M-05 | Create a **private** GitHub repo | github.com | Free | **Private.** Not public. |
-| M-06 | **Rotate the Groq key** | console.groq.com → API Keys | Free tier | Delete the old one. Don't just create a new one. |
+| M-06 | ~~**Rotate the Groq key**~~ - **retired 18 Nov 2026:** the old voice path is deleted; the owner removes `GROQ_API_KEY` from Netlify (all 4 contexts) and may delete the key at console.groq.com | console.groq.com → API Keys | Free tier | - |
 | M-07 | **Rotate the Gemini key** | aistudio.google.com → Get API key | Free tier | Same — delete the old. |
 | M-08 | Put both keys in `.env.local` | Your machine | — | Verify `git status` does **not** show it |
 
@@ -88,8 +88,8 @@ deploy, and anything pushed is live.
 1. netlify.com → connect the GitHub repo
 2. Build command `npm run build`, publish directory `dist`
 3. Site settings → Environment variables → add exactly what `netlify/functions/voice.mts` reads (lines
-   26–29): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`. Missing any one →
-   `/voice` answers every request `500 Server misconfigured`. The two `VITE_` values are also what
+   26–29): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GEMINI_API_KEY`. Missing any one →
+   the voice function answers `500 Server misconfigured`. (18 Nov 2026: `GROQ_API_KEY` and `/voice` are gone; the function is `voice-run`.) The two `VITE_` values are also what
    `npm run build` bakes into the client bundle — they're the public URL and anon key, safe to expose.
    **No `SUPABASE_SERVICE_ROLE_KEY`** — `/voice` never uses it (`KB-206`). *(Corrected 26 Sep 2026 — this
    step used to list the service role key and omit both `VITE_` values.)*
@@ -154,7 +154,7 @@ The order matters: the **draft** is tested with Google still in **Testing** and 
 5. **The real check:** on a phone, sign in with a Gmail that has **never** used the app (and is not a test user): Google sign-in returns signed in -> "Set up your shop" -> **Use ready catalog** -> billing -> a bill. "This account isn't set up for the pilot" must **not** appear.
 6. **Rollback of sign-ups only:** switch "Allow new users to sign up" OFF - immediate; every existing user keeps working.
 
-**C. What watches the spend:** nothing automatic (owner's choice, D90): Netlify credits, the Groq usage page, Supabase database size (500 MB on Free). The per-shop 300-an-hour `/voice` limit stays.
+**C. What watches the spend:** nothing automatic (owner's choice, D90): Netlify credits, Supabase database size (500 MB on Free). The per-shop 300-an-hour `/voice` limit stays.
 
 **D. The policy page is a minimal page for Google (D91), not the parked privacy notice (`KB-347`):** no consent flow, no acceptance records, **no lawyer has reviewed it**, and the deletion it promises (by e-mail) is done by hand by the owner - there is no runbook yet (`SG-19`).
 

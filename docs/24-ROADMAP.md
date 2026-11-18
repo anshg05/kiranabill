@@ -152,7 +152,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 ## e2. Open after the V3 release (owner, 10 Nov 2026, D109)
 
 **Voice follow-ups:**
-- **Delete the old voice path** - Whisper, the typed-text `/voice` and `GROQ_API_KEY` - after V3 runs well in production for a few days. It also removes `check:spike` from production's build command.
+- **Delete the old voice path** **(DONE 18 Nov 2026, owner + reviewer; tag `pre-old-voice-removal`)** - Whisper, the typed-text `/voice` and `GROQ_API_KEY` - after V3 runs well in production for a few days. It also removes `check:spike` from production's build command.
 - **`KB-384b`, the Sarvam backup** (after the release, D108).
 - **Gemini's price doubles on 1 Jan 2027:** re-check the cost per bill and the Rs 1,500 budget alarm before then.
 - **Watch ear mis-hearings like A47 in real use** (D106: at most 1 per full run; a second ear is revisited if real use shows more).

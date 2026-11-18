@@ -114,7 +114,6 @@ Then fill in `.env.local` with **real values**, matching each name in `.env.exam
 
 | Variable | Where it comes from |
 |---|---|
-| `GROQ_API_KEY` | console.groq.com → API Keys (the one already rotated in this project — see `17-MANUAL-TASKS.md` M-06) |
 | `GEMINI_API_KEY` | aistudio.google.com → Get API key (M-07) |
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | For **local Docker** dev, these come from `supabase start`'s own printed output (§6 below), not the hosted project's dashboard — the app talks to the local stack during development. |
 | `ALLOWED_ORIGIN`, other legacy-carried vars | Already in `.env.example` from the original project setup — copy as named. |
