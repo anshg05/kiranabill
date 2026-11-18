@@ -5,7 +5,7 @@ import { isNativeApp } from "@/data/nativeSignIn";
 // KB-302: push-to-talk capture (docs/04-VOICE-PIPELINE.md section 2 - tap to
 // start, tap to stop; no length limit). The browser picks its own recording
 // format - Chrome audio/webm;codecs=opus, Safari audio/mp4 - and the Blob
-// keeps that type; groqTranscriptionProvider maps it to a file extension.
+// keeps that type; the V3 upload (data/voiceJob.ts) stores it with that type.
 // Every failure becomes a CaptureError the screen shows inline - never a throw.
 //
 // KB-317 commit 4 - the warm mic (docs/07-DECISIONS.md D45): opening the mic
