@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GIVE_UP_MS, nextSteps, POLL_INTERVAL_MS, submitRecording, type VoiceJobOutcome } from "./voiceJob";
+import { submitAppRecording, voiceRunEndpoint } from "./voiceRunEndpoint";
 
 // KB-384a step 4 (owner, 9 Nov 2026; D107): the phone's side of the async voice path. Upload -> row -> /voice-run -> watch the row every
 // 1.5 s. Every outcome that is not a bill ends in Retry (the SAME recording) or Add by hand - never a dead end.
@@ -51,6 +52,27 @@ describe("submitRecording (KB-384a step 4)", () => {
     expect(f.sleep).toHaveBeenCalledWith(1500);
     expect(f.read).toHaveBeenCalledTimes(4); // the check before starting + 3 while watching
     expect(nextSteps(out)).toEqual([]);
+  });
+
+  describe("where /voice-run is (option (b) step 3, owner 18 Nov 2026)", () => {
+    afterEach(() => vi.unstubAllEnvs());
+    // the billing screen's own call (BillingScreen.tsx: submitAppRecording), with fake storage, rows and network
+    const startedAt = async () => {
+      const f = fake({ rows: [Q, { status: "done", attempts: 1, transcript: "x", items: [], error: null }] });
+      await submitAppRecording({ client: f.client as never, shopId: SHOP, recordingId: REC, audio: new Blob([new Uint8Array([1])], { type: "audio/webm" }), accessToken: "jwt", fetchImpl: f.fetchImpl as never, sleep: f.sleep, now: () => 0 });
+      return (f.fetchImpl.mock.calls[0]! as [string])[0];
+    };
+    it("the WEBSITE build (VITE_VOICE_RUN_URL unset or empty): /voice-run on its own site, exactly as before", async () => {
+      vi.stubEnv("VITE_VOICE_RUN_URL", undefined as never);
+      expect(voiceRunEndpoint()).toBe("/voice-run");
+      expect(await startedAt()).toBe("/voice-run");
+      vi.stubEnv("VITE_VOICE_RUN_URL", "");
+      expect(await startedAt()).toBe("/voice-run");
+    });
+    it("the APP build: the functions site's full address", async () => {
+      vi.stubEnv("VITE_VOICE_RUN_URL", "https://kvb-api.netlify.app/voice-run");
+      expect(await startedAt()).toBe("https://kvb-api.netlify.app/voice-run");
+    });
   });
 
   it("a FAILED row: failed with its reason -> Retry or Add by hand", async () => {

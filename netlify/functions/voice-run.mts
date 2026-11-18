@@ -1,74 +1,46 @@
 import type { Config, Context } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
-import { EZY_V3_PROMPT } from "../../src/voice/audioPrompts.js";
-import { createGeminiAudioParseProvider } from "../../src/voice/geminiAudioParseProvider.js";
+import { corsHeaders, PREFLIGHT_HEADERS } from "./_shared/cors.js";
 import { verifyAccessToken } from "./_shared/jwt.js";
-import { checkRateLimit } from "./_shared/rateLimit.js";
-import { runVoiceJob, V3_AUDIO_MODEL, V3_GEMINI_TIMEOUT_MS, type ClaimedRecording } from "./_shared/voiceRun.js";
+import { RECORDING_ID } from "./_shared/voiceRun.js";
 
-// KB-384a step 3 (owner, 9 Nov 2026; D107): the async voice path's worker - a Netlify BACKGROUND function (the phone gets 202 at
-// once; it may run up to 15 min, measured limit of a normal one: 30 s). The phone has already uploaded the audio to Supabase Storage
-// and added the voice_recordings row; it POSTs {recordingId} here and then watches the row. The worker acts AS THE CALLER (their
-// token, every RLS policy) - no service-role key in Netlify. It stores Gemini's raw answer; the phone builds the bill (our checks,
-// fills and totals) from it. One path for every order, short or long.
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Option (b) step 3 (owner, 18 Nov 2026): the FRONT of the voice path. The bundled Android app calls this from https://localhost, so it
+// needs CORS - which a background function cannot give (Netlify answers it with its own 202, our headers never reach the caller). This
+// normal function answers CORS and the preflight, checks the login, and starts the worker (/voice-run-worker, the D107 background
+// function, unchanged) on the SAME deploy - a draft starts its own draft's worker. The worker checks the login again.
 
 export default async (req: Request, _context: Context): Promise<Response> => {
-  const done = () => new Response(null, { status: 202 }); // a background function's answer is not seen by the caller anyway
-  if (req.method !== "POST") return done();
+  const cors = corsHeaders(req);
+  if (!cors) return new Response(null, { status: 403, headers: { Vary: "Origin" } });
+  const answer = (status: number) => new Response(null, { status, headers: cors });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors, ...PREFLIGHT_HEADERS } });
+  if (req.method !== "POST") return answer(405);
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!supabaseUrl || !anonKey || !geminiKey) {
+  if (!supabaseUrl) {
     console.warn("[voice-run] server misconfigured");
-    return done();
+    return answer(500);
   }
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || !(await verifyAccessToken(authHeader, supabaseUrl))) return done();
+  if (!authHeader || !(await verifyAccessToken(authHeader, supabaseUrl))) return answer(401);
   let recordingId: unknown;
   try {
     recordingId = ((await req.json()) as { recordingId?: unknown }).recordingId;
   } catch {
-    return done();
+    return answer(400);
   }
-  if (typeof recordingId !== "string" || !UUID.test(recordingId)) return done();
+  if (typeof recordingId !== "string" || !RECORDING_ID.test(recordingId)) return answer(400);
 
-  const db = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false, autoRefreshToken: false } });
-  const gemini = createGeminiAudioParseProvider(geminiKey, {
-    model: process.env.GEMINI_AUDIO_MODEL || V3_AUDIO_MODEL,
-    thinkingConfig: { thinkingLevel: "low" },
-    systemPrompt: EZY_V3_PROMPT,
-    timeoutMs: V3_GEMINI_TIMEOUT_MS,
-  });
-
-  await runVoiceJob(recordingId, {
-    async claim(id) {
-      const { data, error } = await db.rpc("claim_voice_recording", { p_recording_id: id });
-      if (error) throw new Error("claim");
-      const r = (data as { shop_id: string; path: string; mime: string; attempts: number }[])[0];
-      return r ? ({ shopId: r.shop_id, path: r.path, mime: r.mime, attempts: r.attempts } satisfies ClaimedRecording) : null;
-    },
-    allowed: checkRateLimit,
-    async download(path) {
-      const { data, error } = await db.storage.from("recordings").download(path);
-      if (error || !data) throw new Error("download");
-      return data;
-    },
-    async parse(audio) {
-      const r = await gemini.parseAudio(audio, { catalog: [] });
-      return { transcript: r.transcript, items: r.items, usage: r.usage };
-    },
-    async finish(f) {
-      const { data, error } = await db.rpc("finish_voice_recording", {
-        p_recording_id: f.recordingId, p_attempt: f.attempt, p_status: f.status, p_transcript: f.transcript, p_items: f.items, p_usage: f.usage, p_model: gemini.name, p_error: f.error,
-      });
-      if (error) throw new Error("finish");
-      return data === true;
-    },
-    log: (line) => console.warn(line),
-  });
-  return done();
+  try {
+    const res = await fetch(new URL("/voice-run-worker", req.url), {
+      method: "POST",
+      headers: { Authorization: authHeader, "Content-Type": "application/json" },
+      body: JSON.stringify({ recordingId }),
+    });
+    if (!res.ok) return answer(502);
+  } catch {
+    return answer(502);
+  }
+  return answer(202);
 };
 
-export const config: Config = { background: true, path: "/voice-run" };
+export const config: Config = { path: "/voice-run" };

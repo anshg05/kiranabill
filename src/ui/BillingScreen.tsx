@@ -55,7 +55,8 @@ import { BillBack, TabFrame, useStartTab } from "./AppTabs";
 import { HomeScreen } from "./HomeScreen";
 import type { SyncChip } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
-import { markRecordingBilled, submitRecording, type VoiceJobOutcome } from "@/data/voiceJob";
+import { markRecordingBilled, type VoiceJobOutcome } from "@/data/voiceJob";
+import { submitAppRecording } from "@/data/voiceRunEndpoint";
 import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
 import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
@@ -169,7 +170,7 @@ export function BillingScreen() {
       devSubmit
         ? devSubmit(recordingId, audio)
         : accessToken && shop
-        ? submitRecording({ client: supabase, shopId: shop.id, recordingId, audio, accessToken })
+        ? submitAppRecording({ client: supabase, shopId: shop.id, recordingId, audio, accessToken })
         : Promise.resolve({ kind: "failed" as const, recordingId, reason: "session" }),
     [accessToken, devSubmit, shop],
   );

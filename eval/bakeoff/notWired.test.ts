@@ -18,10 +18,10 @@ describe("the bake-off providers are not wired into the app", () => {
   it("no file in src/app, src/data, src/domain, src/providers, src/ui or netlify/functions imports them", () => {
     const shipped = ["src/app", "src/data", "src/domain", "src/providers", "src/ui", "netlify/functions"].flatMap((d) => files(path.join(ROOT, d)));
     expect(shipped.length).toBeGreaterThan(50);
-    // KB-384a (D107): the V3 worker /voice-run uses the Gemini AUDIO provider - only that one; the Sarvam and
+    // KB-384a (D107): the V3 worker /voice-run-worker uses the Gemini AUDIO provider - only that one; the Sarvam and
     // Gemini-transcription providers stay out of everything shipped until KB-384b wires the backup.
     const ALLOWED: Record<string, string[]> = {
-      "netlify/functions/voice-run.mts": ["geminiAudioParseProvider"],
+      "netlify/functions/voice-run-worker.mts": ["geminiAudioParseProvider"],
     };
     const offenders = shipped.flatMap((f) => {
       const rel = path.relative(ROOT, f).split(path.sep).join("/");

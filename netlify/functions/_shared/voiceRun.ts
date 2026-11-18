@@ -6,6 +6,8 @@ import { ProviderError } from "../../../src/voice/deadline.js";
 // retries a background function that throws, and that would be a second Gemini call.
 
 /** V3's model (D104). GEMINI_AUDIO_MODEL may name another pinned model. */
+/** A recording id is a UUID - nothing else reaches the database (the front and the worker both check). */
+export const RECORDING_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const V3_AUDIO_MODEL = "gemini-3.8-flash";
 /** Under the 70 s after which a stuck run may be claimed again (claim_voice_recording) - A63, 3 min 22 s, took 26 s. */
 export const V3_GEMINI_TIMEOUT_MS = 60_000;

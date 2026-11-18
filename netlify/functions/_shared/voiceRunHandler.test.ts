@@ -15,7 +15,7 @@ vi.mock("./voiceRun.js", async (orig) => ({ ...(await orig<typeof import("./voic
 vi.mock("../../../src/voice/geminiAudioParseProvider.js", () => ({ createGeminiAudioParseProvider: providerMock }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: createClientMock }));
 
-import handler, { config } from "../voice-run.mts";
+import handler, { config } from "../voice-run-worker.mts";
 import { EZY_V3_PROMPT } from "../../../src/voice/audioPrompts";
 
 const REC = "0b6f3c1e-8d2a-4c5b-9e7f-1a2b3c4d5e6f";
@@ -33,9 +33,9 @@ afterEach(() => {
   delete process.env.GEMINI_AUDIO_MODEL;
 });
 
-describe("/voice-run (KB-384a step 3)", () => {
-  it("is a BACKGROUND function at /voice-run", () => {
-    expect(config).toMatchObject({ background: true, path: "/voice-run" });
+describe("/voice-run-worker (KB-384a step 3; moved from /voice-run by option (b) step 3)", () => {
+  it("is a BACKGROUND function at /voice-run-worker", () => {
+    expect(config).toMatchObject({ background: true, path: "/voice-run-worker" });
   });
 
   it("no valid login: nothing runs", async () => {

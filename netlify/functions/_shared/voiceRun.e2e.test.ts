@@ -11,7 +11,7 @@ import { createShop } from "../../../src/data/shops";
  */
 
 vi.mock("./rateLimit.js", () => ({ checkRateLimit: vi.fn(async () => true) }));
-import handler from "../voice-run.mts";
+import handler from "../voice-run-worker.mts";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;

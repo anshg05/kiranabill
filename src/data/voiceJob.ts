@@ -35,7 +35,7 @@ export interface SubmitRecordingOptions {
   recordingId: string;
   audio: Blob;
   accessToken: string;
-  /** "/voice-run" in the browser (same origin) */
+  /** the app passes voiceRunEndpoint() (voiceRunEndpoint.ts); "/voice-run" on the same site when left out (scripts pass their own) */
   endpoint?: string;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;

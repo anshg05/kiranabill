@@ -13,7 +13,7 @@ import { markRecordingBilled, nextSteps, submitRecording } from "./voiceJob";
  */
 
 vi.mock("../../netlify/functions/_shared/rateLimit.js", () => ({ checkRateLimit: vi.fn(async () => true) }));
-import handler from "../../netlify/functions/voice-run.mts";
+import handler from "../../netlify/functions/voice-run-worker.mts";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
