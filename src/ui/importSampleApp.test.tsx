@@ -36,7 +36,7 @@ describe("Import's sample file", () => {
     await tap();
     expect(env.saveFile).toHaveBeenCalledOnce();
     const file = env.saveFile.mock.calls[0]![0];
-    expect(file.name).toBe("kiranabill-products-sample.csv");
+    expect(file.name).toBe("kirana-voice-bill-products-sample.csv");
     expect(file.type).toBe("text/csv");
     expect(await file.text()).toContain("Name,Price,Unit");
     expect((await screen.findByText("Saved to Downloads")).closest("[role=status]")).toBeTruthy();
@@ -68,7 +68,7 @@ describe("Import's sample file", () => {
     open();
     await tap();
     expect(anchorClick).toHaveBeenCalledOnce();
-    expect((anchorClick.mock.contexts[0] as HTMLAnchorElement).download).toBe("kiranabill-products-sample.csv");
+    expect((anchorClick.mock.contexts[0] as HTMLAnchorElement).download).toBe("kirana-voice-bill-products-sample.csv");
     expect(env.saveFile).not.toHaveBeenCalled();
   });
 });

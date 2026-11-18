@@ -50,7 +50,7 @@ type Stage =
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const priceUnit = (paise: number | null, unit: string) => `${paise === null ? "—" : formatRupees(paise)} / ${unit}`;
 
-const SAMPLE_NAME = "kiranabill-products-sample.csv";
+const SAMPLE_NAME = "kirana-voice-bill-products-sample.csv"; // owner, 18 Nov 2026: the app's visible name
 
 /** The browser: today's download. KB-414 step 3: the Android app's WebView drops downloads - there the FileShare plugin saves it. */
 async function downloadSample(): Promise<SavedFile | { kind: "downloaded" }> {
