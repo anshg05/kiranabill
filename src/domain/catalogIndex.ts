@@ -182,7 +182,7 @@ export function lookupCandidates(index: CatalogIndex, query: string, limit = 10)
  * "top 30 relevant products"). A whole multi-item transcript is a poor single
  * query - it dilutes every product's score - so each word and each adjacent
  * word pair is looked up on its own; a product keeps its best score. Pure;
- * the server caps the slice again (netlify/functions/voice.mts).
+ * the old /voice function capped the slice again (deleted 18 Nov 2026 - V3 sends no catalog).
  */
 export function buildCatalogSlice(pc: ParserCatalog, transcript: string, limit = 30): CatalogEntry[] {
   const words = transcript.split(/[\s,.;:!?।]+/).filter((w) => w.length > 0);
