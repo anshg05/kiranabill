@@ -139,7 +139,7 @@ Capacitor around the existing code (D100, `11` SD-008). No iOS app: iOS stays th
 
 **A5 - the redesign, what it holds (`26` §10 build steps, then §9 new features; each its own PLAN)**
 - **Riskiest first (owner, 11 Nov 2026):** a Capacitor shell of the CURRENT app + Bluetooth ESC/POS printing of the real receipt (`KB-406`, `KB-408`), planned before the build steps. **Approved 12 Nov 2026 (D111):** "Kirana Voice Bill", `com.kiranavoicebill.app`, min API 24, target SDK 36; steps S1-S6.
-- Build steps: `KB-411` tokens, fonts, icons, motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens (9-13, 23, 24) **(done 16 Nov 2026)** -> `KB-414` tab screens (8, 14-17, 19-21, 25) **(done 18 Nov 2026)** -> `KB-415` first-time flow (1-7) -> `KB-416` printer screens (18, 22) with `KB-408`.
+- Build steps: `KB-411` tokens, fonts, icons, motion -> `KB-412` core components + dev gallery -> `KB-413` record -> bill screens (9-13, 23, 24) **(done 16 Nov 2026)** -> `KB-414` tab screens (8, 14-17, 19-21, 25) **(done 18 Nov 2026)** -> `KB-415` first-time flow (1-7) **(done 18 Nov 2026)** -> `KB-416` printer screens (18, 22) with `KB-408`.
 - New features (`26` §9), one ticket each: `KB-417` today's numbers on Home + the 7-day chart · `KB-418` Reprint last · ~~auto-print + copies~~ parked (`12` SG-26) · `KB-419` learned-prices review (decision first) · ~~`KB-420`~~ (folded: the 5 reasons stay) · `KB-421` first-day Home · `KB-422` address + thank-you note on the bill (decision first) · `KB-423` unfinished-bill card · `KB-424` rotating tips · `KB-425` Android splash, icon, permission screen, offline strip · `KB-426` a desktop layout (later; until then the phone layout centred).
 
 **A3 `KB-410` - Play Store, what it holds**
