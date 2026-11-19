@@ -15,12 +15,18 @@ vi.mock("@/providers/ShopProvider", () => ({
     shopMounted.count++;
     return children;
   },
-  useShop: () => ({ loading: true, shop: null, loadError: false }),
+  useShop: () => ({ loading: true, shop: null, loadError: false, localDb: null }),
 }));
 
 const cap = vi.hoisted(() => ({ native: false, id: "com.kiranavoicebill.app", build: "", getInfo: vi.fn() }));
 vi.mock("@capacitor/core", async (orig) => { const real = await orig<typeof import("@capacitor/core")>(); return { ...real, Capacitor: { ...real.Capacitor, isNativePlatform: () => cap.native } }; });
 vi.mock("@capacitor/app", async (orig) => ({ App: { ...(await orig<typeof import("@capacitor/app")>()).App, getInfo: () => { cap.getInfo(); return Promise.resolve({ id: cap.id, build: cap.build }); } } }));
+
+const gate = vi.hoisted(() => ({ blocked: false }));
+vi.mock("@/ui/VersionGate", () => ({
+  VersionGateProvider: ({ children }: { children: unknown }) => children,
+  useVersionGate: () => ({ blocked: gate.blocked, updateUrl: null, checkAgain: () => Promise.resolve() }),
+}));
 
 import { App } from "./App";
 import { SignInScreen } from "@/ui/SignInScreen";
@@ -40,6 +46,7 @@ afterEach(() => {
   cap.id = "com.kiranavoicebill.app";
   cap.build = String(APP_VERSION_CODE);
   cap.getInfo.mockClear();
+  gate.blocked = false;
 });
 const banner = () => screen.queryByTestId("test-app-banner");
 
@@ -175,5 +182,31 @@ describe("the wrong-build guard (D115)", () => {
     render(<App />);
     expect(cap.getInfo).not.toHaveBeenCalled();
     expect(shopMounted.count).toBeGreaterThan(0);
+  });
+});
+
+// D116 step 5 commit 4: where "Please update" sits. Signed in, it is INSIDE the shop loader, so the sync loop keeps uploading the
+// bills behind it; signed out there is nothing to upload and no shop is opened.
+describe("Please update in the app (D116)", () => {
+  const PLEASE = "Please update";
+  it("signed in and below the minimum: the screen, with the shop loader still running (sync goes on)", () => {
+    gate.blocked = true;
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(screen.getByRole("heading", { name: PLEASE })).toBeTruthy();
+    expect(shopMounted.count).toBeGreaterThan(0);
+  });
+
+  it("signed out and below the minimum: the screen, and no shop opened", () => {
+    gate.blocked = true;
+    render(<App />);
+    expect(screen.getByRole("heading", { name: PLEASE })).toBeTruthy();
+    expect(shopMounted.count).toBe(0);
+  });
+
+  it("not below the minimum: no screen", () => {
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(screen.queryByRole("heading", { name: PLEASE })).toBeNull();
   });
 });

@@ -28,6 +28,8 @@ import { TabFrame } from "./AppTabs";
 import { CatalogScreen } from "./CatalogScreen";
 import { MoreScreen } from "./MoreScreen";
 import { SignedOutFlow } from "./WelcomeScreens";
+import { PleaseUpdate } from "./PleaseUpdate";
+import { VersionGateProvider } from "./VersionGate";
 import { OnboardingScreen } from "./OnboardingScreen";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ShopProvider } from "@/providers/ShopProvider";
@@ -721,6 +723,12 @@ function Frame() {
                 <AuthProvider deviceDb={DEV_DEVICE_DB}>
                   <SignedOutFlow start={({ "01": 0, "02": 1, "03": 2, "04": 3, "05": 4 } as const)[params.get("screen") as "01"]} />
                 </AuthProvider>
+              )
+            : params.get("screen") === "update" ? (
+                // D116: "Please update" (state url = an Update address, ask = none yet); the waiting-bills line needs a shop's database
+                <VersionGateProvider applies appVersionCode={1} fetcher={() => Promise.resolve({ minVersionCode: 2, updateUrl: params.get("state") === "ask" ? null : "https://play.google.com/store/apps/details?id=com.kiranavoicebill.app" })}>
+                  <PleaseUpdate localDb={null} />
+                </VersionGateProvider>
               )
             : params.get("screen") === "06" ? <Screen06 state={params.get("state") ?? "setup"} onReady={() => setReady(true)} />
             : ["17", "18", "21"].includes(params.get("screen") ?? "") ? <Screen17 state={params.get("state") ?? "more"} onReady={() => setReady(true)} />

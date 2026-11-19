@@ -8,6 +8,8 @@ import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
 import { TestAppBanner, TestAppRefused, WrongBuild } from "@/ui/TestAppBanner";
 import { TEST_APP_USER_IDS, isTestApp } from "@/data/testApp";
+import { VersionGateProvider, useVersionGate } from "@/ui/VersionGate";
+import { PleaseUpdate } from "@/ui/PleaseUpdate";
 
 /** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
  * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
@@ -30,8 +32,10 @@ function ShopLoadError() {
 
 /** The Auth {Signed in?} -> HasShop? branch from 16-APP-FLOW.md's nav map. */
 export function ShopGate() {
-  const { loading, shop, loadError } = useShop();
+  const { loading, shop, loadError, localDb } = useShop();
   const { t } = useT();
+  // D116: below the minimum version - INSIDE the shop loader, so the sync loop keeps uploading behind the screen
+  if (useVersionGate().blocked) return <PleaseUpdate localDb={localDb} />;
 
   if (loading) {
     return (
@@ -50,6 +54,7 @@ function AuthGate() {
   // this device (D38) - the app runs from their local database either way.
   const { loading, userId, mode, deviceDb, signOut } = useAuth();
   const { t } = useT();
+  const { blocked } = useVersionGate();
   // KB-415: someone signed in on this phone has been welcomed - an update to this version never shows them the splash after a sign-out
   useEffect(() => {
     if (userId) markWelcomed();
@@ -64,7 +69,7 @@ function AuthGate() {
   }
 
   // KB-415: signed out -> the splash and onboarding once per install, then Sign in (WelcomeScreens.tsx)
-  if (!userId) return <SignedOutFlow />;
+  if (!userId) return blocked ? <PleaseUpdate localDb={null} /> : <SignedOutFlow />; // D116: signed out, nothing to upload
   // D115: the test app uses the production database - only the test account gets past here. Checked BEFORE ShopProvider, so for any
   // other account (the owner's real one) no phone database is opened, no shop read, nothing pulled, no sync started.
   if (isTestApp() && !TEST_APP_USER_IDS.includes(userId)) return <TestAppRefused onSignOut={() => void signOut()} />;
@@ -85,9 +90,11 @@ export function App() {
   if (build === "checking") return null;
   if (build === "wrong") return <WrongBuild />;
   return (
-    <AuthProvider>
-      <AuthGate />
-      <TestAppBanner />
-    </AuthProvider>
+    <VersionGateProvider>
+      <AuthProvider>
+        <AuthGate />
+        <TestAppBanner />
+      </AuthProvider>
+    </VersionGateProvider>
   );
 }
