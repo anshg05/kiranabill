@@ -5,7 +5,8 @@ import { SignedOutFlow, markWelcomed } from "@/ui/WelcomeScreens";
 import { OnboardingScreen } from "@/ui/OnboardingScreen";
 import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
-import { TestAppBanner } from "@/ui/TestAppBanner";
+import { TestAppBanner, TestAppRefused } from "@/ui/TestAppBanner";
+import { TEST_APP_USER_IDS, isTestApp } from "./testApp";
 
 /** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
  * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
@@ -46,7 +47,7 @@ export function ShopGate() {
 function AuthGate() {
   // KB-315: userId is the live user OR, offline, the last signed-in user on
   // this device (D38) - the app runs from their local database either way.
-  const { loading, userId, mode, deviceDb } = useAuth();
+  const { loading, userId, mode, deviceDb, signOut } = useAuth();
   const { t } = useT();
   // KB-415: someone signed in on this phone has been welcomed - an update to this version never shows them the splash after a sign-out
   useEffect(() => {
@@ -63,6 +64,9 @@ function AuthGate() {
 
   // KB-415: signed out -> the splash and onboarding once per install, then Sign in (WelcomeScreens.tsx)
   if (!userId) return <SignedOutFlow />;
+  // D115: the test app uses the production database - only the test account gets past here. Checked BEFORE ShopProvider, so for any
+  // other account (the owner's real one) no phone database is opened, no shop read, nothing pulled, no sync started.
+  if (isTestApp() && !TEST_APP_USER_IDS.includes(userId)) return <TestAppRefused onSignOut={() => void signOut()} />;
 
   return (
     <ShopProvider userId={userId} online={mode === "online"} deviceDb={deviceDb}>
