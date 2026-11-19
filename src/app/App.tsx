@@ -5,6 +5,7 @@ import { SignedOutFlow, markWelcomed } from "@/ui/WelcomeScreens";
 import { OnboardingScreen } from "@/ui/OnboardingScreen";
 import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
+import { TestAppBanner } from "@/ui/TestAppBanner";
 
 /** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
  * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
@@ -74,6 +75,7 @@ export function App() {
   return (
     <AuthProvider>
       <AuthGate />
+      <TestAppBanner />
     </AuthProvider>
   );
 }

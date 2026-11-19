@@ -1,4 +1,5 @@
 import { privacyHref } from "./privacyLink";
+import { isTestApp, TEST_SIGN_IN_HINT } from "@/app/testApp";
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
 import { useT } from "./useT";
@@ -100,6 +101,7 @@ export function SignInScreen() {
               {error === REFUSED_TEXT ? t("signin.refused") : error === FAILED_TEXT ? t("signin.unfinished") : tx(error)}
             </p>
           )}
+          {isTestApp() && <p className="text-center text-kb-14 font-bold text-kb-err">{TEST_SIGN_IN_HINT}</p>}
           <button
             type="button"
             onClick={handleClick}
