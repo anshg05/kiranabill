@@ -28,7 +28,7 @@ export interface ApkExpect {
 }
 
 /** Strings only the test app or a draft may carry - never the real app's production bundle. */
-const NOT_IN_PRODUCTION = ["77636ea8-8058-44ef-9762-76dfc47e5502", "Use the TEST Google account", "com.kiranavoicebill.app.test", "fn-draft--kiranavoicebill-api", "release-draft--kiranabilling"];
+const NOT_IN_PRODUCTION = ["77636ea8-8058-44ef-9762-76dfc47e5502", "f7c9ac31-ab78-4367-9aa1-49dd5f2e57d4", "Use the TEST Google account", "com.kiranavoicebill.app.test", "fn-draft--kiranavoicebill-api", "release-draft--kiranabilling"];
 
 export function checkApk(f: ApkFacts, e: ApkExpect): { problems: string[]; certSha256: string | null } {
   const problems: string[] = [];
