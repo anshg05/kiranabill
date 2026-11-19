@@ -31,8 +31,21 @@ android {
             versionNameSuffix "-test"
         }
     }
+    // D117 (owner, 19 Nov 2026): the release key - its file path and password ONLY from environment variables, which
+    // scripts/release-apk.ps1 sets for one build after a hidden prompt. Nothing secret, and no path, is written here.
+    signingConfigs {
+        release {
+            if (System.getenv("KVB_RELEASE_KEYSTORE")) {
+                storeFile file(System.getenv("KVB_RELEASE_KEYSTORE"))
+                storePassword System.getenv("KVB_RELEASE_STORE_PASSWORD")
+                keyAlias "kvb-release"
+                keyPassword System.getenv("KVB_RELEASE_STORE_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -66,4 +79,12 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// D117: never an unsigned release - a release build without the key's environment variables stops here.
+gradle.taskGraph.whenReady { graph ->
+    def release = graph.allTasks.any { it.project == project && it.name ==~ /(assemble|bundle|package)\w*Release/ }
+    if (release && !System.getenv("KVB_RELEASE_KEYSTORE")) {
+        throw new GradleException("A release build needs the release key: run scripts/release-apk.ps1 (it asks for the password).")
+    }
 }

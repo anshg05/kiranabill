@@ -33,3 +33,10 @@ eval/bakeoff/.transcribe-quota.json
 eval/print-preview/
 # KB-412: the kit gallery screenshots and side-by-side sheets (made by headless Edge from /__dev/kit, re-made any time)
 eval/kit-preview/
+
+# D117 (19 Nov 2026): the release key and its settings NEVER enter the repo - the key lives outside it (C:\Users\ANSH\KVB-keys)
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
