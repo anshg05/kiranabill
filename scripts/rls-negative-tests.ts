@@ -1463,6 +1463,60 @@ async function main(): Promise<void> {
       await asAnon(client);
       await client.query(`select * from voice_cleanup_due()`);
     });
+
+    // (6) D116 (owner, 19 Nov 2026): app_min_version - ONE row the app reads BEFORE sign-in ("Please update"). Anyone may read it;
+    // nobody may write it from the app (anon or signed in) - only the owner, in the dashboard.
+    await check(client, "D116 sanity: the anon role (before sign-in) reads the android row", async () => {
+      await asAnon(client);
+      const r = await client.query(`select platform, min_version_code from app_min_version`);
+      if (r.rowCount !== 1 || r.rows[0].platform !== "android" || !(r.rows[0].min_version_code >= 1)) throw new Error(JSON.stringify(r.rows));
+      return `android, ${r.rows[0].min_version_code}`;
+    });
+    await check(client, "D116 sanity: a signed-in user reads it too", async () => {
+      await asUser(client, ownerA);
+      const r = await client.query(`select 1 from app_min_version where platform = 'android'`);
+      if (r.rowCount !== 1) throw new Error(`saw ${r.rowCount}`);
+      return "1 row";
+    });
+    for (const who of ["anon", "a signed-in user"] as const) {
+      const as = () => (who === "anon" ? asAnon(client) : asUser(client, ownerA));
+      await checkRejects(client, `D116: ${who} cannot insert into app_min_version`, "42501", async () => {
+        await as();
+        await client.query(`insert into app_min_version (platform, min_version_code) values ('android', 1)`);
+      });
+      await checkRejects(client, `D116: ${who} cannot update app_min_version (a phone cannot lower or raise the minimum)`, "42501", async () => {
+        await as();
+        await client.query(`update app_min_version set min_version_code = 99`);
+      });
+      await checkRejects(client, `D116: ${who} cannot delete the app_min_version row`, "42501", async () => {
+        await as();
+        await client.query(`delete from app_min_version`);
+      });
+    }
+    await check(client, "D116: after every attempt the row is unchanged (android, 1, no update address)", async () => {
+      await asSuperuser(client);
+      const r = await client.query(`select platform, min_version_code, update_url from app_min_version`);
+      if (r.rowCount !== 1 || r.rows[0].min_version_code !== 1 || r.rows[0].update_url !== null) throw new Error(JSON.stringify(r.rows));
+      return "android, 1, null";
+    });
+
+    // D116 (g1): the phone records its versionCode on the recording row it adds - only at insert, never changed afterwards
+    await check(client, "D116: owner A adds a recording row WITH its app_version_code", async () => {
+      await asUser(client, ownerA);
+      const rec = randomUUID();
+      await client.query(`insert into voice_recordings (recording_id, shop_id, mime, app_version_code) values ($1, $2, 'audio/webm', 7)`, [rec, shopA]);
+      const r = await client.query(`select app_version_code from voice_recordings where recording_id = $1`, [rec]);
+      if (r.rows[0]?.app_version_code !== 7) throw new Error(JSON.stringify(r.rows));
+      return "app_version_code 7";
+    });
+    await checkRejects(client, "D116: an app_version_code below 1 is refused", "23514", async () => {
+      await asUser(client, ownerA);
+      await client.query(`insert into voice_recordings (recording_id, shop_id, mime, app_version_code) values ($1, $2, 'audio/webm', 0)`, [randomUUID(), shopA]);
+    });
+    await checkRejects(client, "D116: a phone cannot change app_version_code afterwards", "42501", async () => {
+      await asUser(client, ownerA);
+      await client.query(`update voice_recordings set app_version_code = 99 where shop_id = $1`, [shopA]);
+    });
   } finally {
     await client.query("rollback");
     await client.end();

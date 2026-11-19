@@ -47,6 +47,12 @@ export interface RehearseResult {
   liveMismatches: string[];
 }
 
+/**
+ * Public tables a migration SEEDS that the backup also carries - cleared before the data load (step 3), or the load meets its own
+ * rows. scripts/backup/seededTables.test.ts keeps this equal to the migrations' top-level INSERTs. (D116: app_min_version added.)
+ */
+export const SEEDED_PUBLIC_TABLES: readonly string[] = ["public.base_products", "public.app_min_version"];
+
 /** docker exec -i psql ... with `input` piped to stdin; rejects on a non-zero exit (unless tolerant). */
 function psql(db: string, input: NodeJS.ReadableStream | string | null, args: string[] = [], opts: { stopOnError: boolean } = { stopOnError: true }): Promise<string> {
   return new Promise((res, rej) => {
@@ -171,10 +177,10 @@ export async function rehearse(o: RehearseOptions): Promise<RehearseResult> {
     for (const f of files) await psql(SCRATCH, readFileSync(join(REPO, "supabase", "migrations", f), "utf8"));
     say(`${files.length} migrations applied`);
 
-    // 3. the data. The migrations seeded one thing the backup carries too (the ready catalog): clear exactly that,
+    // 3. the data. The migrations seeded tables the backup carries too (SEEDED_PUBLIC_TABLES): clear exactly those,
     //    so the load meets an otherwise EMPTY project (anything else already there is a
     //    primary-key collision and stops the load - by design, a restore must never merge into live data).
-    await psql(SCRATCH, "delete from public.base_products;");
+    await psql(SCRATCH, SEEDED_PUBLIC_TABLES.map((t) => `delete from ${t};`).join(" "));
     const dataDec = decrypt(o, join(o.backupDir, backupFileName(stamp, "data")));
     try {
       await psql(SCRATCH, dataDec.stream);
