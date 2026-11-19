@@ -547,7 +547,7 @@ function Screen17({ state, onReady }: { state: string; onReady: () => void }) {
     }, 250);
     return () => window.clearInterval(id);
   }, [db]);
-  const page: MorePage | undefined = ({ shop: "shop", printer: "printer", bill: "billDesign", language: "language", sync: "sync", developer: "developer" } as const)[state as "shop"];
+  const page: MorePage | undefined = ({ shop: "shop", printer: "printer", bill: "billDesign", language: "language", sync: "sync", developer: "developer", account: "account" } as const)[state as "shop"];
   const sync =
     state === "sync"
       ? { chip: { kind: "failing" as const, label: "Sync failing" }, unsynced: { pending: 2, conflict: 1 }, detail: { pending: 2, conflict: 1, lastAttemptAt: new Date().toISOString() } }
@@ -556,7 +556,7 @@ function Screen17({ state, onReady }: { state: string; onReady: () => void }) {
         : { chip: null, unsynced: { pending: 0, conflict: 0 }, detail: { pending: 0, conflict: 0, lastAttemptAt: null } };
   return db ? (
     <TabFrame tab="more" onTab={noop} offline={params.get("offline") === "1"}>
-      <MoreScreen localDb={db} shopId={shopId} deviceId="d" sync={sync} billInProgress={state === "signout"} onSignOut={noop} onItems={noop} onClose={noop} initialPage={page} />
+      <MoreScreen localDb={db} shopId={shopId} deviceId="d" sync={sync} billInProgress={state === "signout"} onSignOut={noop} onItems={noop} onClose={noop} onDeleteAccount={async () => ({ kind: "failed", reason: "server" })} initialPage={page} />
     </TabFrame>
   ) : null;
 }

@@ -8,6 +8,7 @@ import { listIgnoredPriceSuggestions, listLearnedAliases, listPendingPriceSugges
 import { updateShopSettings } from "@/data/shopSettings";
 import { readStorageStatus, storageStatusText, type StorageStatus } from "@/data/storagePersist";
 import type { ReconcileResult } from "@/data/billMetrics";
+import type { DeleteOutcome } from "@/data/accountDeletion";
 import { BUILD_ID } from "@/pwa/buildId";
 import { formatMobile } from "@/domain/customer";
 import type { PriceSuggestion } from "@/domain/learning";
@@ -19,6 +20,7 @@ import { useHidesNav } from "./AppTabs";
 import { Button } from "./kit/Button";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { ReceiptPaper } from "./kit/ReceiptPaper";
+import { ListCard, ListRow } from "./kit/ListRow";
 import { TextField } from "./kit/TextField";
 import { TopBar } from "./kit/TopBar";
 import { PilotNumbers } from "./PilotNumbers";
@@ -35,7 +37,7 @@ import { useT } from "./useT";
 // KB-414 step 4 (owner + reviewer, 18 Nov 2026): More's inner pages - today's Settings (KB-312) split into pages in the new look,
 // nothing dropped. Each is an inner page: Back (arrow or Android) goes one level, no nav.
 
-export type MorePage = "shop" | "printer" | "billDesign" | "language" | "sync" | "developer";
+export type MorePage = "shop" | "printer" | "billDesign" | "language" | "sync" | "developer" | "account";
 
 /** The receipt language labels (fixed - a language's own name is never translated; "Both" is a word, so it is). */
 export const RECEIPT_LANGUAGE_NAME: Record<BillLanguage, string> = { en: "English", hi: "हिन्दी", both: "English + हिन्दी" };
@@ -432,6 +434,88 @@ export function DeveloperPage({ localDb, shopId, deviceId, deviceDb, reconcile, 
         )}
         <p className={help}>Version {BUILD_ID}</p>
       </div>
+    </InnerPage>
+  );
+}
+
+/** KB-430: the shop's name as typed - case, outer spaces and runs of spaces do not matter (NFC, so a Hindi name typed two ways is one). */
+export const sameShopName = (typed: string, name: string): boolean => {
+  const norm = (x: string) => x.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  return norm(typed) !== "" && norm(typed) === norm(name);
+};
+
+/**
+ * KB-430 (D119, owner 20 Nov 2026): More -> Account -> Delete account. What goes is said plainly (the shop, its bills, items and
+ * learned names, the login); bills not yet on the server and a bill in progress are named; the shop's name must be typed; offline
+ * the button stays off - the server deletes all or nothing, and the phone is cleared only after it (accountDeletion.ts).
+ */
+export function AccountPage({ localDb, shop, sync, billInProgress, onDeleteAccount, onClose }: {
+  localDb: KiranaBillDB;
+  shop: LocalShop;
+  sync: SyncState;
+  billInProgress: boolean;
+  onDeleteAccount: () => Promise<DeleteOutcome>;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const online = useBrowserOnline();
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [counts, setCounts] = useState<{ bills: number; items: number; learned: number } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void Promise.all([
+      localDb.bills.where("[shopId+status]").anyOf([[shop.id, "final"], [shop.id, "cancelled"]]).count(),
+      localDb.shopProducts.where("shopId").equals(shop.id).filter((p) => p.isActive).count(),
+      deriveShopAliases(localDb, shop.id).then((a) => a.filter((x) => x.active).length),
+    ]).then(([bills, items, learned]) => live && setCounts({ bills, items, learned }), () => {});
+    return () => {
+      live = false;
+    };
+  }, [localDb, shop.id]);
+  const waiting = sync.unsynced.pending + sync.unsynced.conflict;
+  const ready = online && !busy && sameShopName(typed, shop.name);
+  const onDelete = () => {
+    if (!ready) return;
+    setBusy(true);
+    setNote(null);
+    void onDeleteAccount().then((out) => {
+      setBusy(false);
+      if (out.kind === "offline") setNote(t("account.needsInternet"));
+      else if (out.kind === "shared_shop") setNote(t("account.shared"));
+      else if (out.kind === "failed") setNote(t("account.failed"));
+      // "deleted": the app is signed out and leaves this page
+    }, () => {
+      setBusy(false);
+      setNote(t("account.failed"));
+    });
+  };
+  return (
+    <InnerPage title={t("account.title")} backKey="kbAccount" onClose={onClose}>
+      {!confirming ? (
+        <ListCard>
+          <ListRow icon={KB_ICONS.TriangleAlert} title={t("account.deleteRow")} sub={t("account.deleteSub")} onClick={() => setConfirming(true)} />
+        </ListCard>
+      ) : (
+        <>
+          <p className="font-semibold">{t("account.whatGoes")}</p>
+          <ul className="list-disc pl-5">
+            <li>{t("account.shopLine", { name: shop.name })}</li>
+            {counts && <li>{t("account.counts", { bills: counts.bills, items: counts.items, learned: counts.learned })}</li>}
+            <li>{t("account.loginLine")}</li>
+          </ul>
+          {waiting > 0 && <p role="alert" className="font-semibold text-kb-err">{t("account.waiting", { n: waiting })}</p>}
+          {billInProgress && <p role="alert" className="font-semibold text-kb-err">{t("account.inProgress")}</p>}
+          <TextField label={t("account.typeName")} value={typed} onChange={setTyped} placeholder={shop.name} />
+          {!online && <p className={help}>{t("account.needsInternet")}</p>}
+          {note && <p role="status" className="font-semibold text-kb-err">{note}</p>}
+          <Button variant="destructive" ariaDisabled={!ready} onClick={onDelete}>
+            {busy ? t("account.deleting") : t("account.deleteButton")}
+          </Button>
+        </>
+      )}
     </InnerPage>
   );
 }

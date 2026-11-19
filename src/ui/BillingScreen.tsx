@@ -57,6 +57,7 @@ import type { SyncChip } from "./syncChip";
 import { useSyncChip } from "./useSyncChip";
 import { markRecordingBilled, type VoiceJobOutcome } from "@/data/voiceJob";
 import { submitAppRecording } from "@/data/voiceRunEndpoint";
+import { deleteMyAccount } from "@/data/accountDeletion";
 import { settleBilledRecordings } from "@/data/voiceQueue";
 import { useVoiceOrders } from "./useVoiceOrders";
 import { OrderEntries, OrderRecorder, type TakeStore } from "./VoiceOrderPanel";
@@ -420,6 +421,7 @@ export function BillingScreen() {
             onSignOut={onSignOut}
             onItems={() => setTab("items")}
             onClose={goHome}
+            onDeleteAccount={() => deleteMyAccount({ client: supabase, userId: session?.user.id ?? "", shopIds: [shop.id], localDb, deviceDb })}
           />
         )}
         {tab === "items" && localDb && shop && deviceId && (

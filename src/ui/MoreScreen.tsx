@@ -7,13 +7,14 @@ import type { KiranaBillDB, LocalShop } from "@/data/db";
 import { isNativeApp } from "@/data/nativeSignIn";
 import { loadPrinterSettings } from "@/data/printer";
 import type { ReconcileResult } from "@/data/billMetrics";
+import type { DeleteOutcome } from "@/data/accountDeletion";
 import { BUILD_ID } from "@/pwa/buildId";
 import { formatMobile } from "@/domain/customer";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
 import { Logo } from "./kit/Logo";
 import { ScreenTitle } from "./kit/TopBar";
-import { BillDesignPage, DeveloperPage, EditShopPage, LanguagePage, PrinterPage, RECEIPT_LANGUAGE_NAME, SCREEN_LANGUAGES, SyncPage, useSyncStateText, type MorePage, type SyncState } from "./MorePages";
+import { AccountPage, BillDesignPage, DeveloperPage, EditShopPage, LanguagePage, PrinterPage, RECEIPT_LANGUAGE_NAME, SCREEN_LANGUAGES, SyncPage, useSyncStateText, type MorePage, type SyncState } from "./MorePages";
 import { SignOutButton } from "./OfflineUi";
 import { useBackEntry } from "./useBackEntry";
 import { useT } from "./useT";
@@ -23,7 +24,7 @@ import { useT } from "./useT";
 // design's Help & support (SG-27) and account deletion (KB-430) stay out; its "Backup & sync" is "Sync" (there is no backup the
 // shopkeeper can see). Everything here is read from the phone - offline is the same page.
 
-export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, sync, billInProgress, onSignOut, onItems, onClose, initialPage }: {
+export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, sync, billInProgress, onSignOut, onItems, onClose, onDeleteAccount, initialPage }: {
   localDb: KiranaBillDB;
   shopId: string;
   deviceId: string;
@@ -36,6 +37,8 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
   onSignOut: () => void;
   onItems: () => void;
   onClose: () => void;
+  /** KB-430: "Delete my account" (accountDeletion.ts). Absent = no Account row. */
+  onDeleteAccount?: () => Promise<DeleteOutcome>;
   /** the dev sheets only: open on an inner page */
   initialPage?: MorePage;
 }) {
@@ -109,6 +112,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
               <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href={privacyHref()} />
               {/* English in every language, as today's Developer mode (KB-312) */}
               <ListRow icon={KB_ICONS.Phone} title="Developer" onClick={() => setPage("developer")} />
+              {onDeleteAccount && <ListRow icon={KB_ICONS.LogOut} title={t("account.title")} sub={t("account.deleteRow")} onClick={() => setPage("account")} />}
             </ListCard>
 
             <SignOutButton unsynced={sync.unsynced} billInProgress={billInProgress} onSignOut={onSignOut} />
@@ -123,6 +127,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
       {shop && page === "billDesign" && <BillDesignPage localDb={localDb} shop={shop} onClose={close} />}
       {page === "language" && <LanguagePage onClose={close} />}
       {page === "sync" && <SyncPage sync={sync} onClose={close} />}
+      {shop && page === "account" && onDeleteAccount && <AccountPage localDb={localDb} shop={shop} sync={sync} billInProgress={billInProgress} onDeleteAccount={onDeleteAccount} onClose={close} />}
       {page === "developer" && <DeveloperPage localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} onClose={close} />}
     </section>
   );
