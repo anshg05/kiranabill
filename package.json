@@ -19,6 +19,7 @@
     "test:rls": "tsx scripts/rls-negative-tests.ts",
     "lint": "eslint .",
     "check:recorder": "tsx scripts/check-recorder-absent.ts",
+    "check:version": "tsx scripts/checkVersionBump.ts",
     "draft:voice": "tsx scripts/draft-voice-check.ts",
     "accept:import": "tsx eval/acceptance/import.ts",
     "accept:build": "tsx eval/acceptance/build.ts",
