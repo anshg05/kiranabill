@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nativeRedirect, nativeReturnPath } from "./oauthReturn";
 import { appPackage } from "./testApp";
+import { APP_VERSION_CODE } from "./appVersion";
 
 // KB-409 (D111): Google sign-in inside the Android app. Google refuses sign-in in an app's own web view, so the Google page opens
 // in a Chrome Custom Tab and Supabase returns to the app link (nativeRedirect()). The link is turned into the WEB return
@@ -13,13 +14,15 @@ import { appPackage } from "./testApp";
 export const isNativeApp = (): boolean => Capacitor.isNativePlatform();
 
 /**
- * D115: inside the Android app, does this web bundle belong to the package it is in? A test bundle inside the real app (or the reverse)
+ * D115: inside the Android app, does this web bundle belong to the package it is in (and, D116, to this APK's versionCode)? A test bundle inside the real app (or the reverse)
  * would ask Supabase to return to the OTHER app's link. A failed check lets the app open (never lock the real shopkeeper out).
  */
 export async function buildMatchesPackage(): Promise<boolean> {
   if (!isNativeApp()) return true;
   try {
-    return (await App.getInfo()).id === appPackage();
+    const info = await App.getInfo();
+    // D116: the APK's versionCode must be this bundle's too - an APK built around a stale web bundle stops here
+    return info.id === appPackage() && info.build === String(APP_VERSION_CODE);
   } catch {
     return true;
   }

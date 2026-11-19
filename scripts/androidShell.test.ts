@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import config from "../capacitor.config";
 import { ANDROID_APP_ORIGIN } from "../netlify/functions/_shared/cors";
+import { APP_VERSION_CODE } from "../src/data/appVersion";
 
 // KB-406 S1 (D111): the Android shell's settings are decisions, not defaults - this pins them.
 
@@ -47,6 +48,18 @@ describe("the Android shell (D111)", () => {
     expect(test).toContain('<string name="title_activity_main">KVB Test</string>');
     expect(read("android/app/src/main/res/values/ic_launcher_background.xml")).toContain("#FFCF33");
     expect(read("android/app/src/kvbtest/res/values/ic_launcher_background.xml")).toMatch(/<color name="ic_launcher_background">#C0392B<\/color>/);
+  });
+
+  it("D116 (owner, 19 Nov 2026): ONE version - app-version.json - read by Gradle (no number of its own) and stamped into the web code", () => {
+    const version = JSON.parse(read("app-version.json")) as { versionCode: number; versionName: string };
+    expect(Number.isInteger(version.versionCode) && version.versionCode >= 1).toBe(true);
+    expect(version.versionName).toMatch(/^\d+\.\d+(\.\d+)?$/);
+    const gradle = read("android/app/build.gradle");
+    expect(gradle).toMatch(/JsonSlurper\(\)\.parse\(rootProject\.file\('\.\.\/app-version\.json'\)\)/);
+    expect(gradle).not.toMatch(/versionCode\s+\d/); // no number of its own
+    expect(gradle).not.toMatch(/versionName\s+"/);
+    expect(gradle.match(/^\s*versionCode\s/gm)).toHaveLength(1); // set once - the test app shares it (only a name suffix)
+    expect(APP_VERSION_CODE).toBe(version.versionCode);
   });
 
   it("targets SDK 36 with minimum Android 7.0 (API 24)", () => {

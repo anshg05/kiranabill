@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
@@ -55,6 +55,8 @@ export default defineConfig({
   define: {
     __BUILD_ID__: JSON.stringify(computeBuildId(process.env, new Date())),
     __KB_SW_KILL__: JSON.stringify(resolveSwMode(process.cwd(), process.env) === "kill"),
+    // D116: the app's versionCode from app-version.json - the same file android/app/build.gradle reads
+    __APP_VERSION_CODE__: JSON.stringify((JSON.parse(readFileSync("app-version.json", "utf8")) as { versionCode: number }).versionCode),
   },
   resolve: {
     alias: {

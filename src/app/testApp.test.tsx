@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { stubLocalStorage } from "@/ui/testStorage";
 
@@ -18,15 +18,19 @@ vi.mock("@/providers/ShopProvider", () => ({
   useShop: () => ({ loading: true, shop: null, loadError: false }),
 }));
 
-const cap = vi.hoisted(() => ({ native: false, id: "com.kiranavoicebill.app", getInfo: vi.fn() }));
+const cap = vi.hoisted(() => ({ native: false, id: "com.kiranavoicebill.app", build: "", getInfo: vi.fn() }));
 vi.mock("@capacitor/core", async (orig) => { const real = await orig<typeof import("@capacitor/core")>(); return { ...real, Capacitor: { ...real.Capacitor, isNativePlatform: () => cap.native } }; });
-vi.mock("@capacitor/app", async (orig) => ({ App: { ...(await orig<typeof import("@capacitor/app")>()).App, getInfo: () => { cap.getInfo(); return Promise.resolve({ id: cap.id }); } } }));
+vi.mock("@capacitor/app", async (orig) => ({ App: { ...(await orig<typeof import("@capacitor/app")>()).App, getInfo: () => { cap.getInfo(); return Promise.resolve({ id: cap.id, build: cap.build }); } } }));
 
 import { App } from "./App";
 import { SignInScreen } from "@/ui/SignInScreen";
 import { TEST_APP_USER_IDS, TEST_SIGN_IN_HINT, isTestApp } from "@/data/testApp";
+import { APP_VERSION_CODE } from "@/data/appVersion";
 
 const TEST_USER = "77636ea8-8058-44ef-9762-76dfc47e5502";
+beforeEach(() => {
+  cap.build = String(APP_VERSION_CODE);
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllEnvs();
@@ -34,6 +38,7 @@ afterEach(() => {
   shopMounted.count = 0;
   cap.native = false;
   cap.id = "com.kiranavoicebill.app";
+  cap.build = String(APP_VERSION_CODE);
   cap.getInfo.mockClear();
 });
 const banner = () => screen.queryByTestId("test-app-banner");
@@ -150,6 +155,15 @@ describe("the wrong-build guard (D115)", () => {
   it("a real bundle inside the TEST app's package: stopped", async () => {
     cap.native = true;
     cap.id = "com.kiranavoicebill.app.test";
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: WRONG })).toBeTruthy();
+    expect(shopMounted.count).toBe(0);
+  });
+
+  it("D116: an APK whose versionCode is not this web bundle's (a stale bundle) is stopped too", async () => {
+    cap.native = true;
+    cap.build = String(APP_VERSION_CODE + 1);
     auth.value = { ...auth.value, userId: TEST_USER };
     render(<App />);
     expect(await screen.findByRole("heading", { name: WRONG })).toBeTruthy();
