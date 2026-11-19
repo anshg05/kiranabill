@@ -12,9 +12,6 @@ export const isTestApp = (): boolean => import.meta.env.VITE_APP_VARIANT === "te
 export const appPackage = (): string => (import.meta.env.VITE_APP_VARIANT === "test" ? "com.kiranavoicebill.app.test" : "com.kiranavoicebill.app");
 
 /** The test Google account's Supabase user id (owner, 19 Nov 2026) - an id, not a secret. None in the real app. */
-// KB-430 phone test only (owner, 20 Nov 2026): f7c9ac31... is the throwaway account whose near-empty shop the test deletes - REMOVED
-// in the commit after the test.
-export const testAppUserIds = (): readonly string[] =>
-  import.meta.env.VITE_APP_VARIANT === "test" ? ["77636ea8-8058-44ef-9762-76dfc47e5502", "f7c9ac31-ab78-4367-9aa1-49dd5f2e57d4"] : [];
+export const testAppUserIds = (): readonly string[] => (import.meta.env.VITE_APP_VARIANT === "test" ? ["77636ea8-8058-44ef-9762-76dfc47e5502"] : []);
 
 export const testSignInHint = (): string => (import.meta.env.VITE_APP_VARIANT === "test" ? "Use the TEST Google account (second Gmail)" : "");

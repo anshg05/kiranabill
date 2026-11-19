@@ -59,7 +59,7 @@ describe("the test app's marks (D115)", () => {
     expect(isTestApp()).toBe(false);
     expect(testAppUserIds()).toEqual([]); // the real app: no test account, no test strings (D117)
     vi.stubEnv("VITE_APP_VARIANT", "test");
-    expect(testAppUserIds()).toEqual([TEST_USER, "f7c9ac31-ab78-4367-9aa1-49dd5f2e57d4"]); // + the KB-430 throwaway, for its phone test only
+    expect(testAppUserIds()).toEqual([TEST_USER]); // only the test account (the KB-430 throwaway was removed after its phone test, 20 Nov 2026)
   });
 
   it("test app: the red TEST frame on the signed-out screens and on a signed-in screen; never takes a tap", () => {
