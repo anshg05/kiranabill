@@ -54,10 +54,10 @@ describe("public/privacy.html", () => {
       for (const processor of ["Google", "Supabase", "Netlify", "Groq", "Gemini", "Drive"]) expect(text, `${name}: ${processor}`).toContain(processor);
       expect(text, name).toContain('href="mailto:anshgupta0404@gmail.com"');
       expect(text, name).toContain(">anshgupta0404@gmail.com<");
-      expect(text, name).toContain("3");
+      expect(text, name).toContain("4");
     }
-    for (const phrase of ["shop", "email address and name", "name and mobile number", "recording", "Why", "3 months", "delete"]) expect(english.toLowerCase(), phrase).toContain(phrase.toLowerCase());
-    for (const phrase of ["दुकान", "ईमेल", "मोबाइल", "रिकॉर्डिंग", "क्यों", "3 महीने", "हटवाने"]) expect(hindi, phrase).toContain(phrase);
+    for (const phrase of ["shop", "email address and name", "name and mobile number", "recording", "Why", "4 months", "delete"]) expect(english.toLowerCase(), phrase).toContain(phrase.toLowerCase());
+    for (const phrase of ["दुकान", "ईमेल", "मोबाइल", "रिकॉर्डिंग", "क्यों", "4 महीने", "हटवाने"]) expect(hindi, phrase).toContain(phrase);
   });
 
   it("links home ('/') and keeps no script, tracker or outside file (a privacy page must not track)", () => {

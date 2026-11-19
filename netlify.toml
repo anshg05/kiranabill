@@ -19,6 +19,12 @@
   to = "/privacy.html"
   status = 200
 
+# KB-430 (D119): the account-deletion page Google Play requires - its own static page, like /privacy.
+[[redirects]]
+  from = "/delete-account"
+  to = "/delete-account.html"
+  status = 200
+
 [[headers]]
   for = "/sw.js"
   [headers.values]
