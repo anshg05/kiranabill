@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index,follow" />
     <title>Kirana Voice Bill — Privacy policy</title>
-    <!-- A minimal public policy page (owner, 21 Oct 2026, D91): Google's consent screen needs a privacy-policy link. Plain HTML, no
-         script, no tracker, no external file - it is its own page, never the app shell. English first, हिन्दी below. -->
+    <!-- A minimal public policy page (owner, 21 Oct 2026, D91; rewritten 20 Nov 2026, D120 - every claim checked against the code). Plain
+         HTML, no script, no tracker, no external file - it is its own page, never the app shell. English first, हिन्दी below. -->
     <style>
       :root { color-scheme: light; }
       body { margin: 0; background: #FBF9F4; color: #1C1B18; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif; }
@@ -22,92 +22,142 @@
   </head>
   <body>
     <main>
-      <p><a href="/">Kirana Voice Bill</a> · <a href="#hindi">हिन्दी</a></p>
+      <p><a href="/">Kirana Voice Bill</a> · <a href="#hindi">हिन्दी</a> · <a href="/delete-account">Delete your account</a></p>
 
       <section id="english" lang="en">
         <h1>Kirana Voice Bill — Privacy policy</h1>
-        <p class="meta">Last updated 10 November 2026</p>
-        <p>Kirana Voice Bill is a billing app for small shops. You speak or type an order, and it makes a bill. This page says what the app keeps, why, and who helps us run it.</p>
+        <p class="meta">Last updated 20 November 2026</p>
+        <p>Kirana Voice Bill is a billing app for small shops. You speak or type an order, and it makes a bill. This page says what the app keeps, why, where, for how long, and who helps us run it.</p>
 
         <h2>What we collect</h2>
         <ul>
-          <li><strong>Your shop:</strong> its name and phone number, the products and prices you add, and the bills you make.</li>
-          <li><strong>Your Google account:</strong> when you sign in with Google we receive your email address and name. We use them only to know who you are and to open your shop.</li>
+          <li><strong>Your Google account:</strong> when you sign in with Google we receive your email address, your name, a link to your profile picture and your Google account id. We use them only to sign you in and open your shop; the app does not show or use them otherwise.</li>
+          <li><strong>Your shop:</strong> its name and phone number, the bill language, and the products and prices you add (typed, or read from a spreadsheet file on your phone).</li>
+          <li><strong>Your bills:</strong> each bill's number, its items (the name, the words you said for it, quantity, unit, price, total), totals, status (saved or cancelled) and times.</li>
           <li><strong>Your customers:</strong> a customer's name and mobile number, only if you type them on a bill. They are used to print or send that bill.</li>
-          <li><strong>Voice:</strong> when you tap the microphone and speak an order, the recording is stored for a short time (see "Voice recordings" below) and sent to Google Gemini, which writes down the words that were said (the transcript) and turns them into bill items. The transcript is stored with the recording.</li>
+          <li><strong>What the app learns for your shop:</strong> names you use for your products, new product names it heard, and prices you charged - so it understands you better and can suggest a price. Only your shop uses them.</li>
+          <li><strong>Voice:</strong> when you tap the microphone and speak an order, the recording is stored for a short time (see "Voice recordings") and sent to Google Gemini, which writes down the words (the transcript) and turns them into bill items. The transcript and the items are stored with the recording.</li>
+          <li><strong>A device id:</strong> a random number the app makes once on each phone, stored with your bills, to number bills made without internet and to keep phones in step.</li>
+          <li><strong>Usage numbers for each bill:</strong> how many lines were spoken, typed, edited or removed, how many checks were raised, and how long the bill took - to measure whether voice billing is accurate and fast.</li>
+          <li><strong>Diagnostics:</strong> for each voice recording, the app version, whether reading it worked (and if not, a short reason), how much of the AI model it used, and how long it took. Our server's own log lines hold only such status words and timings.</li>
         </ul>
+
+        <h2>On your phone only</h2>
+        <p>Your printer choice, the screen language and start-up times stay on your phone and are never sent to us. Your phone also keeps a copy of your shop's data so the app works without internet.</p>
 
         <h2>Voice recordings</h2>
         <ul>
-          <li>A recording and its transcript are kept for <strong>7 days after its bill is made</strong>, so that a disputed bill can be checked. Then both are deleted automatically.</li>
-          <li>A recording that never became a bill is deleted automatically <strong>7 days after it was recorded</strong>.</li>
-          <li>Only your shop can open its recordings. Recordings and transcripts are <strong>never copied into our backups</strong>.</li>
-          <li>To have your recordings deleted sooner, email us (see the last section). We delete them as soon as we can, and in any case within 7 days.</li>
+          <li>A recording and its transcript are kept for 7 days after its bill is made, so that a disputed bill can be checked. Then both are deleted automatically.</li>
+          <li>A recording that never became a bill is deleted automatically 7 days after it was recorded.</li>
+          <li>Only your shop can open its recordings. Recordings and transcripts are never copied into our backups.</li>
+          <li>To have your recordings deleted sooner, email us (see "Contact"). We delete them within 7 days.</li>
         </ul>
 
         <h2>Why</h2>
-        <p>Only to run the app for you: to sign you in, save your bills, show them on all your phones, and make receipts. We do not sell your data and we do not show advertisements.</p>
+        <p>Only to run the app for you: to sign you in, save your bills, keep them on all your phones, make receipts, understand your spoken orders, and see whether the app bills correctly.</p>
 
-        <h2>Who helps us run it</h2>
+        <h2>Permissions the app asks for</h2>
         <ul>
-          <li><strong>Google</strong> — sign-in (your email and name), and encrypted backups kept on Google Drive.</li>
-          <li><strong>Supabase</strong> — stores your shop, bills and catalog in its database, and your voice recordings and their transcripts for up to 7 days (see above).</li>
-          <li><strong>Netlify</strong> — hosts the app and the voice service.</li>
-          <li><strong>Google Gemini</strong> — writes down an order from its voice recording and turns it into bill items. It also helps read an order's text when the app cannot read it by itself. Google processes what we send it under its paid API terms: it does not use it to improve its products, and keeps it only for a limited time to detect misuse.</li>
-          <li><strong>Groq</strong> — turns a voice recording into text in our older voice service, until that service is switched off.</li>
+          <li><strong>Microphone</strong> - to record an order, only after you tap the microphone.</li>
+          <li><strong>Nearby devices (Bluetooth)</strong> - to find and print on your Bluetooth printer.</li>
+          <li><strong>Location (Android 11 and older only)</strong> - those Android versions require it to search for Bluetooth printers. The app never reads your location.</li>
+          <li><strong>Internet and network state</strong> - to save and sync your bills, sign in, and know when you are offline.</li>
         </ul>
-        <p>We share your data with them only so that the app works, and with no one else.</p>
+
+        <h2>Who helps us run it, and where</h2>
+        <ul>
+          <li><strong>Supabase</strong> - stores your shop, bills, products, what the app learned, your login, and your voice recordings (for up to 7 days). Its servers are in Mumbai, India.</li>
+          <li><strong>Netlify</strong> - hosts the website and runs our voice service, which fetches a recording and sends it to Google Gemini. It runs in the USA.</li>
+          <li><strong>Google Gemini (paid API)</strong> - writes down an order from its recording and turns it into bill items. Under Google's paid API terms, Google does not use what we send to improve its products; it keeps it for a limited time only to detect misuse and for legal reasons, and may process it in any country where Google has facilities.</li>
+          <li><strong>Google</strong> - Google sign-in, and our encrypted backups kept on Google Drive.</li>
+        </ul>
+        <p>Supabase and Netlify keep standard server logs, including your IP address, for a limited time (Supabase: about 1 day for most logs on our plan; Netlify: its own privacy policy). Our own code does not store IP addresses.</p>
+        <p>They process your data only on our behalf, so that the app works. We share it with no one else.</p>
+
+        <h2>No ads, no selling</h2>
+        <p>The app shows no advertisements and contains no advertising or tracking tools. We do not sell your data or use it for marketing.</p>
 
         <h2>How long we keep it</h2>
-        <p>Voice recordings and transcripts: 7 days, as above. Everything else: while your shop is active. If your shop is deleted, its data is removed from the live database, and the encrypted backups age out in about 4 months.</p>
+        <p>Voice recordings and transcripts: 7 days, as above. Everything else: as long as your account exists. When your account is deleted, its data is removed from the live database at once; the encrypted backups age out in about 4 months.</p>
 
-        <h2>Deleting or correcting your data</h2>
+        <h2>Deleting your data</h2>
         <p>To delete your account and your shop's data yourself: in the app, <strong>More → Account → Delete account</strong>. Without the app, see <a href="/delete-account">Delete your account</a>. A copy stays in our encrypted backups until they expire - at most about 4 months.</p>
-        <p>To see, correct or delete your data (including your voice recordings), or to delete your shop, email <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> from the Google email you sign in with. You can also write to the same address with any question or complaint about your data.</p>
+        <p>To see, correct or delete any of your data, email us from the Google account you sign in with. We reply within 7 days.</p>
+
+        <h2>Children</h2>
+        <p>The app is made for shopkeepers, not for children.</p>
+
+        <h2>Contact</h2>
+        <p><a href="mailto:kiranavoicebill@gmail.com">kiranavoicebill@gmail.com</a> - for any question, request or complaint about your data.</p>
       </section>
 
       <hr />
 
       <section id="hindi" lang="hi">
-        <h1>किराना बिल — गोपनीयता नीति</h1>
-        <p class="meta">आखिरी बार बदला गया: 10 नवंबर 2026</p>
-        <p>Kirana Voice Bill छोटी दुकानों के लिए बिल बनाने का ऐप है। आप बोलकर या लिखकर ऑर्डर बताते हैं और ऐप बिल बना देता है। इस पन्ने में बताया गया है कि ऐप क्या रखता है, क्यों रखता है, और इसे चलाने में कौन मदद करता है।</p>
+        <h1>Kirana Voice Bill — गोपनीयता नीति</h1>
+        <p class="meta">आखिरी बार बदला गया: 20 नवंबर 2026</p>
+        <p>Kirana Voice Bill छोटी दुकानों के लिए बिल बनाने का ऐप है। आप बोलकर या लिखकर ऑर्डर बताते हैं और ऐप बिल बना देता है। इस पन्ने में बताया गया है कि ऐप क्या रखता है, क्यों, कहाँ, कब तक, और इसे चलाने में कौन मदद करता है।</p>
 
         <h2>हम क्या जमा करते हैं</h2>
         <ul>
-          <li><strong>आपकी दुकान:</strong> दुकान का नाम और फ़ोन नंबर, आपके जोड़े हुए सामान और भाव, और आपके बनाए बिल।</li>
-          <li><strong>आपका Google खाता:</strong> Google से साइन इन करने पर हमें आपका ईमेल पता और नाम मिलता है। हम इन्हें सिर्फ़ आपको पहचानने और आपकी दुकान खोलने के लिए इस्तेमाल करते हैं।</li>
+          <li><strong>आपका Google खाता:</strong> Google से साइन इन करने पर हमें आपका ईमेल पता, आपका नाम, आपकी प्रोफ़ाइल फ़ोटो का लिंक और आपके Google खाते की आईडी मिलती है। हम इन्हें सिर्फ़ आपको साइन इन कराने और आपकी दुकान खोलने के लिए इस्तेमाल करते हैं; ऐप इन्हें और कहीं नहीं दिखाता या इस्तेमाल करता।</li>
+          <li><strong>आपकी दुकान:</strong> दुकान का नाम और फ़ोन नंबर, बिल की भाषा, और आपके जोड़े हुए सामान और भाव (लिखकर, या आपके फ़ोन की किसी स्प्रेडशीट फ़ाइल से पढ़कर)।</li>
+          <li><strong>आपके बिल:</strong> हर बिल का नंबर, उसके सामान (नाम, उसके लिए बोले गए शब्द, मात्रा, इकाई, भाव, कुल), कुल रकम, हालत (सेव या रद्द) और समय।</li>
           <li><strong>आपके ग्राहक:</strong> किसी ग्राहक का नाम और मोबाइल नंबर तभी, जब आप उसे बिल पर लिखें। इनसे सिर्फ़ वही बिल छपता या भेजा जाता है।</li>
-          <li><strong>आवाज़:</strong> माइक दबाकर ऑर्डर बोलने पर आपकी रिकॉर्डिंग थोड़े समय के लिए रखी जाती है (नीचे "आवाज़ की रिकॉर्डिंग" देखें) और Google Gemini को भेजी जाती है। Gemini बोले गए शब्द लिखता है (ट्रांसक्रिप्ट) और उन्हें बिल के सामान में बदलता है। ट्रांसक्रिप्ट रिकॉर्डिंग के साथ रखा जाता है।</li>
+          <li><strong>ऐप आपकी दुकान के लिए क्या सीखता है:</strong> आपके सामान के लिए आपके बोले नाम, नए सुने गए सामान के नाम, और आपके लगाए भाव - ताकि ऐप आपको बेहतर समझे और भाव सुझा सके। इन्हें सिर्फ़ आपकी दुकान इस्तेमाल करती है।</li>
+          <li><strong>आवाज़:</strong> माइक दबाकर ऑर्डर बोलने पर रिकॉर्डिंग थोड़े समय के लिए रखी जाती है ("आवाज़ की रिकॉर्डिंग" देखें) और Google Gemini को भेजी जाती है, जो बोले गए शब्द लिखता है (ट्रांसक्रिप्ट) और उन्हें बिल के सामान में बदलता है। ट्रांसक्रिप्ट और सामान रिकॉर्डिंग के साथ रखे जाते हैं।</li>
+          <li><strong>फ़ोन की आईडी:</strong> एक बेतरतीब नंबर जो ऐप हर फ़ोन पर एक बार बनाता है और आपके बिलों के साथ रखता है - बिना इंटरनेट बने बिलों को नंबर देने और फ़ोनों को आपस में मिलाकर रखने के लिए।</li>
+          <li><strong>हर बिल के इस्तेमाल के आँकड़े:</strong> कितनी लाइनें बोली, लिखी, बदली या हटाई गईं, कितनी जाँचें उठीं, और बिल में कितना समय लगा - यह मापने के लिए कि आवाज़ से बिलिंग सही और तेज़ है या नहीं।</li>
+          <li><strong>जाँच की जानकारी (डायग्नोस्टिक्स):</strong> हर आवाज़ की रिकॉर्डिंग के लिए ऐप का वर्ज़न, उसे पढ़ना हुआ या नहीं (और न हुआ तो एक छोटा कारण), AI मॉडल का कितना इस्तेमाल हुआ, और कितना समय लगा। हमारे सर्वर की अपनी लॉग लाइनों में सिर्फ़ ऐसे हालत के शब्द और समय होते हैं।</li>
         </ul>
+
+        <h2>सिर्फ़ आपके फ़ोन पर</h2>
+        <p>आपके प्रिंटर का चुनाव, स्क्रीन की भाषा और ऐप खुलने का समय आपके फ़ोन पर ही रहते हैं और हमें कभी नहीं भेजे जाते। आपका फ़ोन आपकी दुकान के डेटा की एक प्रति भी रखता है, ताकि ऐप बिना इंटरनेट के चले।</p>
 
         <h2>आवाज़ की रिकॉर्डिंग</h2>
         <ul>
           <li>रिकॉर्डिंग और उसका ट्रांसक्रिप्ट <strong>बिल बनने के 7 दिन बाद तक</strong> रखे जाते हैं, ताकि किसी बिल पर सवाल उठे तो उसे जाँचा जा सके। उसके बाद दोनों अपने आप हट जाते हैं।</li>
           <li>जिस रिकॉर्डिंग से कभी बिल नहीं बना, वह <strong>रिकॉर्ड होने के 7 दिन बाद</strong> अपने आप हट जाती है।</li>
           <li>आपकी दुकान की रिकॉर्डिंग सिर्फ़ आपकी दुकान खोल सकती है। रिकॉर्डिंग और ट्रांसक्रिप्ट <strong>हमारे बैकअप में कभी नहीं जाते</strong>।</li>
-          <li>अपनी रिकॉर्डिंग जल्दी हटवाने के लिए हमें ईमेल करें (आखिरी हिस्सा देखें)। हम उन्हें जितनी जल्दी हो सके हटा देते हैं, और हर हाल में 7 दिन के अंदर।</li>
+          <li>अपनी रिकॉर्डिंग जल्दी हटवाने के लिए हमें ईमेल करें ("संपर्क" देखें)। हम उन्हें 7 दिन के अंदर हटा देते हैं।</li>
         </ul>
 
         <h2>क्यों</h2>
-        <p>सिर्फ़ आपके लिए ऐप चलाने को: आपको साइन इन कराने, बिल सेव करने, उन्हें आपके सभी फ़ोन पर दिखाने और रसीद बनाने के लिए। हम आपका डेटा बेचते नहीं हैं और कोई विज्ञापन नहीं दिखाते।</p>
+        <p>सिर्फ़ आपके लिए ऐप चलाने को: आपको साइन इन कराने, बिल सेव करने, उन्हें आपके सभी फ़ोन पर रखने, रसीद बनाने, आपके बोले ऑर्डर समझने, और यह देखने के लिए कि ऐप सही बिल बनाता है।</p>
 
-        <h2>इसे चलाने में कौन मदद करता है</h2>
+        <h2>ऐप कौन-सी अनुमतियाँ माँगता है</h2>
         <ul>
-          <li><strong>Google</strong> — साइन इन (आपका ईमेल और नाम), और Google Drive पर रखे गए कूट-बंद (एन्क्रिप्टेड) बैकअप।</li>
-          <li><strong>Supabase</strong> — आपकी दुकान, बिल और सामान की सूची अपने डेटाबेस में रखता है, और आपकी आवाज़ की रिकॉर्डिंग और उनके ट्रांसक्रिप्ट ज़्यादा से ज़्यादा 7 दिन तक (ऊपर देखें)।</li>
-          <li><strong>Netlify</strong> — ऐप और आवाज़ वाली सेवा चलाता है।</li>
-          <li><strong>Google Gemini</strong> — आवाज़ की रिकॉर्डिंग से ऑर्डर लिखता है और उसे बिल के सामान में बदलता है। जब ऐप किसी ऑर्डर का लिखा हुआ रूप खुद नहीं पढ़ पाता, तब उसे पढ़ने में भी मदद करता है। हम जो भेजते हैं, Google उसे अपनी पेड API शर्तों के तहत प्रोसेस करता है: वह इसका इस्तेमाल अपने प्रोडक्ट सुधारने में नहीं करता, और इसे सिर्फ़ गलत इस्तेमाल पकड़ने के लिए थोड़े समय तक रखता है।</li>
-          <li><strong>Groq</strong> — हमारी पुरानी आवाज़ वाली सेवा में रिकॉर्डिंग को लिखे हुए शब्दों में बदलता है, जब तक वह सेवा बंद नहीं होती।</li>
+          <li><strong>माइक्रोफ़ोन</strong> - ऑर्डर रिकॉर्ड करने के लिए, सिर्फ़ तब जब आप माइक दबाएँ।</li>
+          <li><strong>आस-पास के डिवाइस (ब्लूटूथ)</strong> - आपके ब्लूटूथ प्रिंटर को ढूँढने और उस पर छापने के लिए।</li>
+          <li><strong>लोकेशन (सिर्फ़ Android 11 और पुराने)</strong> - उन Android वर्ज़न में ब्लूटूथ प्रिंटर ढूँढने के लिए यह ज़रूरी है। ऐप आपकी लोकेशन कभी नहीं पढ़ता।</li>
+          <li><strong>इंटरनेट और नेटवर्क की हालत</strong> - बिल सेव और सिंक करने, साइन इन करने, और यह जानने के लिए कि आप ऑफ़लाइन हैं।</li>
         </ul>
-        <p>आपका डेटा हम इनके साथ सिर्फ़ इसलिए साझा करते हैं कि ऐप चले — और किसी के साथ नहीं।</p>
+
+        <h2>इसे चलाने में कौन मदद करता है, और कहाँ</h2>
+        <ul>
+          <li><strong>Supabase</strong> - आपकी दुकान, बिल, सामान, ऐप ने जो सीखा, आपका लॉगिन, और आपकी आवाज़ की रिकॉर्डिंग (ज़्यादा से ज़्यादा 7 दिन) रखता है। इसके सर्वर मुंबई, भारत में हैं।</li>
+          <li><strong>Netlify</strong> - वेबसाइट चलाता है और हमारी आवाज़ वाली सेवा चलाता है, जो रिकॉर्डिंग लेकर Google Gemini को भेजती है। यह अमेरिका (USA) में चलता है।</li>
+          <li><strong>Google Gemini (पेड API)</strong> - रिकॉर्डिंग से ऑर्डर लिखता है और उसे बिल के सामान में बदलता है। Google की पेड API शर्तों के तहत, Google हमारा भेजा हुआ अपने प्रोडक्ट सुधारने में इस्तेमाल नहीं करता; इसे सिर्फ़ गलत इस्तेमाल पकड़ने और कानूनी वजहों से थोड़े समय तक रखता है, और इसे किसी भी उस देश में प्रोसेस कर सकता है जहाँ Google की सुविधाएँ हैं।</li>
+          <li><strong>Google</strong> - Google से साइन इन, और Google Drive पर रखे गए हमारे कूट-बंद (एन्क्रिप्टेड) बैकअप।</li>
+        </ul>
+        <p>Supabase और Netlify सामान्य सर्वर लॉग रखते हैं, जिनमें आपका IP पता भी होता है, थोड़े समय के लिए (Supabase: हमारे प्लान पर ज़्यादातर लॉग लगभग 1 दिन; Netlify: उसकी अपनी गोपनीयता नीति के अनुसार)। हमारा अपना कोड IP पते नहीं रखता।</p>
+        <p>ये आपका डेटा सिर्फ़ हमारी ओर से प्रोसेस करते हैं, ताकि ऐप चले। हम इसे और किसी के साथ साझा नहीं करते।</p>
+
+        <h2>कोई विज्ञापन नहीं, कोई बिक्री नहीं</h2>
+        <p>ऐप कोई विज्ञापन नहीं दिखाता और इसमें विज्ञापन या ट्रैकिंग का कोई टूल नहीं है। हम आपका डेटा नहीं बेचते और मार्केटिंग के लिए इस्तेमाल नहीं करते।</p>
 
         <h2>कितने समय तक रखते हैं</h2>
-        <p>आवाज़ की रिकॉर्डिंग और ट्रांसक्रिप्ट: ऊपर बताए अनुसार 7 दिन। बाकी सब: जब तक आपकी दुकान चालू है। दुकान हटाने पर उसका डेटा चालू डेटाबेस से हट जाता है, और कूट-बंद बैकअप लगभग 4 महीने में अपने आप पुराने होकर हट जाते हैं।</p>
+        <p>आवाज़ की रिकॉर्डिंग और ट्रांसक्रिप्ट: ऊपर बताए अनुसार 7 दिन। बाकी सब: जब तक आपका खाता है। खाता हटने पर उसका डेटा चालू डेटाबेस से तुरंत हट जाता है; कूट-बंद बैकअप लगभग 4 महीने में अपने आप पुराने होकर हट जाते हैं।</p>
 
         <h2>अपना डेटा देखना, सुधारना या हटवाना</h2>
         <p>अपना खाता और दुकान का डेटा खुद हटाने के लिए: ऐप में <strong>More → खाता → खाता हटाएँ</strong>। बिना ऐप के: <a href="/delete-account">अपना खाता हटाएँ</a> देखें। हमारे कूट-बंद बैकअप में एक प्रति तब तक रहती है जब तक वे पुराने होकर हट न जाएँ - ज़्यादा से ज़्यादा लगभग 4 महीने।</p>
-        <p>अपना डेटा (आवाज़ की रिकॉर्डिंग समेत) देखने, सुधारने या हटवाने के लिए, या अपनी दुकान हटवाने के लिए, उसी Google ईमेल से जिससे आप साइन इन करते हैं, <a href="mailto:anshgupta0404@gmail.com">anshgupta0404@gmail.com</a> पर ईमेल करें। अपने डेटा के बारे में कोई भी सवाल या शिकायत इसी पते पर लिख सकते हैं।</p>
+        <p>अपना कोई भी डेटा देखने, सुधारने या हटवाने के लिए उसी Google खाते से हमें ईमेल करें जिससे आप साइन इन करते हैं। हम 7 दिन के अंदर जवाब देते हैं।</p>
+
+        <h2>बच्चे</h2>
+        <p>यह ऐप दुकानदारों के लिए बना है, बच्चों के लिए नहीं।</p>
+
+        <h2>संपर्क</h2>
+        <p><a href="mailto:kiranavoicebill@gmail.com">kiranavoicebill@gmail.com</a> - अपने डेटा के बारे में किसी भी सवाल, अनुरोध या शिकायत के लिए।</p>
       </section>
 
       <p class="meta"><a href="/">← Kirana Voice Bill</a></p>

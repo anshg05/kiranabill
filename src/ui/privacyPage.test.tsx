@@ -37,27 +37,54 @@ describe("public/privacy.html", () => {
   });
 
   it("KB-384a (owner, 9 Nov 2026): voice recordings - kept 7 days after the bill (unbilled: 7 days after upload), never in backups, Gemini's paid terms - in BOTH languages", () => {
-    for (const phrase of ["7 days after its bill is made", "7 days after it was recorded", "never copied into our backups", "deleted automatically", "your voice recordings", "within 7 days"]) expect(english, phrase).toContain(phrase);
-    for (const phrase of ["बिल बनने के 7 दिन बाद", "रिकॉर्ड होने के 7 दिन बाद", "बैकअप में कभी नहीं", "अपने आप हट", "आवाज़ की रिकॉर्डिंग समेत", "7 दिन के अंदर"]) expect(hindi, phrase).toContain(phrase);
-    // Gemini API Additional Terms (effective 23 Mar 2026), Paid Services: prompts and responses are not used to improve Google's products;
-    // logged for a limited time only to detect misuse
-    expect(english).toContain("under its paid API terms: it does not use it to improve its products, and keeps it only for a limited time to detect misuse");
-    expect(hindi).toContain("अपनी पेड API शर्तों के तहत प्रोसेस करता है: वह इसका इस्तेमाल अपने प्रोडक्ट सुधारने में नहीं करता");
+    for (const phrase of ["7 days after its bill is made", "7 days after it was recorded", "never copied into our backups", "deleted automatically", "within 7 days"]) expect(english, phrase).toContain(phrase);
+    for (const phrase of ["बिल बनने के 7 दिन बाद", "रिकॉर्ड होने के 7 दिन बाद", "बैकअप में कभी नहीं", "अपने आप हट", "7 दिन के अंदर"]) expect(hindi, phrase).toContain(phrase);
+    // Gemini API Additional Terms (aistudio.google.com/docs/terms, effective 23 Mar 2026), Paid Services: prompts and responses are not
+    // used to improve Google's products; logged for a limited time to detect misuse and for legal reasons; may be processed in any country
+    expect(english).toContain("Google does not use what we send to improve its products; it keeps it for a limited time only to detect misuse and for legal reasons, and may process it in any country where Google has facilities");
+    expect(hindi).toContain("Google हमारा भेजा हुआ अपने प्रोडक्ट सुधारने में इस्तेमाल नहीं करता");
     // the old promise is gone (recordings ARE kept now), and Sarvam is not listed before KB-384b ships it
     expect(english).not.toContain("does not keep the recordings");
     expect(hindi).not.toContain("रिकॉर्डिंग अपने पास नहीं रखता");
     expect(page).not.toContain("Sarvam");
   });
 
-  it("says what the owner listed - in BOTH languages: what is collected, why, the processors, retention, deletion, the contact", () => {
+  it("D120 (owner, 20 Nov 2026): the processors and where they are - Groq gone (removed 18 Nov), no text path for Gemini; the support address", () => {
     for (const [name, text] of [["English", english], ["हिन्दी", hindi]] as const) {
-      for (const processor of ["Google", "Supabase", "Netlify", "Groq", "Gemini", "Drive"]) expect(text, `${name}: ${processor}`).toContain(processor);
-      expect(text, name).toContain('href="mailto:anshgupta0404@gmail.com"');
-      expect(text, name).toContain(">anshgupta0404@gmail.com<");
-      expect(text, name).toContain("4");
+      for (const processor of ["Google", "Supabase", "Netlify", "Gemini", "Drive"]) expect(text, `${name}: ${processor}`).toContain(processor);
+      expect(text, `${name}: Groq`).not.toContain("Groq");
+      expect(text, name).toContain('href="mailto:kiranavoicebill@gmail.com"');
+      expect(text, name).toContain(">kiranavoicebill@gmail.com<");
+      expect(text, name).not.toContain("anshgupta0404");
     }
-    for (const phrase of ["shop", "email address and name", "name and mobile number", "recording", "Why", "4 months", "delete"]) expect(english.toLowerCase(), phrase).toContain(phrase.toLowerCase());
-    for (const phrase of ["दुकान", "ईमेल", "मोबाइल", "रिकॉर्डिंग", "क्यों", "4 महीने", "हटवाने"]) expect(hindi, phrase).toContain(phrase);
+    expect(english).toContain("Its servers are in Mumbai, India.");
+    expect(english).toContain("It runs in the USA.");
+    expect(hindi).toContain("मुंबई, भारत");
+    expect(hindi).toContain("अमेरिका (USA)");
+    expect(english).not.toMatch(/read an order's text/); // the text path was deleted with the old voice path (18 Nov 2026)
+    expect(hindi).not.toContain("लिखा हुआ रूप खुद नहीं पढ़ पाता");
+  });
+
+  it("D120: every kind of data the code collects is named - in BOTH languages", () => {
+    for (const phrase of ["your email address, your name, a link to your profile picture and your Google account id", "name and phone number", "bill language", "customer's name and mobile number", "names you use for your products", "prices you charged", "A device id", "Usage numbers for each bill", "Diagnostics", "the app version", "On your phone only", "printer choice"]) expect(english, phrase).toContain(phrase);
+    for (const phrase of ["ईमेल पता, आपका नाम, आपकी प्रोफ़ाइल फ़ोटो का लिंक और आपके Google खाते की आईडी", "नाम और फ़ोन नंबर", "बिल की भाषा", "नाम और मोबाइल नंबर", "आपके लगाए भाव", "फ़ोन की आईडी", "इस्तेमाल के आँकड़े", "डायग्नोस्टिक्स", "ऐप का वर्ज़न", "सिर्फ़ आपके फ़ोन पर", "प्रिंटर का चुनाव"]) expect(hindi, phrase).toContain(phrase);
+    // not collected: the shop's address and logo exist in the schema but no screen sets them - the page must not claim them
+    expect(english).not.toMatch(/address of your shop|shop's address|your logo/i);
+  });
+
+  it("D120: the permissions and why; IP addresses in the providers' logs only; no ads; children; retention and deletion", () => {
+    for (const phrase of ["Microphone", "Nearby devices (Bluetooth)", "Location (Android 11 and older only)", "never reads your location", "Internet and network state"]) expect(english, phrase).toContain(phrase);
+    for (const phrase of ["माइक्रोफ़ोन", "ब्लूटूथ", "Android 11 और पुराने", "लोकेशन कभी नहीं पढ़ता", "नेटवर्क की हालत"]) expect(hindi, phrase).toContain(phrase);
+    expect(english).toContain("Supabase and Netlify keep standard server logs, including your IP address, for a limited time");
+    expect(english).toContain("Our own code does not store IP addresses.");
+    expect(hindi).toContain("हमारा अपना कोड IP पते नहीं रखता");
+    expect(english).toContain("no advertising or tracking tools");
+    expect(english).toContain("We do not sell your data");
+    expect(hindi).toContain("डेटा नहीं बेचते");
+    expect(english).toContain("not for children");
+    expect(hindi).toContain("बच्चों के लिए नहीं");
+    for (const phrase of ["as long as your account exists", "about 4 months", "More → Account → Delete account"]) expect(english, phrase).toContain(phrase);
+    for (const phrase of ["जब तक आपका खाता है", "लगभग 4 महीने", "More → खाता → खाता हटाएँ"]) expect(hindi, phrase).toContain(phrase);
   });
 
   it("links home ('/') and keeps no script, tracker or outside file (a privacy page must not track)", () => {
