@@ -135,7 +135,8 @@ describe("the Android shell (D111)", () => {
     const links = filters.filter((f) => f.includes("android.intent.action.VIEW"));
     expect(links).toHaveLength(1);
     const data = [...links[0]!.matchAll(/<data\s+([^>]*?)\s*\/>/g)].map((m) => m[1]!.trim().split(/\s+/).sort().join(" "));
-    expect(data).toEqual(['android:host="auth-callback" android:scheme="com.kiranavoicebill.app"']);
+    // D115: the scheme is the package - com.kiranavoicebill.app for the real app (unchanged), com.kiranavoicebill.app.test for the test app
+    expect(data).toEqual(['android:host="auth-callback" android:scheme="${applicationId}"']);
     expect(links[0]).toContain("android.intent.category.BROWSABLE"); // Chrome must be allowed to hand the link over
     expect(links[0]).toContain("android.intent.category.DEFAULT");
     expect(manifest).not.toMatch(/android:scheme="https?"/); // no web link claimed without verification (KB-410)

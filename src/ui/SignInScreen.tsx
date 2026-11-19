@@ -1,5 +1,5 @@
 import { privacyHref } from "./privacyLink";
-import { isTestApp, TEST_SIGN_IN_HINT } from "@/app/testApp";
+import { isTestApp, TEST_SIGN_IN_HINT } from "@/data/testApp";
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
 import { useT } from "./useT";

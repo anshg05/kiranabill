@@ -1,3 +1,4 @@
+import { appPackage } from "./testApp";
 // KB-335 (docs/07-DECISIONS.md D82): the Google sign-in return. The client uses the PKCE flow: the return is
 // `/?code=...` (a one-time code swapped for a session, key kept in this browser) instead of the implicit flow's
 // `/#access_token=...`. auth-js leaves the marks of a REFUSED or FAILED return in the address bar (and, when the sign-in
@@ -40,8 +41,12 @@ export function stripOAuthReturn(href: string): string {
   return `${url.pathname}${url.search}${h ? `#${h}` : ""}`;
 }
 
-/** KB-409 (D111): where Supabase returns to inside the Android app - the one app link the app opens for (AndroidManifest.xml). */
-export const NATIVE_REDIRECT = "com.kiranavoicebill.app://auth-callback";
+/**
+ * KB-409 (D111): where Supabase returns to inside the Android app - the one app link the app opens for (AndroidManifest.xml: the scheme
+ * is the package, ${applicationId}). D115: the test app (com.kiranavoicebill.app.test) has its own, so its sign-in never opens the
+ * real app; the real app's is unchanged.
+ */
+export const nativeRedirect = (): string => `${appPackage()}://auth-callback`;
 
 /**
  * KB-409: the app's own path for a sign-in return link, or null when the link is not exactly ours or holds nothing to act on.
@@ -55,7 +60,7 @@ export function nativeReturnPath(link: string): string | null {
   } catch {
     return null;
   }
-  const ours = new URL(NATIVE_REDIRECT);
+  const ours = new URL(nativeRedirect());
   if (url.protocol !== ours.protocol || url.host !== ours.host) return null;
   if (url.username || url.password || url.port || (url.pathname !== "" && url.pathname !== "/")) return null;
   const from = paramsOf(url);

@@ -71,6 +71,18 @@ describe("startNativeSignIn", () => {
     expect(cap.open).toHaveBeenCalledWith({ url: GOOGLE });
   });
 
+  it("D115: the test app asks Supabase to return to the TEST app's link", async () => {
+    vi.stubEnv("VITE_APP_VARIANT", "test");
+    try {
+      const { client, signInWithOAuth } = fakeClient();
+      void startNativeSignIn(client);
+      await settle();
+      expect(signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: "com.kiranavoicebill.app.test://auth-callback", skipBrowserRedirect: true } });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it.each([
     ["the Custom Tab reports it closed", () => cap.emit("browserFinished")],
     ["the app comes back to the foreground (MIUI may never report the tab closing)", () => cap.emit("appStateChange", { isActive: true })],

@@ -1,12 +1,13 @@
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { ShopProvider, useShop } from "@/providers/ShopProvider";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { buildMatchesPackage, isNativeApp } from "@/data/nativeSignIn";
 import { SignedOutFlow, markWelcomed } from "@/ui/WelcomeScreens";
 import { OnboardingScreen } from "@/ui/OnboardingScreen";
 import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
-import { TestAppBanner, TestAppRefused } from "@/ui/TestAppBanner";
-import { TEST_APP_USER_IDS, isTestApp } from "./testApp";
+import { TestAppBanner, TestAppRefused, WrongBuild } from "@/ui/TestAppBanner";
+import { TEST_APP_USER_IDS, isTestApp } from "@/data/testApp";
 
 /** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
  * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
@@ -76,6 +77,13 @@ function AuthGate() {
 }
 
 export function App() {
+  // D115: inside the Android app nothing starts (no sign-in, no shop) until this bundle is known to belong to its package.
+  const [build, setBuild] = useState<"checking" | "ok" | "wrong">(() => (isNativeApp() ? "checking" : "ok"));
+  useEffect(() => {
+    if (build === "checking") void buildMatchesPackage().then((ok) => setBuild(ok ? "ok" : "wrong"));
+  }, [build]);
+  if (build === "checking") return null;
+  if (build === "wrong") return <WrongBuild />;
   return (
     <AuthProvider>
       <AuthGate />

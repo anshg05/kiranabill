@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { stubLocalStorage } from "@/ui/testStorage";
 
 // Option (b) step 4 (owner, 19 Nov 2026; D115): the test app "KVB Test" (com.kiranavoicebill.app.test) is the same code built with
@@ -18,9 +18,13 @@ vi.mock("@/providers/ShopProvider", () => ({
   useShop: () => ({ loading: true, shop: null, loadError: false }),
 }));
 
+const cap = vi.hoisted(() => ({ native: false, id: "com.kiranavoicebill.app", getInfo: vi.fn() }));
+vi.mock("@capacitor/core", async (orig) => { const real = await orig<typeof import("@capacitor/core")>(); return { ...real, Capacitor: { ...real.Capacitor, isNativePlatform: () => cap.native } }; });
+vi.mock("@capacitor/app", async (orig) => ({ App: { ...(await orig<typeof import("@capacitor/app")>()).App, getInfo: () => { cap.getInfo(); return Promise.resolve({ id: cap.id }); } } }));
+
 import { App } from "./App";
 import { SignInScreen } from "@/ui/SignInScreen";
-import { TEST_APP_USER_IDS, TEST_SIGN_IN_HINT, isTestApp } from "./testApp";
+import { TEST_APP_USER_IDS, TEST_SIGN_IN_HINT, isTestApp } from "@/data/testApp";
 
 const TEST_USER = "77636ea8-8058-44ef-9762-76dfc47e5502";
 afterEach(() => {
@@ -28,6 +32,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
   auth.value = { ...auth.value, userId: null };
   shopMounted.count = 0;
+  cap.native = false;
+  cap.id = "com.kiranavoicebill.app";
+  cap.getInfo.mockClear();
 });
 const banner = () => screen.queryByTestId("test-app-banner");
 
@@ -108,5 +115,51 @@ describe("the test app opens only for the test account (D115)", () => {
       cleanup();
       shopMounted.count = 0;
     }
+  });
+});
+
+// Step 4 commit 3: the web bundle must belong to the package it is inside. A test bundle in the real app (or the reverse) would ask
+// Supabase to return to the other app's link - so inside the Android app nothing starts until the package is checked.
+describe("the wrong-build guard (D115)", () => {
+  const WRONG = "Wrong build for this app";
+  it("real app, real bundle: opens; test app, test bundle: opens", async () => {
+    cap.native = true;
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    await waitFor(() => expect(shopMounted.count).toBeGreaterThan(0));
+    expect(screen.queryByRole("heading", { name: WRONG })).toBeNull();
+    expect(cap.getInfo).toHaveBeenCalledOnce();
+    cleanup();
+    shopMounted.count = 0;
+    vi.stubEnv("VITE_APP_VARIANT", "test");
+    cap.id = "com.kiranavoicebill.app.test";
+    render(<App />);
+    await waitFor(() => expect(shopMounted.count).toBeGreaterThan(0));
+    expect(screen.queryByRole("heading", { name: WRONG })).toBeNull();
+  });
+
+  it("a test bundle inside the REAL app's package: stopped - nothing signs in or opens a shop", async () => {
+    cap.native = true;
+    vi.stubEnv("VITE_APP_VARIANT", "test");
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: WRONG })).toBeTruthy();
+    expect(shopMounted.count).toBe(0);
+  });
+
+  it("a real bundle inside the TEST app's package: stopped", async () => {
+    cap.native = true;
+    cap.id = "com.kiranavoicebill.app.test";
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: WRONG })).toBeTruthy();
+    expect(shopMounted.count).toBe(0);
+  });
+
+  it("in a browser (the website) nothing is checked and nothing waits", () => {
+    auth.value = { ...auth.value, userId: TEST_USER };
+    render(<App />);
+    expect(cap.getInfo).not.toHaveBeenCalled();
+    expect(shopMounted.count).toBeGreaterThan(0);
   });
 });

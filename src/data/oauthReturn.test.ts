@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AUTH_OPTIONS, FAILED_TEXT, NATIVE_REDIRECT, REFUSED_TEXT, nativeReturnPath, readOAuthReturn, stripOAuthReturn } from "./oauthReturn";
+import { describe, expect, it, vi } from "vitest";
+import { AUTH_OPTIONS, FAILED_TEXT, REFUSED_TEXT, nativeRedirect, nativeReturnPath, readOAuthReturn, stripOAuthReturn } from "./oauthReturn";
 
 // KB-335 (D82): the sign-in return. PKCE puts a one-time ?code= in the query string (the implicit flow used the #fragment);
 // a refused sign-up or a failed exchange leaves its marks in the address bar and the sign-in screen must say so, in plain
@@ -55,7 +55,23 @@ describe("nativeReturnPath (KB-409)", () => {
   const L = "com.kiranavoicebill.app://auth-callback";
 
   it("the redirect we ask Supabase for is exactly the app link", () => {
-    expect(NATIVE_REDIRECT).toBe(L);
+    expect(nativeRedirect()).toBe(L);
+  });
+
+  // Option (b) step 4 (owner, 19 Nov 2026; D115): the test app (com.kiranavoicebill.app.test) returns to ITS OWN link - never the real
+  // app's - and each app accepts only its own; the real app's link is exactly what it was.
+  it("the test app asks for its own link; each app refuses the other's", () => {
+    const T = "com.kiranavoicebill.app.test://auth-callback";
+    expect(nativeReturnPath(`${T}?code=abc`)).toBeNull(); // the real app refuses the test app's link
+    vi.stubEnv("VITE_APP_VARIANT", "test");
+    try {
+      expect(nativeRedirect()).toBe(T);
+      expect(nativeReturnPath(`${T}?code=abc`)).toBe("/?code=abc");
+      expect(nativeReturnPath(`${L}?code=abc`)).toBeNull(); // the test app refuses the real app's link
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect(nativeRedirect()).toBe(L);
   });
 
   it("a code becomes /?code= on the app's own origin - the web return, so auth-js exchanges it as today", () => {

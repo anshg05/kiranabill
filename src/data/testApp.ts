@@ -4,6 +4,9 @@
 
 export const isTestApp = (): boolean => import.meta.env.VITE_APP_VARIANT === "test";
 
+/** The Android package this build belongs to (build.gradle: the testapp flavour adds ".test"). */
+export const appPackage = (): string => (isTestApp() ? "com.kiranavoicebill.app.test" : "com.kiranavoicebill.app");
+
 /** The test Google account's Supabase user id (owner, 19 Nov 2026) - an id, not a secret. */
 export const TEST_APP_USER_IDS: readonly string[] = ["77636ea8-8058-44ef-9762-76dfc47e5502"];
 

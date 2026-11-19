@@ -1,4 +1,4 @@
-import { isTestApp } from "@/app/testApp";
+import { isTestApp } from "@/data/testApp";
 
 /** D115: the test app's mark on every screen - a red frame and a TEST pill, fixed above everything, never taking a tap. */
 export function TestAppBanner() {
@@ -19,6 +19,16 @@ export function TestAppRefused({ onSignOut }: { onSignOut: () => void }) {
       <button type="button" onClick={onSignOut} className="min-h-11 rounded-[6px] border border-line bg-surface px-6 font-medium">
         Sign out
       </button>
+    </main>
+  );
+}
+
+/** D115: this web bundle was built for the other app (a test bundle in the real app, or the reverse) - stop before anything signs in. */
+export function WrongBuild() {
+  return (
+    <main className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center gap-4 px-4 text-center">
+      <h1 className="text-kb-18 font-bold">Wrong build for this app</h1>
+      <p className="text-kb-14 text-kb-sub">This copy was built for the other app (Kirana Voice Bill / KVB Test). Install the right build.</p>
     </main>
   );
 }

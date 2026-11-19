@@ -2,14 +2,28 @@ import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { NATIVE_REDIRECT, nativeReturnPath } from "./oauthReturn";
+import { nativeRedirect, nativeReturnPath } from "./oauthReturn";
+import { appPackage } from "./testApp";
 
 // KB-409 (D111): Google sign-in inside the Android app. Google refuses sign-in in an app's own web view, so the Google page opens
-// in a Chrome Custom Tab and Supabase returns to the app link (NATIVE_REDIRECT). The link is turned into the WEB return
+// in a Chrome Custom Tab and Supabase returns to the app link (nativeRedirect()). The link is turned into the WEB return
 // (/?code=...) on the app's own origin, so auth-js exchanges the code with the PKCE key in this web view, exactly as on the web (D82).
 
 /** True inside the Android app; false in a browser and in the installed PWA. */
 export const isNativeApp = (): boolean => Capacitor.isNativePlatform();
+
+/**
+ * D115: inside the Android app, does this web bundle belong to the package it is in? A test bundle inside the real app (or the reverse)
+ * would ask Supabase to return to the OTHER app's link. A failed check lets the app open (never lock the real shopkeeper out).
+ */
+export async function buildMatchesPackage(): Promise<boolean> {
+  if (!isNativeApp()) return true;
+  try {
+    return (await App.getInfo()).id === appPackage();
+  } catch {
+    return true;
+  }
+}
 
 /** How long the sign-in button waits before coming back by itself, when the phone never says the Custom Tab closed. */
 export const SIGN_IN_WAIT_MS = 60_000;
@@ -31,7 +45,7 @@ export function resetNativeSignIn(): void {
  */
 export async function startNativeSignIn(client: SupabaseClient): Promise<"returned"> {
   if (!pendingUrl) {
-    const { data, error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true } });
+    const { data, error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: nativeRedirect(), skipBrowserRedirect: true } });
     if (error) throw error;
     if (!data.url) throw new Error("sign-in: no address to open");
     pendingUrl = data.url;
