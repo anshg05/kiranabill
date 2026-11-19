@@ -94,6 +94,9 @@ unparsed lines through. Env checks show **names and lengths only** (e.g. `VITE_S
 - **A push does not deploy** (D55): Netlify builds production only when the latest commit message contains `[deploy]`.
   Never put that marker in a commit message unless the owner explicitly approves the release — each production deploy
   costs Netlify credits. Real-device testing: `netlify deploy` (a draft, no `--prod`) only.
+- **Two Netlify sites (D114):** `kiranabilling` (the website, built by `[deploy]`) and `kiranavoicebill-api` (the Android
+  app's voice server - functions only, deployed from the laptop, never linked to GitHub). Ask before EVERY deploy to it; never
+  `--prod` on either site without the owner's approval (15 credits each). `netlify/functions/` changes must reach both.
 - **Every migration stays compatible with the currently DEPLOYED app** (D55 §5): `db push` is live at once, code only at
   a `[deploy]` release. Additive until the release; rename/drop/tighten = two releases (expand, deploy, contract).
 - **UI tickets:** check the change yourself in the preview browser before asking for the owner's check (D39).

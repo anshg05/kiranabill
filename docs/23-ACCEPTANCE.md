@@ -129,6 +129,8 @@ npm run check:recorder        # must print: "no acceptance recorder in dist/ - s
      - Rollback is one click, and the database is backward-compatible (every migration is additive).
      - The shared bill-number sequence is server-side, unchanged, and covered by the green e2e suite.
      - It is done at the START of the pilot instead (`17` "Before the real shop", item 8).
+4b. **The functions site (D114, 19 Nov 2026):** `netlify/functions/` runs on TWO sites - the website (`kiranabilling`, released by `[deploy]`) and `kiranavoicebill-api` (the Android app's server, deployed from the laptop: `npx netlify deploy --site kiranavoicebill-api --dir functions-site --functions netlify/functions --no-build`, a draft with `--alias fn-draft` (0 credits) first, then production only with the owner's OK, 15 credits). A release that changes `netlify/functions/` reaches both. Before an app release: the preflight from `https://localhost` passes and from another site is refused, and one real voice order through that site reaches done.
+4c. **The app build (D114):** the production VITE values plus `VITE_VOICE_RUN_URL` = the functions site's `/voice-run` (the draft's for the test app); never set on the `kiranabilling` site. Check `dist` holds that address before `npx cap sync android`.
 5. The two-phone session (§9) when the release touches sync, bill numbers, history, cancel, the catalog, or the screen.
 6. The owner's draft check, then his written approval of the exact commit; only then the `[deploy]` marker.
 

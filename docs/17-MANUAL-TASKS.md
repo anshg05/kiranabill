@@ -188,6 +188,7 @@ Do these once, in this order, before the first real customer. Each says what to 
 
 | # | Task | Cost |
 |---|---|---|
+| M-44 | ✅ **Done 19 Nov 2026.** **The functions site (D114):** `kiranavoicebill-api` (`https://kiranavoicebill-api.netlify.app`) created by the agent with the CLI (0 credits, not linked to GitHub). The owner typed the values in Netlify -> the project -> Project configuration -> Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GEMINI_API_KEY` (Contains secret values), `GEMINI_AUDIO_MODEL` - the same values as the `kiranabilling` site (checked by length and hash, never printed); never the service-role key. Functions region: the default `us-east-2`, same as the current site. **Later (step 6):** its first production deploy (15 credits), asked first. | Free; 15 credits per production deploy |
 | M-43 | ✅ **Done 13 Nov 2026.** **`KB-409` (D112):** Supabase -> Authentication -> URL Configuration -> Redirect URLs -> add `com.kiranavoicebill.app://auth-callback` (keep the web URLs). Without it the Google sign-in inside the Android app cannot return to the app. | Free |
 | M-40 | Google Play developer account | **$25 one-time** |
 | M-41 | Play Store listing: screenshots, description, privacy policy | Free |
