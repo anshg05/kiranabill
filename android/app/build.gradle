@@ -17,6 +17,17 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // D115 (owner, 19 Nov 2026): the real app and the test app "KVB Test" from the same code, installed side by side. The web bundle
+    // must be built for the same app (VITE_APP_VARIANT=test for kvbtest; a flavour name may not start with "test") - the app stops at "Wrong build" otherwise.
+    flavorDimensions = ["app"]
+    productFlavors {
+        prod { dimension "app" }
+        kvbtest {
+            dimension "app"
+            applicationIdSuffix ".test"
+            versionNameSuffix "-test"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false

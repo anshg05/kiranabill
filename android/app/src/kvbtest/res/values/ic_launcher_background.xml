@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- D115: the test app's icon tile is RED (the real app's is yellow #FFCF33). -->
+<resources>
+    <color name="ic_launcher_background">#C0392B</color>
+</resources>

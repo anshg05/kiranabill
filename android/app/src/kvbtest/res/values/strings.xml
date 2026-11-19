@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- D115: the test app (com.kiranavoicebill.app.test) - a name that can never be mistaken for the real app. -->
+<resources>
+    <string name="app_name">KVB Test</string>
+    <string name="title_activity_main">KVB Test</string>
+    <string name="package_name">com.kiranavoicebill.app.test</string>
+    <string name="custom_url_scheme">com.kiranavoicebill.app.test</string>
+</resources>

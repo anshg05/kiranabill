@@ -33,6 +33,22 @@ describe("the Android shell (D111)", () => {
     expect(page).not.toMatch(/<script|<link/i);
   });
 
+  it("D115 (owner, 19 Nov 2026): two flavours - prod (com.kiranavoicebill.app, unchanged) and kvbtest (.test), installed side by side", () => {
+    const gradle = read("android/app/build.gradle");
+    expect(gradle).toMatch(/productFlavors\s*\{[\s\S]*prod\s*\{\s*dimension "app"\s*\}[\s\S]*kvbtest\s*\{[^}]*applicationIdSuffix "\.test"[^}]*\}/);
+    expect(gradle.match(/applicationIdSuffix/g)).toHaveLength(1); // only the test app's
+  });
+
+  it("D115: the test app is labelled \"KVB Test\" with a RED icon tile; the real app keeps its name and yellow tile", () => {
+    const main = read("android/app/src/main/res/values/strings.xml");
+    expect(main).toContain('<string name="app_name">Kirana Voice Bill</string>');
+    const test = read("android/app/src/kvbtest/res/values/strings.xml");
+    expect(test).toContain('<string name="app_name">KVB Test</string>');
+    expect(test).toContain('<string name="title_activity_main">KVB Test</string>');
+    expect(read("android/app/src/main/res/values/ic_launcher_background.xml")).toContain("#FFCF33");
+    expect(read("android/app/src/kvbtest/res/values/ic_launcher_background.xml")).toMatch(/<color name="ic_launcher_background">#C0392B<\/color>/);
+  });
+
   it("targets SDK 36 with minimum Android 7.0 (API 24)", () => {
     const vars = read("android/variables.gradle");
     expect(vars).toMatch(/minSdkVersion = 24\b/);
