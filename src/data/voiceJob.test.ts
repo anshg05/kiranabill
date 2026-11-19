@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GIVE_UP_MS, nextSteps, POLL_INTERVAL_MS, submitRecording, type VoiceJobOutcome } from "./voiceJob";
 import { submitAppRecording, voiceRunEndpoint } from "./voiceRunEndpoint";
+import { APP_VERSION_CODE } from "./appVersion";
 
 // KB-384a step 4 (owner, 9 Nov 2026; D107): the phone's side of the async voice path. Upload -> row -> /voice-run -> watch the row every
 // 1.5 s. Every outcome that is not a bill ends in Retry (the SAME recording) or Add by hand - never a dead end.
@@ -52,6 +53,20 @@ describe("submitRecording (KB-384a step 4)", () => {
     expect(f.sleep).toHaveBeenCalledWith(1500);
     expect(f.read).toHaveBeenCalledTimes(4); // the check before starting + 3 while watching
     expect(nextSteps(out)).toEqual([]);
+  });
+
+  describe("the app's version on the recording row (D116, g1 - a record only)", () => {
+    it("the billing screen's call adds the row WITH this build's versionCode", async () => {
+      const f = fake({ rows: [Q, { status: "done", attempts: 1, transcript: "x", items: [], error: null }] });
+      await submitAppRecording({ client: f.client as never, shopId: SHOP, recordingId: REC, audio: new Blob([new Uint8Array([1])], { type: "audio/webm" }), accessToken: "jwt", fetchImpl: f.fetchImpl as never, sleep: f.sleep, now: () => 0 });
+      expect(APP_VERSION_CODE).toBeGreaterThanOrEqual(1);
+      expect(f.insert).toHaveBeenCalledWith({ recording_id: REC, shop_id: SHOP, mime: "audio/webm", app_version_code: APP_VERSION_CODE });
+    });
+    it("a caller that gives no version (draft:voice, other scripts) adds the row without one - the column stays empty", async () => {
+      const f = fake({ rows: [Q, { status: "done", attempts: 1, transcript: "x", items: [], error: null }] });
+      await f.run();
+      expect(f.insert).toHaveBeenCalledWith({ recording_id: REC, shop_id: SHOP, mime: "audio/webm" });
+    });
   });
 
   describe("where /voice-run is (option (b) step 3, owner 18 Nov 2026)", () => {

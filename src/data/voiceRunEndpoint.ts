@@ -1,3 +1,4 @@
+import { APP_VERSION_CODE } from "./appVersion";
 import { submitRecording, type SubmitRecordingOptions, type VoiceJobOutcome } from "./voiceJob";
 
 /**
@@ -7,5 +8,6 @@ import { submitRecording, type SubmitRecordingOptions, type VoiceJobOutcome } fr
  */
 export const voiceRunEndpoint = (): string => import.meta.env.VITE_VOICE_RUN_URL || "/voice-run";
 
-/** The billing screen's call: submitRecording at this build's address. */
-export const submitAppRecording = (opts: Omit<SubmitRecordingOptions, "endpoint">): Promise<VoiceJobOutcome> => submitRecording({ ...opts, endpoint: voiceRunEndpoint() });
+/** The billing screen's call: submitRecording at this build's address, recording this build's versionCode (D116). */
+export const submitAppRecording = (opts: Omit<SubmitRecordingOptions, "endpoint" | "appVersionCode">): Promise<VoiceJobOutcome> =>
+  submitRecording({ ...opts, endpoint: voiceRunEndpoint(), appVersionCode: APP_VERSION_CODE });

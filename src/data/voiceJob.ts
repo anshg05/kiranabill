@@ -37,6 +37,8 @@ export interface SubmitRecordingOptions {
   accessToken: string;
   /** the app passes voiceRunEndpoint() (voiceRunEndpoint.ts); "/voice-run" on the same site when left out (scripts pass their own) */
   endpoint?: string;
+  /** D116: the app's versionCode, recorded on the row (a record only). Scripts leave it out - the column stays empty. */
+  appVersionCode?: number;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
@@ -52,7 +54,7 @@ export async function submitRecording(opts: SubmitRecordingOptions): Promise<Voi
 
   const up = await client.storage.from("recordings").upload(`${shopId}/${recordingId}`, audio, { contentType: mime, upsert: false });
   if (up.error && !isAlreadyThere(up.error)) return failed(isLoginRefused(up.error) ? "session" : "upload", up.error);
-  const row = await client.from("voice_recordings").insert({ recording_id: recordingId, shop_id: shopId, mime });
+  const row = await client.from("voice_recordings").insert({ recording_id: recordingId, shop_id: shopId, mime, ...(opts.appVersionCode ? { app_version_code: opts.appVersionCode } : {}) });
   if (row.error && row.error.code !== "23505") return failed("start", row.error);
   // Retry: a recording already done is answered at once (no /voice-run, no Gemini); an earlier FAILED attempt is not this run's
   // answer - only a failure from a newer attempt counts (the worker claims again, attempts + 1).

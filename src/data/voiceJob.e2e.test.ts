@@ -76,6 +76,15 @@ describe("KB-384a e2e - the phone's async voice path on the local stack (Gemini 
     expect(bill.lines.map((l) => [l.item.qty, l.item.unit, l.item.rate, l.item.total])).toEqual([[2, "kg", 4500, 9000]]);
   }, 60_000);
 
+  it("D116: the app's versionCode is stored on the row it adds; a caller without one leaves it empty", async () => {
+    const withVersion = crypto.randomUUID();
+    await submitRecording({ client, shopId, recordingId: withVersion, audio, accessToken: token, fetchImpl: backgroundRun, appVersionCode: 3, sleep: (ms) => new Promise((r) => setTimeout(r, ms / 10)) });
+    expect((await pg.query("select app_version_code from voice_recordings where recording_id = $1", [withVersion])).rows[0].app_version_code).toBe(3);
+    const without = crypto.randomUUID();
+    await submit(without);
+    expect((await pg.query("select app_version_code from voice_recordings where recording_id = $1", [without])).rows[0].app_version_code).toBeNull();
+  }, 60_000);
+
   it("2. Retry (or a double tap) on a done recording: done at once, NO second Gemini call", async () => {
     const rec = crypto.randomUUID();
     await submit(rec);
