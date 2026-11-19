@@ -2662,6 +2662,7 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
 7. **Compatibility rule:** the server, the database and the functions keep working with every app version released in the last **60 days, and at least the last 2 versions**, whichever covers more; database changes stay additive until then (rename / drop / tighten = two releases, D55 section 5).
 8. **Order with this migration:** the owner's `db push` of `20261119090000` comes BEFORE any build containing step 5's code reaches a phone or a site (the app writes `app_version_code`).
 9. **Restores:** a table a migration seeds is cleared before the data load (`SEEDED_PUBLIC_TABLES`, kept equal to the migrations by `scripts/backup/seededTables.test.ts`; `22` step 5) - the seeded `app_min_version` row had stopped the rehearsal. The hang it caused instead of an error is `KB-432`.
+10. **Verified 19 Nov 2026:** the migration pushed on the owner's yes (production reads `android` / 1; a write with the public key refused, 42501); the owner's phone test of the test app `test-v2` passed every check (block on return to the front, held offline, Check again reopened the app, never mid-bill, Update to Chrome, the real app unchanged).
 ---
 
 ## Superseded
