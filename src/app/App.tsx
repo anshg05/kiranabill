@@ -7,7 +7,7 @@ import { OnboardingScreen } from "@/ui/OnboardingScreen";
 import { BillingScreen } from "@/ui/BillingScreen";
 import { useT } from "@/ui/useT";
 import { TestAppBanner, TestAppRefused, WrongBuild } from "@/ui/TestAppBanner";
-import { TEST_APP_USER_IDS, isTestApp } from "@/data/testApp";
+import { isTestApp, testAppUserIds } from "@/data/testApp";
 import { VersionGateProvider, useVersionGate } from "@/ui/VersionGate";
 import { PleaseUpdate } from "@/ui/PleaseUpdate";
 
@@ -72,7 +72,7 @@ function AuthGate() {
   if (!userId) return blocked ? <PleaseUpdate localDb={null} /> : <SignedOutFlow />; // D116: signed out, nothing to upload
   // D115: the test app uses the production database - only the test account gets past here. Checked BEFORE ShopProvider, so for any
   // other account (the owner's real one) no phone database is opened, no shop read, nothing pulled, no sync started.
-  if (isTestApp() && !TEST_APP_USER_IDS.includes(userId)) return <TestAppRefused onSignOut={() => void signOut()} />;
+  if (isTestApp() && !testAppUserIds().includes(userId)) return <TestAppRefused onSignOut={() => void signOut()} />;
 
   return (
     <ShopProvider userId={userId} online={mode === "online"} deviceDb={deviceDb}>

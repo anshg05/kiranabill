@@ -30,7 +30,7 @@ vi.mock("@/ui/VersionGate", () => ({
 
 import { App } from "./App";
 import { SignInScreen } from "@/ui/SignInScreen";
-import { TEST_APP_USER_IDS, TEST_SIGN_IN_HINT, isTestApp } from "@/data/testApp";
+import { isTestApp, testAppUserIds, testSignInHint } from "@/data/testApp";
 import { APP_VERSION_CODE } from "@/data/appVersion";
 
 const TEST_USER = "77636ea8-8058-44ef-9762-76dfc47e5502";
@@ -57,7 +57,9 @@ describe("the test app's marks (D115)", () => {
     expect(isTestApp()).toBe(true);
     vi.stubEnv("VITE_APP_VARIANT", "Test");
     expect(isTestApp()).toBe(false);
-    expect(TEST_APP_USER_IDS).toEqual([TEST_USER]);
+    expect(testAppUserIds()).toEqual([]); // the real app: no test account, no test strings (D117)
+    vi.stubEnv("VITE_APP_VARIANT", "test");
+    expect(testAppUserIds()).toEqual([TEST_USER]);
   });
 
   it("test app: the red TEST frame on the signed-out screens and on a signed-in screen; never takes a tap", () => {
@@ -84,13 +86,15 @@ describe("the test app's marks (D115)", () => {
   });
 
   it("the sign-in hint: in the test app only", () => {
-    expect(TEST_SIGN_IN_HINT).toBe("Use the TEST Google account (second Gmail)");
+    const HINT = "Use the TEST Google account (second Gmail)";
+    expect(testSignInHint()).toBe("");
     render(<SignInScreen />);
-    expect(screen.queryByText(TEST_SIGN_IN_HINT)).toBeNull();
+    expect(screen.queryByText(HINT)).toBeNull();
     cleanup();
     vi.stubEnv("VITE_APP_VARIANT", "test");
     render(<SignInScreen />);
-    expect(screen.getByText(TEST_SIGN_IN_HINT)).toBeTruthy();
+    expect(testSignInHint()).toBe(HINT);
+    expect(screen.getByText(HINT)).toBeTruthy();
   });
 });
 
