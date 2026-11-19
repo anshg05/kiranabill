@@ -73,6 +73,7 @@ Read `10-TRACKER.md` immediately after this file — it is the current state of 
 | 24 | `24-ROADMAP.md` | **What is next and in what order** - voice accuracy, the pilot, bill features, the Android app; status per item (D100) |
 | 25 | `25-V3-VOICE-DESIGN.md` | **How V3's voice is built** (D104, D105): the pipeline, the prompt, the checks on an AI answer, the recording flow, the Sarvam backup, the tickets `KB-379` - `KB-387` and their finish lines |
 | 26 | `26-DESIGN-SPEC.md` + `docs/design/` | **The Phase A look (D110), binding:** tokens, fonts, components, motion, every screen. `docs/design/` holds the 26 approved screens as HTML (`index.html`), the logos and `canvas.json`. Before building or changing any screen |
+| 27 | `27-PLAY-DATA-SAFETY.md` | **Google Play's Data safety form and App content answers** (D120), ready to copy into Play Console; kept in step with `/privacy` by a test. |
 
 ### Documents that don't exist yet, on purpose
 

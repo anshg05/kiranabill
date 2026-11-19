@@ -48,6 +48,7 @@ on this project.
 | Backups, restore, key custody | `22-BACKUP-AND-RESTORE.md` |
 | V3 voice (the new pipeline, `KB-379` - `KB-387`) | `25-V3-VOICE-DESIGN.md` |
 | Android app, printing, the redesign (Phase A) | `24-ROADMAP.md` §e, `26-DESIGN-SPEC.md`, `docs/design/` |
+| Privacy policy, Play's Data safety form (what the app collects) | `public/privacy.html`, `27-PLAY-DATA-SAFETY.md`, D120 |
 
 **Never read `legacy/` in depth.** It is reference only, never imported, never edited, never linted.
 Its useful content is already extracted into `14-LEGACY-REFERENCE.md`. Read that instead.
