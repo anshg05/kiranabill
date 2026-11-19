@@ -2649,6 +2649,7 @@ Google refuses sign-in inside an app's own web view. Model: Fable 5.2 (D33 - it 
 5. **Wrong-build guard:** inside the Android app nothing starts until `App.getInfo().id` equals this bundle's package; a test bundle in the real app (or the reverse) shows "Wrong build for this app". A failed check lets the app open.
 6. **Voice server:** the test app's `VITE_VOICE_RUN_URL` is the functions-site draft `https://fn-draft--kiranavoicebill-api.netlify.app/voice-run` (D114). The real app build is not changed by this step.
 7. **Test data on production (owner's choice: the same project, not a second Supabase project):** bills, numbers, catalog, learning and metrics are per shop (RLS, rule 12) and never reach the real shop; recordings follow the daily clean-up; each test voice order is a real paid Gemini call; any later report across shops (`KB-405`) must leave the test shop out (its id goes into `17` `M-45`).
+8. **Verified 19 Nov 2026 (owner, phone):** the debug APK `test-v1` (6.7 MB; aapt2: `com.kiranavoicebill.app.test`, "KVB Test") installed next to the real app (the real app unchanged, 1.0 of 17 Nov) - all 10 checks of the step 4 checklist passed.
 ---
 
 ## Superseded
