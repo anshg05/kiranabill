@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Receipt } from "@/domain/receipt";
 import { PrintError, type PrinterDevice, type PrinterLink, type PrinterTransport } from "@/data/printer";
 import { stubLocalStorage } from "./testStorage";
@@ -75,6 +75,19 @@ afterEach(() => {
 
 const printBtn = () => screen.getByRole("button", { name: /^(Print bill|Reprint)$/ }); // KB-414 step 2: 13 "Print bill", 15 "Reprint"
 const settle = () => act(async () => {});
+/**
+ * KB-431 (owner, 19 Nov 2026): wait until print number `n` has FINISHED - its result on screen ("Printed", or the failure sentence)
+ * and the button usable again - before the next tap. PrintButton ignores a tap while printing (PrintButton.tsx:24), so a second
+ * tap after a fixed wait was sometimes swallowed. The last settle lets the print's own .then (the "printed once" mark) run.
+ */
+const printFinished = async (n: number) => {
+  await waitFor(() => {
+    expect(rendered.calls).toHaveLength(n);
+    expect(screen.queryByText("Printed") ?? screen.queryByRole("alert")).toBeTruthy();
+    expect(printBtn().getAttribute("aria-disabled")).not.toBe("true");
+  });
+  await settle();
+};
 
 describe("PrintButton", () => {
   it("is not there in a browser or the PWA", () => {
@@ -141,9 +154,9 @@ describe("PrintButton", () => {
     choose(BT58);
     render(<PrintButton receipt={receipt} firstIsOriginal />);
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(1);
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(2);
     expect(rendered.calls.map((c) => c.receipt.reprint ?? null)).toEqual([null, "REPRINT"]);
   });
 
@@ -161,10 +174,11 @@ describe("PrintButton", () => {
     classic.t.failOpen = new PrintError("unreachable");
     render(<PrintButton receipt={receipt} firstIsOriginal />);
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(1);
+    expect(screen.getByRole("alert")).toBeTruthy(); // the first copy failed
     classic.t.failOpen = null;
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(2);
     expect(rendered.calls.map((c) => c.receipt.reprint ?? null)).toEqual([null, null]);
   });
 
