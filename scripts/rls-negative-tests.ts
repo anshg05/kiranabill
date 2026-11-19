@@ -1517,6 +1517,91 @@ async function main(): Promise<void> {
       await asUser(client, ownerA);
       await client.query(`update voice_recordings set app_version_code = 99 where shop_id = $1`, [shopA]);
     });
+
+    // (7) KB-430 (D119, owner 20 Nov 2026): "Delete my account". delete_my_account() takes NO argument - it acts on auth.uid() only;
+    // the admin and internal functions are closed to every app role; a shop with another member is refused (nothing deleted); a
+    // finalised bill's lines can be removed ONLY inside the deletion (the flag AND a non-app role), never by a user setting the flag.
+    const userD = randomUUID(); // deletes his account
+    const userE = randomUUID(); // another shop - must be untouched
+    const userF = randomUUID(); // a shop shared with userG - refused
+    const userG = randomUUID();
+    await asSuperuser(client);
+    await client.query(`insert into auth.users (id, email) values ($1, 'd@kb430.local'), ($2, 'e@kb430.local'), ($3, 'f@kb430.local'), ($4, 'g@kb430.local')`, [userD, userE, userF, userG]);
+    const seedShop = async (owner: string, alsoMember?: string) => {
+      const shop = randomUUID();
+      await asSuperuser(client);
+      await client.query(`insert into shops (id, owner_user_id, name, catalog_mode) values ($1, $2, 'KB-430 shop', 'custom_only')`, [shop, owner]);
+      await client.query(`insert into shop_members (shop_id, user_id, role) values ($1, $2, 'owner')`, [shop, owner]);
+      if (alsoMember) await client.query(`insert into shop_members (shop_id, user_id, role) values ($1, $2, 'staff')`, [shop, alsoMember]);
+      await client.query(`insert into shop_products (shop_id, display_name, unit, price_paise, source, local_id, device_id) values ($1, 'P', 'kg', 3000, 'custom', gen_random_uuid(), 'kb430')`, [shop]);
+      for (const status of ["final", "cancelled"]) {
+        const bill = randomUUID();
+        await client.query(`insert into bills (id, shop_id, local_id, receipt_number, subtotal_paise, total_paise, status, schema_version, device_id) values ($1, $2, gen_random_uuid(), $3, 2000, 2000, 'draft', 1, 'kb430')`, [bill, shop, `K-${status}-${shop.slice(0, 4)}`]);
+        await client.query(`insert into bill_items (bill_id, shop_id, line_no, display_name, total_paise, price_type, source) values ($1, $2, 1, 'I', 2000, 'total', 'manual')`, [bill, shop]);
+        await client.query(`update bills set status = 'final', finalized_at = now() where id = $1`, [bill]);
+        if (status === "cancelled") await client.query(`update bills set status = 'cancelled' where id = $1`, [bill]);
+      }
+      return shop;
+    };
+    const shopD = await seedShop(userD);
+    const shopE = await seedShop(userE);
+    const shopF = await seedShop(userF, userG);
+    const rowsOf = async (shop: string) => {
+      await asSuperuser(client);
+      const r = await client.query(`select (select count(*) from bills where shop_id = $1)::int as bills, (select count(*) from bill_items where shop_id = $1)::int as items, (select count(*) from shop_products where shop_id = $1)::int as products, (select count(*) from shops where id = $1)::int as shops`, [shop]);
+      return r.rows[0] as { bills: number; items: number; products: number; shops: number };
+    };
+
+    await checkRejects(client, "KB-430: the anon role cannot call delete_my_account", "42501", async () => {
+      await asAnon(client);
+      await client.query(`select delete_my_account()`);
+    });
+    await checkRejects(client, "KB-430: a signed-in user cannot call delete_account_by_admin (it takes any user id)", "42501", async () => {
+      await asUser(client, userD);
+      await client.query(`select delete_account_by_admin($1)`, [userE]);
+    });
+    await checkRejects(client, "KB-430: a signed-in user cannot call delete_account_internal", "42501", async () => {
+      await asUser(client, userD);
+      await client.query(`select delete_account_internal($1)`, [userE]);
+    });
+    await checkRejects(client, "KB-430 hard rule 2: a signed-in user who SETS the deletion flag still cannot remove a final bill's lines", "P0001", async () => {
+      await asUser(client, userD);
+      await client.query(`select set_config('kb.deleting_account', 'on', true)`);
+      await client.query(`delete from bill_items where shop_id = $1`, [shopD]);
+    });
+    await checkRejects(client, "KB-430: a member of a SHARED shop is refused - and nothing is deleted", "P0001", async () => {
+      await asUser(client, userF);
+      await client.query(`select delete_my_account()`);
+    });
+    await check(client, "KB-430: after the refusal the shared shop is whole (2 bills, 2 items, 1 product) and F's login exists", async () => {
+      const r = await rowsOf(shopF);
+      const login = await client.query(`select 1 from auth.users where id = $1`, [userF]);
+      if (r.bills !== 2 || r.items !== 2 || r.products !== 1 || r.shops !== 1 || login.rowCount !== 1) throw new Error(JSON.stringify(r));
+      return JSON.stringify(r);
+    });
+    await check(client, "KB-430: user D deletes his account - his shop's final AND cancelled bills, their lines, products, the shop and his login go", async () => {
+      await asUser(client, userD);
+      const out = (await client.query(`select delete_my_account() as c`)).rows[0].c as Record<string, number>;
+      if (out.bills !== 2 || out.bill_items !== 2 || out.shop_products !== 1 || out.shops !== 1 || out.auth_users !== 1) throw new Error(JSON.stringify(out));
+      const r = await rowsOf(shopD);
+      const login = await client.query(`select 1 from auth.users where id = $1`, [userD]);
+      if (r.bills || r.items || r.products || r.shops || login.rowCount) throw new Error(`left: ${JSON.stringify(r)}, login ${login.rowCount}`);
+      return JSON.stringify(out);
+    });
+    await check(client, "KB-430: the OTHER user's shop is untouched (2 bills, 2 items, 1 product, login)", async () => {
+      const r = await rowsOf(shopE);
+      const login = await client.query(`select 1 from auth.users where id = $1`, [userE]);
+      if (r.bills !== 2 || r.items !== 2 || r.products !== 1 || r.shops !== 1 || login.rowCount !== 1) throw new Error(JSON.stringify(r));
+      return JSON.stringify(r);
+    });
+    await checkRejects(client, "KB-430: the deleted user calling again is refused (no such account) - nothing else changes", "P0002", async () => {
+      await asUser(client, userD);
+      await client.query(`select delete_my_account()`);
+    });
+    await checkRejects(client, "KB-430: outside the deletion a final bill's lines stay protected, even for the owner role (no flag)", "P0001", async () => {
+      await asSuperuser(client);
+      await client.query(`delete from bill_items where shop_id = $1`, [shopE]);
+    });
   } finally {
     await client.query("rollback");
     await client.end();
