@@ -109,6 +109,9 @@ export const STORAGE_EXCLUDE = [
   "storage.s3_multipart_uploads",
   "storage.s3_multipart_uploads_parts",
   "storage.vector_indexes",
+  // 19 Nov 2026 (step 7's backup stopped on them): Supabase's new bucket-lifecycle bookkeeping - platform-managed, none of our data
+  "storage.bucket_lifecycle_states",
+  "storage.lifecycle_abandoned_artifacts",
 ];
 
 /** The only `storage` table a backup keeps. */

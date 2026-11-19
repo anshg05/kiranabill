@@ -343,6 +343,19 @@ describe("public tables the backup insists on (KB-325: bill_cancellations is exp
   });
 });
 
+describe("Storage's bookkeeping tables (19 Nov 2026: Supabase added two lifecycle tables; step 7's backup stopped on them)", () => {
+  const counts: Record<string, number> = { "auth.users": 1, "auth.identities": 1, ...Object.fromEntries(EXPECTED_PUBLIC_TABLES.map((t) => [t, 1])) };
+  it("the two lifecycle tables are left out of the dump itself (-x), with the other bookkeeping tables", () => {
+    const x = buildDataDumpArgs("linked").join(" ");
+    expect(x).toContain("storage.bucket_lifecycle_states");
+    expect(x).toContain("storage.lifecycle_abandoned_artifacts");
+    expect(x).toContain("storage.buckets_vectors");
+  });
+  it("any OTHER unknown Storage table still stops the backup - only storage.objects is allowed", () => {
+    expect(evaluateScan({ counts: { ...counts, "storage.some_new_table": 1 }, sawReplicaRole: true } as never).join(" ")).toMatch(/storage\.some_new_table is not on the allow-list of storage tables/);
+  });
+});
+
 describe("the list of public tables cannot drift from the migrations", () => {
   it("EXPECTED_PUBLIC_TABLES + PENDING_PUBLIC_TABLES equal every `create table` in supabase/migrations", () => {
     const dir = join(__dirname, "..", "..", "supabase", "migrations");
