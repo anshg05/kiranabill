@@ -26,6 +26,9 @@ import { useT } from "./useT";
  */
 const SETUP_OFFLINE = "Setting up a shop needs an internet connection."; // ShopProvider's wording
 const SETUP_FAILED = "Couldn't set up the shop — check the internet and try again";
+/** SG-20 (D121): the database's refusal in allowlist mode (shops_before_insert raises "signup_closed") - messages.ts onboard.invite */
+const SETUP_INVITE = "Sign-ups are by invitation right now. Write to kiranavoicebill@gmail.com from this Google account.";
+const isSignupClosed = (err: unknown) => typeof err === "object" && err !== null && ((err as { message?: unknown }).message === "signup_closed" || (err as { hint?: unknown }).hint === "signup_closed");
 
 /** 06's sample lines, built by the real receipt (units as the app writes them - D110 item 8). */
 function previewReceipt(name: string, phone: string | null) {
@@ -81,7 +84,7 @@ export function OnboardingScreen() {
       setSubmitting(false);
       // The one message written for the shopkeeper (ShopProvider) keeps its sentence; anything else is a developer's text.
       console.warn("[setup] could not create the shop:", err instanceof Error ? err.name : "error");
-      setError(err instanceof Error && err.message === SETUP_OFFLINE ? err.message : SETUP_FAILED);
+      setError(isSignupClosed(err) ? SETUP_INVITE : err instanceof Error && err.message === SETUP_OFFLINE ? err.message : SETUP_FAILED);
     });
   };
 

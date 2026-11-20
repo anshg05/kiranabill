@@ -311,6 +311,7 @@ const FAILED_TEXT: Record<string, Parameters<ReturnType<typeof useT>["t"]>[0]> =
   start: "order.couldntSend",
   session: "order.session",
   rate_limited: "order.limit",
+  day_limit: "order.dayLimit", // SG-20 (D121): the shop's voice calls for today are used up
 };
 
 export function OrderEntries({

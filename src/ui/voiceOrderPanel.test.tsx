@@ -608,6 +608,7 @@ describe("OrderEntries - each recording of the bill", () => {
     ["start", "Couldn't send the recording"],
     ["session", "Signed out — sign in again, then try again"],
     ["rate_limited", "Too many orders this hour — try again later"],
+    ["day_limit", "Today's voice orders are used up — type the items; voice works again after midnight"],
     ["timeout", "Couldn't read the order"],
     ["failed", "Couldn't read the order"],
   ])("failed '%s': %s -> Retry (the SAME recording), Add by hand, Remove", (reason, text) => {

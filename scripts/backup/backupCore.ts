@@ -45,7 +45,7 @@ export const EXPECTED_PUBLIC_TABLES = [
  * before the push has no such table and must still pass; once it is pushed, move the name into EXPECTED_PUBLIC_TABLES
  * (a dump then missing it is a real fault). The data dump takes every public table - this list only decides what is checked.
  */
-export const PENDING_PUBLIC_TABLES: string[] = []; // empty again since 19 Nov 2026 (app_min_version moved after the owner's db push of 20261119090000_d116_app_min_version) (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
+export const PENDING_PUBLIC_TABLES: string[] = ["public.app_limits", "public.gemini_price", "public.signup_allowlist", "public.voice_usage"]; // SG-20 (D121) until the owner's db push of 20261121090000_sg20_limits_signups_reports; before: empty since 19 Nov 2026 (app_min_version moved after the owner's db push of 20261119090000_d116_app_min_version) (shop_bill_counters and bill_number_grants moved after the owner's push of 20261022090000_bill_numbers; bill_metrics on 17 Oct)
 
 /**
  * KB-384a (owner, 9 Nov 2026): public tables NEVER backed up. voice_recordings holds the recordings' transcripts; recordings exist

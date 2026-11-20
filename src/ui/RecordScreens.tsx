@@ -278,8 +278,8 @@ export function GeneratingBody({ shopName, seconds, onByHand }: { shopName: stri
 }
 
 /** 23's one true sentence: the voice queue's reason (src/data/voiceJob.ts) */
-const FAIL_SENTENCE: Record<string, "fail.sent" | "fail.busy" | "fail.limit" | "fail.session"> = {
-  upload: "fail.sent", start: "fail.sent", busy: "fail.busy", timeout: "fail.busy", rate_limited: "fail.limit", session: "fail.session",
+const FAIL_SENTENCE: Record<string, "fail.sent" | "fail.busy" | "fail.limit" | "fail.dayLimit" | "fail.session"> = {
+  upload: "fail.sent", start: "fail.sent", busy: "fail.busy", timeout: "fail.busy", rate_limited: "fail.limit", day_limit: "fail.dayLimit", session: "fail.session",
 };
 
 /** 23-ReadFailed's screen (under the top bar): the first recording of an empty bill was not read. It is still in the voice queue. */

@@ -100,6 +100,7 @@ export default defineConfig({
         test: {
           name: "e2e",
           include: ["**/*.e2e.test.ts"],
+          globalSetup: ["src/e2eGlobalSetup.ts"],
           env: loadEnv("test", process.cwd(), "VITE_"),
           testTimeout: 60_000,
           hookTimeout: 60_000,

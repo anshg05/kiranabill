@@ -17,7 +17,7 @@ export const GIVE_UP_MS = 75_000;
 
 export type VoiceJobOutcome =
   | { kind: "done"; recordingId: string; transcript: string; items: ParsedItem[] }
-  /** reason: "upload" | "session" (sign in, then Retry) | "start" | the server's kind (rate_limited, download, timeout, busy, failed)
+  /** reason: "upload" | "session" (sign in, then Retry) | "start" | the server's kind (rate_limited, day_limit - SG-20, download, timeout, busy, failed)
    *  network: fetch itself failed (no answer from the server) - KB-414 bug A: if the phone is offline, it waits instead (useVoiceOrders) */
   | { kind: "failed"; recordingId: string; reason: string; network?: true }
   | { kind: "gave_up"; recordingId: string };

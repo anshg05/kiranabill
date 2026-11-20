@@ -181,6 +181,8 @@ describe("23 Couldn't read the order: the first recording of an empty bill faile
     ["busy", "The reading service is busy right now. Your recording is safe — try again in a moment."],
     ["timeout", "The reading service is busy right now. Your recording is safe — try again in a moment."],
     ["rate_limited", "Too many orders this hour. Your recording is safe — try again later."],
+    // SG-20 (D121): the shop's 250 voice calls for today are used up - typing still works, the recording waits
+    ["day_limit", "Today's voice orders are used up. Type the items for now — your recording is safe; voice works again after midnight."],
     ["session", "You were signed out. Sign in again, then try again — your recording is safe."],
     ["failed", "This order couldn't be read. Your recording is safe — try again, no need to speak again."],
     ["download", "This order couldn't be read. Your recording is safe — try again, no need to speak again."],
@@ -408,7 +410,7 @@ describe("24 Offline: the bill screen, as today's offline waiting - drawn as 24"
 
   it("every new word in Hindi and Hinglish (the catalog)", () => {
     for (const lang of ["hi", "hl"] as const)
-      for (const key of ["gen.title", "gen.reading", "gen.elapsed", "gen.tipTitle", "gen.tip", "gen.safe", "gen.byHand", "fail.sent", "fail.busy", "fail.limit", "fail.session", "fail.read", "fail.recording", "fail.saved", "fail.recordAgain", "offline.strip", "order.queued", "order.queuedSub", "order.meanwhile", "need.recOne", "need.recMany", "bill.afterOrder", "bill.afterOrders"] as const)
+      for (const key of ["gen.title", "gen.reading", "gen.elapsed", "gen.tipTitle", "gen.tip", "gen.safe", "gen.byHand", "fail.sent", "fail.busy", "fail.limit", "fail.dayLimit", "fail.session", "fail.read", "fail.recording", "fail.saved", "fail.recordAgain", "offline.strip", "order.queued", "order.queuedSub", "order.meanwhile", "need.recOne", "need.recMany", "bill.afterOrder", "bill.afterOrders"] as const)
         if (!(lang === "hl" && key === "fail.recording")) // "Recording 0:42" is the same words in Hinglish
           expect(say(key, { s: 3, time: "0:42", n: 2 }, lang)).not.toBe(say(key, { s: 3, time: "0:42", n: 2 }, "en"));
     expect(say("gen.elapsed", { s: 12 }, "hi")).toContain("12");

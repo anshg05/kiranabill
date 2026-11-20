@@ -236,6 +236,8 @@ export const MESSAGES = {
   // KB-413 step 3 (23-ReadFailed): one true sentence per reason (the queue's reason - src/data/voiceJob.ts); the recording is in the queue
   "fail.sent": m("The recording couldn't be sent. It's safe on this phone — try again, no need to speak again.", "रिकॉर्डिंग भेज नहीं पाए। वह इस फ़ोन में सुरक्षित है — ‘फिर कोशिश’ करें, दोबारा बोलने की ज़रूरत नहीं।", "Recording bhej nahi paaye. Woh is phone mein surakshit hai — ‘Phir koshish’ karein, dobara bolne ki zaroorat nahi."),
   "fail.busy": m("The reading service is busy right now. Your recording is safe — try again in a moment.", "पढ़ने वाली सेवा अभी व्यस्त है। आपकी रिकॉर्डिंग सुरक्षित है — थोड़ी देर में ‘फिर कोशिश’ करें।", "Padhne wali service abhi busy hai. Aapki recording surakshit hai — thodi der mein ‘Phir koshish’ karein."),
+  // SG-20 (D121): the shop's voice calls for today (app_limits, 250) are used up - typing still works, the recording waits
+  "fail.dayLimit": m("Today's voice orders are used up. Type the items for now — your recording is safe; voice works again after midnight.", "आज के आवाज़ वाले ऑर्डर पूरे हो गए। अभी सामान टाइप करें — आपकी रिकॉर्डिंग सुरक्षित है; आधी रात के बाद आवाज़ फिर चलेगी।", "Aaj ke voice order poore ho gaye. Abhi saamaan type karein — aapki recording surakshit hai; aadhi raat ke baad voice phir chalegi."),
   "fail.limit": m("Too many orders this hour. Your recording is safe — try again later.", "इस घंटे बहुत ऑर्डर हो गए। आपकी रिकॉर्डिंग सुरक्षित है — बाद में ‘फिर कोशिश’ करें।", "Is ghante bahut order ho gaye. Aapki recording surakshit hai — baad mein ‘Phir koshish’ karein."),
   "fail.session": m("You were signed out. Sign in again, then try again — your recording is safe.", "आप साइन आउट हो गए। फिर से साइन इन करें, फिर ‘फिर कोशिश’ — आपकी रिकॉर्डिंग सुरक्षित है।", "Aap sign out ho gaye. Phir se sign in karein, phir ‘Phir koshish’ — aapki recording surakshit hai."),
   "fail.read": m("This order couldn't be read. Your recording is safe — try again, no need to speak again.", "यह ऑर्डर पढ़ा नहीं जा सका। आपकी रिकॉर्डिंग सुरक्षित है — ‘फिर कोशिश’ करें, दोबारा बोलने की ज़रूरत नहीं।", "Yeh order padha nahi ja saka. Aapki recording surakshit hai — ‘Phir koshish’ karein, dobara bolne ki zaroorat nahi."),
@@ -244,6 +246,7 @@ export const MESSAGES = {
   "fail.recordAgain": m("Record again", "फिर से रिकॉर्ड करें", "Phir se record karein"),
   "order.couldntSend": m("Couldn't send the recording", "रिकॉर्डिंग भेज नहीं पाए", "Recording bhej nahi paaye"),
   "order.session": m("Signed out — sign in again, then try again", "साइन आउट हो गया — फिर से साइन इन करें, फिर ‘फिर कोशिश’", "Sign out ho gaya — phir se sign in karein, phir ‘Phir koshish’"),
+  "order.dayLimit": m("Today's voice orders are used up — type the items; voice works again after midnight", "आज के आवाज़ वाले ऑर्डर पूरे — सामान टाइप करें; आधी रात के बाद आवाज़ फिर चलेगी", "Aaj ke voice order poore — saamaan type karein; aadhi raat ke baad voice phir chalegi"),
   "order.limit": m("Too many orders this hour — try again later", "इस घंटे बहुत ऑर्डर हो गए — थोड़ी देर बाद ‘फिर कोशिश’", "Is ghante bahut order ho gaye — thodi der baad ‘Phir koshish’"),
   "order.couldntRead": m("Couldn't read the order", "ऑर्डर पढ़ नहीं पाए", "Order padh nahi paaye"),
   "order.noItems": m("No items found", "कोई सामान नहीं मिला", "Koi saamaan nahi mila"),
@@ -674,6 +677,8 @@ export const MESSAGES = {
   "onboard.question": m("Ready catalog, or start empty?", "तैयार सूची लें, या खाली शुरू करें?", "Taiyaar list lein, ya khaali shuru karein?"),
   "onboard.ready": m("Use ready catalog", "तैयार सूची लें", "Taiyaar list lein"),
   "onboard.empty": m("Start empty", "खाली शुरू करें", "Khaali shuru karein"),
+  // SG-20 (D121): sign-ups by the owner's allowlist - the database refused this Google account
+  "onboard.invite": m("Sign-ups are by invitation right now. Write to kiranavoicebill@gmail.com from this Google account.", "अभी साइन-अप सिर्फ़ न्योते से है। इसी Google खाते से kiranavoicebill@gmail.com पर लिखें।", "Abhi sign-up sirf invitation se hai. Isi Google account se kiranavoicebill@gmail.com par likhein."),
   "onboard.offline": m("Setting up a shop needs an internet connection.", "दुकान सेट करने के लिए इंटरनेट चाहिए।", "Dukaan set karne ke liye internet chahiye."),
   "app.serverDown": m("Couldn't reach the server", "सर्वर से जुड़ नहीं पाए", "Server se connect nahi ho paaya"),
   "app.loading": m("Loading…", "खुल रहा है…", "Khul raha hai…"),

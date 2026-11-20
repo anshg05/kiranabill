@@ -51,7 +51,8 @@ export interface RehearseResult {
  * Public tables a migration SEEDS that the backup also carries - cleared before the data load (step 3), or the load meets its own
  * rows. scripts/backup/seededTables.test.ts keeps this equal to the migrations' top-level INSERTs. (D116: app_min_version added.)
  */
-export const SEEDED_PUBLIC_TABLES: readonly string[] = ["public.base_products", "public.app_min_version"];
+// SG-20 (D121): app_limits, gemini_price and signup_allowlist are seeded too (the owner's two accounts, by id, on production)
+export const SEEDED_PUBLIC_TABLES: readonly string[] = ["public.base_products", "public.app_min_version", "public.app_limits", "public.gemini_price", "public.signup_allowlist"];
 
 /** docker exec -i psql ... with `input` piped to stdin; rejects on a non-zero exit (unless tolerant). */
 function psql(db: string, input: NodeJS.ReadableStream | string | null, args: string[] = [], opts: { stopOnError: boolean } = { stopOnError: true }): Promise<string> {

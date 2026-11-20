@@ -137,6 +137,8 @@ async function main(): Promise<void> {
   const client = new Client({ connectionString: dbUrl });
   await client.connect();
   await client.query("begin");
+  // SG-20 (D121): sign-ups open for the checks below (rolled back); section (8) tests the allowlist itself
+  await client.query(`update app_limits set signup_mode = 'open'`);
 
   const ownerA = randomUUID();
   const ownerB = randomUUID();
@@ -1601,6 +1603,59 @@ async function main(): Promise<void> {
     await checkRejects(client, "KB-430: outside the deletion a final bill's lines stay protected, even for the owner role (no flag)", "P0001", async () => {
       await asSuperuser(client);
       await client.query(`delete from bill_items where shop_id = $1`, [shopE]);
+    });
+
+    // (8) SG-20 (D121, owner 20 Nov 2026): the limits row, the price row, the allowlist and the usage counters are the owner's - no app
+    // role reads or writes them (the claim and finish functions do, as their owner); the owner's reports (schema reports) are readable
+    // ONLY in the dashboard; in allowlist mode a user not on the list cannot make a shop.
+    for (const who of ["anon", "a signed-in user"] as const) {
+      const as = () => (who === "anon" ? asAnon(client) : asUser(client, ownerA));
+      for (const [table, write] of [
+        ["app_limits", "update app_limits set shop_calls_per_day = 99999"],
+        ["gemini_price", "update gemini_price set gst_percent = 0"],
+        ["signup_allowlist", "insert into signup_allowlist (email) values ('me@example.com')"],
+        ["voice_usage", `update voice_usage set calls = 0`],
+      ] as const) {
+        await checkRejects(client, `SG-20: ${who} cannot read ${table}`, "42501", async () => {
+          await as();
+          await client.query(`select * from ${table}`);
+        });
+        await checkRejects(client, `SG-20: ${who} cannot write ${table}`, "42501", async () => {
+          await as();
+          await client.query(write);
+        });
+      }
+      await checkRejects(client, `SG-20: ${who} cannot add a voice_usage row`, "42501", async () => {
+        await as();
+        await client.query(`insert into voice_usage (day, shop_id, calls) values (current_date, $1, 0)`, [shopA]);
+      });
+      for (const view of ["reports.daily", "reports.shops"]) {
+        await checkRejects(client, `SG-20: ${who} cannot read the owner's report ${view}`, "42501", async () => {
+          await as();
+          await client.query(`select * from ${view}`);
+        });
+      }
+    }
+    await check(client, "SG-20 sanity: the dashboard (postgres) reads both reports", async () => {
+      await asSuperuser(client);
+      const d = await client.query(`select * from reports.daily limit 1`);
+      const sh = await client.query(`select * from reports.shops limit 1`);
+      return `daily ${d.rowCount} row(s), shops ${sh.rowCount} row(s) seen`;
+    });
+    const stranger = randomUUID();
+    await asSuperuser(client);
+    await client.query(`insert into auth.users (id, email) values ($1, 'stranger@sg20.local')`, [stranger]);
+    await client.query(`update app_limits set signup_mode = 'allowlist'`);
+    await checkRejects(client, "SG-20: in allowlist mode a signed-in user NOT on the list cannot make a shop", "P0001", async () => {
+      await asUser(client, stranger);
+      await client.query(`insert into shops (owner_user_id, name, catalog_mode) values ($1, 'not invited', 'custom_only')`, [stranger]);
+    });
+    await check(client, "SG-20: on the list (another letter case), the same user makes a shop", async () => {
+      await asSuperuser(client);
+      await client.query(`insert into signup_allowlist (email, note) values ('STRANGER@sg20.local', 'rls')`);
+      await asUser(client, stranger);
+      await client.query(`insert into shops (owner_user_id, name, catalog_mode) values ($1, 'invited', 'custom_only')`, [stranger]);
+      return "1 shop";
     });
   } finally {
     await client.query("rollback");

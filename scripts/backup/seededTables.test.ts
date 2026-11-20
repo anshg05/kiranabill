@@ -24,7 +24,7 @@ function seededPublicTables(): string[] {
 
 describe("the restore's clear-before-load list", () => {
   it("equals every public table a migration seeds", () => {
-    expect(seededPublicTables()).toEqual(["public.app_min_version", "public.base_products"]);
+    expect(seededPublicTables()).toEqual(["public.app_limits", "public.app_min_version", "public.base_products", "public.gemini_price", "public.signup_allowlist"]);
     expect([...SEEDED_PUBLIC_TABLES].sort()).toEqual(seededPublicTables());
   });
 });
