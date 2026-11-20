@@ -37,7 +37,7 @@ import { useT } from "./useT";
 // KB-414 step 4 (owner + reviewer, 18 Nov 2026): More's inner pages - today's Settings (KB-312) split into pages in the new look,
 // nothing dropped. Each is an inner page: Back (arrow or Android) goes one level, no nav.
 
-export type MorePage = "shop" | "printer" | "billDesign" | "language" | "sync" | "developer" | "account";
+export type MorePage = "shop" | "printer" | "billDesign" | "language" | "sync" | "help" | "developer" | "account";
 
 /** The receipt language labels (fixed - a language's own name is never translated; "Both" is a word, so it is). */
 export const RECEIPT_LANGUAGE_NAME: Record<BillLanguage, string> = { en: "English", hi: "हिन्दी", both: "English + हिन्दी" };
@@ -65,7 +65,7 @@ export function useSyncStateText(sync: SyncState): string {
 
 const showPhone = (phone: string | null) => (phone === null ? "" : /^\d{10}$/.test(phone) ? formatMobile(phone) : phone);
 
-function InnerPage({ title, backKey, onClose, children }: { title: string; backKey: string; onClose: () => void; children: ReactNode }) {
+export function InnerPage({ title, backKey, onClose, children }: { title: string; backKey: string; onClose: () => void; children: ReactNode }) {
   useBackEntry(backKey, onClose);
   useHidesNav();
   const { t } = useT();

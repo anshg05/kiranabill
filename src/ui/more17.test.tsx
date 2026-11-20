@@ -105,6 +105,7 @@ describe("17 More: the page", () => {
       screen.getByText("App"),
       row(/^App language/),
       row(/^Sync/),
+      row(/^Help & support/), // SG-27 (D124): between Sync and Privacy, as 17 draws it
       screen.getByRole("link", { name: /^Privacy/ }),
       row(/^Developer/),
       screen.getByRole("button", { name: "Sign out" }),
@@ -118,9 +119,15 @@ describe("17 More: the page", () => {
     expect(nav()).toBeTruthy(); // More is a tab: the nav shows
   });
 
-  it("left out, as planned: Help & support (SG-27), account deletion (KB-430); no back arrow on the tab", async () => {
+  it("Help & support (SG-27, D124): the row says 'How to use, contact us' and opens its page", async () => {
     await open();
-    expect(screen.queryByText(/Help/)).toBeNull();
+    expect(row(/^Help & support/).textContent).toContain("How to use, contact us");
+    fireEvent.click(row(/^Help & support/));
+    expect(await screen.findByRole("heading", { name: "How to use" })).toBeTruthy();
+  });
+
+  it("left out, as planned: account deletion (KB-430, only with onDeleteAccount); no back arrow on the tab", async () => {
+    await open();
     expect(screen.queryByText(/Delete|deletion/i)).toBeNull();
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
   });

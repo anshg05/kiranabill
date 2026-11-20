@@ -9,6 +9,7 @@ import { loadPrinterSettings } from "@/data/printer";
 import type { ReconcileResult } from "@/data/billMetrics";
 import type { DeleteOutcome } from "@/data/accountDeletion";
 import { BUILD_ID } from "@/pwa/buildId";
+import { HelpPage } from "./HelpPage";
 import { formatMobile } from "@/domain/customer";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
@@ -109,6 +110,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
             <ListCard>
               <ListRow icon={KB_ICONS.Languages} title={t("more.appLanguage")} value={SCREEN_LANGUAGES.find((l) => l.value === lang)?.label} onClick={() => setPage("language")} />
               <ListRow icon={KB_ICONS.Cloud} title={t("more.sync")} sub={syncText} onClick={() => setPage("sync")} />
+              <ListRow icon={KB_ICONS.CircleHelp} title={t("help.row")} sub={t("help.rowSub")} onClick={() => setPage("help")} />
               <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href={privacyHref()} />
               {/* English in every language, as today's Developer mode (KB-312) */}
               <ListRow icon={KB_ICONS.Phone} title="Developer" onClick={() => setPage("developer")} />
@@ -127,6 +129,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
       {shop && page === "billDesign" && <BillDesignPage localDb={localDb} shop={shop} onClose={close} />}
       {page === "language" && <LanguagePage onClose={close} />}
       {page === "sync" && <SyncPage sync={sync} onClose={close} />}
+      {page === "help" && <HelpPage onClose={close} />}
       {shop && page === "account" && onDeleteAccount && <AccountPage localDb={localDb} shop={shop} sync={sync} billInProgress={billInProgress} onDeleteAccount={onDeleteAccount} onClose={close} />}
       {page === "developer" && <DeveloperPage localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} onClose={close} />}
     </section>

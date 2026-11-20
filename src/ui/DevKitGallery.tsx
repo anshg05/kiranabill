@@ -13,6 +13,7 @@ import { BottomNav } from "./kit/BottomNav";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
 import { BottomSheet } from "./kit/BottomSheet";
 import { PermissionSheet } from "./PermissionSheet";
+import { HelpPage } from "./HelpPage";
 import { InfoBanner, LinkBanner, OfflineStrip } from "./kit/Banner";
 import { TipCard } from "./kit/TipCard";
 import { HeroCard } from "./kit/HeroCard";
@@ -229,6 +230,9 @@ function BATCH_B_PARTS(): Part[] {
           <Button variant="tertiary">Keep Bill 514</Button>
         </BottomSheet>
       ) },
+    // SG-27 (D124): the Help & support page (an inner page: shown inside a frame here, it covers the screen in the app)
+    { name: "SG-27 / Help & support", find: { file: "17-More.html", text: "How to use, contact us", up: 2 },
+      ours: () => <div style={{ transform: "translateZ(0)", position: "relative", height: 1180 }}><HelpPage onClose={noop} /></div> },
     // KB-425 (D123): screen 07's card, one permission at a time, and the Open Settings sheet
     { name: "N9 / Permission card - microphone", find: { file: "07-Permissions.html", text: "Hears the order only when you tap Record.", up: 2 },
       ours: () => <PermissionSheet position="static" kind="microphone" sheet="explain" onChoice={noop} /> },
