@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MUST_ACCEPT, MUST_REFUSE, verdicts } from "./checkRedirects";
 
@@ -28,6 +30,12 @@ describe("check:redirects", () => {
 
   it("no state or no row = unknown = a failure, never a pass", () => {
     expect(verdicts([{ url: MUST_ACCEPT[0], state: null }, { url: MUST_REFUSE[0], state: "z" }], {}).map((x) => [x.got, x.ok])).toEqual([["unknown", false], ["unknown", false]]);
+  });
+
+  it("the check's list is the one written in docs/17 M-54 (\"Now\")", () => {
+    const row = readFileSync(join(__dirname, "..", "docs", "17-MANUAL-TASKS.md"), "utf8").split("\n").find((l) => l.startsWith("| M-54 |"))!;
+    const now = row.split("Redirect URLs exactly:**")[1]!.split("**Before")[0]!;
+    expect([...now.matchAll(/`([^`]+)`/g)].map((m) => m[1])).toEqual([...MUST_ACCEPT]);
   });
 
   it("the exact list: the website, release-draft, the real app, KVB Test - no wildcard anywhere", () => {

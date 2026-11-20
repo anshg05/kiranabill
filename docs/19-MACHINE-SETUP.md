@@ -272,8 +272,9 @@ If `.netlify/state.json` ever holds a `siteId`, run `npx netlify unlink` before 
    name or ID (`netlify deploy --help`); **no link needed, no `--prod`**. `--alias release-draft` keeps ONE draft address (https://release-draft--kiranabilling.netlify.app) that each new draft replaces. **`--no-build` is required:** a plain `netlify deploy` REBUILDS `dist/` without the production values. Build the draft with `KB_BUILD_ID=draft-vN` (Settings then shows `draft-vN`) and WITHOUT `VITE_ACCEPTANCE` (that flag adds the recording tool, for acceptance drafts only; production never has it - `npm run check:recorder`). The draft URL is
    `https://<deploy-id>--kiranabilling.netlify.app`.
 5. Rebuild `dist/` locally (`npm run build`) afterwards so it no longer holds production values.
-6. Google sign-in returns to the draft only because the Supabase Redirect URL `https://*--kiranabilling.netlify.app/**`
-   exists (single `*` — D58 §6). **At pilot time, after the last draft, that entry and `https://kiranabilling.netlify.app/**` are removed, leaving the exact `https://kiranabilling.netlify.app/` (D82).**
+6. **Only `--alias release-draft` can sign in** (D122, 20 Nov 2026): the Supabase Redirect URLs are exact - the website,
+   `https://release-draft--kiranabilling.netlify.app/` and the two apps. Any other draft address (a deploy id, `sw-test`) is
+   refused and falls back to the live site, so use it only for checks without sign-in. The wildcard entries were removed.
 
 ---
 

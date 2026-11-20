@@ -2719,6 +2719,14 @@ Google Play requires an in-app path AND a web resource to delete an account and 
 6. **Deletion:** `voice_usage` joins the D119 delete list (the same function, one table added).
 7. **The rule before `open`:** the Google AI Studio monthly spend cap must be set first (`23` §8 item 4j, `17` M-51).
 8. Migration `20261121090000_sg20_limits_signups_reports` (additive; in allowlist mode a new account not on the list can no longer make a shop). No functions deploy. The new messages ship with the next website release and the Android app versionCode 3 / "1.2".
+
+### D122 — Exact sign-in return addresses, no wildcards (owner, 20 Nov 2026; KB-335's last part) 🟢
+
+1. **Supabase -> Authentication -> URL Configuration, from 20 Nov 2026:** Site URL `https://kiranabilling.netlify.app` (unchanged); Redirect URLs exactly `https://kiranabilling.netlify.app/` (the website), `https://release-draft--kiranabilling.netlify.app/` (the one draft address that signs in), `com.kiranavoicebill.app://auth-callback` (the real app), `com.kiranavoicebill.app.test://auth-callback` (KVB Test). **Removed:** `https://kiranabilling.netlify.app/**` and `https://*--kiranabilling.netlify.app/**` - the second let a lookalike `https://evil--kiranabilling.netlify.app/` be a sign-in return (seen in the "before" check). The old and new lists are in `17` M-54 (the rollback).
+2. **Proof:** `npm run check:redirects` (read-only, production) starts a Google sign-in (PKCE) for 14 addresses with the public key and reads only `auth.flow_state.referrer` - what Supabase will return to. Before: 3 lookalikes accepted; after: 13 of 13 as the list says. **Supabase still accepts any other page of the Site URL's own address** (`/anything/deeper` stayed accepted with no `/**` entry) - our own site, not a lookalike, so the check reports it without judging. The owner's 4 sign-ins passed: the website and release-draft (Chrome, incognito), KVB Test (`test-v4`, only the TEST Gmail), the real app (`app-v2`, after More showed nothing waiting).
+3. **Drafts:** only a draft deployed with `--alias release-draft` can sign in. Any other draft address (`sw-test`, a deploy id) is refused and falls back to the live site - use them only for checks without sign-in (`19` step 6, `23` §8 item 4k). The functions site's `fn-draft` never signs in.
+4. PKCE stays (D82): an app that copies our link name still cannot finish a sign-in without the key held by the app that started it.
+5. `scripts/checkRedirects.test.ts` keeps the check's list equal to `17` M-54. A change to the Redirect URLs changes both, then `npm run check:redirects`.
 ---
 
 ## Superseded
