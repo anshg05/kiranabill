@@ -67,6 +67,9 @@ describe("the splash", () => {
     const plugin = read(ROOT, "android", "app", "src", "main", "java", "com", "kiranavoicebill", "app", "AppShellPlugin.kt");
     expect(plugin).toContain('@CapacitorPlugin(name = "AppShell")');
     for (const m of ["fun ready(", "fun permissionState(", "fun openSettings("]) expect(plugin).toContain(m);
+    // owner's phone test (20 Nov 2026): "can Android still ask" is judged on the MISSING parts only; Android 11 and older: nothing
+    expect(plugin).toContain("val canAsk = missing.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }");
+    expect(plugin).toMatch(/\} else \{\s+emptyArray\(\)\s+\}/);
     expect(read(ROOT, "src", "data", "appShell.ts")).toContain('registerPlugin<AppShellPlugin>("AppShell")');
   });
 });

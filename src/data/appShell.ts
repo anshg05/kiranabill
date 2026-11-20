@@ -5,7 +5,8 @@ import { isNativeApp } from "./nativeSignIn";
 //  1. The splash: MainActivity keeps the blue splash until ready() (at most 5 s). ready() goes once the app's first REAL screen (Home,
 //     Sign in, setup - anything but a holding screen) is in #root and drawn, so the cream "Loading" never shows in the app.
 //  2. Permissions, one at a time: the explanation card (screen 07's words) once per install just BEFORE Android's own prompt - the mic at
-//     the first Record, Nearby devices at the first printer search; when Android will not ask again, Open Settings instead.
+//     the first Record, Nearby devices at the first Choose printer; after the action failed because Android will not ask again, Open
+//     Settings.
 
 export type PermissionKind = "microphone" | "nearby";
 interface PermissionState {
@@ -57,15 +58,15 @@ export function setPermissionHost(show: typeof host): () => void {
   };
 }
 
-const flagKey = (kind: PermissionKind, what: "card" | "asked") => `kb.perm.${kind}.${what}.v1`;
-function flag(kind: PermissionKind, what: "card" | "asked"): boolean {
+const flagKey = (kind: PermissionKind, what: "card") => `kb.perm.${kind}.${what}.v1`;
+function flag(kind: PermissionKind, what: "card"): boolean {
   try {
     return localStorage.getItem(flagKey(kind, what)) === "1";
   } catch {
     return false;
   }
 }
-function setFlag(kind: PermissionKind, what: "card" | "asked"): void {
+function setFlag(kind: PermissionKind, what: "card"): void {
   try {
     localStorage.setItem(flagKey(kind, what), "1");
   } catch {
@@ -82,26 +83,21 @@ async function stateOf(kind: PermissionKind): Promise<PermissionState | null> {
 }
 
 /**
- * Before the action that makes Android ask (Record / the printer search). true = go on (Android may show its prompt); false = stop
- * (the shopkeeper chose Not now, or Android will not ask again - the Open Settings sheet was shown). Outside the Android app: true.
+ * Before the action that makes Android ask (Record / Choose printer). Shows the card ONCE per install when the permission is not
+ * there yet; true = go on (the action asks Android itself, or simply works), false = the shopkeeper chose Not now on the card.
+ * It never decides "turned off for good" (owner's phone test, 20 Nov 2026): Android grants only what an action asks for - Choose
+ * printer's "connect", never the search's "scan" - so a missing part is not a refusal. Only afterRefused, after the action really
+ * failed, may offer Open Settings. Outside the Android app: true.
  */
 export async function beforeAsking(kind: PermissionKind): Promise<boolean> {
-  if (!isNativeApp()) return true;
+  if (!isNativeApp() || flag(kind, "card")) return true;
   const state = await stateOf(kind);
   if (!state || state.granted) return true;
-  if (flag(kind, "asked") && !state.canAsk) {
-    await host?.(kind, "settings");
-    return false;
-  }
-  if (!flag(kind, "card")) {
-    setFlag(kind, "card"); // once per install, whatever the answer
-    if (host && (await host(kind, "explain")) !== "allow") return false;
-  }
-  setFlag(kind, "asked");
-  return true;
+  setFlag(kind, "card"); // once per install, whatever the answer
+  return !host || (await host(kind, "explain")) === "allow";
 }
 
-/** After Android refused: if it will not ask again, the Open Settings sheet at once. */
+/** After the action failed because Android refused: if Android will not ask again, the Open Settings sheet. */
 export async function afterRefused(kind: PermissionKind): Promise<void> {
   if (!isNativeApp()) return;
   const state = await stateOf(kind);

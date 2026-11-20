@@ -23,8 +23,9 @@ object AppShellState {
 /**
  * KB-425 (owner, 20 Nov 2026; D123) - the web side is src/data/appShell.ts.
  * - ready: the first real screen (Home, Sign in, setup) is on screen - the splash may go.
- * - permissionState: microphone / nearby (Bluetooth search; location on Android 11 and older) - granted, and whether Android would still
- *   show its prompt (canAsk). Not granted + cannot ask + asked before = "Don't allow" for good: the app offers Open Settings.
+ * - permissionState: microphone / nearby (Android 12+'s "Nearby devices": scan + connect; nothing on Android 11 and older) - granted,
+ *   and whether Android would still show its prompt (canAsk). Asked only after an action FAILED because Android refused: cannot ask =
+ *   "Don't allow" for good, and the app offers Open Settings.
  * - openSettings: this app's own page in Android's Settings.
  * It asks for nothing itself: the mic prompt still comes from the recording, the Bluetooth one from the printer search.
  */
@@ -38,10 +39,12 @@ class AppShellPlugin : Plugin() {
 
     private fun permissionsFor(name: String?): Array<String>? = when (name) {
         "microphone" -> arrayOf(Manifest.permission.RECORD_AUDIO)
+        // Android 12+: the "Nearby devices" switch (Choose printer asks for connect, the search for scan). Android 11 and older have no
+        // such permission - nothing to explain (the Bluetooth search asks for location itself).
         "nearby" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
         } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            emptyArray()
         }
         else -> null
     }
@@ -49,8 +52,10 @@ class AppShellPlugin : Plugin() {
     @PluginMethod
     fun permissionState(call: PluginCall) {
         val perms = permissionsFor(call.getString("name")) ?: return call.reject("unknown permission")
-        val granted = perms.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-        val canAsk = perms.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
+        val missing = perms.filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+        val granted = missing.isEmpty()
+        // judged on the missing parts only (owner's phone test, 20 Nov 2026); the web side asks this only after a real refusal
+        val canAsk = missing.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
         call.resolve(JSObject().put("granted", granted).put("canAsk", canAsk))
     }
 

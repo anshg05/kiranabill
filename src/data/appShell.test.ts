@@ -113,12 +113,15 @@ describe("the permission card, once, just before Android's prompt", () => {
     h.unset();
   });
 
-  it("asked before and Android will not ask again: Open Settings, and the action stops", async () => {
+  it("owner's phone test, 20 Nov 2026: Allow, a printer chosen, then Choose printer again - NO sheet, the tap goes through", async () => {
+    // Android granted only what Choose printer asked for (connect); the scan part was never asked, so the state stays "not granted,
+    // cannot ask" - that is NOT a refusal. The pre-check never blocks: only a real refusal (afterRefused) offers Open Settings.
     const h = host("allow");
-    await beforeAsking("microphone"); // asked once
+    expect(await beforeAsking("nearby")).toBe(true);
     env.state = { granted: false, canAsk: false };
-    expect(await beforeAsking("microphone")).toBe(false);
-    expect(h.calls).toEqual(["microphone:explain", "microphone:settings"]);
+    expect(await beforeAsking("nearby")).toBe(true);
+    expect(await beforeAsking("nearby")).toBe(true);
+    expect(h.calls).toEqual(["nearby:explain"]);
     h.unset();
   });
 
