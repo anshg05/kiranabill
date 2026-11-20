@@ -158,7 +158,7 @@ Performance budget: no dropped frames on the Redmi 9 Power for the mic pulse, li
   - `logo-blue2.svg` — **main**: tile `#2563D9`, bill outline `#1F4FA3`, bill marks `#263238`, mic badge **bright yellow `#FFC72C`** with the mic drawn in navy `#1F3A75` (white is invisible on yellow), badge ring `#2563D9`.
   - `logo-light.svg` — for the blue splash: white tile, bill outline `#2563D9`, mic badge `#2563D9` with white mic.
 - In the UI: rounded square, radius ≈ 22% of size. Sizes: 42 (home / first-day header), 52 (More shop card), 76 (sign-in hero), 92 (splash).
-- Android app icon: adaptive icon from `logo-blue2.svg` (foreground = bill + badge, background = `#2563D9`); monochrome layer for themed icons. Splash (Android 12 SplashScreen API): icon on `#2563D9`, then the app's own splash screen (screen 1).
+- Android app icon: adaptive icon from `logo-blue2.svg` (foreground = bill + badge, background = `#2563D9`); monochrome layer for themed icons. Splash (Android 12 SplashScreen API): icon on `#2563D9`, then the app's own splash screen (screen 1). **Built 20 Nov 2026 (`KB-425`, D123):** `scripts/makeIcons.ts` makes them; the splash stays until the first screen is drawn (5 s at most).
 
 ## 5. Components
 
