@@ -21,6 +21,7 @@
     "check:recorder": "tsx scripts/check-recorder-absent.ts",
     "check:version": "tsx scripts/checkVersionBump.ts",
     "draft:voice": "tsx scripts/draft-voice-check.ts",
+    "check:redirects": "tsx scripts/checkRedirects.ts",
     "accept:import": "tsx eval/acceptance/import.ts",
     "accept:build": "tsx eval/acceptance/build.ts",
     "bakeoff": "tsx eval/bakeoff/run.ts",

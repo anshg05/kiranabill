@@ -128,7 +128,7 @@ describe("PrintButton", () => {
     choose(BT58, 384, false);
     const first = render(<PrintButton receipt={receipt} firstIsOriginal />);
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(1); // KB-431 (20 Nov 2026): a fixed wait failed twice under load - wait for the print to finish
     expect(has(classic.t.sent, GS_V_0)).toBe(true);
     expect(has(classic.t.sent, ESC_STAR)).toBe(false);
     first.unmount();
@@ -136,7 +136,7 @@ describe("PrintButton", () => {
     choose(BT58, 384, true);
     render(<PrintButton receipt={receipt} firstIsOriginal />);
     fireEvent.click(printBtn());
-    await settle();
+    await printFinished(2);
     expect(has(classic.t.sent, ESC_STAR)).toBe(true);
     expect(has(classic.t.sent, GS_V_0)).toBe(false);
   });
