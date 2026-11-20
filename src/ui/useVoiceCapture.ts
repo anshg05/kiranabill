@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { recordedMimeType } from "./recordingType";
 import { isNativeApp } from "@/data/nativeSignIn";
+import { afterRefused, beforeAsking } from "@/data/appShell";
 
 // KB-302: push-to-talk capture (docs/04-VOICE-PIPELINE.md section 2 - tap to
 // start, tap to stop; no length limit). The browser picks its own recording
@@ -196,11 +197,18 @@ export function useVoiceCapture(options?: OrderRecordingOptions): VoiceCapture {
       stream = streamRef.current!;
     } else {
       release(); // a dead warm stream: drop it, open a fresh one
+      // KB-425 (D123): inside the app, the mic card once before Android's prompt - or Open Settings when Android will not ask again
+      if (isNativeApp() && !(await beforeAsking("microphone"))) {
+        setPhase("idle");
+        return;
+      }
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (err) {
         setPhase("idle");
-        setError(captureError(kindOf(err)));
+        const kind = kindOf(err);
+        setError(captureError(kind));
+        if (kind === "permission" && isNativeApp()) void afterRefused("microphone");
         return;
       }
       getUserMediaMs = performance.now() - tappedAt;

@@ -10,6 +10,23 @@ import { TestAppBanner, TestAppRefused, WrongBuild } from "@/ui/TestAppBanner";
 import { isTestApp, testAppUserIds } from "@/data/testApp";
 import { VersionGateProvider, useVersionGate } from "@/ui/VersionGate";
 import { PleaseUpdate } from "@/ui/PleaseUpdate";
+import { HOLDING_ATTR } from "@/data/appShell";
+import { PermissionSheetHost } from "@/ui/PermissionSheet";
+
+/**
+ * Waiting for the session or the shop. On the website: today's "Loading" line. KB-425 (owner, 20 Nov 2026; D123): inside the Android
+ * app NEVER the cream screen - the splash's blue, marked as a holding screen, so the splash (held until the first real screen,
+ * src/data/appShell.ts) stays over it; if the 5 s limit is reached first, the shopkeeper still sees blue, never cream or white.
+ */
+export function AppHolding() {
+  const { t } = useT();
+  if (isNativeApp()) return <div {...{ [HOLDING_ATTR]: "" }} aria-busy="true" className="fixed inset-0 bg-[#2563D9]" />;
+  return (
+    <div className="min-h-screen bg-paper flex items-center justify-center">
+      <p className="text-ink-soft">{t("app.loading")}</p>
+    </div>
+  );
+}
 
 /** KB-301: online, no cached shop, and the shop lookup failed. Retry, never
  * onboarding - onboarding here could create a second shop (12-PARKED.md KI-42). */
@@ -33,17 +50,10 @@ function ShopLoadError() {
 /** The Auth {Signed in?} -> HasShop? branch from 16-APP-FLOW.md's nav map. */
 export function ShopGate() {
   const { loading, shop, loadError, localDb } = useShop();
-  const { t } = useT();
   // D116: below the minimum version - INSIDE the shop loader, so the sync loop keeps uploading behind the screen
   if (useVersionGate().blocked) return <PleaseUpdate localDb={localDb} />;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-paper flex items-center justify-center">
-        <p className="text-ink-soft">{t("app.loading")}</p>
-      </div>
-    );
-  }
+  if (loading) return <AppHolding />;
 
   if (loadError) return <ShopLoadError />;
   return shop ? <BillingScreen /> : <OnboardingScreen />;
@@ -53,20 +63,13 @@ function AuthGate() {
   // KB-315: userId is the live user OR, offline, the last signed-in user on
   // this device (D38) - the app runs from their local database either way.
   const { loading, userId, mode, deviceDb, signOut } = useAuth();
-  const { t } = useT();
   const { blocked } = useVersionGate();
   // KB-415: someone signed in on this phone has been welcomed - an update to this version never shows them the splash after a sign-out
   useEffect(() => {
     if (userId) markWelcomed();
   }, [userId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-paper flex items-center justify-center">
-        <p className="text-ink-soft">{t("app.loading")}</p>
-      </div>
-    );
-  }
+  if (loading) return <AppHolding />;
 
   // KB-415: signed out -> the splash and onboarding once per install, then Sign in (WelcomeScreens.tsx)
   if (!userId) return blocked ? <PleaseUpdate localDb={null} /> : <SignedOutFlow />; // D116: signed out, nothing to upload
@@ -87,13 +90,14 @@ export function App() {
   useEffect(() => {
     if (build === "checking") void buildMatchesPackage().then((ok) => setBuild(ok ? "ok" : "wrong"));
   }, [build]);
-  if (build === "checking") return null;
+  if (build === "checking") return <AppHolding />;
   if (build === "wrong") return <WrongBuild />;
   return (
     <VersionGateProvider>
       <AuthProvider>
         <AuthGate />
         <TestAppBanner />
+        {isNativeApp() && <PermissionSheetHost />}
       </AuthProvider>
     </VersionGateProvider>
   );

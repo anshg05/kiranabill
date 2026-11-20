@@ -46,7 +46,7 @@ describe("the Android shell (D111)", () => {
     const test = read("android/app/src/kvbtest/res/values/strings.xml");
     expect(test).toContain('<string name="app_name">KVB Test</string>');
     expect(test).toContain('<string name="title_activity_main">KVB Test</string>');
-    expect(read("android/app/src/main/res/values/ic_launcher_background.xml")).toContain("#FFCF33");
+    expect(read("android/app/src/main/res/values/ic_launcher_background.xml")).toContain("#2563D9"); // KB-425 (D123): the blue logo tile
     expect(read("android/app/src/kvbtest/res/values/ic_launcher_background.xml")).toMatch(/<color name="ic_launcher_background">#C0392B<\/color>/);
   });
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- KB-425 (D123): the launch splash - the light logo on the app's blue (26 §4), held by MainActivity until the first screen. -->
+    <color name="splash_background">#2563D9</color>
+</resources>

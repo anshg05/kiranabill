@@ -5,6 +5,7 @@ import { startServiceWorker } from "@/pwa/register";
 import { startNativeBack } from "@/data/nativeBack";
 import "./index.css";
 import { markCold } from "@/ui/coldMarks";
+import { startAppShell } from "@/data/appShell";
 
 // KB-352: every import above has been parsed and run - the bundle is ready (cold-start milestone "js").
 markCold("js");
@@ -37,6 +38,8 @@ if (import.meta.env.DEV && window.location.pathname === "/__dev/typeahead") {
     </StrictMode>,
   );
 }
+// KB-425: inside the Android app, the splash goes once the first real screen is drawn (nothing on the website).
+startAppShell(document.getElementById("root")!);
 // KB-406: Android Back inside the app (nothing in a browser or the PWA).
 startNativeBack();
 // KB-401: production only (nothing registers in the dev server); after the first render, never before it.

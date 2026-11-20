@@ -7,6 +7,7 @@ import { classicTransport } from "@/data/printerClassic";
 import { PrintStatus } from "./PrintButton";
 import { PRINT_FAILURE_TEXT, usePrint } from "./usePrint";
 import { useT } from "./useT";
+import { afterRefused, beforeAsking } from "@/data/appShell";
 import { Button } from "./kit/Button";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { GroupLabel, ListCard } from "./kit/ListRow";
@@ -68,6 +69,8 @@ export function PrinterSection({ shop }: { shop: ShopForPrint }) {
   };
   const find = async (kind: "classic" | "ble") => {
     setFailure(null);
+    // KB-425 (D123): the Nearby devices card once before Android's prompt - or Open Settings when Android will not ask again
+    if (!(await beforeAsking("nearby"))) return;
     const transport = kind === "ble" ? bleTransport : classicTransport;
     if (kind === "ble") setSearching(true);
     try {
@@ -75,7 +78,9 @@ export function PrinterSection({ shop }: { shop: ShopForPrint }) {
       const found = await transport.list();
       setDevices((cur) => (kind === "ble" ? [...(cur ?? []).filter((d) => d.kind === "classic"), ...found] : found));
     } catch (e) {
-      setFailure(toPrintError(e).kind);
+      const failed = toPrintError(e).kind;
+      setFailure(failed);
+      if (failed === "permission") void afterRefused("nearby");
     } finally {
       setSearching(false);
     }

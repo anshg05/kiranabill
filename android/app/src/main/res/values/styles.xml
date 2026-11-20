@@ -16,7 +16,11 @@
     </style>
 
 
+    <!-- KB-425 (D123): Android's splash screen (core-splashscreen, all versions) - blue + the light logo, then the app's theme.
+         MainActivity keeps it until the app's first real screen is drawn (at most 5 s). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

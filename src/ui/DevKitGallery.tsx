@@ -12,6 +12,7 @@ import { ScreenTitle, TopBar } from "./kit/TopBar";
 import { BottomNav } from "./kit/BottomNav";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
 import { BottomSheet } from "./kit/BottomSheet";
+import { PermissionSheet } from "./PermissionSheet";
 import { InfoBanner, LinkBanner, OfflineStrip } from "./kit/Banner";
 import { TipCard } from "./kit/TipCard";
 import { HeroCard } from "./kit/HeroCard";
@@ -228,6 +229,13 @@ function BATCH_B_PARTS(): Part[] {
           <Button variant="tertiary">Keep Bill 514</Button>
         </BottomSheet>
       ) },
+    // KB-425 (D123): screen 07's card, one permission at a time, and the Open Settings sheet
+    { name: "N9 / Permission card - microphone", find: { file: "07-Permissions.html", text: "Hears the order only when you tap Record.", up: 2 },
+      ours: () => <PermissionSheet position="static" kind="microphone" sheet="explain" onChoice={noop} /> },
+    { name: "N9 / Permission card - nearby devices", find: { file: "07-Permissions.html", text: "Finds your Bluetooth thermal printer.", up: 2 },
+      ours: () => <PermissionSheet position="static" kind="nearby" sheet="explain" onChoice={noop} /> },
+    { name: "N9 / Turned off for good - Open Settings", find: { file: "07-Permissions.html", text: "Hears the order only when you tap Record.", up: 2 },
+      ours: () => <PermissionSheet position="static" kind="microphone" sheet="settings" onChoice={noop} /> },
     { name: "B / Offline strip", find: { file: "24-Offline.html", text: "No internet · billing still works" },
       ours: () => <OfflineStrip>No internet · billing still works</OfflineStrip> },
     { name: "B / Info banner, busy", find: { file: "24-Offline.html", text: "Order saved · will send when online", up: 2 },
