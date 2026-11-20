@@ -66,7 +66,10 @@ describe("the splash", () => {
   it("the plugin's name matches the web side", () => {
     const plugin = read(ROOT, "android", "app", "src", "main", "java", "com", "kiranavoicebill", "app", "AppShellPlugin.kt");
     expect(plugin).toContain('@CapacitorPlugin(name = "AppShell")');
-    for (const m of ["fun ready(", "fun permissionState(", "fun openSettings("]) expect(plugin).toContain(m);
+    for (const m of ["fun ready(", "fun permissionState(", "fun openSettings(", "fun openBluetoothSettings("]) expect(plugin).toContain(m);
+    // KB-416 (D125): Choose printer searches by itself only when the search is already allowed - "scan" = scan + connect (12+)
+    expect(plugin).toMatch(/"scan" -> if \(Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.S\) \{\s+arrayOf\(Manifest\.permission\.BLUETOOTH_SCAN, Manifest\.permission\.BLUETOOTH_CONNECT\)/);
+    expect(plugin).toContain("Intent(Settings.ACTION_BLUETOOTH_SETTINGS)");
     // owner's phone test (20 Nov 2026): "can Android still ask" is judged on the MISSING parts only; Android 11 and older: nothing
     expect(plugin).toContain("val canAsk = missing.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }");
     expect(plugin).toMatch(/\} else \{\s+emptyArray\(\)\s+\}/);

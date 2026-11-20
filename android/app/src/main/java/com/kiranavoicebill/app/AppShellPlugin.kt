@@ -46,6 +46,13 @@ class AppShellPlugin : Plugin() {
         } else {
             emptyArray()
         }
+        // KB-416 (owner, 20 Nov 2026): may Choose printer search for new printers by itself? Only when Android already allows the
+        // Bluetooth search - then the search shows no prompt. Android 11 and older: the search needs location.
+        "scan" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
         else -> null
     }
 
@@ -57,6 +64,13 @@ class AppShellPlugin : Plugin() {
         // judged on the missing parts only (owner's phone test, 20 Nov 2026); the web side asks this only after a real refusal
         val canAsk = missing.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
         call.resolve(JSObject().put("granted", granted).put("canAsk", canAsk))
+    }
+
+    /** KB-416: "Not listed?" - Android's Bluetooth settings, to pair a printer. */
+    @PluginMethod
+    fun openBluetoothSettings(call: PluginCall) {
+        context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        call.resolve()
     }
 
     @PluginMethod

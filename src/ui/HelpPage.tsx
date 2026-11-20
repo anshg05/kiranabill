@@ -2,7 +2,7 @@ import { isNativeApp } from "@/data/nativeSignIn";
 import { BUILD_ID } from "@/pwa/buildId";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
-import { InnerPage } from "./MorePages";
+import { InnerPage } from "./InnerPage";
 import { privacyHref } from "./privacyLink";
 import { useT } from "./useT";
 

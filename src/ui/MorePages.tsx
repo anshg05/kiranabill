@@ -1,6 +1,6 @@
 import { aliasKeyOf } from "@/domain/aliasEvidence";
 import { deriveShopAliases } from "@/data/aliasEvidence";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { liveQuery } from "dexie";
 import type { DeviceDB } from "@/data/device";
 import type { KiranaBillDB, LocalLearnedAlias, LocalProvisionalProduct, LocalShop } from "@/data/db";
@@ -13,26 +13,25 @@ import { BUILD_ID } from "@/pwa/buildId";
 import { formatMobile } from "@/domain/customer";
 import type { PriceSuggestion } from "@/domain/learning";
 import type { Language } from "@/domain/messages";
-import type { Paise } from "@/domain/money";
-import { buildReceipt, type BillLanguage } from "@/domain/receipt";
+import type { BillLanguage } from "@/domain/receipt";
+import { isNativeApp } from "@/data/nativeSignIn";
 import { parseShopName, parseShopPhone } from "@/domain/shopSettings";
-import { useHidesNav } from "./AppTabs";
 import { Button } from "./kit/Button";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { ReceiptPaper } from "./kit/ReceiptPaper";
 import { ListCard, ListRow } from "./kit/ListRow";
 import { TextField } from "./kit/TextField";
-import { TopBar } from "./kit/TopBar";
 import { PilotNumbers } from "./PilotNumbers";
-import { PrinterSection } from "./PrinterSection";
+import { LongTestPrint, PrinterSection, sampleReceipt } from "./PrinterSection";
 import { priceDriftText } from "./priceDriftText";
 import { Receipt } from "./Receipt";
 import { isIos } from "./platform";
 import { setScreenLanguage } from "./screenLanguage";
 import type { SyncChip, Unsynced } from "./syncChip";
-import { useBackEntry } from "./useBackEntry";
 import { useBrowserOnline } from "./useBrowserOnline";
 import { useT } from "./useT";
+import { InnerPage } from "./InnerPage";
+export { InnerPage };
 
 // KB-414 step 4 (owner + reviewer, 18 Nov 2026): More's inner pages - today's Settings (KB-312) split into pages in the new look,
 // nothing dropped. Each is an inner page: Back (arrow or Android) goes one level, no nav.
@@ -65,19 +64,6 @@ export function useSyncStateText(sync: SyncState): string {
 
 const showPhone = (phone: string | null) => (phone === null ? "" : /^\d{10}$/.test(phone) ? formatMobile(phone) : phone);
 
-export function InnerPage({ title, backKey, onClose, children }: { title: string; backKey: string; onClose: () => void; children: ReactNode }) {
-  useBackEntry(backKey, onClose);
-  useHidesNav();
-  const { t } = useT();
-  return (
-    <section aria-label={title} className="font-kb fixed inset-x-0 top-[var(--kb-tab-top,0px)] bottom-0 z-30 flex flex-col bg-kb-bg text-kb-ink">
-      <div data-scroll-page className="mx-auto flex h-full w-full max-w-[480px] flex-col overflow-y-auto">
-        <TopBar title={title} backLabel={t("settings.back")} onBack={onClose} />
-        <div className="flex flex-col gap-[14px] px-4 pt-2 pb-[max(22px,env(safe-area-inset-bottom))] text-kb-15 [overflow-wrap:anywhere]">{children}</div>
-      </div>
-    </section>
-  );
-}
 
 /** A choice of a few, as rows in one card: 58 px, the label 15 / 600, a check on the chosen one. */
 function ChoiceList<T extends string>({ label, options, value, onChange }: { label: string; options: readonly { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
@@ -181,19 +167,6 @@ export function PrinterPage({ shop, onClose }: { shop: LocalShop; onClose: () =>
   );
 }
 
-/** A sample bill for 21's preview - two lines, like the design; the shop's own name, phone and receipt language. Never saved. */
-function previewReceipt(shop: LocalShop) {
-  const at = new Date().toISOString();
-  return buildReceipt(
-    { receiptNumber: "1", customerName: "Cash", totalPaise: 43_000 as Paise, finalizedAt: at, createdAt: at, status: "final" },
-    [
-      { displayName: "चीनी", qty: 2, unit: "kg", ratePaise: 4_500 as Paise, rateUnit: "kg", totalPaise: 9_000 as Paise },
-      { displayName: "चावल", qty: 5, unit: "kg", ratePaise: 6_800 as Paise, rateUnit: "kg", totalPaise: 34_000 as Paise },
-    ],
-    { name: shop.name, phone: shop.phone, logoUrl: null, billLanguage: shop.billLanguage },
-  );
-}
-
 /**
  * 21 Bill design, with today's parts only: the live preview, the receipt language (saves at once, as today - KI-59: the customer's
  * receipt, not the screen's language), and how item names print. Address, thank-you note and Show phone stay out (KB-422); the
@@ -206,7 +179,7 @@ export function BillDesignPage({ localDb, shop, onClose }: { localDb: KiranaBill
     <InnerPage title={t("more.billDesign")} backKey="kbBillDesign" onClose={onClose}>
       <figure aria-label={t("more.preview")} className="flex justify-center rounded-[18px] bg-kb-muted px-3 pt-4 pb-3 [overflow-wrap:normal]">
         <ReceiptPaper width={280} torn>
-          <Receipt receipt={previewReceipt(shop)} />
+          <Receipt receipt={sampleReceipt(shop)} />
         </ReceiptPaper>
       </figure>
       <div className="flex flex-col gap-2">
@@ -286,8 +259,10 @@ const smallBtn = "kb-hit min-h-11 self-start rounded-[12px] border border-kb-bor
  * aliases, provisional products, price suggestions, read-only; the pilot numbers; Reset learning behind a confirmation (local-only,
  * NI-27, and it says so); the version.
  */
-export function DeveloperPage({ localDb, shopId, deviceId, deviceDb, reconcile, onClose }: {
+export function DeveloperPage({ localDb, shopId, deviceId, deviceDb, reconcile, shop, onClose }: {
   localDb: KiranaBillDB;
+  /** KB-416: the 60-line printer test (Android app, a printer chosen) */
+  shop?: LocalShop;
   shopId: string;
   deviceId: string;
   deviceDb?: DeviceDB;
@@ -348,6 +323,7 @@ export function DeveloperPage({ localDb, shopId, deviceId, deviceDb, reconcile, 
       <div data-testid="developer" className="flex flex-col gap-4">
         <p className={help}>What the app has learned about this shop on this phone. Nothing here changes a price or a unit.</p>
         {deviceDb && <StorageLine deviceDb={deviceDb} />}
+        {shop && isNativeApp() && <LongTestPrint shop={shop} />}
         {learning && (
           <>
             {learning.aliases.length > 0 && (

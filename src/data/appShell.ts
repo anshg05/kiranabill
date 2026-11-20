@@ -16,8 +16,9 @@ interface PermissionState {
 }
 interface AppShellPlugin {
   ready(): Promise<void>;
-  permissionState(options: { name: PermissionKind }): Promise<PermissionState>;
+  permissionState(options: { name: PermissionKind | "scan" }): Promise<PermissionState>;
   openSettings(): Promise<void>;
+  openBluetoothSettings(): Promise<void>;
 }
 const AppShell = registerPlugin<AppShellPlugin>("AppShell");
 
@@ -74,7 +75,7 @@ function setFlag(kind: PermissionKind, what: "card"): void {
   }
 }
 
-async function stateOf(kind: PermissionKind): Promise<PermissionState | null> {
+async function stateOf(kind: PermissionKind | "scan"): Promise<PermissionState | null> {
   try {
     return await AppShell.permissionState({ name: kind });
   } catch {
@@ -106,4 +107,19 @@ export async function afterRefused(kind: PermissionKind): Promise<void> {
 
 export function openAppSettings(): void {
   void AppShell.openSettings().catch(() => {});
+}
+
+/**
+ * KB-416 (owner, 20 Nov 2026): may Choose printer search for new printers BY ITSELF? Only when Android already allows the Bluetooth
+ * search, so opening Choose printer never brings up a prompt; otherwise the search waits for the shopkeeper's tap. Outside the app,
+ * or an app without the plugin: no.
+ */
+export async function scanAllowed(): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  return (await stateOf("scan"))?.granted === true;
+}
+
+/** KB-416: "Not listed?" - Android's Bluetooth settings, to pair a printer. */
+export function openBluetoothSettings(): void {
+  void AppShell.openBluetoothSettings().catch(() => {});
 }

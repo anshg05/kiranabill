@@ -14,6 +14,7 @@ import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
 import { BottomSheet } from "./kit/BottomSheet";
 import { PermissionSheet } from "./PermissionSheet";
 import { HelpPage } from "./HelpPage";
+import { PrinterSection } from "./PrinterSection";
 import { InfoBanner, LinkBanner, OfflineStrip } from "./kit/Banner";
 import { TipCard } from "./kit/TipCard";
 import { HeroCard } from "./kit/HeroCard";
@@ -230,6 +231,9 @@ function BATCH_B_PARTS(): Part[] {
           <Button variant="tertiary">Keep Bill 514</Button>
         </BottomSheet>
       ) },
+    // KB-416 (D125): 18 Printer (a printer saved on this browser shows its card, paper, Compatible mode, preview; Change opens 22)
+    { name: "KB-416 / Printer (18) - tap Change for 22", find: { file: "18-Printer.html", text: "Test print", up: 2 },
+      ours: () => <div style={{ transform: "translateZ(0)", position: "relative", minHeight: 1000 }}><PrinterSection shop={{ name: "Gupta Kirana Store", phone: "9876543210", billLanguage: "en" }} /></div> },
     // SG-27 (D124): the Help & support page (an inner page: shown inside a frame here, it covers the screen in the app)
     { name: "SG-27 / Help & support", find: { file: "17-More.html", text: "How to use, contact us", up: 2 },
       ours: () => <div style={{ transform: "translateZ(0)", position: "relative", height: 1180 }}><HelpPage onClose={noop} /></div> },

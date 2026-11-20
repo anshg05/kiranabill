@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Receipt } from "@/domain/receipt";
 import { PrintError, type PrinterDevice, type PrinterLink, type PrinterTransport } from "@/data/printer";
 import { stubLocalStorage } from "./testStorage";
@@ -51,7 +51,7 @@ vi.mock("@/data/printerClassic", () => ({ get classicTransport(): PrinterTranspo
 vi.mock("@/data/printerBle", () => ({ get bleTransport(): PrinterTransport { return ble.t; } }));
 
 import { PrintButton } from "./PrintButton";
-import { PrinterSection } from "./PrinterSection";
+import { LongTestPrint, PrinterSection } from "./PrinterSection";
 
 const receipt = { shopName: "Gupta Kirana Store", receiptNumber: "514", rows: [], reprint: null } as unknown as Receipt;
 const BT58: PrinterDevice = { id: "AA:BB", name: "BT-SRT-58", kind: "classic", printerLike: true };
@@ -68,9 +68,10 @@ beforeEach(() => {
   ble.t = fakeTransport("ble");
   stubLocalStorage();
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   vi.unstubAllGlobals();
+  await new Promise((r) => setTimeout(r, 30)); // an inner page's Back entry settles (as more17.test.tsx) - else it closes the next test's page
 });
 
 const printBtn = () => screen.getByRole("button", { name: /^(Print bill|Reprint)$/ }); // KB-414 step 2: 13 "Print bill", 15 "Reprint"
@@ -207,28 +208,80 @@ describe("PrintButton", () => {
   });
 });
 
-// KB-414 step 4: More -> Printer (the row is there only in the Android app - more17.test.tsx)
-describe("More → Printer", () => {
-  it("asks for Bluetooth permission only when Choose printer is tapped - never just by opening Settings", async () => {
+// KB-414 step 4 + KB-416 (owner, 20 Nov 2026; D125): More -> Printer (18) and Choose printer (22). The row is there only in the Android app
+// (more17.test.tsx). Here the app has no "scan already allowed" (appShell's plugin is absent in tests): Choose printer lists the paired
+// printers and the search waits for a tap - the automatic search is printerPermissionGate.test.tsx.
+const connect = (name: string) => screen.getByRole("button", { name: `Connect ${name}` });
+const openChoose = async (label: "Choose printer" | "Change" = "Choose printer") => {
+  fireEvent.click(screen.getByRole("button", { name: label }));
+  // the Nearby devices check asks appShell's plugin first (absent here: Capacitor answers "not available" a few ticks later)
+  await screen.findByRole("heading", { level: 1, name: "Choose printer" });
+  await waitFor(() => expect(classic.t.list.mock.calls.length + (classic.t.failReady ? 1 : 0)).toBeGreaterThan(0));
+  await settle();
+};
+
+describe("More → Printer (18) and Choose printer (22)", () => {
+  it("opening the page touches no Bluetooth; Choose printer asks only for the paired list - never the search by itself", async () => {
     render(<PrinterSection shop={shop} />);
     await settle();
     expect(screen.getByText("No printer chosen")).toBeTruthy();
     expect(classic.t.ready).not.toHaveBeenCalled();
     expect(ble.t.ready).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
-    await settle();
+    await openChoose();
     expect(classic.t.ready).toHaveBeenCalledTimes(1);
+    expect(ble.t.ready).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Search for new printers" })).toBeTruthy();
   });
 
-  it("choose: the paired printers are listed; tapping one saves it on this phone, 58 mm until changed", async () => {
+  it("22: the paired printers at once, each marked Paired with Connect; Connect saves it (58 mm until changed) and goes back to 18", async () => {
     classic.t.devices = [BT58, { id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }];
     render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
-    await settle();
-    fireEvent.click(screen.getByRole("button", { name: "KP307-UEWB" }));
+    await openChoose();
+    expect(screen.getByRole("heading", { level: 1, name: "Choose printer" })).toBeTruthy();
+    expect(screen.getByText("Found nearby")).toBeTruthy();
+    expect(screen.getAllByText("Paired")).toHaveLength(2);
+    fireEvent.click(connect("KP307-UEWB"));
     await settle();
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!)).toEqual({ device: { id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }, dots: 384, compat: false });
+    expect(screen.queryByRole("heading", { level: 1, name: "Choose printer" })).toBeNull();
     expect(screen.getByText("KP307-UEWB")).toBeTruthy();
+    expect(screen.getByText("Bluetooth · Paired")).toBeTruthy();
+  });
+
+  it("owner (20 Nov 2026): the printer chosen BEFORE this update keeps working - same printer, paper size and Compatible mode, nothing to choose again", async () => {
+    choose(BT58, 576, true); // exactly what the earlier app saved under kb.printer.v1
+    render(<PrinterSection shop={shop} />);
+    expect(screen.getByText("BT-SRT-58")).toBeTruthy();
+    expect(screen.getByText("Bluetooth · Paired")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "80 mm (3 inch)" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("switch", { name: "Compatible mode (for older printers)" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Test print" }));
+    await settle();
+    expect(classic.t.open).toHaveBeenCalledWith("AA:BB");
+    expect(rendered.calls[0]!.dots).toBe(576);
+    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
+  });
+
+  it("18: the status line says the truth - Paired for Bluetooth Classic, Bluetooth LE for a searched one, never 'Connected'", async () => {
+    choose({ id: "ble-1", name: "Printer_8A21", kind: "ble", printerLike: true });
+    render(<PrinterSection shop={shop} />);
+    expect(screen.getByText("Bluetooth LE")).toBeTruthy();
+    expect(screen.queryByText(/Connected/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Change" })).toBeTruthy();
+  });
+
+  it("18: the preview at the chosen paper width, with the shop's name; left out: Print after Bill Banao, Copies, Show shop phone, Long test print", async () => {
+    choose(BT58);
+    render(<PrinterSection shop={shop} />);
+    const preview = () => screen.getByRole("figure", { name: /preview/ });
+    const width = () => Number((preview().querySelector("[data-paper-width]") as HTMLElement).dataset.paperWidth);
+    expect(screen.getByText("58 mm preview · Long lines wrap so nothing is cut off.")).toBeTruthy();
+    expect(within(preview()).getByText("Gupta Kirana Store")).toBeTruthy();
+    const narrow = width();
+    fireEvent.click(screen.getByRole("radio", { name: "80 mm (3 inch)" }));
+    expect(screen.getByText("80 mm preview · Long lines wrap so nothing is cut off.")).toBeTruthy();
+    expect(width()).toBeGreaterThan(narrow);
+    for (const gone of [/Print after Bill Banao/, /Copies/, /Show shop phone/, /Long test print/]) expect(screen.queryByText(gone)).toBeNull();
   });
 
   it("Compatible mode: a switch with its one-line hint, OFF by default; switching it is saved on this phone", async () => {
@@ -243,27 +296,22 @@ describe("More → Printer", () => {
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(false);
   });
 
-  it("Compatible mode is kept when the paper size or the printer changes", async () => {
+  it("Compatible mode and the paper size are kept when the printer changes; the current printer is marked Chosen", async () => {
     choose(BT58, 384, true);
-    classic.t.devices = [{ id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }];
+    classic.t.devices = [BT58, { id: "CC", name: "KP307-UEWB", kind: "classic", printerLike: true }];
     render(<PrinterSection shop={shop} />);
     fireEvent.click(screen.getByRole("radio", { name: "80 mm (3 inch)" }));
-    expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).compat).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
-    await settle();
-    fireEvent.click(screen.getByRole("button", { name: "KP307-UEWB" }));
+    await openChoose("Change");
+    expect(screen.getByText("Chosen")).toBeTruthy();
+    fireEvent.click(connect("KP307-UEWB"));
     await settle();
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!)).toMatchObject({ device: { id: "CC" }, dots: 576, compat: true });
   });
 
-  it("Test print and Long test print use Compatible mode too", async () => {
+  it("Test print uses Compatible mode too", async () => {
     choose(BT58, 384, true);
     render(<PrinterSection shop={shop} />);
     fireEvent.click(screen.getByRole("button", { name: "Test print" }));
-    await settle();
-    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
-    classic.t.sent = [];
-    fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
     await settle();
     expect(has(classic.t.sent, ESC_STAR)).toBe(true);
     expect(has(classic.t.sent, GS_V_0)).toBe(false);
@@ -276,25 +324,39 @@ describe("More → Printer", () => {
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).dots).toBe(576);
   });
 
-  it("nothing paired: the pairing hint; Search finds BLE printers", async () => {
+  it("nothing paired: 'No printer found yet', the pairing tip with Bluetooth settings; Search for new printers finds a BLE printer (New device)", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     ble.t.devices = [{ id: "ble-1", name: "Printer_8A21", kind: "ble", printerLike: true }];
     render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
+    await openChoose();
+    expect(screen.getByText("No printer found yet.")).toBeTruthy();
+    expect(screen.getByText("Not listed? Pair it once in your phone's Bluetooth settings (PIN is usually 0000 or 1234), then come back.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Bluetooth settings" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Search for new printers" }));
     await settle();
-    expect(screen.getByText("No printer found. Pair it in the phone's Bluetooth settings, then come back.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Search for Bluetooth LE printers" }));
-    await settle();
-    expect(ble.t.ready).toHaveBeenCalled();
+    expect(ble.t.ready).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("New device")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Search again" })).toBeTruthy();
     classic.t.failOpen = new PrintError("unreachable"); // it does not answer on Bluetooth Classic: a BLE-only printer
-    fireEvent.click(screen.getByRole("button", { name: "Printer_8A21" }));
+    fireEvent.click(connect("Printer_8A21"));
     await settle();
     expect(JSON.parse(localStorage.getItem("kb.printer.v1")!).device.kind).toBe("ble");
     vi.useRealTimers();
   });
 
+  it("a printer both paired and found by the search is listed ONCE, as Paired", async () => {
+    classic.t.devices = [BT58];
+    ble.t.devices = [{ id: "AA:BB", name: "BT-SRT-58", kind: "ble", printerLike: true }];
+    render(<PrinterSection shop={shop} />);
+    await openChoose();
+    fireEvent.click(screen.getByRole("button", { name: "Search for new printers" }));
+    await settle();
+    expect(screen.getAllByRole("button", { name: "Connect BT-SRT-58" })).toHaveLength(1);
+    expect(screen.queryByText("New device")).toBeNull();
+  });
+
   // Owner's S6 (14 Nov 2026): the 58 mm printer was found only by the BLE search and lost bytes there. Classic is tried first.
-  it("a printer found by the BLE search that also answers on Bluetooth Classic is saved as CLASSIC; 'Checking the printer…' shows meanwhile", async () => {
+  it("a printer found only by the search that also answers on Bluetooth Classic is saved as CLASSIC; 'Checking the printer…' shows meanwhile", async () => {
     ble.t.devices = [{ id: "AA:BB", name: "BT-SRT-58", kind: "ble", printerLike: true }];
     let answer: () => void = () => {};
     const waiting = new Promise<void>((r) => (answer = r));
@@ -304,11 +366,10 @@ describe("More → Printer", () => {
       return realOpen(id);
     });
     render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
+    await openChoose();
+    fireEvent.click(screen.getByRole("button", { name: "Search for new printers" }));
     await settle();
-    fireEvent.click(screen.getByRole("button", { name: "Search for Bluetooth LE printers" }));
-    await settle();
-    fireEvent.click(screen.getByRole("button", { name: "BT-SRT-58" }));
+    fireEvent.click(connect("BT-SRT-58"));
     await settle();
     expect(screen.getByRole("status").textContent).toBe("Checking the printer…");
     expect(localStorage.getItem("kb.printer.v1")).toBeNull(); // nothing saved until it is known
@@ -321,32 +382,16 @@ describe("More → Printer", () => {
   it("a paired Classic printer is saved at once - no check needed", async () => {
     classic.t.devices = [BT58];
     render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
-    await settle();
-    fireEvent.click(screen.getByRole("button", { name: "BT-SRT-58" }));
+    await openChoose();
+    fireEvent.click(connect("BT-SRT-58"));
     await settle();
     expect(classic.t.open).not.toHaveBeenCalled();
-  });
-
-  it("Long test print: 60 numbered lines, so a lost or shifted line is seen at a glance on paper", async () => {
-    choose(BT58);
-    render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
-    await settle();
-    const r = rendered.calls[0]!.receipt;
-    expect(r.reprint).toBe("TEST PRINT");
-    expect(r.rows).toHaveLength(60);
-    expect(r.rows.map((x) => x.amount)).toEqual(Array.from({ length: 60 }, (_, i) => `₹${i + 1}`));
-    expect(r.rows[0]!.name).toMatch(/1$/);
-    expect(r.rows[59]!.name).toMatch(/60$/);
-    expect(r.total).toBe("₹1,830");
   });
 
   it("permission refused or Bluetooth off while choosing: the same sentences as printing", async () => {
     classic.t.failReady = new PrintError("permission");
     render(<PrinterSection shop={shop} />);
-    fireEvent.click(screen.getByRole("button", { name: "Choose printer" }));
-    await settle();
+    await openChoose();
     expect(screen.getByRole("alert").textContent).toBe("Allow “Nearby devices” to print: phone Settings → Apps → Kirana Voice Bill → Permissions.");
   });
 
@@ -371,5 +416,26 @@ describe("More → Printer", () => {
     expect(r.reprint).toBe("TEST PRINT");
     expect(r.rows.map((x) => x.name).join(" ")).toMatch(/क्ष/);
     expect(screen.getByRole("status").textContent).toBe("Printed");
+  });
+});
+
+// KB-416 (owner, 20 Nov 2026): the 60-line stress test lives in More -> Developer now.
+describe("Long test print (Developer)", () => {
+  it("60 numbered lines, at the chosen width and mode, so a lost or shifted line is seen at a glance on paper", async () => {
+    choose(BT58, 384, true);
+    render(<LongTestPrint shop={shop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
+    await settle();
+    const r = rendered.calls[0]!.receipt;
+    expect(r.reprint).toBe("TEST PRINT");
+    expect(r.rows).toHaveLength(60);
+    expect(r.rows.map((x) => x.amount)).toEqual(Array.from({ length: 60 }, (_, i) => `₹${i + 1}`));
+    expect(r.total).toBe("₹1,830");
+    expect(has(classic.t.sent, ESC_STAR)).toBe(true);
+  });
+
+  it("no printer chosen: nothing to print, so no button", () => {
+    render(<LongTestPrint shop={shop} />);
+    expect(screen.queryByRole("button", { name: "Long test print (60 lines)" })).toBeNull();
   });
 });

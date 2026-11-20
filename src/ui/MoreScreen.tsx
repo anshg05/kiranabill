@@ -131,7 +131,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
       {page === "sync" && <SyncPage sync={sync} onClose={close} />}
       {page === "help" && <HelpPage onClose={close} />}
       {shop && page === "account" && onDeleteAccount && <AccountPage localDb={localDb} shop={shop} sync={sync} billInProgress={billInProgress} onDeleteAccount={onDeleteAccount} onClose={close} />}
-      {page === "developer" && <DeveloperPage localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} onClose={close} />}
+      {page === "developer" && <DeveloperPage localDb={localDb} shopId={shopId} deviceId={deviceId} deviceDb={deviceDb} reconcile={reconcile} shop={shop ?? undefined} onClose={close} />}
     </section>
   );
 }
