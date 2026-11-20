@@ -206,7 +206,7 @@ Every existing check stays for the Sarvam path (§7). On the Gemini path, six of
 - **gemini-3.8-flash limits on this project** (owner's AI Studio, Tier 1, 7 Nov 2026): **1,000 requests a minute, 2M tokens a minute, 10,000 requests a day.**
   - A long bill uses about 2,500 - 3,600 tokens (A61: 3,542).
   - The daily 10,000 is shared with eval runs. A live regression run takes 84.
-- **The per-shop limit stays:** 300 `/voice` requests an hour.
+- **The per-shop limits:** 250 Gemini calls a shop a day (India time), counted in the database's claim (D121, `app_limits` - the owner changes it in the dashboard); the old 300 `/voice` requests an hour (Netlify Blobs) stays until a later deploy.
 - **Storage:** Supabase's free tier holds 1 GB. Recordings take about 0.1 GB at 24 kbps and 100 bills a day for 7 days (§9). The measured size is reported in `KB-384` and `KB-386`.
 - **A Google billing budget alarm** is a manual step for the owner (§13).
 
