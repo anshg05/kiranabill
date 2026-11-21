@@ -1,4 +1,4 @@
-import { privacyHref } from "./privacyLink";
+import { privacyHref, termsHref } from "./privacyLink";
 import { useEffect, useState } from "react";
 import { liveQuery } from "dexie";
 import { deriveShopAliases } from "@/data/aliasEvidence";
@@ -112,6 +112,7 @@ export function MoreScreen({ localDb, shopId, deviceId, deviceDb, reconcile, syn
               <ListRow icon={KB_ICONS.Cloud} title={t("more.sync")} sub={syncText} onClick={() => setPage("sync")} />
               <ListRow icon={KB_ICONS.CircleHelp} title={t("help.row")} sub={t("help.rowSub")} onClick={() => setPage("help")} />
               <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href={privacyHref()} />
+              <ListRow icon={KB_ICONS.FileText} title={t("more.terms")} href={termsHref()} />
               {/* English in every language, as today's Developer mode (KB-312) */}
               <ListRow icon={KB_ICONS.Phone} title="Developer" onClick={() => setPage("developer")} />
               {onDeleteAccount && <ListRow icon={KB_ICONS.LogOut} title={t("account.title")} sub={t("account.deleteRow")} onClick={() => setPage("account")} />}

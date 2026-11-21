@@ -1,4 +1,4 @@
-import { privacyHref } from "./privacyLink";
+import { privacyHref, termsHref } from "./privacyLink";
 import { isTestApp, testSignInHint } from "@/data/testApp";
 import { useEffect, useState } from "react";
 import { FAILED_TEXT, REFUSED_TEXT, readOAuthReturn, stripOAuthReturn } from "@/data/oauthReturn";
@@ -114,6 +114,11 @@ export function SignInScreen() {
           <p className="text-center text-kb-13 text-kb-sub">
             <a href={privacyHref()} target="_blank" rel="noopener" className="kb-hit-icon inline-flex min-h-[44px] items-center font-semibold text-kb-primary underline">
               {t("signin.privacy")}
+            </a>
+            {/* KB-435 (D126): a plain link beside Privacy - nothing to agree to, sign-in unchanged */}
+            {" · "}
+            <a href={termsHref()} target="_blank" rel="noopener" className="kb-hit-icon inline-flex min-h-[44px] items-center font-semibold text-kb-primary underline">
+              {t("more.terms")}
             </a>
           </p>
           {import.meta.env.DEV && isLocalSupabaseUrl(import.meta.env.VITE_SUPABASE_URL) && <DevEmailSignIn />}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Session } from "@supabase/supabase-js";
 import { render as say, type Language, type MessageId } from "@/domain/messages";
 import { setScreenLanguage } from "@/ui/screenLanguage";
@@ -347,10 +347,11 @@ describe("Shop setup (06)", () => {
   it("change 4: Android Back signs out too", async () => {
     await toSetup();
     await androidBack();
-    await heading("Sign in to your shop");
-    expect(net.state.session).toBeNull();
+    // KB-431 (21 Nov 2026): failed twice under the full suite's load - wait for the sign-out itself, then for Sign in (not a fixed 40 ms)
+    await waitFor(() => expect(net.state.session).toBeNull(), { timeout: 5000 });
+    await screen.findByRole("heading", { level: 1, name: "Sign in to your shop" }, { timeout: 5000 });
     expect(net.state.created).toEqual([]);
-  });
+  }, 20_000); // owner, 21 Nov 2026: the whole first-run walk (splash -> setup) can pass Vitest's 5 s under the full suite's load
 
   it("a name is required", async () => {
     await toSetup();

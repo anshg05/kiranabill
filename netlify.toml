@@ -25,6 +25,12 @@
   to = "/delete-account.html"
   status = 200
 
+# KB-435 (D126): the Terms of Service - its own static page, like /privacy.
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+
 [[headers]]
   for = "/sw.js"
   [headers.values]

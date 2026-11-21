@@ -566,6 +566,7 @@ export const MESSAGES = {
   "more.waitingOne": m("1 bill waiting to sync", "1 बिल सिंक होना बाकी", "1 bill sync hona baaki"),
   "more.waitingMany": m("{n} bills waiting to sync", "{n} बिल सिंक होने बाकी", "{n} bill sync hone baaki"),
   "more.privacy": m("Privacy", "गोपनीयता", "Privacy"),
+  "more.terms": m("Terms of Service", "सेवा की शर्तें", "Terms of Service"), // KB-435 (D126)
   // KB-430 (D119, owner 20 Nov 2026): More -> Account -> Delete account
   "account.title": m("Account", "खाता", "Account"),
   "account.deleteRow": m("Delete account", "खाता हटाएँ", "Account delete karein"),

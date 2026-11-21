@@ -3,7 +3,7 @@ import { BUILD_ID } from "@/pwa/buildId";
 import { Icon, KB_ICONS } from "./kit/icons";
 import { GroupLabel, ListCard, ListRow } from "./kit/ListRow";
 import { InnerPage } from "./InnerPage";
-import { privacyHref } from "./privacyLink";
+import { privacyHref, termsHref } from "./privacyLink";
 import { useT } from "./useT";
 
 // SG-27 (owner, 20 Nov 2026; D124): More -> Help & support. How to use - short steps, each true of today's app; the screen names they
@@ -63,6 +63,7 @@ export function HelpPage({ onClose }: { onClose: () => void }) {
       <p className="text-kb-13 text-kb-sub">{t("help.reply")}</p>
       <ListCard>
         <ListRow icon={KB_ICONS.ShieldCheck} title={t("more.privacy")} href={privacyHref()} />
+        <ListRow icon={KB_ICONS.FileText} title={t("more.terms")} href={termsHref()} />
       </ListCard>
     </InnerPage>
   );

@@ -425,7 +425,8 @@ describe("Long test print (Developer)", () => {
     choose(BT58, 384, true);
     render(<LongTestPrint shop={shop} />);
     fireEvent.click(screen.getByRole("button", { name: "Long test print (60 lines)" }));
-    await settle();
+    // KB-431: a 60-line print takes longer than one tick under load - wait for it to finish, as the other print tests do
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Printed"), { timeout: 5000 });
     const r = rendered.calls[0]!.receipt;
     expect(r.reprint).toBe("TEST PRINT");
     expect(r.rows).toHaveLength(60);

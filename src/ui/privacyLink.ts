@@ -8,3 +8,7 @@ export const PRIVACY_PAGE_URL = "https://kiranabilling.netlify.app/privacy";
  * rewrite exists only on Netlify) - so the app links to the public page, which Capacitor opens in the phone's browser.
  */
 export const privacyHref = (): string => (isNativeApp() ? PRIVACY_PAGE_URL : "/privacy");
+
+/** KB-435 (D126): the Terms of Service - the same rule as Privacy. */
+export const TERMS_PAGE_URL = "https://kiranabilling.netlify.app/terms";
+export const termsHref = (): string => (isNativeApp() ? TERMS_PAGE_URL : "/terms");
